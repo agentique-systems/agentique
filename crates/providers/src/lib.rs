@@ -115,10 +115,11 @@ impl Provider {
         }
     }
 
-    /// The model used when the Operator has not chosen one.
+    /// The model used when the Operator has not chosen one (for Anthropic,
+    /// the Assistant's default since C-54).
     pub fn default_model(self) -> &'static str {
         match self {
-            Provider::Anthropic => "claude-opus-5",
+            Provider::Anthropic => "claude-sonnet-5-5",
             Provider::OpenAi => "gpt-6-astra",
             Provider::OpenRouter => "anthropic/claude-opus-5",
             Provider::DeepSeek => "deepseek-flash",
@@ -142,6 +143,65 @@ impl ModelRef {
             model: model.into(),
         }
     }
+
+    /// `provider/model`, as Settings write a role's model (C-54): the
+    /// provider's id, then the model's id (which may hold `/` itself).
+    pub fn parse(text: &str) -> Option<ModelRef> {
+        let (provider, model) = text.trim().split_once('/')?;
+        let provider = Provider::from_id(provider)?;
+        (!model.trim().is_empty()).then(|| ModelRef::new(provider, model.trim()))
+    }
+}
+
+/// `provider/model` (read back by [`ModelRef::parse`]).
+impl std::fmt::Display for ModelRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}/{}", self.provider.id(), self.model)
+    }
+}
+
+/// A secret Agentique may hold (R-25, C-54): a provider's API key, or the
+/// Operator's Claude subscription token (from `claude setup-token`), which
+/// Anthropic accepts only through the Claude Agent runtime, so nothing in
+/// this crate sends it anywhere ([`Providers`] never reads it).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Credential {
+    Key(Provider),
+    ClaudeSubscription,
+}
+
+impl From<Provider> for Credential {
+    fn from(provider: Provider) -> Credential {
+        Credential::Key(provider)
+    }
+}
+
+impl Credential {
+    /// Its name in the credential store (`agentique:<id>`): the provider's
+    /// id for a key, as before C-54.
+    pub fn id(self) -> String {
+        match self {
+            Credential::Key(provider) => provider.id().to_string(),
+            Credential::ClaudeSubscription => "anthropic-subscription".into(),
+        }
+    }
+
+    /// The environment variable that holds it; a non-empty value wins over
+    /// a stored one (R-25).
+    pub fn variable(self) -> &'static str {
+        match self {
+            Credential::Key(provider) => provider.key_variable(),
+            Credential::ClaudeSubscription => "CLAUDE_CODE_OAUTH_TOKEN",
+        }
+    }
+
+    /// What the Operator calls it.
+    pub fn name(self) -> String {
+        match self {
+            Credential::Key(provider) => format!("{} key", provider.name()),
+            Credential::ClaudeSubscription => "Claude subscription token".into(),
+        }
+    }
 }
 
 /// Where a provider's key comes from (R-25).
@@ -161,12 +221,18 @@ pub enum KeyStatus {
 /// Where the key for `provider` comes from. The key itself never leaves this
 /// crate except in the request to its own provider (§8.7).
 pub fn key_status(provider: Provider) -> KeyStatus {
-    if environment_key(provider).is_some() {
+    credential_status(Credential::Key(provider))
+}
+
+/// Where a key or the Claude subscription token comes from: its
+/// environment variable, else the credential store (R-25).
+pub fn credential_status(credential: Credential) -> KeyStatus {
+    if environment(credential).is_some() {
         KeyStatus::FromEnvironment {
-            variable: provider.key_variable(),
+            variable: credential.variable(),
         }
     } else {
-        match keys::stored(provider) {
+        match keys::stored(credential) {
             Ok(Some(_)) => KeyStatus::Stored,
             Ok(None) => KeyStatus::Missing,
             Err(error) => KeyStatus::Unavailable(error.0),
@@ -209,16 +275,27 @@ pub fn claude_agent_key() -> Result<Option<Secret>, String> {
 /// Anthropic-compatible endpoint (DeepSeek's, C-53). The same exception to
 /// §8.7 rule 4, and the key still goes only to its own provider's endpoint.
 pub fn runtime_key(provider: Provider) -> Result<Option<Secret>, String> {
-    if let Some(key) = environment_key(provider) {
+    runtime_credential(Credential::Key(provider))
+}
+
+/// A key, or the Claude subscription token, for the Claude Agent runtime's
+/// process (the same exception to §8.7 rule 4; C-54 adds the token, which
+/// that process's Claude Code sends to Anthropic and nowhere else).
+pub fn runtime_credential(credential: Credential) -> Result<Option<Secret>, String> {
+    if let Some(key) = environment(credential) {
         return Ok(Some(Secret(key)));
     }
-    keys::stored(provider)
+    keys::stored(credential)
         .map(|key| key.map(Secret))
         .map_err(|error| error.0)
 }
 
 fn environment_key(provider: Provider) -> Option<String> {
-    std::env::var(provider.key_variable())
+    environment(Credential::Key(provider))
+}
+
+fn environment(credential: Credential) -> Option<String> {
+    std::env::var(credential.variable())
         .ok()
         .map(|key| key.trim().to_string())
         .filter(|key| !key.is_empty())

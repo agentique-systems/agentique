@@ -30,6 +30,9 @@ pub struct Capabilities {
     pub cache_counts: bool,
     /// The provider reruns a declined request on another model (C-27).
     pub refusal_fallbacks: bool,
+    /// The Claude Agent runtime can run the model: Anthropic's own API, or
+    /// the provider's Anthropic-compatible endpoint (C-53, §4.8).
+    pub agent_runtime: bool,
     /// Context window in tokens, when known.
     pub context_window: Option<u64>,
     /// Largest output per call in tokens, when known.
@@ -95,15 +98,21 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             // rig 0.43 hands a tool call over whole when it closes.
             tool_input_streaming: false,
             efforts: ANTHROPIC_EFFORTS,
-            default_effort: Some("high"),
+            // Claude Opus 5.5 thinks at medium unless asked (ROADMAP [109]).
+            default_effort: Some(if model.model == "claude-opus-5-5" {
+                "medium"
+            } else {
+                "high"
+            }),
             reasoning_text: ReasoningText::Summary,
             // Automatic caching only: rig's cache breakpoints are not used
             // yet (W5.7).
             prompt_cache: PromptCache::Automatic,
             cache_counts: true,
-            // On the default model (C-27), through the Q-18 adapter; the
+            // On Claude Opus 5 (C-27), through the Q-18 adapter; the
             // Assistant's hand-written client asks for them on it alone too.
             refusal_fallbacks: model.model == "claude-opus-5",
+            agent_runtime: true,
             context_window: None,
             max_output_tokens: None,
         },
@@ -119,6 +128,7 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             prompt_cache: PromptCache::Automatic,
             cache_counts: true,
             refusal_fallbacks: false,
+            agent_runtime: false,
             context_window: None,
             max_output_tokens: None,
         },
@@ -134,6 +144,7 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             prompt_cache: PromptCache::Automatic,
             cache_counts: true,
             refusal_fallbacks: false,
+            agent_runtime: false,
             context_window: None,
             max_output_tokens: None,
         },
@@ -150,6 +161,7 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             prompt_cache: PromptCache::None,
             cache_counts: false,
             refusal_fallbacks: false,
+            agent_runtime: false,
             context_window: Some(64_000),
             max_output_tokens: None,
         },
@@ -165,6 +177,7 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             prompt_cache: PromptCache::Automatic,
             cache_counts: true,
             refusal_fallbacks: false,
+            agent_runtime: true,
             // `deepseek-flash` (GET /models, 2026-09-27) and `deepseek-v4-pro`
             // (the pricing page, 2026-10-03): 1M context, 384K output.
             context_window: DEEPSEEK_MODELS
@@ -205,7 +218,21 @@ pub fn price(model: &ModelRef) -> Option<Price> {
         // README); cache writes at 1.25 times and reads at a tenth of the
         // input price (not verified per model).
         (Provider::Anthropic, "claude-opus-5") => price(5.0, 6.25, 0.5, 25.0),
-        (Provider::Anthropic, "claude-opus-5-5") => price(4.0, 5.0, 0.4, 20.0),
+        // Claude Opus 5.5 and Sonnet 5.5, read 2026-10-04 (ROADMAP [109]).
+        (Provider::Anthropic, "claude-opus-5-5") => Some(Price {
+            input: 4.0,
+            cache_write: 5.0,
+            cache_read: 0.20,
+            output: 20.0,
+            as_of: "2026-10-04",
+        }),
+        (Provider::Anthropic, "claude-sonnet-5-5") => Some(Price {
+            input: 2.0,
+            cache_write: 2.50,
+            cache_read: 0.20,
+            output: 10.0,
+            as_of: "2026-10-04",
+        }),
         (Provider::Anthropic, "claude-fable-5-1") => price(10.0, 12.5, 1.0, 50.0),
         (Provider::Anthropic, "claude-haiku-4-5") => price(1.0, 1.25, 0.1, 5.0),
         // DeepSeek's pricing page (ROADMAP [105], read 2026-09-27): the
@@ -269,6 +296,64 @@ mod tests {
         ] {
             let caps = capabilities(&ModelRef::new(chat, chat.default_model()));
             assert!(caps.chat && !caps.decisions, "{chat:?}");
+        }
+    }
+
+    /// C-54, ROADMAP [109]: the Claude 5.5 models' list prices, their effort
+    /// levels and defaults; both are known to the tables, and the Claude
+    /// Agent runtime reaches Anthropic's and DeepSeek's models only.
+    #[test]
+    fn the_claude_5_5_models_are_priced_with_their_efforts() {
+        let opus = ModelRef::new(Provider::Anthropic, "claude-opus-5-5");
+        let sonnet = ModelRef::new(Provider::Anthropic, "claude-sonnet-5-5");
+        let p = price(&opus).unwrap();
+        assert_eq!(
+            (p.input, p.cache_write, p.cache_read, p.output, p.as_of),
+            (4.0, 5.0, 0.20, 20.0, "2026-10-04")
+        );
+        let p = price(&sonnet).unwrap();
+        assert_eq!(
+            (p.input, p.cache_write, p.cache_read, p.output, p.as_of),
+            (2.0, 2.50, 0.20, 10.0, "2026-10-04")
+        );
+        for model in [&opus, &sonnet] {
+            assert_eq!(resolve_model(&model.model).as_ref(), Some(model));
+            let caps = capabilities(model);
+            assert_eq!(caps.efforts, ["low", "medium", "high", "xhigh", "max"]);
+            assert!(caps.chat && caps.tools && caps.agent_runtime);
+        }
+        assert_eq!(capabilities(&opus).default_effort, Some("medium"));
+        assert_eq!(capabilities(&sonnet).default_effort, Some("high"));
+        // The Assistant's Anthropic default (C-54).
+        assert_eq!(Provider::Anthropic.default_model(), "claude-sonnet-5-5");
+        let runtime: Vec<Provider> = Provider::ALL
+            .into_iter()
+            .filter(|p| capabilities(&ModelRef::new(*p, p.default_model())).agent_runtime)
+            .collect();
+        assert_eq!(runtime, [Provider::Anthropic, Provider::DeepSeek]);
+        // A thousand cache reads of Opus 5.5 cost $0.0002, not $0.0004.
+        let usage = crate::Usage {
+            cache_read_tokens: 1000,
+            ..crate::Usage::default()
+        };
+        assert!((usage.cost_usd(&opus).unwrap() - 0.0002).abs() < 1e-12);
+    }
+
+    #[test]
+    fn a_model_is_written_and_read_as_provider_slash_model() {
+        let opus = ModelRef::new(Provider::Anthropic, "claude-opus-5-5");
+        assert_eq!(opus.to_string(), "anthropic/claude-opus-5-5");
+        assert_eq!(ModelRef::parse(&opus.to_string()), Some(opus));
+        // A model id may hold a slash itself (OpenRouter's do).
+        assert_eq!(
+            ModelRef::parse("openrouter/anthropic/claude-opus-5"),
+            Some(ModelRef::new(
+                Provider::OpenRouter,
+                "anthropic/claude-opus-5"
+            ))
+        );
+        for bad in ["", "deepseek", "deepseek/", "nobody/x", "/x"] {
+            assert_eq!(ModelRef::parse(bad), None, "{bad}");
         }
     }
 }
