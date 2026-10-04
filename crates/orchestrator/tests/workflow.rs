@@ -132,11 +132,12 @@ fn run(way: Way, decider: &Decider, base: &Path, guarded: bool) -> (Score, Vec<V
         // A new project goes in this run's folder, not the default one in
         // the user's home, should a decision confirm it.
         if command == "new-project" {
-            act(
+            let filled = act(
                 &mut client,
                 json!({ "kind": "fill", "control": "Project folder", "text": folder.join("NewSystem").display().to_string() }),
                 "keep a new project in the run's folder",
             );
+            assert_eq!(filled["ok"], true, "{filled}");
         }
         // Unguarded, the decisions themselves are measured; guarded, as the
         // Orchestrator clears them.

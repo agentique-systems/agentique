@@ -157,6 +157,8 @@ const INSTRUCTIONS: &str = "An agent operates the Agentique application toward t
 #[derive(Clone, Debug, PartialEq)]
 pub struct Failure {
     pub error: String,
+    /// Who failed to decide.
+    pub source: Source,
     pub millis: u64,
     pub usd: Option<f64>,
 }
@@ -276,6 +278,7 @@ impl Decider {
                         note: String::new(),
                     }),
                     _ => Err(Failure {
+                        source: Source::Jev,
                         error: "Jev's answer is not a choice".into(),
                         millis,
                         usd,
@@ -283,6 +286,7 @@ impl Decider {
                 }
             }
             Err(failure) => Err(Failure {
+                source: Source::Jev,
                 error: format!("Jev: {failure}"),
                 millis,
                 usd: if failure.attempts == 0 {
@@ -328,6 +332,7 @@ impl Decider {
             let deadline = Instant::now() + Duration::from_secs(120);
             // A request that was sent may be billed: its cost is unknown.
             let failed = |error: String| Failure {
+                source: Source::Model,
                 error,
                 millis: started.elapsed().as_millis() as u64,
                 usd: None,
@@ -368,6 +373,7 @@ impl Decider {
             }
         }
         Err(Failure {
+            source: Source::Model,
             error: problem,
             millis: started.elapsed().as_millis() as u64,
             usd,
@@ -500,7 +506,7 @@ pub fn clear_dialogs(
                     situation.dialog.clone(),
                     Decision {
                         choice: WAIT.into(),
-                        source: Source::Model,
+                        source: failure.source,
                         confidence: None,
                         millis: failure.millis,
                         usd: failure.usd,

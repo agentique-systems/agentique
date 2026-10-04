@@ -831,7 +831,14 @@ impl Driver {
             );
             dialogs.push(dialog);
         }
-        cleared.map(|()| dialogs)
+        match cleared {
+            Ok(()) => Ok(dialogs),
+            Err(problem) if dialogs.is_empty() => Err(problem),
+            Err(problem) => Err(format!(
+                "{problem} (after cancelling {})",
+                dialogs.join(", ")
+            )),
+        }
     }
 
     /// The dialog a test instance shows as it starts, if any: a finding
