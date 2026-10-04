@@ -3,22 +3,25 @@
 //! Objectives panel show it: the Operator's messages, agents' directives and
 //! results, the Orchestrator's events (phases, checks, gates, pull requests,
 //! merges, builds, adoptions, recoveries) and each agent's tool activity,
-//! which folds under the entry before it that is not activity (the step it
-//! belongs to), with a bounded diff for a file it changed or the command
-//! line it ran. Each entry says who wrote it: the Operator, Agentique, or an
-//! agent with its role and model.
+//! which folds under the step it belongs to (`under`: the entry that started
+//! the work, such as a role's session), with a bounded diff for a file it
+//! changed or the command line it ran. Each entry says who wrote it: the
+//! Operator, Agentique, or an agent with its role and model.
 //!
 //! Kept with the objective's records (`objectives/<id>/thread.jsonl`, under
 //! the `objectives` data format 1, a file the previous build does not read):
 //! one JSON line per entry, appended whole under the folder's lock file, so
 //! writers (the Orchestrator's thread, the Studio) take turns and number
 //! entries in order (`seq`); a line cut short by a crash is skipped when
-//! read and the next one starts on a line of its own. Read back from any
-//! point with [`Store::thread`]. Bounded: each entry's text and details are
-//! capped ([`TEXT_CHARS`], [`DETAILS_CHARS`]), and a file that reaches
+//! read and the next one starts on a line of its own. A line another build
+//! wrote still counts: its number is read on its own, and a kind or author
+//! this build does not know reads as unknown. Read back from any point with
+//! [`Store::thread`], from the end. Bounded: each entry's text and details
+//! are capped ([`TEXT_BYTES`], [`DETAILS_BYTES`]), and a file that reaches
 //! [`FILE_BYTES`] is kept as `thread.1.jsonl` (replacing the one before) while
-//! a new one starts, so an objective's thread takes at most twice that. No
-//! model receives it whole.
+//! a new one starts, so an objective's thread takes at most twice that. A
+//! configured key never reaches it ([`redacted`]), nor a key file's
+//! contents. No model receives it whole.
 
 use crate::record::Store;
 use agq_providers::ModelRef;
@@ -35,9 +38,9 @@ use std::path::PathBuf;
 /// kept, the latest 4 to 8 MB of an objective's thread can always be read.
 pub const FILE_BYTES: u64 = 4 << 20;
 
-/// The most characters of an entry's text, and of its details.
-pub const TEXT_CHARS: usize = 2000;
-pub const DETAILS_CHARS: usize = 8000;
+/// The most bytes of an entry's text, and of its details (UTF-8).
+pub const TEXT_BYTES: usize = 2000;
+pub const DETAILS_BYTES: usize = 8000;
 
 /// What an entry is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,6 +59,9 @@ pub enum Kind {
     Event,
     /// An agent's tool call, folded under the step it belongs to.
     Activity,
+    /// A kind a later build added: shown as an event.
+    #[serde(other)]
+    Unknown,
 }
 
 /// Who wrote an entry.
@@ -70,9 +76,24 @@ pub enum Author {
     /// recorded it; none for a role without one).
     Agent {
         role: String,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            default,
+            skip_serializing_if = "Option::is_none",
+            deserialize_with = "lenient_model"
+        )]
         model: Option<ModelRef>,
     },
+    /// An author a later build added.
+    #[serde(other)]
+    Unknown,
+}
+
+/// A model as written, or none when this build does not know its provider.
+fn lenient_model<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<ModelRef>, D::Error> {
+    let value = Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).ok())
 }
 
 impl Author {
@@ -95,6 +116,7 @@ impl Author {
                 role,
                 model: Some(model),
             } => format!("{role} · {}", model.model),
+            Author::Unknown => "Agentique".into(),
         }
     }
 }
@@ -119,6 +141,14 @@ pub struct ThreadEntry {
     /// for it, its result); a directive's id names its objective.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub directive: Option<String>,
+    /// Where an Operator's message went: `implementer` (at its next tool
+    /// call) or `lead` (its next turn); never the reviewer or the explorer.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+    /// For activity, the entry of the step it belongs to (the start of the
+    /// role's session): it folds under that one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<u64>,
 }
 
 impl ThreadEntry {
@@ -134,6 +164,8 @@ impl ThreadEntry {
             text: text.into(),
             details: None,
             directive: None,
+            to: None,
+            under: None,
         }
     }
 
@@ -148,23 +180,65 @@ impl ThreadEntry {
         self
     }
 
+    /// The Operator's message, going `to` a role.
+    pub fn message(text: impl Into<String>, to: &str) -> ThreadEntry {
+        let mut entry = ThreadEntry::new(Kind::Human, Author::Operator, text);
+        entry.to = Some(to.to_string());
+        entry
+    }
+
     pub fn for_directive(mut self, id: Option<&str>) -> ThreadEntry {
         self.directive = id.map(str::to_string);
         self
     }
 }
 
-/// `text` cut to `most` characters, saying how much was left out.
+/// `text` cut to at most `most` bytes (on a character's boundary), saying
+/// how much was left out.
 pub fn capped(text: &str, most: usize) -> String {
-    let count = text.chars().count();
-    if count <= most {
+    if text.len() <= most {
         return text.to_string();
     }
-    let kept: String = text.chars().take(most.saturating_sub(40)).collect();
-    format!(
-        "{kept}\n… ({} more characters)",
-        count - kept.chars().count()
-    )
+    let mut end = most.saturating_sub(40);
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}\n… ({} more bytes)", &text[..end], text.len() - end)
+}
+
+/// `text` with every configured key (of twelve characters or more) in it
+/// replaced by a hint, as the key gate names one: keys never reach a file
+/// or a log (ROADMAP §4.9).
+pub fn redacted(text: &str, keys: &[String]) -> String {
+    let mut text = text.to_string();
+    for key in keys.iter().filter(|k| k.len() >= 12) {
+        if text.contains(key.as_str()) {
+            let hint = format!("[a configured key ending {}]", &key[key.len() - 4..]);
+            text = text.replace(key.as_str(), &hint);
+        }
+    }
+    text
+}
+
+/// Whether `path` names a file that holds keys (as the permission policy's
+/// `SECRET_FILES` do): its contents are never shown. Templates
+/// (`.env.example`, `.sample`, `.template`, `.dist`) hold none.
+pub fn key_file(path: &str) -> bool {
+    let name = path
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or(path)
+        .to_ascii_lowercase();
+    let template = [".example", ".sample", ".template", ".dist"]
+        .iter()
+        .any(|t| name.ends_with(t));
+    (name == ".env" || name.starts_with(".env.")) && !template
+        || name.ends_with(".pem")
+        || name.ends_with(".key")
+        || name == ".git-credentials"
+        || ["id_rsa", "id_ed25519", "id_ecdsa"]
+            .iter()
+            .any(|k| name.starts_with(k))
 }
 
 /// A tool call as the thread shows it: a line naming the tool and what it
@@ -174,6 +248,12 @@ pub fn capped(text: &str, most: usize) -> String {
 pub fn activity(tool: &str, input: &Value) -> (String, Option<String>) {
     let tool = tool.strip_prefix("mcp__agentique__").unwrap_or(tool);
     let field = |name: &str| input[name].as_str().unwrap_or_default();
+    if matches!(tool, "Edit" | "MultiEdit" | "Write") && key_file(field("file_path")) {
+        return (
+            format!("{tool} {} (a key file: not shown)", field("file_path")),
+            None,
+        );
+    }
     let lines = |prefix: &str, text: &str| -> String {
         text.lines()
             .map(|line| format!("{prefix} {line}"))
@@ -243,9 +323,7 @@ impl Store {
     /// Adds `entry` to the thread of objective `id`, numbered after the
     /// last one, and returns it as added.
     pub fn append_thread(&self, id: &str, mut entry: ThreadEntry) -> Result<ThreadEntry, String> {
-        if id.contains(['/', '\\']) || id.contains("..") {
-            return Err(format!("{id} is not an objective's id"));
-        }
+        thread_id(id)?;
         let (previous, current) = self.thread_files(id);
         let dir = self.folder.join(id);
         std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
@@ -266,8 +344,8 @@ impl Store {
         entry.seq = last + 1;
         entry.at = agq_launcher::now();
         entry.objective = id.to_string();
-        entry.text = capped(&entry.text, TEXT_CHARS);
-        entry.details = entry.details.map(|d| capped(&d, DETAILS_CHARS));
+        entry.text = capped(&entry.text, TEXT_BYTES);
+        entry.details = entry.details.map(|d| capped(&d, DETAILS_BYTES));
         let mut line = serde_json::to_string(&entry).map_err(|e| e.to_string())?;
         line.push('\n');
         let mut file = std::fs::OpenOptions::new()
@@ -287,25 +365,92 @@ impl Store {
     }
 
     /// The entries of objective `id`'s thread after `since` (0 for all
-    /// that are kept), in order.
+    /// that are kept), in order. Read from the end, so following a thread
+    /// reads only what is new.
     pub fn thread(&self, id: &str, since: u64) -> Vec<ThreadEntry> {
+        if thread_id(id).is_err() {
+            return Vec::new();
+        }
         let (previous, current) = self.thread_files(id);
-        let mut entries: Vec<ThreadEntry> = [previous, current]
-            .iter()
-            .flat_map(|path| {
-                std::fs::read_to_string(path)
-                    .unwrap_or_default()
-                    .lines()
-                    .filter_map(|line| serde_json::from_str::<ThreadEntry>(line).ok())
-                    .filter(|e| e.seq > since)
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-        // In order even if a writer's clock or a copy disagreed.
+        // The current file first: a file kept as the previous one meanwhile
+        // is read again whole, never lost (the same entries twice go below).
+        let mut entries = after(&current, since);
+        if entries.first().is_none_or(|e| e.seq > since + 1) {
+            entries.extend(after(&previous, since));
+        }
         entries.sort_by_key(|e| e.seq);
         entries.dedup_by_key(|e| e.seq);
         entries
     }
+
+    /// The number of the last entry of objective `id`'s thread; 0 when it
+    /// has none.
+    pub fn thread_last(&self, id: &str) -> u64 {
+        if thread_id(id).is_err() {
+            return 0;
+        }
+        let (previous, current) = self.thread_files(id);
+        last_seq(&current)
+            .ok()
+            .flatten()
+            .or_else(|| last_seq(&previous).ok().flatten())
+            .unwrap_or(0)
+    }
+}
+
+/// An objective's id as a folder name: never a path.
+fn thread_id(id: &str) -> Result<(), String> {
+    if id.is_empty() || id.contains(['/', '\\']) || id.contains("..") {
+        Err(format!("{id} is not an objective's id"))
+    } else {
+        Ok(())
+    }
+}
+
+/// An entry's number, read on its own: a line this build cannot read whole
+/// (a later build's) still counts.
+#[derive(Deserialize)]
+struct Numbered {
+    seq: u64,
+}
+
+/// The entries of `path` after `since`, reading back from its end in
+/// blocks until one at or before `since` is reached.
+fn after(path: &std::path::Path, since: u64) -> Vec<ThreadEntry> {
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return Vec::new();
+    };
+    let size = file.metadata().map(|m| m.len()).unwrap_or(0);
+    const BLOCK: u64 = 256 * 1024;
+    let mut from = size;
+    let mut text: Vec<u8> = Vec::new();
+    loop {
+        let start = from.saturating_sub(BLOCK);
+        let mut block = vec![0u8; (from - start) as usize];
+        if file.seek(SeekFrom::Start(start)).is_err() || file.read_exact(&mut block).is_err() {
+            return Vec::new();
+        }
+        block.extend_from_slice(&text);
+        text = block;
+        from = start;
+        // The first line may be cut by the block's start: judged from the
+        // second on.
+        let reached = from == 0
+            || String::from_utf8_lossy(&text)
+                .lines()
+                .skip(1)
+                .filter_map(|line| serde_json::from_str::<Numbered>(line).ok())
+                .next()
+                .is_some_and(|n| n.seq <= since);
+        if reached {
+            break;
+        }
+    }
+    String::from_utf8_lossy(&text)
+        .lines()
+        .filter(|line| serde_json::from_str::<Numbered>(line).is_ok_and(|n| n.seq > since))
+        .filter_map(|line| serde_json::from_str::<ThreadEntry>(line).ok())
+        .collect()
 }
 
 /// The number of the last whole entry in `path`, read from its end.
@@ -326,8 +471,8 @@ fn last_seq(path: &std::path::Path) -> Result<Option<u64>, String> {
     Ok(String::from_utf8_lossy(&tail)
         .lines()
         .rev()
-        .filter_map(|line| serde_json::from_str::<ThreadEntry>(line).ok())
-        .map(|e| e.seq)
+        .filter_map(|line| serde_json::from_str::<Numbered>(line).ok())
+        .map(|n| n.seq)
         .next())
 }
 
@@ -445,16 +590,16 @@ mod tests {
     #[test]
     fn a_thread_stays_within_its_bounds() {
         let (_dir, store) = store();
-        let long = "x".repeat(TEXT_CHARS * 3);
+        let long = "é".repeat(TEXT_BYTES * 3);
         let entry = store
             .append_thread(
                 "o",
-                ThreadEntry::event(long.clone()).with_details("y".repeat(DETAILS_CHARS * 3)),
+                ThreadEntry::event(long.clone()).with_details("y".repeat(DETAILS_BYTES * 3)),
             )
             .unwrap();
-        assert!(entry.text.chars().count() <= TEXT_CHARS + 40);
-        assert!(entry.text.ends_with("more characters)"));
-        assert!(entry.details.unwrap().chars().count() <= DETAILS_CHARS + 40);
+        assert!(entry.text.len() <= TEXT_BYTES, "capped in bytes");
+        assert!(entry.text.ends_with("more bytes)"));
+        assert!(entry.details.unwrap().len() <= DETAILS_BYTES);
         // A full file is kept as the previous one, and a new one starts;
         // numbers go on, and both are read. (Filled here in one write, as
         // appending entry by entry would.)
@@ -464,7 +609,7 @@ mod tests {
             let mut seq = from;
             while (text.len() as u64) < FILE_BYTES {
                 seq += 1;
-                let mut entry = ThreadEntry::event(capped(&long, TEXT_CHARS));
+                let mut entry = ThreadEntry::event(capped(&long, TEXT_BYTES));
                 entry.seq = seq;
                 entry.objective = "o".into();
                 text.push_str(&serde_json::to_string(&entry).unwrap());
@@ -494,6 +639,88 @@ mod tests {
         let kept = store.thread("o", 0);
         assert!(kept.first().unwrap().seq > n, "the oldest entries went");
         assert_eq!(kept.last().unwrap().text, "last");
+    }
+
+    /// A line another build wrote, whose kind, author or model this build
+    /// does not know, still counts: its number is never given again, and it
+    /// reads as unknown; following the thread from a point reads only what
+    /// is new, also across a file kept as the previous one.
+    #[test]
+    fn lines_of_another_build_still_count_and_reading_follows_from_the_end() {
+        let (_dir, store) = store();
+        store.append_thread("o", ThreadEntry::event("one")).unwrap();
+        let file = store.folder.join("o").join("thread.jsonl");
+        let mut text = std::fs::read_to_string(&file).unwrap();
+        text.push_str(
+            r#"{"seq":2,"at":"t","objective":"o","kind":"vote","author":{"by":"council"},"text":"later"}"#,
+        );
+        text.push('\n');
+        text.push_str(
+            r#"{"seq":3,"at":"t","objective":"o","kind":"activity","author":{"by":"agent","role":"lead","model":{"provider":"newco","model":"x"}},"text":"Read a.rs","under":1}"#,
+        );
+        text.push('\n');
+        text.push_str(r#"{"seq":4,"what":"a line nobody can read"}"#);
+        text.push('\n');
+        std::fs::write(&file, text).unwrap();
+        assert_eq!(store.thread_last("o"), 4);
+        let next = store
+            .append_thread("o", ThreadEntry::event("five"))
+            .unwrap();
+        assert_eq!(next.seq, 5, "no number is given twice");
+        let all = store.thread("o", 0);
+        assert_eq!(
+            all.iter().map(|e| e.seq).collect::<Vec<_>>(),
+            vec![1, 2, 3, 5]
+        );
+        assert_eq!(all[1].kind, Kind::Unknown);
+        assert_eq!(all[1].author, Author::Unknown);
+        assert_eq!(all[2].author, Author::agent("lead", None));
+        assert_eq!(all[2].under, Some(1));
+        assert_eq!(store.thread("o", 3).len(), 1);
+        assert!(store.thread("o", 5).is_empty());
+        assert!(store.thread("../o", 0).is_empty() && store.thread_last("") == 0);
+        // Many entries: reading after a recent one reads from the end.
+        for n in 6..=400 {
+            store
+                .append_thread("o", ThreadEntry::event(format!("{n} {}", "x".repeat(900))))
+                .unwrap();
+        }
+        let tail = store.thread("o", 398);
+        assert_eq!(
+            tail.iter().map(|e| e.seq).collect::<Vec<_>>(),
+            vec![399, 400]
+        );
+        assert_eq!(store.thread("o", 0).len(), 399);
+    }
+
+    /// Keys never reach the thread (ROADMAP §4.9): a configured key in an
+    /// entry's text or details is replaced by a hint, and a key file's
+    /// contents are not shown.
+    #[test]
+    fn keys_and_key_files_never_reach_the_thread() {
+        let keys = vec!["sk-fake-0123456789abcdef".to_string(), "short".to_string()];
+        let said = redacted("curl -H 'x-api-key: sk-fake-0123456789abcdef' short", &keys);
+        assert_eq!(
+            said,
+            "curl -H 'x-api-key: [a configured key ending cdef]' short"
+        );
+        for path in [
+            ".env",
+            "crates/x/.env.local",
+            "certs/server.pem",
+            "a.key",
+            "/home/u/.ssh/id_ed25519",
+        ] {
+            assert!(key_file(path), "{path}");
+            let (text, details) = activity(
+                "Write",
+                &json!({ "file_path": path, "content": "SECRET=1" }),
+            );
+            assert!(text.ends_with("(a key file: not shown)") && details.is_none());
+        }
+        for path in [".env.example", "src/environment.rs", "keyboard.rs"] {
+            assert!(!key_file(path), "{path}");
+        }
     }
 
     #[test]
