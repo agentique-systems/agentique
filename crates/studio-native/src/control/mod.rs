@@ -1130,8 +1130,9 @@ fn bounded(text: &str, limit: usize) -> String {
 
 /// The tool calls of the turn running, or else of the last one (since the
 /// last message to the Assistant): each tool and how it stands, a failure
-/// with the start of its message; the last 12.
-fn turn_tools(panel: &crate::conversation::ConversationPanel) -> Value {
+/// with the start of its message; the last 12, and how many earlier ones
+/// were left out.
+fn turn_tools(panel: &crate::conversation::ConversationPanel) -> (Vec<Value>, usize) {
     const SHOWN: usize = 12;
     let entries = &panel.conversation.entries;
     let since = entries
@@ -1165,11 +1166,7 @@ fn turn_tools(panel: &crate::conversation::ConversationPanel) -> Value {
             None => json!({ "tool": name, "state": "not run" }),
         })
         .collect();
-    if omitted > 0 {
-        json!({ "omitted": omitted, "calls": listed })
-    } else {
-        json!(listed)
-    }
+    (listed, omitted)
 }
 
 /// The Conversation's notices since the last message (errors, a stop, a
@@ -1268,6 +1265,7 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             }),
             _ => None,
         });
+    let (tool_calls, tools_omitted) = turn_tools(panel);
     let last_message = panel
         .conversation
         .entries
@@ -1326,7 +1324,8 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             // The current or last turn's tool calls, and what stands in
             // the way (no key, an error), so an agent that asked can tell
             // whether it was answered.
-            "toolCalls": turn_tools(panel),
+            "toolCalls": tool_calls,
+            "toolCallsOmitted": tools_omitted,
             "notices": notices(panel),
             "error": conversation_error(panel),
             "keyMissing": panel.key_missing,
@@ -3101,11 +3100,11 @@ mod tests {
             agq_assistant::ToolResult::error("`Cache` is not a type".repeat(20)),
         );
         let panel = &app.conversation;
-        let tools = turn_tools(panel);
+        let (tools, omitted) = turn_tools(panel);
         assert_eq!(tools[0], json!({ "tool": "read_model", "state": "done" }));
         assert_eq!(tools[1]["state"], "failed");
         assert!(tools[1]["error"].as_str().unwrap().chars().count() <= 161);
-        assert_eq!(tools.as_array().unwrap().len(), 2, "only the last turn's");
+        assert_eq!((tools.len(), omitted), (2, 0), "only the last turn's");
         assert_eq!(
             notices(panel),
             vec!["The provider refused the request: rate limited".to_string()]

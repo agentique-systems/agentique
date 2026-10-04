@@ -314,8 +314,8 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   key of the Operator's that it was not given, and Settings › Providers
   says so. The observation's `conversation` says whether a turn is
   `running`, the `lastMessage` and `lastReply`, the current or last turn's
-  `toolCalls` (tool and state: running, done, failed with its `error`, not
-  run), its `notices` since the last message, the `error` a failed turn
+  `toolCalls` (the last 12, `toolCallsOmitted` counting earlier ones: tool
+  and state, running, done, failed with its `error`, or not run), its `notices` since the last message, the `error` a failed turn
   ended with, and `keyMissing`, all bounded; its messages, tool cards and
   thinking rows are controls (items), the composer is the field `Message`,
   Send and Stop are `send` and `stop`.
