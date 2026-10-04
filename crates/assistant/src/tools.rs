@@ -365,7 +365,7 @@ pub fn definitions() -> Value {
         },
         {
             "name": OBSERVE_APP,
-            "description": "What the Agentique application shows now, as text (C-53): its identity (pass `identity.instance` back in act_in_app's `expect`), the screen and its revision (pass `screenRevision` back as `observed`), view, panels, dialog, palette, selection, status, problems, the conversation, a running task and builds, every control on screen (id, role, label, value, enabled, selected, focused, bounds, and `operatorOnly` where agents may not act on it), the available commands (likewise marked), and the project's revision and `digest` (a hash of the model's text: undo restores it exactly). `full` also lists unavailable commands with why, and the cards in view. You never see pixels: work from this text.",
+            "description": "What the Agentique application shows now, as text (C-53): its identity (pass `identity.instance` back in act_in_app's `expect`), the screen and its revision (pass `screenRevision` back as `observed`), view, panels, dialog, palette, selection, status, problems, the conversation, a running task and builds, every control on screen (id, role, label, value, enabled, selected, focused, bounds, and `operatorOnly` where agents may not act on it), the available commands (likewise marked), and the project's revision. `full` also gives the project's `digest` (a hash of the model's text: undo restores it exactly), and lists unavailable commands with why, and the cards in view. You never see pixels: work from this text.",
             "input_schema": {
                 "type": "object",
                 "properties": {

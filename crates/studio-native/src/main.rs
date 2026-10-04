@@ -136,6 +136,37 @@ pub struct Args {
 }
 
 impl Args {
+    /// A test instance runs on app data of its own (C-54): its session
+    /// file, and the settings and data beside it, are never the Operator's.
+    fn checked(&self) -> Result<(), String> {
+        if !self.test_instance {
+            return Ok(());
+        }
+        let Some(session) = &self.session else {
+            return Err("--test-instance needs --session <file> in a folder of its own: a test instance never uses the Operator's app data".into());
+        };
+        let default = session::Session::default_path();
+        let same = |a: &std::path::Path, b: &std::path::Path| {
+            a == b
+                || a.canonicalize()
+                    .ok()
+                    .zip(b.canonicalize().ok())
+                    .is_some_and(|(a, b)| a == b)
+        };
+        if same(session, &default)
+            || session
+                .parent()
+                .zip(default.parent())
+                .is_some_and(|(a, b)| same(a, b))
+        {
+            return Err(format!(
+                "--test-instance needs a session in a folder of its own, not the Operator's app data ({})",
+                default.parent().unwrap_or(&default).display()
+            ));
+        }
+        Ok(())
+    }
+
     /// Whether a scripted scenario drives this process's input.
     #[cfg(feature = "automation")]
     fn scenario_running(&self) -> bool {
@@ -178,6 +209,10 @@ impl Args {
 fn main() {
     timing::mark_process_start();
     let args = Args::parse();
+    if let Err(problem) = args.checked() {
+        eprintln!("{problem}");
+        std::process::exit(2);
+    }
     // A test instance holds no key of the Operator's that its supervisor
     // did not give it (C-54).
     if args.test_instance {
@@ -232,4 +267,34 @@ fn main() {
             }
             cx.activate(true);
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_test_instance_needs_app_data_of_its_own() {
+        let parse = |options: &[&str]| {
+            Args::parse_from(std::iter::once("studio").chain(options.iter().copied()))
+        };
+        assert_eq!(parse(&[]).checked(), Ok(()));
+        let own = std::env::temp_dir()
+            .join("agq-test-instance")
+            .join("session.json");
+        let own = own.to_str().unwrap();
+        assert_eq!(
+            parse(&["--test-instance", "--session", own]).checked(),
+            Ok(())
+        );
+        let none = parse(&["--test-instance"]).checked().unwrap_err();
+        assert!(none.contains("--session"), "{none}");
+        let default = session::Session::default_path();
+        let operators =
+            parse(&["--test-instance", "--session", default.to_str().unwrap()]).checked();
+        assert!(operators.is_err(), "the Operator's session file");
+        let beside = default.with_file_name("other.json");
+        let beside = parse(&["--test-instance", "--session", beside.to_str().unwrap()]).checked();
+        assert!(beside.is_err(), "a file beside the Operator's");
+    }
 }

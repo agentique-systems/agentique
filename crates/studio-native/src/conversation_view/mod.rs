@@ -65,6 +65,9 @@ pub struct Ctx {
     pub expanded: HashSet<String>,
     selection: Option<(TextPoint, TextPoint)>,
     drawn: Rc<RefCell<Vec<Drawn>>>,
+    /// Agents' observations carry the Conversation's text (a test
+    /// instance); in the Operator's own window they name items without it.
+    pub text_shown: bool,
 }
 
 /// One row of the list.
@@ -1224,6 +1227,12 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
             .into_any_element(),
         Item::Operator { place, blocks, editable } => {
             let studio = ctx.studio.clone();
+            let name = message_name("You", blocks);
+            let label = if ctx.text_shown {
+                control_label(name.clone())
+            } else {
+                format!("Message {} from you", place.0 + 1)
+            };
             div()
                 .flex()
                 .flex_col()
@@ -1231,11 +1240,10 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 .gap(r(4.0))
                 .id(SharedString::from(format!("operator-{}", place.0)))
                 .role(gpui::Role::Article)
-                .aria_label(SharedString::from(message_name("You", blocks)))
+                .aria_label(SharedString::from(name))
                 .relative()
                 .child(ui::target::control(
-                    ui::target::Control::new("item", control_label(message_name("You", blocks)))
-                        .id(format!("operator-{}", place.0)),
+                    ui::target::Control::new("item", label).id(format!("operator-{}", place.0)),
                 ))
                 .child(
                     div()
@@ -1261,16 +1269,22 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 .into_any_element()
         }
         Item::Assistant { place, blocks, copy, streaming } => {
+            let name = message_name("Assistant", blocks);
+            let label = if ctx.text_shown {
+                control_label(name.clone())
+            } else {
+                format!("Reply {} from the Assistant", place.0 + 1)
+            };
             div()
                 .flex()
                 .flex_col()
                 .gap(r(4.0))
                 .id(SharedString::from(format!("assistant-{}-{}", place.0, place.1)))
                 .role(gpui::Role::Article)
-                .aria_label(SharedString::from(message_name("Assistant", blocks)))
+                .aria_label(SharedString::from(name))
                 .relative()
                 .child(ui::target::control(
-                    ui::target::Control::new("item", control_label(message_name("Assistant", blocks)))
+                    ui::target::Control::new("item", label)
                         .id(format!("assistant-{}-{}", place.0, place.1)),
                 ))
                 .child(message(ctx, *place, blocks, cx))
@@ -1401,6 +1415,7 @@ impl Render for ConversationView {
             expanded: self.expanded.clone(),
             selection: self.selection.map(|s| s.range()),
             drawn: self.drawn.clone(),
+            text_shown: self.studio.read(cx).args.test_instance,
         });
         let items = self.items.clone();
         let studio_entity = self.studio.clone();

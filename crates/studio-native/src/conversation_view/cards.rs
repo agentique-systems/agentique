@@ -707,9 +707,16 @@ pub fn thinking_row(ctx: &Rc<Ctx>, key: String, text: &str, live: bool, cx: &App
                 .id(SharedString::from(format!("thinking-{key}")))
                 .relative()
                 .child(ui::target::control(
-                    ui::target::Control::new("item", format!("Thinking: {summary}"))
-                        .id(format!("thinking-{key}"))
-                        .selected(open),
+                    ui::target::Control::new(
+                        "item",
+                        if ctx.text_shown {
+                            format!("Thinking: {summary}")
+                        } else {
+                            "The Assistant's thinking".to_string()
+                        },
+                    )
+                    .id(format!("thinking-{key}"))
+                    .selected(open),
                 ))
                 .flex()
                 .items_center()

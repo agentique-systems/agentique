@@ -90,6 +90,8 @@ pub const IDLE: Duration = Duration::from_secs(30);
 /// The name under which the Orchestrator's own steps by rule act in an
 /// instance it supervises through the endpoint.
 pub const SUPERVISOR: &str = "orchestrator";
+/// The name the Studio's own Assistant acts under.
+pub const ASSISTANT: &str = "Assistant";
 /// How long a click's ripple and a scroll's arrow are drawn.
 const EFFECT: Duration = Duration::from_millis(700);
 
@@ -433,6 +435,12 @@ pub struct ControlState {
     lease: Option<Lease>,
     /// The model's digest at a revision (worked out once per revision).
     digest: Option<(u64, String)>,
+    /// The agent whose message started the Assistant's turn (in a test
+    /// instance): the Assistant acts within that agent's window hold.
+    pub asked_by: Option<String>,
+    /// The Operator stopped agents from the agents chip: only the
+    /// Operator's Resume lifts it, not the endpoint's.
+    stopped_by_operator: bool,
     pub endpoint: Option<server::Endpoint>,
 }
 
@@ -462,6 +470,8 @@ impl Default for ControlState {
             last: None,
             lease: None,
             digest: None,
+            asked_by: None,
+            stopped_by_operator: false,
             endpoint: None,
         }
     }
@@ -614,7 +624,32 @@ impl ControlState {
         for wait in cancelled {
             wait.request.reply.send(Refusal::Stopped.answer(why));
         }
+        // Its action in progress ends at the next tick, as on Stop.
+        if let Some(active) = self.active.as_mut().filter(|a| a.who.agent == agent) {
+            active.cancelled = Some(why.to_string());
+        }
         self.release(agent);
+        if agent == ASSISTANT {
+            self.asked_by = None;
+        }
+    }
+
+    /// The Assistant's turn ended: it no longer holds the window, nor acts
+    /// for the agent whose message started that turn.
+    pub fn turn_ended(&mut self) {
+        self.release(ASSISTANT);
+        self.asked_by = None;
+    }
+
+    /// The agent whose window hold `agent` acts within: the Assistant acts
+    /// within the hold of the agent whose message started its turn (in a
+    /// test instance, an explorer's or evaluator's); everyone else within
+    /// its own.
+    fn holds_as<'a>(&'a self, agent: &'a str) -> &'a str {
+        match &self.asked_by {
+            Some(asker) if agent == ASSISTANT => asker,
+            _ => agent,
+        }
     }
 
     /// Actions waiting, an action in progress, or a recent one (still drawn
@@ -696,7 +731,8 @@ impl ControlState {
     /// idle time starts now) and the agents chip say so.
     fn ended(&mut self, who: &Who, what: &str, answer: &Value) {
         let now = Instant::now();
-        if let Some(lease) = self.lease.as_mut().filter(|l| l.agent == who.agent) {
+        let holds_as = self.holds_as(&who.agent).to_string();
+        if let Some(lease) = self.lease.as_mut().filter(|l| l.agent == holds_as) {
             lease.last = now;
         }
         let ok = answer["ok"] != false;
@@ -827,19 +863,6 @@ const TEST_INSTANCE_COMMANDS: [CommandId; 4] = [
     CommandId::InsertSelection,
 ];
 
-/// The Conversation's controls that stay the Operator's in a test instance
-/// too: steering the Assistant's turn (Pause, Step and Resume are the
-/// supervisor's), retrying or editing a message, a new conversation, and
-/// the model (as Settings).
-const CONVERSATION_OPERATORS: [&str; 6] = [
-    "pause",
-    "resume",
-    "step",
-    "retry",
-    "new-conversation",
-    "model-picker",
-];
-
 /// Whether `id` is the Operator's to use here.
 pub fn operators_command(studio: &Studio, id: CommandId) -> bool {
     OPERATORS_COMMANDS.contains(&id)
@@ -851,13 +874,98 @@ fn operators_region(studio: &Studio, region: &str) -> bool {
     OPERATORS_REGIONS.contains(&region) && !(studio.args.test_instance && region == "conversation")
 }
 
-/// The agents chip: pausing, stopping and resuming agents is the Operator's.
-const OPERATORS_CONTROLS: [&str; 4] = [
-    "agents-pause",
-    "agents-step",
-    "agents-resume",
-    "agents-stop",
+/// Controls named by their id: exactly, or by how it starts.
+#[derive(Clone, Copy, Debug)]
+enum Ids {
+    Is(&'static str),
+    Start(&'static str),
+}
+
+const CONVERSATION_OWN: &str = "steering the Assistant's turn, retrying or editing a message, a new conversation and the model are the Operator's";
+
+/// The controls that are the Operator's by their id, wherever they are
+/// drawn (or only in the region named), with the reason. The rule that
+/// refuses an agent's action on a control and the observation's
+/// `operatorOnly` mark both read this table (with the Operator's commands
+/// and regions); the effects these controls lead to are refused where they
+/// happen as well.
+const OPERATORS_CONTROLS: [(Ids, Option<&str>, &str); 11] = [
+    (
+        Ids::Start("agents-"),
+        None,
+        "pausing, stopping and resuming agents is the Operator's",
+    ),
+    // The system's folder picker is a window of its own that no
+    // observation shows and no action reaches.
+    (
+        Ids::Start("browse-"),
+        None,
+        "it opens the system's folder picker, which an agent cannot see or operate; fill the folder field instead",
+    ),
+    (
+        Ids::Start("objective-"),
+        None,
+        "objectives are the Operator's to start, steer and stop",
+    ),
+    // The window's own buttons answer the operating system's pointer,
+    // which an agent's input does not use.
+    (
+        Ids::Start("window-"),
+        None,
+        "minimizing, maximizing and closing the window are the Operator's",
+    ),
+    // The Conversation's, in a test instance too (where agents may use the
+    // rest of it): Pause, Step and Resume of the turn are the supervisor's.
+    (Ids::Is("pause"), Some("conversation"), CONVERSATION_OWN),
+    (Ids::Is("resume"), Some("conversation"), CONVERSATION_OWN),
+    (Ids::Is("step"), Some("conversation"), CONVERSATION_OWN),
+    (Ids::Is("retry"), Some("conversation"), CONVERSATION_OWN),
+    (
+        Ids::Is("new-conversation"),
+        Some("conversation"),
+        CONVERSATION_OWN,
+    ),
+    (Ids::Start("edit-"), Some("conversation"), CONVERSATION_OWN),
+    (Ids::Start("model-"), Some("conversation"), CONVERSATION_OWN),
 ];
+
+/// Why the control `d` is the Operator's by the table above, if it is.
+fn listed_as_operators(d: &Drawn) -> Option<&'static str> {
+    let id = d.control.id.as_ref();
+    OPERATORS_CONTROLS
+        .iter()
+        .find(|(ids, region, _)| {
+            region.is_none_or(|r| r == d.region)
+                && match ids {
+                    Ids::Is(name) => id == *name,
+                    Ids::Start(start) => id.starts_with(start),
+                }
+        })
+        .map(|(_, _, why)| *why)
+}
+
+/// Why an agent may not act on the control `d`: listed above, running one
+/// of the Operator's commands, or in one of the Operator's regions.
+fn operators_control(studio: &Studio, d: &Drawn) -> Option<String> {
+    if let Some(why) = listed_as_operators(d) {
+        return Some(why.into());
+    }
+    if let Some(id) = runs_command(&d.control.id)
+        && operators_command(studio, id)
+    {
+        return Some(format!("`{}` is the Operator's to use", command_name(id)));
+    }
+    operators_region(studio, d.region).then(|| {
+        format!(
+            "the {} is the Operator's; an agent does not act there",
+            if d.region == "settings" {
+                "Settings screen"
+            } else {
+                "Conversation"
+            }
+        )
+    })
+}
 
 /// Buttons outside the Operator's regions that do what one of the
 /// Operator's commands does (its effect is refused where it happens).
@@ -911,59 +1019,14 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
         ));
     }
     let focused = drawn.iter().rev().find(|d| d.control.focused);
-    let operators_region = |d: &Drawn| {
-        operators_region(studio, d.region).then(|| {
-            format!(
-                "the {} is the Operator's; an agent does not act there",
-                if d.region == "settings" {
-                    "Settings screen"
-                } else {
-                    "Conversation"
-                }
-            )
-        })
-    };
     match action {
         Action::Command(id) if operators_command(studio, *id) => {
             Some(format!("`{}` is the Operator's to use", command_name(*id)))
         }
-        Action::Click(name) | Action::Fill(name, _) | Action::Scroll(name, _) => {
-            let d = control_named(drawn, name)?;
-            if OPERATORS_CONTROLS.contains(&d.control.id.as_ref()) {
-                return Some("pausing and resuming agents is the Operator's".into());
-            }
-            // The system's folder picker is a window of its own that no
-            // observation shows and no action reaches.
-            if d.control.id.starts_with("browse-") {
-                return Some("it opens the system's folder picker, which an agent cannot see or operate; fill the folder field instead".into());
-            }
-            if d.control.id.starts_with("objective-") {
-                return Some("objectives are the Operator's to start, steer and stop".into());
-            }
-            if matches!(action, Action::Scroll(..)) {
-                return None;
-            }
-            // The window's own buttons answer the operating system's
-            // pointer, which an agent's input does not use.
-            if d.control.id.starts_with("window-") {
-                return Some("minimizing, maximizing and closing the window are the Operator's".into());
-            }
-            if let Some(id) = runs_command(&d.control.id)
-                && operators_command(studio, id)
-            {
-                return Some(format!("`{}` is the Operator's to use", command_name(id)));
-            }
-            if d.region == "conversation"
-                && (CONVERSATION_OPERATORS.contains(&d.control.id.as_ref())
-                    || d.control.id.starts_with("edit-")
-                    || d.control.id.starts_with("model-"))
-            {
-                return Some(format!(
-                    "`{}` in the Conversation is the Operator's",
-                    d.control.label
-                ));
-            }
-            operators_region(d)
+        // Scrolling changes nothing but what shows: only the listed controls.
+        Action::Scroll(name, _) => listed_as_operators(control_named(drawn, name)?).map(Into::into),
+        Action::Click(name) | Action::Fill(name, _) => {
+            operators_control(studio, control_named(drawn, name)?)
         }
         Action::Key(keys) => {
             if screen(studio) == "settings" {
@@ -972,7 +1035,8 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
                     "the Settings screen is the Operator's; an agent may only leave it (escape)".into()
                 });
             }
-            if let Some(reason) = focused.and_then(operators_region) {
+            // Space or Enter on a focused control is a click on it.
+            if let Some(reason) = focused.and_then(|d| operators_control(studio, d)) {
                 return Some(reason);
             }
             keys.iter().find_map(|key| {
@@ -984,7 +1048,7 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
         Action::Type(_) => match focused {
             None => Some("no field has the focus, so the text would go to the Studio's shortcuts; fill a field instead".into()),
             Some(d) if d.control.role != "field" => Some(format!("`{}` is not a field", d.control.label)),
-            Some(d) => operators_region(d),
+            Some(d) => operators_control(studio, d),
         },
         _ => None,
     }
@@ -1171,7 +1235,7 @@ fn turn_tools(panel: &crate::conversation::ConversationPanel) -> (Vec<Value>, us
 
 /// The Conversation's notices since the last message (errors, a stop, a
 /// steering note): the last five, bounded.
-fn notices(panel: &crate::conversation::ConversationPanel) -> Vec<String> {
+fn notices(panel: &crate::conversation::ConversationPanel, text_shown: bool) -> Vec<String> {
     let entries = &panel.conversation.entries;
     let since = entries
         .iter()
@@ -1180,6 +1244,13 @@ fn notices(panel: &crate::conversation::ConversationPanel) -> Vec<String> {
     let all: Vec<String> = entries[since..]
         .iter()
         .filter_map(|e| match e {
+            // A message the Operator added while the Assistant worked is
+            // the Operator's text, shown only in a test instance.
+            agq_assistant::Entry::Notice { text }
+                if !text_shown && text.starts_with(crate::conversation::STEERED) =>
+            {
+                Some("You added a message while the Assistant worked".to_string())
+            }
             agq_assistant::Entry::Notice { text } => Some(bounded(text, 300)),
             _ => None,
         })
@@ -1190,9 +1261,12 @@ fn notices(panel: &crate::conversation::ConversationPanel) -> Vec<String> {
 /// Why the Conversation's last turn failed (its last notice), or why the
 /// conversation could not be read or saved; none when nothing went wrong.
 /// A missing key is `keyMissing`.
-fn conversation_error(panel: &crate::conversation::ConversationPanel) -> Option<String> {
+fn conversation_error(
+    panel: &crate::conversation::ConversationPanel,
+    text_shown: bool,
+) -> Option<String> {
     if panel.can_retry()
-        && let Some(last) = notices(panel).pop()
+        && let Some(last) = notices(panel, text_shown).pop()
     {
         return Some(last);
     }
@@ -1266,6 +1340,7 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             _ => None,
         });
     let (tool_calls, tools_omitted) = turn_tools(panel);
+    let text_shown = studio.args.test_instance;
     let last_message = panel
         .conversation
         .entries
@@ -1319,15 +1394,21 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             "phase": panel.phase,
             "waiting": waiting,
             "entries": panel.conversation.entries.len(),
-            "lastMessage": last_message,
-            "lastReply": last_reply,
+            // The Conversation's text only in a test instance: role agents
+            // observing the Operator's own window send what they observe to
+            // their providers.
+            "lastMessage": last_message.filter(|_| text_shown),
+            "lastReply": last_reply.filter(|_| text_shown),
             // The current or last turn's tool calls, and what stands in
             // the way (no key, an error), so an agent that asked can tell
             // whether it was answered.
             "toolCalls": tool_calls,
             "toolCallsOmitted": tools_omitted,
-            "notices": notices(panel),
-            "error": conversation_error(panel),
+            "notices": notices(panel, text_shown),
+            "error": conversation_error(panel, text_shown),
+            // This conversation's estimated spend since the Studio started;
+            // null when some of it is unpriced.
+            "usd": panel.spent.map(|usd| (usd * 1e6).round() / 1e6),
             "keyMissing": panel.key_missing,
         },
         "task": studio.implementation.task.as_ref().map(|t| json!({
@@ -1524,7 +1605,7 @@ fn holds(studio: &Studio, condition: &Condition, agent: &str) -> bool {
         return false;
     }
     if condition.idle
-        && ((agent != "Assistant" && studio.conversation.running())
+        && ((agent != ASSISTANT && studio.conversation.running())
             || studio.runs.running()
             || studio.implementation.task.is_some()
             || studio.implementation.checking()
@@ -1576,6 +1657,18 @@ struct Active {
     not_before: Option<Instant>,
     /// It started on a Step: its first typed character goes through too.
     stepped: bool,
+    /// Its agent's turn was stopped: it ends at the next tick, as on Stop.
+    cancelled: Option<String>,
+}
+
+impl Active {
+    /// Why this action ends now, if it does: its agent's turn was stopped,
+    /// or the Operator stopped agents.
+    fn ending(&self, gate: Gate) -> Option<String> {
+        self.cancelled.clone().or_else(|| {
+            (gate == Gate::Stop).then(|| "refused: stopped by the Operator".to_string())
+        })
+    }
 }
 
 struct Waiting {
@@ -1683,20 +1776,18 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
     if let Some(mut active) = active {
         changed = true;
         let gate = studio.read(cx).control.gate;
-        if gate == Gate::Stop {
-            // Ended at once. A press is released away from its target, so
-            // no button stays down and the press does not become a click.
-            if let Some(Step::Release(_)) = active.steps.front() {
-                input::click(
-                    gpui::point(gpui::px(-1.0), gpui::px(-1.0)),
-                    false,
-                    window,
-                    cx,
-                );
+        if let Some(why) = active.ending(gate) {
+            // Ended at once. A press still down is released where it was
+            // made, as a step of the agent's (so its effects are the
+            // agent's, and the Operator's own stay refused): no button stays
+            // down, and nothing is dragged.
+            if let Some(Step::Release(_)) = active.steps.front()
+                && let Some(release) = active.steps.pop_front()
+            {
+                let _ = run_step(studio, release, &mut active, window, cx);
             }
-            let answer = Refusal::Stopped.answer("refused: stopped by the Operator");
+            let answer = Refusal::Stopped.answer(why);
             studio.update(cx, |studio, _| {
-                studio.control.acting = None;
                 studio.control.refused = None;
                 studio.control.ended(&active.who, &active.what, &answer);
             });
@@ -1799,9 +1890,14 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
     match body["op"].as_str().unwrap_or_default() {
         "hello" => json!({ "ok": true, "identity": identity(studio) }),
         "observe" => {
+            // The model's digest costs a print of the model after each
+            // change (about 140 ms at 10k elements in a debug build), so it
+            // is worked out only for a full observation or when asked.
+            let wanted = body["detail"] == "full" || body["digest"] == true;
             let digest = studio
                 .project
                 .as_ref()
+                .filter(|_| wanted)
                 .map(|project| studio.control.digest(project));
             let mut v = observe(
                 studio,
@@ -1839,21 +1935,11 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
             }
         }
         "gate" => match body["mode"].as_str() {
-            Some("pause") => {
-                studio.pause_agents();
-                json!({ "ok": true, "gate": "pause" })
-            }
-            Some("step") => {
-                studio.step_agents();
-                json!({ "ok": true, "gate": "step" })
-            }
-            Some("run") => {
-                studio.resume_agents();
-                json!({ "ok": true, "gate": "run" })
-            }
-            Some("stop") => {
-                studio.stop_agents();
-                json!({ "ok": true, "gate": "stop" })
+            Some(mode @ ("pause" | "step" | "run" | "stop")) => {
+                match studio.gate_by_supervisor(mode) {
+                    Ok(()) => json!({ "ok": true, "gate": mode }),
+                    Err(why) => Refusal::OperatorOwn.answer(why),
+                }
             }
             _ => Refusal::Invalid.answer("`mode` is pause, step, run or stop"),
         },
@@ -1898,10 +1984,11 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     // (which only observes) neither take the window nor are refused.
     let supervisor = request.endpoint && who.agent == SUPERVISOR;
     let holds_window = !supervisor && !matches!(action, Action::Wait(..));
+    let holds_as = studio.control.holds_as(&who.agent).to_string();
     let now = Instant::now();
     if holds_window
         && let Some(holder) = studio.control.holder_at(now)
-        && holder != who.agent
+        && holder != holds_as
     {
         let error = format!(
             "refused: the window is in use by {holder}; act in your own test instance, or wait"
@@ -1991,7 +2078,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             }
         }
         Action::OpenProject(folder) => {
-            if who.agent == "Assistant" {
+            if who.agent == ASSISTANT {
                 let error = "refused: opening another project ends your own turn; ask the Operator to open it".into();
                 return refuse(request, (Refusal::OperatorOwn, error), what);
             }
@@ -2034,7 +2121,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     }
     if holds_window {
         // Free (checked above), or already this agent's.
-        let _ = studio.control.hold(&who.agent, now);
+        let _ = studio.control.hold(&holds_as, now);
     }
     studio.control.activity = Some((shown, Instant::now()));
     studio.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
@@ -2049,6 +2136,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         speed,
         not_before: None,
         stepped: false,
+        cancelled: None,
     });
     Ok(())
 }
@@ -2293,9 +2381,9 @@ fn carry_out(
                 let error = format!("`{}` is not a field", field.control.label);
                 return Err((Refusal::Invalid, error));
             }
-            if operators_region(studio.read(cx), field.region) {
+            if let Some(reason) = operators_control(studio.read(cx), field) {
                 let error = format!(
-                    "`{}` is not a field an agent may type into",
+                    "`{}` is not a field an agent may type into: {reason}",
                     field.control.label
                 );
                 return Err((Refusal::OperatorOwn, error));
@@ -2430,6 +2518,7 @@ impl Studio {
             self.status = "Agents may act again".into();
         }
         self.control.gate = Gate::Run;
+        self.control.stopped_by_operator = false;
         self.resume_assistant();
         self.mark(crate::studio::Dirty::STATUS);
     }
@@ -2441,8 +2530,33 @@ impl Studio {
             return;
         }
         self.control.gate = Gate::Stop;
+        self.control.stopped_by_operator = true;
         self.status = "Agents stopped: their actions are refused until you resume them".into();
         self.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
+    }
+
+    /// The endpoint's holder, supervising its instance, pauses, steps,
+    /// resumes or stops agents; a Stop the Operator gave in the window is
+    /// lifted only by the Operator's own Resume.
+    pub fn gate_by_supervisor(&mut self, mode: &str) -> Result<(), String> {
+        if self.control.gate == Gate::Stop && self.control.stopped_by_operator && mode != "stop" {
+            return Err(
+                "the Operator stopped agents in this window; only the Operator's Resume lifts it"
+                    .into(),
+            );
+        }
+        match mode {
+            "pause" => self.pause_agents(),
+            "step" => self.step_agents(),
+            "run" => self.resume_agents(),
+            _ => {
+                let by_operator =
+                    self.control.gate == Gate::Stop && self.control.stopped_by_operator;
+                self.stop_agents();
+                self.control.stopped_by_operator = by_operator;
+            }
+        }
+        Ok(())
     }
 
     /// Whether agents are held (or will be at their next action), or stopped.
@@ -3106,10 +3220,177 @@ mod tests {
         assert!(tools[1]["error"].as_str().unwrap().chars().count() <= 161);
         assert_eq!((tools.len(), omitted), (2, 0), "only the last turn's");
         assert_eq!(
-            notices(panel),
+            notices(panel, true),
             vec!["The provider refused the request: rate limited".to_string()]
         );
-        assert_eq!(conversation_error(panel), None, "no turn failed");
+        assert_eq!(conversation_error(panel, true), None, "no turn failed");
+    }
+
+    /// Stop, and the agent's own turn stopped, end the action in progress
+    /// at the next tick; a press still down is released where it was made,
+    /// as a step of the agent's (`run_step`), never moved away.
+    #[test]
+    fn an_action_ends_at_once_when_stopped_or_when_its_agents_turn_is() {
+        let (app, _folder) = crate::edit::app_tests::studio("ending");
+        let mut control = ControlState::default();
+        let at = gpui::point(gpui::px(40.0), gpui::px(30.0));
+        let active = |agent: &str| Active {
+            request: act(
+                &app,
+                agent,
+                json!({ "kind": "click", "control": "x" }),
+                false,
+            ),
+            who: Who {
+                agent: agent.into(),
+                ..Who::default()
+            },
+            what: "click".into(),
+            steps: VecDeque::from([Step::Release(at), Step::Settle(3)]),
+            started: Instant::now(),
+            speed: Speed::Observe,
+            not_before: None,
+            stepped: false,
+            cancelled: None,
+        };
+        control.active = Some(active(ASSISTANT));
+        let running = control.active.as_ref().unwrap();
+        assert_eq!(running.ending(Gate::Run), None);
+        assert_eq!(running.ending(Gate::Pause), None);
+        assert_eq!(
+            running.ending(Gate::Stop).as_deref(),
+            Some("refused: stopped by the Operator")
+        );
+        // Another agent's turn stopping leaves it be; its own ends it.
+        control.cancel("explorer", "stopped");
+        assert_eq!(control.active.as_ref().unwrap().ending(Gate::Run), None);
+        control.cancel(ASSISTANT, "Not run: the Operator stopped the Assistant.");
+        let ending = control.active.as_ref().unwrap();
+        assert_eq!(
+            ending.ending(Gate::Run).as_deref(),
+            Some("Not run: the Operator stopped the Assistant.")
+        );
+        assert!(
+            matches!(ending.steps.front(), Some(Step::Release(p)) if *p == at),
+            "the press is released where it was made"
+        );
+    }
+
+    /// In a test instance, the Assistant's turn that an agent's message
+    /// started acts within that agent's window hold; when the turn ends, the
+    /// Assistant holds nothing.
+    #[test]
+    fn the_assistant_acts_within_the_hold_of_the_agent_that_asked_it() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("asked-by");
+        app.args.test_instance = true;
+        let fit = json!({ "kind": "command", "id": "fit" });
+        let request = act(&app, "explorer", fit.clone(), true);
+        assert_eq!(refusal(start(&mut app, request)), None);
+        app.control.active = None;
+        // The explorer's step sends a message: the turn is the explorer's.
+        app.conversation.new_runtime = crate::conversation::scripted(Vec::new());
+        app.conversation.key_missing = None;
+        app.conversation.input = "Add a cache".into();
+        app.control.acting = Some("explorer".into());
+        app.send_message();
+        app.control.acting = None;
+        assert_eq!(app.control.asked_by.as_deref(), Some("explorer"));
+        let request = act(&app, ASSISTANT, fit.clone(), false);
+        assert_eq!(refusal(start(&mut app, request)), None, "within the hold");
+        app.control.active = None;
+        assert_eq!(app.control.holder(), Some("explorer"));
+        let request = act(&app, "intruder", fit.clone(), true);
+        assert!(refusal(start(&mut app, request)).is_some_and(|e| e.contains("explorer")));
+        // The turn ends: the Assistant acts for nobody any more.
+        app.control.turn_ended();
+        assert_eq!(app.control.asked_by, None);
+        let request = act(&app, ASSISTANT, fit, false);
+        let refused = refusal(start(&mut app, request)).expect("refused");
+        assert!(refused.contains("in use by explorer"), "{refused}");
+        app.end_turn();
+    }
+
+    #[test]
+    fn the_operators_stop_is_lifted_only_by_the_operators_resume() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("operators-stop");
+        app.stop_agents();
+        for mode in ["run", "pause", "step"] {
+            assert!(app.gate_by_supervisor(mode).is_err(), "{mode}");
+            assert_eq!(app.control.gate, Gate::Stop, "{mode}");
+        }
+        assert_eq!(app.gate_by_supervisor("stop"), Ok(()));
+        assert!(
+            app.gate_by_supervisor("run").is_err(),
+            "still the Operator's Stop"
+        );
+        app.resume_agents();
+        assert_eq!(app.control.gate, Gate::Run);
+        // The supervisor's own Stop, the supervisor lifts.
+        assert_eq!(app.gate_by_supervisor("stop"), Ok(()));
+        assert_eq!(app.control.gate, Gate::Stop);
+        assert_eq!(app.gate_by_supervisor("run"), Ok(()));
+        assert_eq!(app.control.gate, Gate::Run);
+        assert_eq!(app.gate_by_supervisor("pause"), Ok(()));
+        assert_eq!(app.control.gate, Gate::Pause);
+    }
+
+    #[test]
+    fn in_a_test_instance_approvals_and_the_operators_fields_stay_the_operators() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("test-instance-approval");
+        app.args.test_instance = true;
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        app.operation(
+            "Lock api",
+            agq_system_state::Operation::Lock { element: api },
+        );
+        app.rename(api, "gateway");
+        assert!(approval(&app).is_some());
+        let confirm = [drawn("dialog-confirm", "button", "dialog", false)];
+        let refused = operators_only(&app, &Action::Click("dialog-confirm".into()), &confirm);
+        assert!(refused.is_some_and(|r| r.contains("approval")));
+        assert!(operator_only(&app, &confirm[0]));
+        app.control.acting = Some("explorer".into());
+        app.answer(true);
+        assert!(
+            app.control.refused.take().is_some(),
+            "refused where it acts"
+        );
+        assert!(approval(&app).is_some(), "still open");
+        app.control.acting = None;
+        app.dialog = None;
+        // A field or switch of the Operator's with the focus (after Tab):
+        // neither typing nor Space reaches it.
+        let intent = [drawn("objective-intent", "field", "inspector", true)];
+        assert!(operators_only(&app, &Action::Type("x".into()), &intent).is_some());
+        let merge = [drawn("objective-merge", "switch", "inspector", true)];
+        assert!(operators_only(&app, &Action::Key(vec!["space".into()]), &merge).is_some());
+        let lock = [drawn("inspector-lock", "button", "inspector", true)];
+        assert!(operators_only(&app, &Action::Key(vec!["enter".into()]), &lock).is_some());
+    }
+
+    #[test]
+    fn the_operators_conversation_text_is_shown_only_in_a_test_instance() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("conversation-text");
+        app.conversation
+            .conversation
+            .entries
+            .push(agq_assistant::Entry::Operator {
+                text: "Build it".into(),
+            });
+        app.conversation
+            .conversation
+            .entries
+            .push(agq_assistant::Entry::Notice {
+                text: format!("{}keep my secret plan", crate::conversation::STEERED),
+            });
+        let operators = notices(&app.conversation, false);
+        assert_eq!(
+            operators,
+            vec!["You added a message while the Assistant worked"]
+        );
+        let test_instance = notices(&app.conversation, true);
+        assert!(test_instance[0].ends_with("keep my secret plan"));
+        assert_eq!(app.conversation.spent, Some(0.0), "nothing spent yet");
     }
 
     #[test]

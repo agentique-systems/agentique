@@ -272,15 +272,18 @@ test instance's local endpoint (`--control <file>`: a port and a token on
 - **Observation** (`op: observe`): the identity, the screen and its
   `screenRevision`, view, panels, dialog, palette, selection, status and
   problems, the conversation, tasks and builds; the project's folder,
-  revision and `digest` (16 hex digits of the SHA-256 of the model's
-  printed text, what History saves, worked out once per revision: undo
-  restores it exactly); `agents` (the gate, actions held, the window's
+  revision and, in a full observation (`detail: "full"`, or `digest:
+  true`), `digest` (16 hex digits of the SHA-256 of the model's printed
+  text, what History saves, worked out once per revision: undo restores it
+  exactly); `agents` (the gate, actions held, the window's
   `holder`, the `speed`); every drawn control (`ui/target.rs`: id, role,
   label, value except a key's, enabled, selected, focused, region, the
   bounds of its visible part, `hidden`, and `operatorOnly` where agents may
   not act on it); and the commands, available or why not, likewise marked.
-  `operatorOnly` comes from the rules that refuse an agent's action, so the
-  mark and the refusal cannot disagree. A menu's items are controls of the
+  `operatorOnly` comes from the same rules that refuse an agent's action up
+  front (the Operator's commands and regions, and one table of controls by
+  id), so the mark follows those refusals; the effects themselves are
+  refused where they happen as well. A menu's items are controls of the
   region that opened it (`Menu::owner`).
 - **Labels.** Every control an agent can operate (button, field, tab,
   option, item, switch, link) has a label a person reads, not just its
@@ -302,8 +305,9 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   the words: `operator-own`, `stale`, `gone`, `disabled`, `unavailable`,
   `held`, `stopped`, `expired`, `invalid`, `timeout` or `failed`
   (`control::Refusal`).
-- **A test instance** (`--test-instance`, which the Orchestrator passes to a
-  Studio it starts with its own app data): agents may also use the
+- **A test instance** (`--test-instance`, for a Studio started with app data
+  of its own: it refuses to start without `--session`, or with the
+  Operator's; the Orchestrator is to pass it in W12.5): agents may also use the
   Conversation as a person would (focus the composer, type, send or answer
   with Enter or Send, stop the turn, open cards, scroll) and undo and redo,
   so exploration tests them through the real input handlers. Steering the
@@ -313,19 +317,28 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   there (`agq_providers::keys::without_store`): the instance never spends a
   key of the Operator's that it was not given, and Settings › Providers
   says so. The observation's `conversation` says whether a turn is
-  `running`, the `lastMessage` and `lastReply`, the current or last turn's
-  `toolCalls` (the last 12, `toolCallsOmitted` counting earlier ones: tool
-  and state, running, done, failed with its `error`, or not run), its `notices` since the last message, the `error` a failed turn
-  ended with, and `keyMissing`, all bounded; its messages, tool cards and
+  `running`, the current or last turn's `toolCalls` (the last 12,
+  `toolCallsOmitted` counting earlier ones: tool and state, running, done,
+  failed with its `error`, or not run), its `notices` since the last
+  message, the `error` a failed turn ended with, `keyMissing`, and `usd`,
+  the conversation's estimated spend since the Studio started (null when
+  some of it is unpriced), all bounded. Its messages, tool cards and
   thinking rows are controls (items), the composer is the field `Message`,
-  Send and Stop are `send` and `stop`.
+  Send and Stop are `send` and `stop`. The Conversation's text (the
+  `lastMessage`, the `lastReply`, the messages' and thinking rows' labels, a
+  message the Operator added to a running turn) is observed only in a test
+  instance: in the Operator's own window an observation could reach an
+  agent's provider, so messages read "Message 3 from you" and "Reply 4 from
+  the Assistant".
 - **One agent at a time.** The first agent to act holds the window until it
   sends `op: release` or has been idle for 30 s (`control::IDLE`); another
   agent's action is refused with "the window is in use by <agent>; act in
   your own test instance, or wait". Observing and waiting are never refused,
   nor is the Operator's own input. The Orchestrator's own steps by rule
   through the endpoint (agent `orchestrator`, such as cancelling a dialog in
-  its way) are the supervisor's and pass a hold.
+  its way) are the supervisor's and pass a hold. In a test instance, the
+  Assistant's turn that an agent's message started acts within that agent's
+  hold (and keeps it); when its turn ends, the Assistant holds nothing.
 - **Observer mode.** `control.speed` (Settings › Appearance, or
   `--control-speed` for a process; default `observe`): `observe` types about
   12 characters a second and rings the target with the agent's label for
@@ -335,8 +348,11 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   progress or the latest outcome for a few seconds (the agent, its goal,
   its decision, done or refused with the reason) and offers Pause, Step and
   Stop; Pause and Step take effect between typed characters, Stop ends the
-  action at once and refuses agents until Resume. The endpoint's holder has
-  the same through `op: gate` (`pause`, `step`, `run`, `stop`). Nothing is
+  action at once and refuses agents until Resume (a press still down is
+  released where it was made, as the agent's input); stopping the Assistant
+  ends its action in progress the same way. The endpoint's holder has the
+  same through `op: gate` (`pause`, `step`, `run`, `stop`), except that it
+  cannot lift a Stop the Operator gave in the window. Nothing is
   drawn and no frame is asked for while no agent acts.
 - **Trace** (`op: events`): every action and refusal, with the agent, its
   `why` and `goal`, and who held the window.

@@ -1624,9 +1624,9 @@ here says the Operator accepted anything).
   window.
 - **`project.digest`:** 16 hex digits of the SHA-256 of the model's printed
   text, independent of revisions, ids and saving, worked out once per model
-  revision: 143 ms at 10,204 elements in a debug build after a change, 1 µs
-  otherwise (not measured in release; the printing is the one every save
-  already does).
+  revision and only for a full observation (`detail: "full"`) or when asked
+  (`digest: true`): 143 ms at 10,204 elements in a debug build after a
+  change, 1 µs otherwise (not measured in release).
 - **Test instances** (the coordinator's addition, the Operator's direction of
   2026-10-04): with `--test-instance`, agents may also use the Conversation
   through the real input handlers (focus the composer, type, send or answer,
@@ -1639,8 +1639,21 @@ here says the Operator accepted anything).
   observation's `conversation` gains `lastMessage`, `toolCalls`, `notices`
   and `error`; a wait can take `conversationIdle`; every refused action has
   a `kind` (`operator-own`, `stale`, `gone`, `disabled`, `unavailable`,
-  `held`, `stopped`, `expired`, `invalid`, `timeout`, `failed`). The
-  Orchestrator does not pass `--test-instance` or `--control-speed` yet.
+  `held`, `stopped`, `expired`, `invalid`, `timeout`, `failed`) and
+  `conversation.usd` estimates the conversation's spend. The Orchestrator
+  does not pass `--test-instance` or `--control-speed` yet.
+- **After the independent review:** a press still down when Stop comes is
+  released where it was made, as the agent's step; stopping the Assistant
+  ends its action in progress; in a test instance, the Assistant's turn an
+  agent's message started acts within that agent's window hold, and the
+  Assistant holds nothing once its turn ends; `--test-instance` refuses to
+  start without a session of its own; a Stop the Operator gave is lifted
+  only by the Operator's Resume; the Conversation's text (messages, replies,
+  thinking, a message added to a running turn) is observed only in a test
+  instance; the controls that are the Operator's by id are one table, read by
+  the refusal and the mark alike, which also refuses typing into a focused
+  Operator's field and Space or Enter on a focused Operator's control; the
+  brand and the project's name drag the window too.
 
 Measured for W12.2 (2026-10-04, the reference machine, while two other
 agents built in parallel):

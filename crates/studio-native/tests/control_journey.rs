@@ -49,7 +49,21 @@ impl Studio {
     /// [`Studio::start`], with more options (`--test-instance`).
     fn start_with(folder: &Path, speed: &str, options: &[&str]) -> Studio {
         let control = folder.join("control.json");
-        let child = Command::new(env!("CARGO_BIN_EXE_agq-studio-native"))
+        let mut command = Command::new(env!("CARGO_BIN_EXE_agq-studio-native"));
+        // Nothing of the developer's environment chooses a model or gives a
+        // key: the journeys run as a test instance would, with none.
+        for provider in agq_providers::Provider::ALL {
+            command.env_remove(provider.key_variable());
+        }
+        for variable in [
+            "CLAUDE_CODE_OAUTH_TOKEN",
+            "AGENTIQUE_PROVIDER",
+            "AGENTIQUE_MODEL",
+            "AGENTIQUE_EFFORT",
+        ] {
+            command.env_remove(variable);
+        }
+        let child = command
             .args(options)
             .args(["--no-restore", "--control-speed", speed, "--session"])
             .arg(folder.join("session").join("studio-session.json"))
@@ -170,13 +184,14 @@ fn control<'a>(observation: &'a Value, id: &str) -> Option<&'a Value> {
 
 /// The label rule (W12.2, C-54): a control an agent can operate (a button,
 /// field, tab, option, item, switch or link) has a label a person can read:
-/// not empty, and not just its machine id (`objective-usd`). Returns the
-/// controls that break it.
+/// not empty, and not just its machine id (`objective-usd`, or a lowercase
+/// word such as `retry`; a choice may be a lowercase word, as the direction
+/// `in`). Returns the controls that break it.
 fn unreadable(observation: &Value) -> Vec<String> {
     const INTERACTIVE: [&str; 7] = ["button", "field", "tab", "option", "item", "switch", "link"];
-    let machine_id = |text: &str| {
+    let machine_id = |text: &str, role: &str| {
         !text.is_empty()
-            && text.contains(['-', '_'])
+            && (text.contains(['-', '_']) || role != "option")
             && text
                 .chars()
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
@@ -189,7 +204,8 @@ fn unreadable(observation: &Value) -> Vec<String> {
         .filter(|c| {
             let label = c["label"].as_str().unwrap_or_default().trim();
             let id = c["id"].as_str().unwrap_or_default();
-            label.is_empty() || (label == id && machine_id(id))
+            label.is_empty()
+                || (label == id && machine_id(id, c["role"].as_str().unwrap_or_default()))
         })
         .map(|c| c.to_string())
         .collect()
@@ -217,11 +233,14 @@ fn the_label_rule_finds_unlabelled_controls() {
         { "id": "objective-cycles", "role": "field", "label": "Improvements" },
         { "id": "Settings", "role": "button", "label": "Settings" },
         { "id": "x", "role": "switch", "label": " " },
+        { "id": "retry", "role": "button", "label": "retry" },
+        { "id": "in", "role": "option", "label": "in" },
         { "id": "Viewport", "role": "area", "label": "" },
     ] });
     let found = unreadable(&observation);
-    assert_eq!(found.len(), 2, "{found:#?}");
+    assert_eq!(found.len(), 3, "{found:#?}");
     assert!(found[0].contains("objective-usd") && found[1].contains("switch"));
+    assert!(found[2].contains("retry"));
 }
 
 #[test]

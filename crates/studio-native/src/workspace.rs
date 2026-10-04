@@ -1191,7 +1191,7 @@ impl Workspace {
             .id("title-bar")
             .flex_none()
             .h(r(height))
-            .pl(r(12.0))
+            .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
             .flex()
             .items_center()
             .gap(r(8.0))
@@ -1202,7 +1202,7 @@ impl Workspace {
                     .flex()
                     .items_center()
                     .gap(r(8.0))
-                    .child(brand_mark(&theme))
+                    .child(brand_mark(&theme).window_control_area(WindowControlArea::Drag))
                     .child(match &project {
                         Some(name) => Button::new("project", name.clone())
                             .ghost()
@@ -1211,6 +1211,7 @@ impl Workspace {
                             .on_click(run(studio_entity.clone(), CommandId::OpenProject))
                             .into_any_element(),
                         None => div()
+                            .window_control_area(WindowControlArea::Drag)
                             .text_size(r(theme::text::BASE))
                             .font_weight(theme::MEDIUM)
                             .text_color(theme.text_secondary)
@@ -1593,7 +1594,7 @@ impl Workspace {
 }
 
 /// Agentique's mark: a small tile in the accent colour.
-fn brand_mark(theme: &ui::Theme) -> impl IntoElement {
+fn brand_mark(theme: &ui::Theme) -> gpui::Div {
     div()
         .size(r(20.0))
         .rounded(r(6.0))
