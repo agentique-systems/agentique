@@ -8,7 +8,11 @@
 //! focused field), the label rule, one agent holding the window at a time,
 //! Pause and Step, and the event trace; a second journey watches observer
 //! mode: typing a character at a time, Pause and Step between characters,
-//! and Stop.
+//! and Stop. Since W12.6 (C-54), two more operate an objective's thread in
+//! the Conversation: in a test instance started with a recorded objective
+//! and the scripted stand-in Assistant (reading it, expanding a step's tool
+//! calls, replying, starting a turn), and in the Operator's own window
+//! (where all of it is refused to agents).
 //!
 //! It needs a desktop session (it opens a window), so it is ignored by
 //! default:
@@ -1046,4 +1050,445 @@ fn an_agent_uses_the_conversation_in_a_test_instance() {
         "press something in Settings",
     );
     assert_eq!(refused["ok"], false, "{refused}");
+}
+
+/// An objective recorded beside a Studio's session before it starts, as a
+/// test instance is started with one (C-54): interrupted (it waits for the
+/// Operator's Continue), with a directive to the implementer and its tool
+/// calls folded under it (a diff among them), and a child objective that
+/// explored and returned. What a journey needs to find its rows.
+struct Seeded {
+    root: String,
+    /// The directive to the implementer, and its two tool calls.
+    directive: u64,
+    edit: u64,
+    /// The text of the directive, which only a test instance shows.
+    secret: &'static str,
+}
+
+fn seed_objective(folder: &Path) -> Seeded {
+    use agq_orchestrator::record::{
+        Budgets, DirectiveStatus, Permissions, Recipient, RoleRef, Scope, State, Store,
+    };
+    use agq_orchestrator::thread::{Author, Kind, ThreadEntry};
+    let store = Store::new(folder.join("session").join("objectives"));
+    let mut root = store
+        .create(
+            "Find and fix problems in the Library panel",
+            Path::new("C:/agentique"),
+            "main",
+            Budgets::default(),
+            Permissions::default(),
+        )
+        .unwrap();
+    // Not finished, and not running here: it waits for Continue.
+    root.state = State::Running;
+    let scope = |instruction: &str| Scope {
+        instruction: instruction.into(),
+        focus: None,
+        budgets: None,
+        permissions: None,
+    };
+    let secret = "Label the Library filter for screen readers";
+    let d1 = root.direct(
+        "lead",
+        Recipient::Role("implementer".into()),
+        scope(secret),
+        Some("cycle-1/proposal".into()),
+    );
+    let mut child = root.clone();
+    child.id = format!("{}-c1", root.id);
+    child.intent = "Explore the History panel".into();
+    child.parent = Some(root.id.clone());
+    child.depth = 1;
+    child.requested_by = Some(RoleRef {
+        role: "lead".into(),
+        objective: root.id.clone(),
+    });
+    child.state = State::Done;
+    child.directives.clear();
+    let d2 = root.direct(
+        "lead",
+        Recipient::Child(child.id.clone()),
+        Scope {
+            focus: Some("History".into()),
+            budgets: Some(Budgets {
+                usd: 0.5,
+                ..Budgets::default()
+            }),
+            ..scope("Explore the History panel")
+        },
+        None,
+    );
+    root.settle(&d2, DirectiveStatus::Done, Some("One finding".into()));
+    store.save(&root).unwrap();
+    store.save(&child).unwrap();
+    let add = |id: &str, entry: ThreadEntry| store.append_thread(id, entry).unwrap().seq;
+    let lead = Author::agent("lead", None);
+    let implementer = Author::agent("implementer", None);
+    add(
+        &root.id,
+        ThreadEntry::new(Kind::Human, Author::Operator, root.intent.clone()),
+    );
+    add(
+        &root.id,
+        ThreadEntry::event("Cycle 1: Proposing an improvement"),
+    );
+    let directive = add(
+        &root.id,
+        ThreadEntry::new(Kind::Directive, lead.clone(), secret)
+            .with_details("Title: Label the filter\nWhy: the filter has no readable label")
+            .for_directive(Some(&d1)),
+    );
+    let mut edit = ThreadEntry::new(
+        Kind::Activity,
+        implementer.clone(),
+        "Edit crates/studio-native/src/panels/library.rs",
+    )
+    .with_details("- .target(\"filter\")\n+ .target(\"Filter the blocks\")");
+    edit.under = Some(directive);
+    let edit = add(&root.id, edit);
+    let mut test = ThreadEntry::new(
+        Kind::Activity,
+        implementer,
+        "Bash: cargo test -p agq-studio-native",
+    )
+    .with_details("cargo test -p agq-studio-native");
+    test.under = Some(directive);
+    add(&root.id, test);
+    add(
+        &root.id,
+        ThreadEntry::new(Kind::Directive, lead, "Explore the History panel")
+            .for_directive(Some(&d2)),
+    );
+    add(&child.id, ThreadEntry::event("Exploring the History panel"));
+    add(
+        &child.id,
+        ThreadEntry::new(
+            Kind::Result,
+            Author::agent("explorer", None),
+            "One finding: the History filter has no readable label",
+        ),
+    );
+    add(
+        &root.id,
+        ThreadEntry::event("Interrupted: Agentique closed"),
+    );
+    Seeded {
+        root: root.id,
+        directive,
+        edit,
+        secret,
+    }
+}
+
+/// Opens the URL shortener sample through the welcome screen, then lets go
+/// of the window.
+fn open_sample(studio: &mut Studio, folder: &Path) {
+    studio.must(
+        json!({ "kind": "click", "control": "welcome-sample" }),
+        "open the sample's dialog",
+    );
+    let project = folder.join("Shortener");
+    studio.must(
+        json!({ "kind": "fill", "control": "Project folder", "text": project.display().to_string() }),
+        "say where the project goes",
+    );
+    studio.must(
+        json!({ "kind": "click", "control": "dialog-confirm" }),
+        "create the project",
+    );
+    studio.must(
+        json!({ "kind": "wait", "until": { "dialog": null, "screen": "surface" }, "timeoutMs": 30000 }),
+        "wait for the project",
+    );
+    let released = studio.call(json!({ "op": "release", "agent": "journey" }));
+    assert_eq!(released["released"], true, "{released}");
+}
+
+/// The Conversation as the one place (C-54, W12.6), in a test instance
+/// started with a recorded objective and the scripted stand-in Assistant:
+/// an agent reads the objective's thread (messages, directives, results,
+/// events, a child's thread), expands a step's tool calls and a diff,
+/// replies in the thread through the composer, switches back to the
+/// Assistant and starts a turn, and observes the reply and its tool call;
+/// Continue and Stop stay the Operator's.
+#[test]
+#[ignore = "opens a window: run on a desktop with --ignored"]
+fn an_agent_operates_an_objectives_thread_in_a_test_instance() {
+    let folder = folder("thread");
+    let seeded = seed_objective(&folder);
+    let mut studio = Studio::start_with(
+        &folder,
+        "fast",
+        &["--test-instance", "--assistant-stand-in"],
+    );
+    open_sample(&mut studio, &folder);
+    let shown = studio.observe();
+    let objective = &shown["objective"];
+    assert_eq!(objective["id"], seeded.root, "{objective}");
+    assert_eq!(objective["state"], "interrupted", "{objective}");
+    assert_eq!(objective["children"].as_array().unwrap().len(), 1);
+    assert_eq!(objective["thread"]["entries"], 9, "{objective}");
+    assert_readable(&shown, "the Conversation with an objective's thread");
+    // Its rows, with their text in a test instance.
+    let directive_id = format!("thread-{}-{}", seeded.root, seeded.directive);
+    let directive = control(&shown, &directive_id).unwrap_or_else(|| panic!("{shown}"));
+    let label = directive["label"].as_str().unwrap();
+    assert!(
+        label.starts_with("Directive from lead to implementer, running")
+            && label.contains(seeded.secret),
+        "{label}"
+    );
+    assert!(directive["operatorOnly"].is_null(), "{directive}");
+    let child_result = shown["controls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == format!("thread-{}-c1-2", seeded.root))
+        .expect("the child's result, nested under its directive");
+    assert!(
+        child_result["label"]
+            .as_str()
+            .unwrap()
+            .starts_with("Result from explorer")
+    );
+    // The tool calls under the directive: folded, then open, then a diff.
+    let fold = format!("thread-fold-{}-{}", seeded.root, seeded.directive);
+    let edit = format!("thread-{}-{}", seeded.root, seeded.edit);
+    assert!(control(&shown, &edit).is_none(), "folded at first");
+    let observed = studio.observe();
+    let opened = studio.act_as(
+        "explorer",
+        &observed,
+        json!({ "kind": "click", "control": fold }),
+        "open the tool calls",
+    );
+    assert_eq!(opened["ok"], true, "{opened}");
+    let unfolded = studio.observe();
+    assert_eq!(control(&unfolded, &fold).unwrap()["selected"], true);
+    let row = control(&unfolded, &edit).unwrap_or_else(|| panic!("{unfolded}"));
+    assert!(
+        row["label"].as_str().unwrap().contains("panels/library.rs"),
+        "{row}"
+    );
+    let diffed = studio.act_as(
+        "explorer",
+        &unfolded,
+        json!({ "kind": "click", "control": edit }),
+        "see the diff",
+    );
+    assert_eq!(diffed["ok"], true, "{diffed}");
+    assert_eq!(control(&studio.observe(), &edit).unwrap()["selected"], true);
+    // A reply in the thread, through the composer.
+    let now = studio.observe();
+    let reply = format!("thread-reply-{}-{}", seeded.root, seeded.directive);
+    let answer = studio.act_as(
+        "explorer",
+        &now,
+        json!({ "kind": "click", "control": reply }),
+        "reply to the directive",
+    );
+    assert_eq!(answer["ok"], true, "{answer}");
+    let addressed = studio.observe();
+    assert_eq!(
+        addressed["conversation"]["addressed"], seeded.root,
+        "{}",
+        addressed["conversation"]
+    );
+    let to = control(&addressed, "conversation-to").unwrap();
+    assert_eq!(to["label"], "To: the objective");
+    let typed = studio.act_as(
+        "explorer",
+        &addressed,
+        json!({ "kind": "fill", "control": "Message", "text": "Keep the change to the label" }),
+        "write to the objective's agents",
+    );
+    assert_eq!(typed["ok"], true, "{typed}");
+    let written = studio.observe();
+    let entries = written["conversation"]["entries"].clone();
+    let sent = studio.act_as(
+        "explorer",
+        &written,
+        json!({ "kind": "key", "keys": "enter" }),
+        "send it",
+    );
+    assert_eq!(sent["ok"], true, "{sent}");
+    let replied = studio.observe();
+    let last = &replied["objective"]["thread"]["last"];
+    assert_eq!(last["kind"], "human", "{last}");
+    assert_eq!(
+        last["to"], "lead",
+        "it waits for the lead's next turn: {last}"
+    );
+    assert_eq!(last["text"], "Keep the change to the label");
+    assert_eq!(
+        replied["conversation"]["entries"], entries,
+        "not the Assistant's"
+    );
+    // Continue and Stop stay the Operator's, in a test instance too.
+    for id in ["objective-bar-continue", "objective-bar-stop"] {
+        let now = studio.observe();
+        let refused = studio.act_as(
+            "explorer",
+            &now,
+            json!({ "kind": "click", "control": id }),
+            "steer the objective",
+        );
+        assert_eq!(refused["ok"], false, "{id}: {refused}");
+        assert_eq!(refused["kind"], "operator-own", "{id}: {refused}");
+    }
+    // Back to the Assistant (the scripted stand-in): a turn, observed.
+    let now = studio.observe();
+    let switched = studio.act_as(
+        "explorer",
+        &now,
+        json!({ "kind": "click", "control": "conversation-to" }),
+        "write to the Assistant",
+    );
+    assert_eq!(switched["ok"], true, "{switched}");
+    let assistant = studio.observe();
+    assert!(assistant["conversation"]["addressed"].is_null());
+    assert_eq!(
+        assistant["conversation"]["runtime"],
+        "scripted stand-in (no network)"
+    );
+    assert!(assistant["conversation"]["keyMissing"].is_null());
+    for (action, why) in [
+        (
+            json!({ "kind": "fill", "control": "Message", "text": "What is in the model?" }),
+            "ask the Assistant",
+        ),
+        (json!({ "kind": "key", "keys": "enter" }), "send it"),
+        (
+            json!({ "kind": "wait", "until": { "conversationIdle": true }, "timeoutMs": 20000 }),
+            "wait for the reply",
+        ),
+    ] {
+        let now = studio.observe();
+        let answer = studio.act_as("explorer", &now, action, why);
+        assert_eq!(answer["ok"], true, "{why}: {answer}");
+    }
+    let answered = studio.observe();
+    let conversation = &answered["conversation"];
+    assert!(
+        conversation["lastReply"]
+            .as_str()
+            .unwrap_or_default()
+            .starts_with("I am the scripted stand-in"),
+        "{conversation}"
+    );
+    assert_eq!(
+        conversation["toolCalls"][0]["tool"], "read_model",
+        "{conversation}"
+    );
+    assert_eq!(
+        conversation["toolCalls"][0]["state"], "done",
+        "{conversation}"
+    );
+    assert_eq!(conversation["usd"], 0.0);
+    // Its tool card opens as the person's click opens it.
+    let card = answered["controls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| {
+            c["id"]
+                .as_str()
+                .is_some_and(|id| id.starts_with("tool-stand-in"))
+        })
+        .unwrap_or_else(|| panic!("the tool card: {answered}"))["id"]
+        .clone();
+    let opened = studio.act_as(
+        "explorer",
+        &answered,
+        json!({ "kind": "click", "control": card }),
+        "open the tool card",
+    );
+    assert_eq!(opened["ok"], true, "{opened}");
+    assert_eq!(
+        control(&studio.observe(), card.as_str().unwrap()).unwrap()["selected"],
+        true
+    );
+    assert_readable(&studio.observe(), "the Conversation after a turn");
+}
+
+/// In the Operator's own window (C-54): the objective's thread is named
+/// without its text, and an agent can neither expand it, reply in it,
+/// switch whom the composer addresses, nor start, steer or stop an
+/// objective, through controls or commands.
+#[test]
+#[ignore = "opens a window: run on a desktop with --ignored"]
+fn the_operators_conversation_and_objectives_are_refused_to_agents() {
+    let folder = folder("operators-thread");
+    let seeded = seed_objective(&folder);
+    let mut studio = Studio::start(&folder, "instant");
+    open_sample(&mut studio, &folder);
+    let shown = studio.observe();
+    assert_readable(&shown, "the Operator's Conversation with an objective");
+    let objective = &shown["objective"];
+    assert_eq!(objective["id"], seeded.root);
+    assert!(
+        objective["intent"].is_null(),
+        "the Operator's text: {objective}"
+    );
+    assert!(objective["thread"]["last"]["text"].is_null(), "{objective}");
+    let directive_id = format!("thread-{}-{}", seeded.root, seeded.directive);
+    let directive = control(&shown, &directive_id).unwrap_or_else(|| panic!("{shown}"));
+    assert_eq!(
+        directive["label"],
+        format!("Directive, entry {}, by lead", seeded.directive)
+    );
+    assert_eq!(directive["operatorOnly"], true);
+    assert!(
+        !shown.to_string().contains(seeded.secret),
+        "no text of the thread is observed"
+    );
+    let fold = format!("thread-fold-{}-{}", seeded.root, seeded.directive);
+    let reply = format!("thread-reply-{}-{}", seeded.root, seeded.directive);
+    for (action, why) in [
+        (
+            json!({ "kind": "click", "control": fold }),
+            "open the tool calls",
+        ),
+        (
+            json!({ "kind": "click", "control": reply }),
+            "reply in the thread",
+        ),
+        (
+            json!({ "kind": "click", "control": "conversation-to" }),
+            "switch whom the composer addresses",
+        ),
+        (
+            json!({ "kind": "click", "control": "objective-bar-continue" }),
+            "continue the objective",
+        ),
+        (
+            json!({ "kind": "fill", "control": "Message", "text": "Stop" }),
+            "write to the agents",
+        ),
+        (
+            json!({ "kind": "command", "id": "message-objective" }),
+            "address the objective",
+        ),
+        (
+            json!({ "kind": "command", "id": "start-objective" }),
+            "start an objective",
+        ),
+        (
+            json!({ "kind": "command", "id": "stop-objective" }),
+            "stop the objective",
+        ),
+    ] {
+        let now = studio.observe();
+        let refused = studio.act_as("explorer", &now, action, why);
+        assert_eq!(refused["ok"], false, "{why}: {refused}");
+        assert_eq!(refused["kind"], "operator-own", "{why}: {refused}");
+    }
+    let after = studio.observe();
+    assert!(after["conversation"]["addressed"].is_null());
+    assert_eq!(
+        after["objective"]["thread"]["entries"], 9,
+        "nothing was added"
+    );
 }
