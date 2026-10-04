@@ -3,7 +3,7 @@
 //! merged and the result adopted; then watches the objective's cycles (the
 //! phase, the proposal, the checks, the review, the pull request, the
 //! spend), pauses, steps, resumes or stops it, sends its agents a message,
-//! and reads what every agent did. Before Start it shows each role's model,
+//! and reads its thread: what every agent and the Orchestrator did (C-54). Before Start it shows each role's model,
 //! why a fallback was taken, the credential and who pays; then each role's
 //! model and spend (C-54).
 
@@ -75,7 +75,7 @@ impl Fields {
         let message = state.objectives.message.clone();
         let activity: Vec<_> = state
             .objectives
-            .activity
+            .thread
             .iter()
             .rev()
             .take(60)
@@ -218,7 +218,7 @@ impl Fields {
                                 .flex_none()
                                 .text_color(theme.text_faint)
                                 .font_family(theme::MONO)
-                                .child(line.at),
+                                .child(line.at.get(11..19).unwrap_or(&line.at).to_string()),
                         )
                         .child(
                             div()
@@ -226,7 +226,13 @@ impl Fields {
                                 .w(r(74.0))
                                 .text_color(theme.text_muted)
                                 .font_weight(theme::MEDIUM)
-                                .child(line.role),
+                                .child(match &line.author {
+                                    // The role here; its model is in the summary.
+                                    agq_orchestrator::thread::Author::Agent { role, .. } => {
+                                        role.clone()
+                                    }
+                                    other => other.label(),
+                                }),
                         )
                         .child(
                             div()

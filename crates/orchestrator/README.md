@@ -10,6 +10,20 @@ what to change.
   file (format 1, written atomically: intent, budgets, permissions, cycles,
   session ids, results, spend, continuation) and `journal.jsonl` (each side
   effect before and after, under a key, so resuming never repeats one).
+  The record keeps its agents' directives (C-54: author, recipient role or
+  child objective, scope, status, result and the record handed over), made
+  only by the Orchestrator: the lead's proposal for the implementer, the
+  reviewer's findings for repair.
+- **Thread** (`thread`, C-54): `objectives/<id>/thread.jsonl`, what happened
+  in order for the Conversation and the Objectives panel: the Operator's
+  messages and commands, directives, results (submissions, verdicts), the
+  Orchestrator's events (phases, checks, gates, pull requests, merges,
+  builds, trials, adoptions, recoveries) and each agent's tool calls as
+  activity (a bounded diff for a file changed, the command line for a
+  command), each with its author (the Operator, Agentique, or a role and its
+  model). Appended one whole line at a time under a lock file, numbered,
+  read back from any point; capped per entry, and a file over 4 MB is kept
+  as `thread.1.jsonl` while a new one starts.
 - **A cycle** (`run`): Propose (the lead, reading but running no command,
   submits one improvement with acceptance criteria, then frozen; a command
   criterion is a test run: `cargo test`, `node --test` or

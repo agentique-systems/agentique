@@ -217,7 +217,8 @@ fn criteria_text(proposal: &Proposal) -> String {
         .join("\n")
 }
 
-fn proposal_text(proposal: &Proposal) -> String {
+/// A proposal as the other roles read it (and the thread shows it).
+pub fn proposal_text(proposal: &Proposal) -> String {
     format!(
         "Title: {}\nKind: {}\nWhy: {}\nParts: {}\nPlan:\n{}\nAcceptance criteria (frozen):\n{}\nIntended changes to tests or checks: {}",
         proposal.title,
