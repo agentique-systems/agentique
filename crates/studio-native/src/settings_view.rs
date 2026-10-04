@@ -1689,6 +1689,17 @@ impl SettingsView {
         cx: &mut Context<Self>,
     ) -> Vec<AnyElement> {
         let mut cards = Vec::new();
+        // A test instance (C-54) keeps out of the credential store.
+        if self.studio.read(cx).args.test_instance {
+            cards.push(
+                ui::inline_message(
+                    Tone::Info,
+                    "Test instance: keys come only from the environment. The credential store is not read, and no key is saved here.",
+                    cx,
+                )
+                .into_any_element(),
+            );
+        }
         for provider in Provider::ALL {
             let words = [
                 provider.name(),
