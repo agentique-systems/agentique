@@ -518,7 +518,7 @@ impl SettingsView {
                 state.status = KeyStatus::Stored;
                 state.message = Some("Saved in Windows Credential Manager.".into());
                 self.studio
-                    .update(cx, |studio, _| studio.read_credentials());
+                    .update(cx, |studio, _| studio.refresh_credentials());
                 let state = self.provider(provider, window, cx);
                 state.check = None;
                 let id: &'static str = match provider {
@@ -561,7 +561,7 @@ impl SettingsView {
                 });
                 self.set("providers.anthropic.tokenHint", json!(hint), cx);
                 self.studio
-                    .update(cx, |studio, _| studio.read_credentials());
+                    .update(cx, |studio, _| studio.refresh_credentials());
             }
             Err(error) => self.token_message = Some(error.0),
         }
@@ -691,14 +691,13 @@ impl SettingsView {
         state.confirm_remove = false;
         match keys::remove(provider) {
             Ok(()) => {
+                // The removed key's own status at once (its environment
+                // variable may still hold one); the rest on the reading's
+                // thread.
                 self.studio
-                    .update(cx, |studio, _| studio.read_credentials());
-                let status = self
-                    .studio
-                    .read(cx)
-                    .credential(agq_providers::Credential::Key(provider));
+                    .update(cx, |studio, _| studio.refresh_credentials());
                 let state = self.provider(provider, window, cx);
-                state.status = status;
+                state.status = agq_providers::key_status(provider);
                 state.message = Some("The saved key was removed.".into());
                 let id: &'static str = match provider {
                     Provider::Anthropic => "providers.anthropic.keyHint",

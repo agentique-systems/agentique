@@ -199,7 +199,7 @@ impl Studio {
         // does not explore yet (W12.5), so the explorer, escalation and
         // typed decisions are recorded but not needed. Whether this
         // computer has a Claude login is said when it is known.
-        self.read_credentials();
+        self.read_credentials_now();
         let resolved = self
             .agent_models(false)
             .map_err(|problems| problems.join("; "))?;
@@ -235,7 +235,7 @@ impl Studio {
         // current Settings, and the activity says so.
         let resolved_now = objective.models.is_empty();
         if resolved_now {
-            self.read_credentials();
+            self.read_credentials_now();
             let resolved = self
                 .agent_models(false)
                 .map_err(|problems| problems.join("; "))?;

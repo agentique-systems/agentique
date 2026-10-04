@@ -306,6 +306,17 @@ pub enum Work {
     Install(Receiver<Result<Health, String>>, Arc<AtomicBool>),
 }
 
+/// Where each credential comes from.
+pub type Credentials = std::collections::BTreeMap<Credential, KeyStatus>;
+
+/// Every credential's status, read now (the environment, else the store:
+/// each read may wait for the store up to its timeout).
+fn read_all() -> Credentials {
+    credentials()
+        .map(|c| (c, agq_providers::credential_status(c)))
+        .collect()
+}
+
 #[derive(Default)]
 pub struct RuntimeState {
     pub health: Option<Health>,
@@ -320,10 +331,17 @@ pub struct RuntimeState {
     /// other setup work.
     pub login_probe: Option<Receiver<Result<Login, String>>>,
     /// Where each key and the subscription token come from, as last read
-    /// (C-54): read when the Studio starts, when Settings or the
-    /// Objectives panel opens, when a key or the token is saved or removed,
-    /// and before an objective starts; drawing never reads the store.
-    pub credentials: std::collections::BTreeMap<Credential, KeyStatus>,
+    /// (C-54): read on a thread of its own when the Studio starts, when
+    /// Settings or the Objectives panel opens and when a key or the token is
+    /// saved or removed, and read at once before an objective starts;
+    /// drawing never reads the store.
+    pub credentials: Credentials,
+    /// Node.js as last looked for (on that thread, or by Check), so the
+    /// runtime choice never starts `node --version` on the window's thread;
+    /// `None` until it is known.
+    pub node: Option<Result<Node, String>>,
+    /// That reading, running.
+    pub reading: Option<Receiver<(Credentials, Result<Node, String>)>>,
     /// The Assistant's route on the Claude Agent runtime, as the runtime
     /// choice last made it: its label and why it is not the configured
     /// one (C-54); `None` on Agentique's own loop.
@@ -349,14 +367,61 @@ impl Studio {
             .unwrap_or(KeyStatus::Missing)
     }
 
-    /// Reads where each key and the token come from again (the environment,
-    /// else the credential store), and applies what changed to the
-    /// Assistant's runtime.
-    pub fn read_credentials(&mut self) {
-        self.runtime.credentials = credentials()
-            .map(|c| (c, agq_providers::credential_status(c)))
-            .collect();
-        self.apply_runtime_choice();
+    /// Reads where each key and the token come from again, and looks for
+    /// Node.js, on a thread of its own (each store read may wait up to its
+    /// timeout); the next tick applies what changed ([`poll_runtime`]
+    /// (Self::poll_runtime)). One reading at a time.
+    pub fn refresh_credentials(&mut self) {
+        if self.runtime.reading.is_some() {
+            return;
+        }
+        let (sender, receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = sender.send((read_all(), claude_agent::find_node()));
+        });
+        self.runtime.reading = Some(receiver);
+    }
+
+    /// Reads where each key and the token come from at once (before an
+    /// objective starts, so its record is exact: an act of the Operator's,
+    /// never drawing), and applies a change to the Assistant's runtime.
+    pub fn read_credentials_now(&mut self) {
+        let read = read_all();
+        if read != self.runtime.credentials {
+            self.runtime.credentials = read;
+            self.apply_runtime_choice();
+        }
+    }
+
+    /// Takes a finished reading: the runtime choice is made again only
+    /// when a credential or Node.js changed. Returns whether anything did.
+    pub fn poll_credentials(&mut self) -> bool {
+        let Some(receiver) = &self.runtime.reading else {
+            return false;
+        };
+        let (read, node) = match receiver.try_recv() {
+            Ok(read) => read,
+            Err(TryRecvError::Empty) => return false,
+            Err(TryRecvError::Disconnected) => {
+                self.runtime.reading = None;
+                return false;
+            }
+        };
+        self.runtime.reading = None;
+        let changed = read != self.runtime.credentials || self.runtime.node.as_ref() != Some(&node);
+        if changed {
+            self.runtime.credentials = read;
+            self.runtime.node = Some(node);
+            self.apply_runtime_choice();
+            self.mark(Dirty::LAYOUT | Dirty::STATUS);
+        }
+        changed
+    }
+
+    /// Whether setup work beside the runtime's own runs on a thread: the
+    /// Claude login's check, or a reading of the credentials.
+    pub fn runtime_reading(&self) -> bool {
+        self.runtime.login_probe.is_some() || self.runtime.reading.is_some()
     }
 
     /// Where the Claude Agent runtime's model answers for the Assistant,
@@ -396,22 +461,17 @@ impl Studio {
         let installation = Installation {
             root: Installation::default_root(),
         };
-        let node = match claude_agent::find_node() {
-            Ok(node) if installation.installed() => node,
-            Ok(_) => {
-                self.runtime.login = Some(Err(
-                    "the Claude Agent runtime is not installed (Settings › Assistant)".into(),
-                ));
-                return;
-            }
-            Err(why) => {
-                self.runtime.login = Some(Err(why));
-                return;
-            }
-        };
         let (sender, receiver) = std::sync::mpsc::channel();
+        // Node is looked for on the probe's thread too.
         std::thread::spawn(move || {
-            let _ = sender.send(claude_agent::login(&node, &installation));
+            let login = claude_agent::find_node().and_then(|node| {
+                if installation.installed() {
+                    claude_agent::login(&node, &installation)
+                } else {
+                    Err("the Claude Agent runtime is not installed (Settings › Assistant)".into())
+                }
+            });
+            let _ = sender.send(login);
         });
         self.runtime.login_probe = Some(receiver);
     }
@@ -571,7 +631,11 @@ impl Studio {
         // The model and effort chosen for the runtime's provider carry over;
         // otherwise its default.
         let (model, effort) = self.runtime_model(endpoint.as_ref());
-        let node = claude_agent::find_node();
+        // Node as last looked for, never looked for here (the window's
+        // thread); until it is known, a turn waits for it.
+        let node = self.runtime.node.clone().unwrap_or_else(|| {
+            Err("Agentique is still looking for Node.js; try again in a moment.".into())
+        });
         let installation = Installation {
             root: Installation::default_root(),
         };
@@ -754,7 +818,7 @@ impl Studio {
 
     /// Takes finished setup work. Returns whether anything changed.
     pub fn poll_runtime(&mut self) -> bool {
-        let login = self.poll_login();
+        let login = self.poll_login() | self.poll_credentials();
         let Some(work) = &self.runtime.work else {
             return login;
         };
@@ -781,6 +845,9 @@ impl Studio {
         match result {
             Ok(health) => {
                 self.runtime.message = None;
+                if let Some(node) = &health.node {
+                    self.runtime.node = Some(node.clone());
+                }
                 self.runtime.health = Some(health);
             }
             Err(why) => self.runtime.message = Some(why),
@@ -968,5 +1035,39 @@ mod tests {
         }
         assert!(app.agent_models(false).is_err());
         assert!(app.agent_models_each().iter().all(|(_, m)| m.is_err()));
+    }
+
+    /// The review of W12.3: credentials are read on a thread of their own,
+    /// and the next tick applies the reading only when a credential or
+    /// Node.js changed.
+    #[test]
+    fn a_reading_is_applied_only_when_something_changed() {
+        use agq_providers::{Credential, KeyStatus, Provider};
+        let (mut app, _folder) = studio("credentials-read-apart");
+        let known: super::Credentials = super::credentials()
+            .map(|c| (c, KeyStatus::Missing))
+            .collect();
+        let node = Err::<agq_assistant::claude_agent::Node, String>("no Node here".into());
+        app.runtime.credentials = known.clone();
+        app.runtime.node = Some(node.clone());
+        // The same reading: nothing to apply.
+        let (sender, receiver) = std::sync::mpsc::channel();
+        app.runtime.reading = Some(receiver);
+        assert!(app.runtime_reading());
+        assert!(!app.poll_credentials(), "nothing yet");
+        sender.send((known.clone(), node.clone())).unwrap();
+        assert!(!app.poll_credentials(), "nothing changed");
+        assert!(app.runtime.reading.is_none());
+        // A key appeared: applied.
+        let mut changed = known;
+        changed.insert(Credential::Key(Provider::DeepSeek), KeyStatus::Stored);
+        let (sender, receiver) = std::sync::mpsc::channel();
+        app.runtime.reading = Some(receiver);
+        sender.send((changed, node)).unwrap();
+        assert!(app.poll_credentials());
+        assert_eq!(
+            app.credential(Credential::Key(Provider::DeepSeek)),
+            KeyStatus::Stored
+        );
     }
 }

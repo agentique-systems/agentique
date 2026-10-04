@@ -333,8 +333,10 @@ impl Studio {
             dirty: Dirty::ALL,
         };
         studio.apply_appearance();
-        // Reads the credentials once and applies the runtime choice.
-        studio.read_credentials();
+        // The credentials and Node.js are read on a thread of their own; the
+        // runtime choice is made now and again when they are known.
+        studio.apply_runtime_choice();
+        studio.refresh_credentials();
         studio.note_recovery();
         #[cfg(feature = "automation")]
         if studio.args.scenario.as_deref() == Some("a-assistant") {
@@ -1379,7 +1381,7 @@ impl Studio {
         self.palette = None;
         // Settings say where each credential comes from, read now, and
         // whether this computer has a Claude login (C-54).
-        self.read_credentials();
+        self.refresh_credentials();
         self.probe_login();
     }
 

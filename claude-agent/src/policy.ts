@@ -569,12 +569,10 @@ export function credentialSettings(from: Record<string, string | undefined>): {
   awsAuthRefresh: string;
   gcpAuthRefresh: string;
 } {
-  const env: Record<string, string> = {
-    ANTHROPIC_AUTH_TOKEN: "",
-    CLAUDE_CODE_USE_BEDROCK: "",
-    CLAUDE_CODE_USE_VERTEX: "",
-    CLAUDE_CODE_USE_FOUNDRY: "",
-  };
+  const env: Record<string, string> = { ANTHROPIC_AUTH_TOKEN: "" };
+  for (const name of PROVIDER_SWITCHES) {
+    env[name] = "";
+  }
   if (given(from) === "token") {
     env[KEY_VARIABLE] = "";
   } else {
@@ -585,6 +583,49 @@ export function credentialSettings(from: Record<string, string | undefined>): {
 
 /** Settings keys that make a credential (helpers the CLI runs). */
 const CREDENTIAL_HELPERS = ["apiKeyHelper", "awsCredentialExport", "awsAuthRefresh", "gcpAuthRefresh"];
+
+/** The switches that send the CLI's model calls to another provider. */
+const PROVIDER_SWITCHES = [
+  "CLAUDE_CODE_USE_BEDROCK",
+  "CLAUDE_CODE_USE_VERTEX",
+  "CLAUDE_CODE_USE_FOUNDRY",
+  "CLAUDE_CODE_USE_ANTHROPIC_AWS",
+  "CLAUDE_CODE_USE_ANTHROPIC_GOOGLE_CLOUD",
+  "CLAUDE_CODE_USE_GATEWAY",
+  "CLAUDE_CODE_USE_MANTLE",
+];
+
+/**
+ * The credential and endpoint variables the bundled Claude Code reads (by
+ * name, as its own lists name them; not by a look-alike pattern, so that
+ * `MAX_THINKING_TOKENS` or `GIT_AUTHOR_NAME` stay a project's to set).
+ */
+const CREDENTIAL_VARIABLES = new Set([
+  "ANTHROPIC_API_KEY",
+  "ANTHROPIC_AUTH_TOKEN",
+  "ANTHROPIC_AWS_API_KEY",
+  "ANTHROPIC_FOUNDRY_API_KEY",
+  "ANTHROPIC_FOUNDRY_AUTH_TOKEN",
+  "ANTHROPIC_IDENTITY_TOKEN",
+  "ANTHROPIC_IDENTITY_TOKEN_FILE",
+  "CLAUDE_CODE_OAUTH_TOKEN",
+  "CLAUDE_CODE_OAUTH_REFRESH_TOKEN",
+  "CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR",
+  "CLAUDE_CODE_API_KEY_FILE_DESCRIPTOR",
+  "CLAUDE_CODE_API_BASE_URL",
+  "GOOGLE_APPLICATION_CREDENTIALS",
+  ...PROVIDER_SWITCHES,
+]);
+
+/**
+ * Whether a project's settings variable brings a credential or another
+ * endpoint: a named one, an Anthropic endpoint override
+ * (`ANTHROPIC_BASE_URL`, `ANTHROPIC_BEDROCK_BASE_URL`, …), or an AWS one.
+ */
+export function credentialVariable(name: string): boolean {
+  const n = name.toUpperCase();
+  return CREDENTIAL_VARIABLES.has(n) || /^ANTHROPIC_(\w+_)?BASE_URL$/.test(n) || n.startsWith("AWS_");
+}
 
 /**
  * Why a project's settings that the session would load must not run it, or
@@ -616,7 +657,7 @@ export function projectCredentialProblem(cwd: string, sources: readonly string[]
     const settings = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
     const helpers = CREDENTIAL_HELPERS.filter((name) => settings[name] !== undefined);
     const env = typeof settings.env === "object" && settings.env !== null ? Object.keys(settings.env as object) : [];
-    const variables = env.filter((name) => SECRET.test(name) || /^CLAUDE_CODE_USE_/i.test(name));
+    const variables = env.filter(credentialVariable);
     if (helpers.length > 0 || variables.length > 0) {
       return `the project's settings ${file} bring a credential of their own (${[...helpers, ...variables.map((v) => `env.${v}`)].join(", ")}); a session uses only the credential Agentique gives it`;
     }

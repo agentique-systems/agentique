@@ -1502,10 +1502,12 @@ budget) on Anthropic's own API. SDK subagents stay on the session's
 endpoint and credential and, unless they name a model, run on the role's
 (`CLAUDE_CODE_SUBAGENT_MODEL`, pinned in the flag tier); their usage shows
 under the role. Settings and the Objectives panel draw from the credentials
-as last read (when the Studio starts, when Settings or the Objectives panel
-opens, when a key or the token is saved or removed, and before an objective
-starts), so drawing reads no store; the login probe runs on its own thread
-beside other setup work and never blocks the window.
+as last read, so drawing reads no store: they are read, with Node.js looked
+for, on a thread of their own when the Studio starts, when Settings or the
+Objectives panel opens and when a key or the token is saved or removed (the
+next tick makes the runtime choice again only when something changed), and
+read at once when an objective starts; the login probe also runs on its own
+thread beside other setup work, so none of it blocks the window.
 `main.ts --login` runs the SDK's Claude Code binary's `claude auth status`
 with the Operator's configuration and keeps only `loggedIn`, `authMethod`,
 `apiProvider` and `subscriptionType`; Settings say the claude.ai login is

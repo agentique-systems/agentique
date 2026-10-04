@@ -68,9 +68,13 @@ review and adoption.
   `initProblem`). The flag tier of the settings blanks every credential the
   session was not given and the credential helpers (`credentialSettings`),
   and a project's settings that bring a credential of their own keep the
-  session from starting (`projectCredentialProblem`); a key replaced under
-  `ANTHROPIC_API_KEY` in a project's settings while a key session runs is
-  the one case the SDK's report cannot show (`docs/stages.md`, W12.3). The SDK keeps its
+  session from starting (`projectCredentialProblem`, by the credential and
+  endpoint variables Claude Code reads, named). That check runs when a
+  session starts, so a key replaced under `ANTHROPIC_API_KEY` in a
+  project's settings while a key session runs is caught at the next start
+  (the one case the SDK's report cannot show, `docs/stages.md`, W12.3);
+  meanwhile the flag tier still turns off the helpers and every other
+  credential. The SDK keeps its
   own configuration folder, so the machine's own `/login` is never read, and
   `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` keeps the credential out of the
   session's commands (measured live for the token on 2026-10-04). A refused

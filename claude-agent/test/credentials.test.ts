@@ -257,6 +257,10 @@ test("the flag tier turns off every credential the session was not given", () =>
     CLAUDE_CODE_USE_BEDROCK: "",
     CLAUDE_CODE_USE_VERTEX: "",
     CLAUDE_CODE_USE_FOUNDRY: "",
+    CLAUDE_CODE_USE_ANTHROPIC_AWS: "",
+    CLAUDE_CODE_USE_ANTHROPIC_GOOGLE_CLOUD: "",
+    CLAUDE_CODE_USE_GATEWAY: "",
+    CLAUDE_CODE_USE_MANTLE: "",
     ANTHROPIC_API_KEY: "",
   });
   const key = credentialSettings(KEY);
@@ -295,6 +299,13 @@ test("a project's settings that bring a credential keep the session from startin
   assert.match(projectCredentialProblem(replaced, ["project"]) ?? "", /env[.]ANTHROPIC_API_KEY/);
   assert.match(projectCredentialProblem(project({ "settings.json": JSON.stringify({ apiKeyHelper: "echo k" }) }), ["project"]) ?? "", /apiKeyHelper/);
   assert.match(projectCredentialProblem(project({ "settings.json": JSON.stringify({ env: { CLAUDE_CODE_USE_BEDROCK: "1" } }) }), ["project"]) ?? "", /CLAUDE_CODE_USE_BEDROCK/);
+  for (const name of ["ANTHROPIC_BASE_URL", "ANTHROPIC_VERTEX_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "AWS_SECRET_ACCESS_KEY", "GOOGLE_APPLICATION_CREDENTIALS"]) {
+    assert.match(projectCredentialProblem(project({ "settings.json": JSON.stringify({ env: { [name]: "x" } }) }), ["project"]) ?? "", new RegExp(name), name);
+  }
+  // Settings that only look like secrets stay the project's to set.
+  for (const name of ["MAX_THINKING_TOKENS", "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "GIT_AUTHOR_NAME", "CLAUDE_CODE_USE_POWERSHELL_TOOL"]) {
+    assert.equal(projectCredentialProblem(project({ "settings.json": JSON.stringify({ env: { [name]: "1" } }) }), ["project"]), null, name);
+  }
   assert.match(projectCredentialProblem(project({ "settings.json": "{ not json" }), ["project"]) ?? "", /cannot be read as JSON/);
   // Ordinary settings, settings not loaded, and no settings start.
   assert.equal(projectCredentialProblem(project({ "settings.json": JSON.stringify({ env: { RUST_LOG: "info" }, permissions: { allow: [] } }) }), ["project"]), null);

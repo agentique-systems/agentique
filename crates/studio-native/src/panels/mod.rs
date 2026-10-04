@@ -309,7 +309,7 @@ impl Render for InspectorColumn {
                                         // The Objectives panel shows each
                                         // role's model and why (C-54).
                                         if tab == Panel::Objectives {
-                                            studio.read_credentials();
+                                            studio.refresh_credentials();
                                             studio.probe_login();
                                         }
                                         studio.mark(Dirty::LAYOUT);
