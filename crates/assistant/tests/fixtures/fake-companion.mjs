@@ -135,6 +135,22 @@ switch (name) {
     ] });
     result();
     break;
+  // Credentials (C-54): what the session was given, and the companion's
+  // check refusing another credential before any prompt.
+  case "credential":
+    out({ type: "error", kind: "auth", source: "none", message: "The SDK would use no API key (a claude.ai login, a token or a cloud provider's credentials) instead of the key it was given; Agentique gives a session one credential and uses no other, so the session was stopped before anything reached the model." });
+    break;
+  case "given":
+    init({ apiKeySource: process.env.CLAUDE_CODE_OAUTH_TOKEN ? "none" : "ANTHROPIC_API_KEY", apiProvider: "firstParty", tokenSource: process.env.CLAUDE_CODE_OAUTH_TOKEN ? "CLAUDE_CODE_OAUTH_TOKEN" : "" });
+    out({ type: "assistant", model: "claude-sonnet-5-5", content: [
+      { type: "text", text: `key=${process.env.ANTHROPIC_API_KEY ?? "none"}; oauth=${process.env.CLAUDE_CODE_OAUTH_TOKEN ?? "none"}; ceiling=${start.options.maxBudgetUsd}` },
+    ] });
+    result();
+    break;
+  case "limit":
+    init({ apiKeySource: "none", apiProvider: "firstParty", tokenSource: "CLAUDE_CODE_OAUTH_TOKEN" });
+    out({ type: "error", kind: "limit", message: "The Claude plan's usage limit is reached (five hour). The session ended; it does not move to an API key." });
+    break;
   // Protocol 2's development sessions (C-53).
   case "development": {
     const o = start.options;

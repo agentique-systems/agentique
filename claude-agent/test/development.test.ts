@@ -33,6 +33,9 @@ const policy: Policy = {
   undecided: "ask",
 };
 
+/** The credential the Studio gives every session (C-54). */
+const GIVEN = { ANTHROPIC_API_KEY: "sk-test" };
+
 const start: StartOptions = {
   prompt: "Fix the flaky test.",
   systemPrompt: "Agentique's skills.",
@@ -197,7 +200,10 @@ function standIn(script: (ctx: { options: Record<string, unknown>; prompt: Async
   const sdk: Sdk = {
     query({ prompt, options }) {
       const generator = script({ options, prompt: prompt[Symbol.asyncIterator]() });
-      return Object.assign(generator, { interrupt: async () => void (await generator.return(undefined)) });
+      return Object.assign(generator, {
+        initializationResult: async () => ({ account: { apiKeySource: "ANTHROPIC_API_KEY", apiProvider: "firstParty" } }),
+        interrupt: async () => void (await generator.return(undefined)),
+      });
     },
   };
   return { sdk, mcp };
@@ -215,7 +221,7 @@ test("the SDK's own tools, subagent tasks and compaction are reported to the Stu
     yield { type: "system", subtype: "compact_boundary", compact_metadata: { trigger: "auto", pre_tokens: 180000, post_tokens: 12000 } };
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1" };
   });
-  await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
+  await new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test").run(start);
   assert.deepEqual(sent.map((m) => m.type), ["assistant", "task", "task", "tool_done", "compaction", "result", "done"]);
   assert.deepEqual(sent[3], { type: "tool_done", toolUseId: "t1", isError: true, content: "1 failed" });
   assert.deepEqual(sent[4], { type: "compaction", trigger: "auto", preTokens: 180000, postTokens: 12000 });
@@ -238,7 +244,7 @@ test("a queued message reaches the running session, and the turn ends after its 
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1" };
     throw new Error("must not be reached: the turn ends after the second result");
   });
-  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  turn = new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test");
   await turn.run(start);
   assert.deepEqual(seen, ["Fix the flaky test.", "Also update the README."]);
   assert.equal(sent.filter((m) => m.type === "result").length, 2);
@@ -266,7 +272,7 @@ test("Pause holds the session at its next tool call; Step lets one through; Resu
     await through("c");
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1" };
   });
-  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  turn = new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test");
   await turn.run(start);
   assert.deepEqual(passed, ["a", "b", "c"]);
   assert.equal(sent.filter((m) => m.type === "paused").length, 2);
@@ -291,7 +297,7 @@ test("a call the policy leaves undecided is asked of the Studio, and its answer 
     },
     sdk,
     mcp,
-    {},
+    GIVEN,
     "agentique/test",
   );
   await turn.run(start);
@@ -348,7 +354,7 @@ test("a queued message the SDK folds into the running turn ends with that turn",
     await new Promise((r) => setTimeout(r, 5000));
     throw new Error("must not be reached: the turn ended at the folded result");
   });
-  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  turn = new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test");
   const started = Date.now();
   await turn.run(start);
   assert.ok(Date.now() - started < 2000, "it did not hang");
@@ -364,7 +370,7 @@ test("background work keeps the turn open until it ends", async () => {
     yield { type: "system", subtype: "task_notification", task_id: "b1", status: "completed", summary: "All pass", output_file: "x" };
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
   });
-  await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
+  await new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test").run(start);
   assert.deepEqual(sent.map((m) => m.type), ["task", "result", "task", "result", "done"]);
 });
 
@@ -381,7 +387,7 @@ test("a call held at the pause gate does not run when the turn is stopped", asyn
     answer = await held;
     yield { type: "result", subtype: "error_during_execution", is_error: true, session_id: "s1" };
   });
-  turn = new Turn(() => {}, sdk, mcp, {}, "agentique/test");
+  turn = new Turn(() => {}, sdk, mcp, GIVEN, "agentique/test");
   await turn.run(start);
   assert.equal((answer as { hookSpecificOutput: { permissionDecision: string } }).hookSpecificOutput.permissionDecision, "deny");
 });
@@ -433,7 +439,7 @@ test("a message the SDK has not taken yet keeps the turn open until a result say
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0, user_message_uuids: [first.uuid] };
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0, user_message_uuids: [late.uuid] };
   });
-  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  turn = new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test");
   await turn.run(start);
   assert.ok(second !== "");
   assert.equal(sent.filter((m) => m.type === "result").length, 2, "the turn waited for the late message's result");
@@ -453,7 +459,7 @@ test("each result reports its own share of the cumulative usage, by model", asyn
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 1, modelUsage: models(100, 5) };
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0, modelUsage: { ...models(250, 5), "deepseek-v4-pro": { inputTokens: 250, outputTokens: 30, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 } } };
   });
-  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  turn = new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test");
   await turn.run(start);
   const results = sent.filter((m) => m.type === "result") as Extract<CompanionMessage, { type: "result" }>[];
   assert.equal(results.length, 2);
@@ -468,7 +474,7 @@ test("a message that arrives after the turn is over is reported undelivered", as
     await prompt.next();
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
   });
-  const turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  const turn = new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test");
   await turn.run(start);
   turn.queue("Too late.");
   assert.deepEqual(sent.slice(-2), [{ type: "done" }, { type: "undelivered", text: "Too late." }]);

@@ -13,11 +13,16 @@
 //   never the machine's user settings, and the environment carries no key
 //   but the model's.
 //
+// Either kind runs only on the credential the Studio gave it (C-54): the
+// source the SDK reports is checked before the first model call
+// (`credentialProblem`). Whether this computer has a Claude login is read
+// with its own environment (`loginEnvironment`, `readLogin`) and never used.
+//
 // These are gates on what the agent can do; they are not an operating-system
 // sandbox, and the Studio's own checks still decide every model change.
 
 import { existsSync, realpathSync } from "node:fs";
-import type { Policy, StartOptions } from "./protocol.ts";
+import type { Login, Policy, StartOptions } from "./protocol.ts";
 
 /** The MCP server's name: tools are `mcp__agentique__<name>`. */
 export const SERVER = "agentique";
@@ -375,14 +380,15 @@ const PARENT_SESSION = /^(CLAUDECODE|CLAUDE_CODE_|CLAUDE_AGENT_SDK_|ANTHROPIC_|O
  * The agent process's environment.
  *
  * Without a policy it is built from nothing: Windows' required variables,
- * the key, the agent's own folders, and the documented switches that turn
+ * the one credential, the agent's own folders, and the documented switches that turn
  * off auto memory, CLAUDE.md files and nonessential traffic (ROADMAP [107]).
  *
  * With a policy it is the companion's own environment (which the Studio
  * already filtered) without anything that looks like a secret or belongs to
- * a Claude Code session that started the Studio; plus the model's key and
- * endpoint, the SDK's configuration folder and the switches that turn off
- * auto memory and nonessential traffic and keep the key out of the session's
+ * a Claude Code session that started the Studio; plus the model's one
+ * credential (key or subscription token) and endpoint, the SDK's
+ * configuration folder and the switches that turn off auto memory and
+ * nonessential traffic and keep the credential out of the session's
  * commands. The home folder stays the Operator's, so Cargo, git and the
  * toolchains find their configuration.
  */
@@ -421,8 +427,12 @@ export function agentEnvironment(
     // and the switch makes the SDK report the `default` permission mode.
     env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB = "1";
   }
-  if (from.ANTHROPIC_API_KEY) {
-    env.ANTHROPIC_API_KEY = from.ANTHROPIC_API_KEY;
+  // Exactly one credential (C-54): the key, or else the subscription token
+  // (with the token, no ANTHROPIC_API_KEY, which would take precedence).
+  if (from[KEY_VARIABLE]) {
+    env[KEY_VARIABLE] = from[KEY_VARIABLE];
+  } else if (from[TOKEN_VARIABLE]) {
+    env[TOKEN_VARIABLE] = from[TOKEN_VARIABLE];
   }
   if (options.endpoint !== null) {
     env.ANTHROPIC_BASE_URL = options.endpoint.baseUrl;
@@ -446,6 +456,134 @@ export function agentEnvironment(
     DISABLE_TELEMETRY: "1",
     DISABLE_ERROR_REPORTING: "1",
     CLAUDE_AGENT_SDK_CLIENT_APP: client,
+  };
+}
+
+/**
+ * The two credentials the Studio may give a session (C-54), exactly one at
+ * a time: an API key (Anthropic's, or an Anthropic-compatible endpoint's
+ * provider's) in `ANTHROPIC_API_KEY`, or the Operator's Claude subscription
+ * token (from `claude setup-token`) in `CLAUDE_CODE_OAUTH_TOKEN`, for
+ * Anthropic's own API.
+ */
+export const KEY_VARIABLE = "ANTHROPIC_API_KEY";
+export const TOKEN_VARIABLE = "CLAUDE_CODE_OAUTH_TOKEN";
+
+/** Which credential the Studio gave, or why it is not exactly one. */
+export function given(from: Record<string, string | undefined>): "key" | "token" | string {
+  const key = Boolean(from[KEY_VARIABLE]);
+  const token = Boolean(from[TOKEN_VARIABLE]);
+  if (key && token) {
+    return "the Studio gave this session two credentials";
+  }
+  return key ? "key" : token ? "token" : "the Studio gave this session no credential";
+}
+
+/** A credential source the SDK reports, in plain words. */
+function sourceWords(source: string): string {
+  switch (source) {
+    case "":
+      return "a credential it did not name";
+    case "none":
+      return "no API key (a claude.ai login, a token or a cloud provider's credentials)";
+    case "apiKeyHelper":
+      return "a key from an apiKeyHelper command in the settings";
+    case "/login managed key":
+      return "a key that Claude Code's /login stored";
+    default:
+      return `the credential "${source}"`;
+  }
+}
+
+function text(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+/**
+ * Why the credential the SDK reports is not the one the Studio gave, or
+ * null when it is (C-54). `account` is what the SDK said before the first
+ * model call (`initializationResult().account`): given a key, its
+ * `apiKeySource` must be `ANTHROPIC_API_KEY`; given the subscription token,
+ * its `tokenSource` must be `CLAUDE_CODE_OAUTH_TOKEN` on Anthropic's own API
+ * (`firstParty`). Anything else, such as the machine's claude.ai login or an
+ * `apiKeyHelper` from a project's settings, stops the session.
+ */
+export function credentialProblem(
+  account: Record<string, unknown> | null | undefined,
+  from: Record<string, string | undefined>,
+): string | null {
+  const kind = given(from);
+  if (kind === "key") {
+    const source = text(account?.apiKeySource);
+    return source === KEY_VARIABLE ? null : `the SDK would use ${sourceWords(source)} instead of the key it was given`;
+  }
+  if (kind === "token") {
+    const token = text(account?.tokenSource);
+    const api = text(account?.apiProvider);
+    if (token === TOKEN_VARIABLE && api === "firstParty") {
+      return null;
+    }
+    return token !== TOKEN_VARIABLE
+      ? `the SDK would use ${token === "" ? "a credential it did not name" : `the token "${token}"`} instead of the subscription token it was given`
+      : `the SDK would send the subscription token to ${api === "" ? "an API it did not name" : `"${api}"`}, not Anthropic's API`;
+  }
+  return kind;
+}
+
+/**
+ * The same check on the init message's `apiKeySource` (a second line, since
+ * the init message comes with the first turn): the given key, or `none`
+ * with the subscription token. Null when it holds or the field is absent.
+ */
+export function initProblem(apiKeySource: unknown, from: Record<string, string | undefined>): string | null {
+  if (typeof apiKeySource !== "string") {
+    return null;
+  }
+  const expected = given(from) === "token" ? "none" : KEY_VARIABLE;
+  return apiKeySource === expected ? null : `the SDK reported ${sourceWords(apiKeySource)} when the turn began`;
+}
+
+/**
+ * The environment for `claude auth status` (C-54): the Operator's own, so
+ * it reads the Operator's real configuration in their home folder, without
+ * a configuration folder of Agentique's, without any key, token or secret
+ * and without a Claude Code session's variables.
+ */
+export function loginEnvironment(from: Record<string, string | undefined>): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [name, value] of Object.entries(from)) {
+    if (value !== undefined && name !== "CLAUDE_CONFIG_DIR" && !SECRET.test(name) && !PARENT_SESSION.test(name)) {
+      env[name] = value;
+    }
+  }
+  return env;
+}
+
+/**
+ * `claude auth status` (JSON) as a [`Login`], keeping only whether and how
+ * this computer is logged in; its email, organisation and every other field
+ * are dropped here. Null when the output is not that JSON.
+ */
+export function readLogin(stdout: string): Login | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(stdout.trim());
+  } catch {
+    return null;
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const v = value as Record<string, unknown>;
+  if (typeof v.loggedIn !== "boolean") {
+    return null;
+  }
+  const text = (field: unknown) => (typeof field === "string" && field !== "" ? field : null);
+  return {
+    loggedIn: v.loggedIn,
+    authMethod: text(v.authMethod) ?? (v.loggedIn ? "unknown" : "none"),
+    apiProvider: text(v.apiProvider),
+    subscriptionType: text(v.subscriptionType),
   };
 }
 
@@ -499,6 +637,9 @@ export function sdkOptions(
     model: start.model ?? undefined,
     effort: start.effort ?? undefined,
     maxTurns: start.maxTurns,
+    // The session's spend ceiling (C-54): what is left of its objective's
+    // budget, which the SDK stops at with an `error_max_budget_usd` result.
+    maxBudgetUsd: start.maxBudgetUsd ?? undefined,
     resume: start.resume ?? undefined,
     // Each turn forks the session it continues, so a session holds exactly
     // the turns up to its own: after the Operator edits or retries an earlier

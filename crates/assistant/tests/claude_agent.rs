@@ -377,6 +377,111 @@ fn the_companion_gets_the_key_and_nothing_else_of_the_environment() {
     assert!(said.contains("parent=none"), "{said}");
 }
 
+// --- Credentials (C-54) --------------------------------------------------------
+
+/// A session gets exactly one credential: a key, or the Claude subscription
+/// token without any key; the SDK's reported credential reaches the Studio;
+/// the spend ceiling goes to the SDK only on Anthropic's own API.
+#[test]
+fn a_session_gets_one_credential_and_reports_the_one_it_uses() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = agent(dir.path(), fixture()) else {
+        return;
+    };
+    agent.spend_ceiling = Some(1.5);
+    let turn = run(&mut agent, asked("scenario:given Hello."), false);
+    let said = texts(&turn.conversation).join(" ");
+    assert!(
+        said.contains("key=sk-test-key; oauth=none; ceiling=1.5"),
+        "{said}"
+    );
+    let effective = agent.effective.clone().unwrap();
+    assert_eq!(effective.api_key_source, "ANTHROPIC_API_KEY");
+    assert_eq!(effective.credential(), "ANTHROPIC_API_KEY, Anthropic's API");
+    // The subscription token, alone.
+    let mut agent = agent.with_subscription(Secret::new("oauth-test-token"));
+    assert!(agent.label().ends_with("(Claude subscription)"));
+    let turn = run(&mut agent, asked("scenario:given Hello."), false);
+    let said = texts(&turn.conversation).join(" ");
+    assert!(
+        said.contains("key=none; oauth=oauth-test-token; ceiling=1.5"),
+        "{said}"
+    );
+    let effective = agent.effective.clone().unwrap();
+    assert_eq!(
+        (
+            effective.api_key_source.as_str(),
+            effective.token_source.as_str()
+        ),
+        ("none", "CLAUDE_CODE_OAUTH_TOKEN")
+    );
+    assert_eq!(
+        effective.credential(),
+        "CLAUDE_CODE_OAUTH_TOKEN, Anthropic's API"
+    );
+    // Through another provider's endpoint: no ceiling (the SDK estimates
+    // at Claude's prices), and a subscription token is never sent there.
+    let Some(mut deepseek) = agent_with_key(dir.path()) else {
+        return;
+    };
+    deepseek.endpoint = Some(Endpoint::deepseek());
+    deepseek.spend_ceiling = Some(1.5);
+    let turn = run(&mut deepseek, asked("scenario:given Hello."), false);
+    assert!(
+        texts(&turn.conversation).join(" ").contains("ceiling=null"),
+        "{:?}",
+        texts(&turn.conversation)
+    );
+    let mut deepseek = deepseek.with_subscription(Secret::new("oauth-test-token"));
+    let turn = run(&mut deepseek, asked("scenario:given Hello."), false);
+    assert!(texts(&turn.conversation).is_empty());
+    assert!(
+        notices(&turn.conversation)[0].contains("works only with Anthropic's own API"),
+        "{:?}",
+        notices(&turn.conversation)
+    );
+}
+
+fn agent_with_key(dir: &Path) -> Option<ClaudeAgent> {
+    agent(&dir.join("other"), fixture())
+}
+
+/// The companion's refusal of another credential (the machine's claude.ai
+/// login, say) reaches the Conversation as it said it, not as a refused key.
+#[test]
+fn another_credential_is_named_and_nothing_ran() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = agent(dir.path(), fixture()) else {
+        return;
+    };
+    let turn = run(&mut agent, asked("scenario:credential Hello."), false);
+    assert!(turn.calls.is_empty());
+    let notices = notices(&turn.conversation);
+    assert_eq!(notices.len(), 1, "{notices:?}");
+    assert!(
+        notices[0].contains("claude.ai login") && notices[0].contains("before anything reached"),
+        "{notices:?}"
+    );
+    assert!(!notices[0].contains("refused the API key"), "{notices:?}");
+}
+
+/// A Claude plan's usage limit ends the session with the reason.
+#[test]
+fn a_plan_limit_ends_the_session_with_the_reason() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(agent) = agent(dir.path(), fixture()) else {
+        return;
+    };
+    let mut agent = agent.with_subscription(Secret::new("oauth-test-token"));
+    let turn = run(&mut agent, asked("scenario:limit Hello."), false);
+    let notices = notices(&turn.conversation);
+    assert_eq!(notices.len(), 1, "{notices:?}");
+    assert!(
+        notices[0].contains("usage limit is reached") && notices[0].contains("API key"),
+        "{notices:?}"
+    );
+}
+
 // --- Protocol 2: development sessions (C-53) ---------------------------------
 
 fn development(dir: &Path) -> Development {

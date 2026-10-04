@@ -15,6 +15,9 @@ import {
 } from "../src/policy.ts";
 import { type CompanionMessage, LineSplitter, type StartOptions, decode, encode } from "../src/protocol.ts";
 
+/** The credential the Studio gives every session (C-54). */
+const GIVEN = { ANTHROPIC_API_KEY: "sk-test" };
+
 const start: StartOptions = {
   prompt: "Rename the store.",
   systemPrompt: "You are Agentique's Assistant.",
@@ -114,6 +117,7 @@ function standIn(script: (call: (name: string, input: Record<string, unknown>) =
     query() {
       const generator = script((name, input) => tools!(name, input));
       return Object.assign(generator, {
+        initializationResult: async () => ({ account: { apiKeySource: "ANTHROPIC_API_KEY", apiProvider: "firstParty" } }),
         interrupt: async () => {
           interrupted += 1;
           await generator.return(undefined);
@@ -164,7 +168,7 @@ test("a turn carries tool calls to the Studio one at a time, with their tool use
     },
     sdk,
     mcp,
-    { SystemRoot: "C:\\Windows" },
+    { SystemRoot: "C:\\Windows", ...GIVEN },
     "agentique/test",
   );
   await turn.run(start);
@@ -198,7 +202,7 @@ test("a stopped turn answers its waiting call not run and is interrupted", async
     },
     sdk,
     mcp,
-    {},
+    GIVEN,
     "agentique/test",
   );
   await turn.run(start);
@@ -217,7 +221,7 @@ test("a refused key ends the turn at once with a plain reason", async () => {
     yield { type: "system", subtype: "api_retry", attempt: 1, error: "authentication_failed", error_status: 401 };
     throw new Error("must not be reached: the turn stops at the refused key");
   });
-  await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
+  await new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test").run(start);
   assert.deepEqual(sent.map((m) => m.type), ["init", "retry", "error", "done"]);
   const error = sent.at(-2);
   assert.equal(error?.type === "error" && error.kind, "auth");
@@ -230,7 +234,7 @@ test("a tool the Studio did not define is never sent to it", async () => {
     answer = await call("delete_project", {});
     yield { type: "result", subtype: "success", is_error: false, session_id: "s4" };
   });
-  await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
+  await new Turn((m) => sent.push(m), sdk, mcp, GIVEN, "agentique/test").run(start);
   assert.deepEqual(answer, { content: "Not run: delete_project is not one of Agentique's tools.", isError: true });
   assert.ok(!sent.some((m) => m.type === "tool_call"));
 });
