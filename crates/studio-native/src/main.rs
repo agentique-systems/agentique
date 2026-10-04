@@ -95,6 +95,11 @@ pub struct Args {
     /// file (port and token), so an agent can operate this Studio (C-53).
     #[arg(long)]
     control: Option<PathBuf>,
+    /// How fast agents' actions are carried out and shown in this window
+    /// (observer mode, C-54), whatever Settings say: instant, fast or
+    /// observe. Test instances are started with it.
+    #[arg(long, value_parser = crate::control::Speed::NAMES)]
+    control_speed: Option<String>,
     /// Started by the supervising launcher (C-53): hand over to another
     /// build by exiting with its handover code.
     #[arg(long)]

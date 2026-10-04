@@ -193,10 +193,18 @@ impl RenderOnce for Switch {
             theme.pressed
         };
         let knob_id = ElementId::Name(format!("{:?}-knob", self.id).into());
+        // For agents (C-54): what it switches, and whether it is on.
+        let control = crate::ui::target::Control::new("switch", self.label.clone())
+            .id(self.id.to_string())
+            .value(if on { "on" } else { "off" })
+            .enabled(!self.disabled)
+            .selected(on);
         let mut button = gpui_base::Button::new(self.id)
             .role(gpui::Role::Switch)
             .accessibility_label(self.label)
             .disabled(self.disabled)
+            .relative()
+            .child(crate::ui::target::control(control))
             .w(r(30.0))
             .h(r(18.0))
             .p(px(2.0))

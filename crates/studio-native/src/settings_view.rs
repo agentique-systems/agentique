@@ -135,6 +135,9 @@ fn choice_label(choice: &str) -> String {
         "claude-agent" => "Claude Agent".into(),
         "subscription" => "Claude subscription".into(),
         "key" => "API key".into(),
+        "observe" => "Observe".into(),
+        "fast" => "Fast".into(),
+        "instant" => "Instant".into(),
         other => other.to_string(),
     }
 }
@@ -778,7 +781,7 @@ impl SettingsView {
                 .checked(chosen)
             })
             .collect();
-        let menu = cx.new(|cx| Menu::new(items, cx).min_width(220.0));
+        let menu = cx.new(|cx| Menu::new(items, cx).min_width(220.0).owner("settings"));
         let subscription = cx.subscribe_in(&menu, window, |this, _, _: &DismissEvent, _, cx| {
             this.open_menu = None;
             cx.notify();
@@ -1449,7 +1452,11 @@ impl SettingsView {
                 div()
                     .w(r(240.0))
                     .when(disabled, |this| this.opacity(0.5))
-                    .child(TextField::new(&state))
+                    .child(
+                        TextField::new(&state)
+                            .target(setting.label)
+                            .control_id(format!("setting-{id}")),
+                    )
                     .into_any_element()
             }
         };
@@ -1825,10 +1832,13 @@ impl SettingsView {
                     .gap(r(6.0))
                     .when(from_environment, |this| this.opacity(0.5))
                     .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .child(TextField::new(&input).leading(IconName::Key)),
+                        div().flex_1().min_w_0().child(
+                            // Masked: an observation never tells the key.
+                            TextField::new(&input)
+                                .leading(IconName::Key)
+                                .target(format!("{} key", provider.name()))
+                                .control_id(format!("key-{}", provider.id())),
+                        ),
                     )
                     .child(
                         Button::new(
@@ -2133,7 +2143,7 @@ impl Render for SettingsView {
                 }
                 Section::Agents => self.agents_section(query, window, cx),
                 Section::Appearance => {
-                    let rows: Vec<AnyElement> = ["appearance.theme", "appearance.uiScale", "appearance.reducedMotion"]
+                    let rows: Vec<AnyElement> = ["appearance.theme", "appearance.uiScale", "appearance.reducedMotion", "control.speed"]
                         .into_iter()
                         .filter_map(|id| self.setting_row(id, query, window, cx))
                         .collect();
@@ -2431,7 +2441,7 @@ impl Render for SettingsView {
                                             Section::Providers => "Keys for the model providers, kept in the Windows Credential Manager; each is tested before it is saved.",
                                             Section::Assistant => "Which model the Assistant uses, and what it shows.",
                                             Section::Agents => "The model of each of the Orchestrator's agents, its effort and its fallback. An objective resolves them when it starts and keeps them; Sonnet and Opus need an Anthropic API key or your Claude subscription token.",
-                                            Section::Appearance => "Theme, scale and motion. Choices apply at once.",
+                                            Section::Appearance => "Theme, scale, motion and how fast agents act on screen. Choices apply at once.",
                                             Section::Keyboard => "Every command and its shortcut.",
                                             Section::Projects => "Where new projects go, and the projects you opened.",
                                             Section::Advanced => "The settings file, and resetting everything.",

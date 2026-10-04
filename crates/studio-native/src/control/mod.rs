@@ -26,10 +26,26 @@
 //!   step of an agent's action is carried out; requests are also refused up
 //!   front with the reason where that can be told. A change an agent's
 //!   action makes is recorded as the Assistant's, with the agent named.
-//! - Every action and its effect go to the **event trace**; the control an
-//!   agent acts on is marked on screen with who did what, and the title bar
-//!   shows the latest action. **Pause** holds actions (observing is never
-//!   held), **Step** lets one through, **Resume** goes on.
+//! - Every action and its effect go to the **event trace**, with the agent's
+//!   reason (`why`), its goal and who held the window; the control an agent
+//!   acts on is marked on screen with who did what, and the title bar's
+//!   agents chip shows the latest action, its goal, the decision and how it
+//!   ended. **Pause** holds actions (observing is never held), between the
+//!   characters of typed text too; **Step** lets one action or one typed
+//!   character through; **Resume** goes on; **Stop** ends the action in
+//!   progress at once, drops those waiting and refuses agents' actions
+//!   until Resume. Each is the Operator's.
+//! - **One agent acts in a window at a time** (C-54): the first to act holds
+//!   it until it releases it (`release`) or has been idle for [`IDLE`];
+//!   another agent's action meanwhile is refused with who holds it. Observing
+//!   and waiting are never refused, and the Operator's own input never meets
+//!   a hold. The Orchestrator's own steps by rule in an instance it
+//!   supervises through the endpoint (agent [`SUPERVISOR`], such as
+//!   cancelling a dialog in its way) are the supervisor's, like the
+//!   Operator's: they neither take the window nor are refused by a hold.
+//! - **Observer mode** (C-54): at the speed `control.speed` (Settings, or
+//!   `--control-speed`), typing appears character by character, the target
+//!   is shown before a click, and clicks and scrolls are drawn ([`Speed`]).
 //! - Requests come from Agentique's own tools (the Assistant in this
 //!   Studio) and from the local endpoint ([`server`]), which the Orchestrator
 //!   uses to drive a test instance (the endpoint's holder supervises that
@@ -60,6 +76,117 @@ const LISTED: usize = 400;
 /// How long one of the Assistant's requests may wait (while agents are
 /// paused, say) before it is dropped.
 pub const TOOL_WAIT: Duration = Duration::from_secs(15 * 60);
+/// How long an agent keeps the window after its last action ended (ROADMAP
+/// §4.16): long enough for a reasoning model to think between two actions
+/// (seconds to tens of seconds a step), short enough that an agent that
+/// ended without releasing it does not keep others out for long.
+pub const IDLE: Duration = Duration::from_secs(30);
+/// The name under which the Orchestrator's own steps by rule act in an
+/// instance it supervises through the endpoint.
+pub const SUPERVISOR: &str = "orchestrator";
+/// How long a click's ripple and a scroll's arrow are drawn.
+const EFFECT: Duration = Duration::from_millis(700);
+
+/// How fast agents' actions are carried out and shown (observer mode,
+/// C-54): `control.speed` in Settings, or `--control-speed` for a process.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Speed {
+    /// At once, as before observer mode (for tests and tools).
+    Instant,
+    /// A typed character a frame; clicks and scrolls drawn.
+    Fast,
+    /// About twelve characters a second, and the target shown for a moment
+    /// before a click, so the Operator can follow.
+    Observe,
+}
+
+impl Speed {
+    pub const NAMES: [&'static str; 3] = ["instant", "fast", "observe"];
+
+    pub fn from_name(name: &str) -> Option<Speed> {
+        match name {
+            "instant" => Some(Speed::Instant),
+            "fast" => Some(Speed::Fast),
+            "observe" => Some(Speed::Observe),
+            _ => None,
+        }
+    }
+
+    /// The time between two typed characters; `None` types text at once.
+    fn typing(self) -> Option<Duration> {
+        match self {
+            Speed::Instant => None,
+            Speed::Fast => Some(Duration::ZERO),
+            Speed::Observe => Some(Duration::from_millis(83)),
+        }
+    }
+
+    /// How long the target is shown before the pointer presses it.
+    fn dwell(self) -> Duration {
+        match self {
+            Speed::Observe => Duration::from_millis(300),
+            _ => Duration::ZERO,
+        }
+    }
+}
+
+/// Who asked for an action, and for what: the agent, the reason it gave
+/// (its decision) and the goal it serves.
+#[derive(Clone, Debug, Default, PartialEq)]
+struct Who {
+    agent: String,
+    why: String,
+    goal: String,
+}
+
+impl Who {
+    fn of(body: &Value) -> Who {
+        let text = |field: &str| body[field].as_str().unwrap_or_default().trim().to_string();
+        Who {
+            agent: body["agent"].as_str().unwrap_or("an agent").to_string(),
+            why: text("why"),
+            goal: text("goal"),
+        }
+    }
+}
+
+/// The agent holding the window, since its last action.
+#[derive(Clone, Debug)]
+struct Lease {
+    agent: String,
+    last: Instant,
+}
+
+/// What the agents chip shows of an action, while it is carried out and
+/// for a few seconds after: who, its goal, its decision and how it ended.
+#[derive(Clone, Debug)]
+pub struct Outcome {
+    pub agent: String,
+    pub goal: String,
+    pub why: String,
+    pub what: String,
+    /// It ended (done, or refused); else it is being carried out.
+    pub ended: bool,
+    /// Why it was refused.
+    pub refused: Option<String>,
+    pub at: Instant,
+}
+
+/// Where an agent's click or scroll went, drawn for a moment.
+#[derive(Clone, Debug)]
+pub struct Effect {
+    pub at: gpui::Point<gpui::Pixels>,
+    /// None for a click; the distance for a scroll (down positive).
+    pub scroll: Option<f32>,
+    pub started: Instant,
+}
+
+impl Effect {
+    /// How far through its time it is, from 0 to 1.
+    pub fn progress(&self, now: Instant) -> f32 {
+        (now.saturating_duration_since(self.started).as_secs_f32() / EFFECT.as_secs_f32()).min(1.0)
+    }
+}
 
 /// Where a request's answer goes.
 pub enum Reply {
@@ -119,6 +246,8 @@ pub struct Request {
     pub body: Value,
     pub reply: Reply,
     pub deadline: Instant,
+    /// It came through the local endpoint, from the instance's supervisor.
+    pub endpoint: bool,
 }
 
 impl Request {
@@ -127,16 +256,19 @@ impl Request {
             body,
             reply,
             deadline: Instant::now() + within,
+            endpoint: false,
         }
     }
 }
 
-/// The pause gate for agents' actions.
+/// The gate for agents' actions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Gate {
     Run,
     Pause,
     Step,
+    /// The Operator stopped agents: their actions are refused until Resume.
+    Stop,
 }
 
 /// A mark on a control an agent acted on.
@@ -157,6 +289,14 @@ pub struct Event {
     pub what: String,
     pub ok: bool,
     pub detail: Value,
+    /// The reason the agent gave: its decision.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub why: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub goal: String,
+    /// Who held the window then.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub holder: Option<String>,
 }
 
 /// An action an agent asked for.
@@ -218,8 +358,16 @@ pub struct ControlState {
     trace: VecDeque<Event>,
     next_seq: u64,
     pub marks: Vec<Mark>,
+    /// Where agents' clicks and scrolls went, while they are drawn.
+    pub effects: Vec<Effect>,
     /// The latest action, for the title bar.
     pub activity: Option<(String, Instant)>,
+    /// How the latest action ended, for the agents chip.
+    pub last: Option<Outcome>,
+    /// The agent holding the window.
+    lease: Option<Lease>,
+    /// The model's digest at a revision (worked out once per revision).
+    digest: Option<(u64, String)>,
     pub endpoint: Option<server::Endpoint>,
 }
 
@@ -244,15 +392,21 @@ impl Default for ControlState {
             trace: VecDeque::new(),
             next_seq: 1,
             marks: Vec::new(),
+            effects: Vec::new(),
             activity: None,
+            last: None,
+            lease: None,
+            digest: None,
             endpoint: None,
         }
     }
 }
 
 impl ControlState {
-    /// Remembers that `agent` typed into the panel field `id` (a dialog's
-    /// fields are read when its confirm is pressed).
+    /// Remembers that `agent` typed into the panel field `id`. A dialog's
+    /// fields are read when its confirm is pressed, and the palette's text
+    /// only filters it (what runs is chosen by the Enter or click that
+    /// follows, whoever's it is), so neither is remembered.
     fn mark_typed(&mut self, id: &str, region: &str, agent: &str) {
         if !matches!(region, "dialog" | "palette") {
             self.typed.insert(id.to_string(), agent.to_string());
@@ -285,9 +439,77 @@ impl ControlState {
         self.typed.remove(field);
     }
 
-    /// Another project: no field holds what an agent typed.
-    pub fn forget_all_typed(&mut self) {
+    /// Another project: no field holds what an agent typed, and the model's
+    /// digest is worked out again.
+    pub fn another_project(&mut self) {
         self.typed.clear();
+        self.digest = None;
+    }
+
+    /// The digest of the model's printed text (what History saves): the
+    /// first 16 hex digits of its SHA-256, worked out only when the model's
+    /// revision changed since it was last asked for.
+    fn digest(&mut self, project: &agq_system_state::Project) -> String {
+        let revision = project.state().revision();
+        if let Some((at, digest)) = &self.digest
+            && *at == revision
+        {
+            return digest.clone();
+        }
+        let mut text = String::new();
+        for source in agq_language::print(project.state().tree()) {
+            text.push_str(&source.path);
+            text.push('\0');
+            text.push_str(&source.text);
+            text.push('\0');
+        }
+        let digest: String = agq_simulation::digest::text_digest(&text)
+            .chars()
+            .take(16)
+            .collect();
+        self.digest = Some((revision, digest.clone()));
+        digest
+    }
+
+    /// The agent holding the window now: one whose action is in progress,
+    /// or whose last action ended less than [`IDLE`] ago.
+    pub fn holder(&self) -> Option<&str> {
+        self.holder_at(Instant::now())
+    }
+
+    fn holder_at(&self, now: Instant) -> Option<&str> {
+        let lease = self.lease.as_ref()?;
+        let acting = self
+            .active
+            .as_ref()
+            .is_some_and(|active| active.who.agent == lease.agent);
+        (acting || now.saturating_duration_since(lease.last) < IDLE).then_some(lease.agent.as_str())
+    }
+
+    /// `agent` takes the window (or keeps it), unless another agent holds
+    /// it: then why not.
+    fn hold(&mut self, agent: &str, now: Instant) -> Result<(), String> {
+        if let Some(holder) = self.holder_at(now)
+            && holder != agent
+        {
+            return Err(format!(
+                "the window is in use by {holder}; act in your own test instance, or wait"
+            ));
+        }
+        self.lease = Some(Lease {
+            agent: agent.to_string(),
+            last: now,
+        });
+        Ok(())
+    }
+
+    /// `agent` lets the window go: whether it held it.
+    pub fn release(&mut self, agent: &str) -> bool {
+        let held = self.lease.as_ref().is_some_and(|l| l.agent == agent);
+        if held {
+            self.lease = None;
+        }
+        held
     }
 
     /// Removes the endpoint's file (the Studio is closing): nobody connects
@@ -309,7 +531,8 @@ impl ControlState {
     }
 
     /// Drops the actions `agent` asked for that have not started, and its
-    /// waits (fail closed when its turn is stopped).
+    /// waits (fail closed when its turn is stopped); it no longer holds the
+    /// window.
     pub fn cancel(&mut self, agent: &str, why: &str) {
         let mut kept = VecDeque::new();
         for request in self.waiting.drain(..) {
@@ -321,16 +544,18 @@ impl ControlState {
         }
         self.waiting = kept;
         let (cancelled, waits): (Vec<Waiting>, Vec<Waiting>) =
-            self.waits.drain(..).partition(|w| w.agent == agent);
+            self.waits.drain(..).partition(|w| w.who.agent == agent);
         self.waits = waits;
         for wait in cancelled {
             wait.request
                 .reply
                 .send(json!({ "ok": false, "error": why }));
         }
+        self.release(agent);
     }
 
-    /// Actions waiting, an action in progress, or a recent one.
+    /// Actions waiting, an action in progress, or a recent one (still drawn
+    /// in the window).
     pub fn busy(&self) -> bool {
         self.active.is_some()
             || self.waiting.iter().any(|r| r.body["op"] == "act")
@@ -338,6 +563,7 @@ impl ControlState {
                 .activity
                 .as_ref()
                 .is_some_and(|(_, at)| at.elapsed() < ACTIVITY)
+            || self.outcome().is_some()
     }
 
     /// Actions held at the gate.
@@ -356,20 +582,74 @@ impl ControlState {
             .map(|(text, _)| text.as_str())
     }
 
-    fn record(&mut self, agent: &str, what: &str, ok: bool, detail: Value) {
+    /// How the latest action ended, while it is recent.
+    pub fn outcome(&self) -> Option<&Outcome> {
+        self.last.as_ref().filter(|o| o.at.elapsed() < ACTIVITY)
+    }
+
+    /// What the agents chip shows: the action being carried out, else how
+    /// the latest one ended, while it is recent.
+    pub fn shown(&self) -> Option<Outcome> {
+        match &self.active {
+            Some(active) => Some(Outcome {
+                agent: active.who.agent.clone(),
+                goal: active.who.goal.clone(),
+                why: active.who.why.clone(),
+                what: active.what.clone(),
+                ended: false,
+                refused: None,
+                at: active.started,
+            }),
+            None => self.outcome().cloned(),
+        }
+    }
+
+    /// Clicks and scrolls still to draw.
+    pub fn live_effects(&mut self) -> &[Effect] {
+        self.effects.retain(|e| e.started.elapsed() < EFFECT);
+        &self.effects
+    }
+
+    fn record(&mut self, who: &Who, what: &str, ok: bool, detail: Value) {
         let event = Event {
             seq: self.next_seq,
             at: self.started.elapsed().as_millis() as u64,
-            agent: agent.to_string(),
+            agent: who.agent.clone(),
             what: what.to_string(),
             ok,
             detail,
+            why: who.why.clone(),
+            goal: who.goal.clone(),
+            holder: self.holder().map(str::to_string),
         };
         self.next_seq += 1;
         self.trace.push_back(event);
         while self.trace.len() > TRACE {
             self.trace.pop_front();
         }
+    }
+
+    /// An action ended (done or refused): the trace, the window's hold (its
+    /// idle time starts now) and the agents chip say so.
+    fn ended(&mut self, who: &Who, what: &str, answer: &Value) {
+        let now = Instant::now();
+        if let Some(lease) = self.lease.as_mut().filter(|l| l.agent == who.agent) {
+            lease.last = now;
+        }
+        let ok = answer["ok"] != false;
+        self.record(who, what, ok, answer.clone());
+        self.last = Some(Outcome {
+            agent: who.agent.clone(),
+            goal: who.goal.clone(),
+            why: who.why.clone(),
+            what: what.to_string(),
+            ended: true,
+            refused: (!ok).then(|| {
+                let error = answer["error"].as_str().unwrap_or("refused");
+                error.strip_prefix("refused: ").unwrap_or(error).to_string()
+            }),
+            at: now,
+        });
     }
 
     /// Events after `since`.
@@ -475,8 +755,35 @@ pub const OPERATORS_COMMANDS: [CommandId; 10] = [
 /// trust, builds) and the Conversation (messages, answers to the Assistant).
 const OPERATORS_REGIONS: [&str; 2] = ["settings", "conversation"];
 
-/// The agents chip: pausing and resuming agents is the Operator's.
-const OPERATORS_CONTROLS: [&str; 3] = ["agents-pause", "agents-step", "agents-resume"];
+/// The agents chip: pausing, stopping and resuming agents is the Operator's.
+const OPERATORS_CONTROLS: [&str; 4] = [
+    "agents-pause",
+    "agents-step",
+    "agents-resume",
+    "agents-stop",
+];
+
+/// Buttons outside the Operator's regions that do what one of the
+/// Operator's commands does (its effect is refused where it happens).
+const BUTTONS_FOR_COMMANDS: [(&str, CommandId); 2] = [
+    ("inspector-lock", CommandId::Lock),
+    ("trust-local", CommandId::TrustLocal),
+];
+
+/// The command a control runs, by its control id: a palette row or a menu
+/// item (`palette-lock`, `menu-lock`), or a button that does what a command
+/// does.
+fn runs_command(id: &str) -> Option<CommandId> {
+    BUTTONS_FOR_COMMANDS
+        .iter()
+        .find(|(button, _)| *button == id)
+        .map(|(_, command)| *command)
+        .or_else(|| {
+            id.strip_prefix("palette-")
+                .or_else(|| id.strip_prefix("menu-"))
+                .and_then(command_by_name)
+        })
+}
 
 /// The command a key is bound to, if any, comparing keystrokes as GPUI
 /// reads them (so `secondary-l` and `l->l` are the keys they press).
@@ -540,6 +847,16 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
             if matches!(action, Action::Scroll(..)) {
                 return None;
             }
+            // The window's own buttons answer the operating system's
+            // pointer, which an agent's input does not use.
+            if d.control.id.starts_with("window-") {
+                return Some("minimizing, maximizing and closing the window are the Operator's".into());
+            }
+            if let Some(id) = runs_command(&d.control.id)
+                && OPERATORS_COMMANDS.contains(&id)
+            {
+                return Some(format!("`{}` is the Operator's to use", command_name(id)));
+            }
             operators_region(d)
         }
         Action::Key(keys) => {
@@ -566,6 +883,17 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
         },
         _ => None,
     }
+}
+
+/// Whether agents may not act on the control `d` now, by the same rules
+/// that refuse an agent's click on it (or fill, for a field).
+fn operator_only(studio: &Studio, d: &Drawn) -> bool {
+    let action = if d.control.role == "field" {
+        Action::Fill(d.control.id.to_string(), String::new())
+    } else {
+        Action::Click(d.control.id.to_string())
+    };
+    operators_only(studio, &action, std::slice::from_ref(d)).is_some()
 }
 
 fn screen(studio: &Studio) -> &'static str {
@@ -624,7 +952,7 @@ fn bounds(b: gpui::Bounds<gpui::Pixels>) -> Value {
     ])
 }
 
-fn control_json(d: &Drawn) -> Value {
+fn control_json(studio: &Studio, d: &Drawn) -> Value {
     let c = &d.control;
     let mut v = json!({
         "id": c.id.to_string(),
@@ -648,6 +976,9 @@ fn control_json(d: &Drawn) -> Value {
     }
     if c.focused {
         v["focused"] = json!(true);
+    }
+    if operator_only(studio, d) {
+        v["operatorOnly"] = json!(true);
     }
     v
 }
@@ -693,7 +1024,7 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
         .filter(|d| d.control.role != "area")
         .filter(|d| region.is_none_or(|r| d.region == r))
         .take(LISTED)
-        .map(control_json)
+        .map(|d| control_json(studio, d))
         .collect();
     let context = studio.context();
     let commands: Vec<Value> = COMMANDS
@@ -708,6 +1039,9 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             if let Some(why) = why {
                 v["available"] = json!(false);
                 v["why"] = json!(why);
+            }
+            if operators_only(studio, &Action::Command(c.id), &[]).is_some() {
+                v["operatorOnly"] = json!(true);
             }
             Some(v)
         })
@@ -799,6 +1133,9 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
         "agents": {
             "gate": format!("{:?}", studio.control.gate).to_lowercase(),
             "held": studio.control.held(),
+            // The agent holding the window, if any.
+            "holder": studio.control.holder(),
+            "speed": format!("{:?}", studio.control_speed()).to_lowercase(),
             "lastEvent": studio.control.next_seq - 1,
         },
         "commands": commands,
@@ -808,6 +1145,16 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
         observation["cards"] = json!(cards(studio));
     }
     observation
+}
+
+/// A whole number, as the tools' input check reads `integer`: `7`, or `7.0`.
+fn whole(value: &Value) -> Option<u64> {
+    value.as_u64().or_else(|| {
+        value
+            .as_f64()
+            .filter(|n| n.fract() == 0.0 && *n >= 0.0 && *n <= u64::MAX as f64)
+            .map(|n| n as u64)
+    })
 }
 
 /// Reads an action from a request body.
@@ -853,7 +1200,7 @@ pub fn parse_action(body: &Value) -> Result<Action, String> {
                 status_contains: until["statusContains"].as_str().map(str::to_string),
                 idle: until["idle"] == true,
             };
-            let ms = action["timeoutMs"].as_u64().unwrap_or(10_000).min(600_000);
+            let ms = whole(&action["timeoutMs"]).unwrap_or(10_000).min(600_000);
             Ok(Action::Wait(condition, Duration::from_millis(ms)))
         }
         "" => Err("the action needs a `kind`: command, click, fill, key, type, scroll, select, open_project or wait".into()),
@@ -906,7 +1253,7 @@ pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
             ));
         }
     }
-    let Some(seen) = body["observed"].as_u64() else {
+    let Some(seen) = whole(&body["observed"]) else {
         return Some(
             "stale: say which observation you acted on (`observed`: its screenRevision)".into(),
         );
@@ -996,21 +1343,33 @@ enum Step {
     Fill(String, String, u32),
     /// Text into the field that has the focus, checked when it is typed.
     Type(String),
+    /// One character into the field `field`, which must still have the
+    /// focus: observer mode types text a character at a time, and Pause
+    /// holds before each.
+    Char {
+        field: String,
+        c: char,
+    },
     /// Frames for the Studio to show the effect.
     Settle(u32),
 }
 
 struct Active {
     request: Request,
-    agent: String,
+    who: Who,
     what: String,
     steps: VecDeque<Step>,
     started: Instant,
+    speed: Speed,
+    /// The next step waits until then (observer mode's pace).
+    not_before: Option<Instant>,
+    /// It started on a Step: its first typed character goes through too.
+    stepped: bool,
 }
 
 struct Waiting {
     request: Request,
-    agent: String,
+    who: Who,
     what: String,
     condition: Condition,
     until: Instant,
@@ -1018,7 +1377,7 @@ struct Waiting {
 
 /// What the workspace does with the control interface each tick: takes new
 /// requests, answers observations at once, and carries out one step of one
-/// action (held while paused).
+/// action (held while paused, between typed characters too).
 pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut gpui::App) -> bool {
     use crate::workspace::StudioExt;
     let mut changed = false;
@@ -1041,15 +1400,35 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
             .partition(|r| r.deadline <= now);
         studio.control.waiting = waiting.into();
         for request in expired {
-            let agent = request.body["agent"].as_str().unwrap_or("an agent").to_string();
+            let who = Who::of(&request.body);
             let answer = json!({ "ok": false, "error": "the request waited past its deadline (agents were paused) and was dropped; observe again" });
-            studio.control.record(&agent, "a request that waited too long", false, answer.clone());
+            studio
+                .control
+                .ended(&who, "a request that waited too long", &answer);
             request.reply.send(answer);
+        }
+        // Stopped by the Operator: actions are refused (waiting for a
+        // condition is observing, and goes on).
+        if studio.control.gate == Gate::Stop {
+            let (stopped, kept): (Vec<Request>, Vec<Request>) =
+                studio.control.waiting.drain(..).partition(|r| {
+                    r.body["op"] == "act" && r.body["action"]["kind"] != "wait"
+                });
+            studio.control.waiting = kept.into();
+            for request in stopped {
+                let who = Who::of(&request.body);
+                let what = parse_action(&request.body)
+                    .map(|action| describe(&action))
+                    .unwrap_or_else(|_| "an action".into());
+                let answer = json!({ "ok": false, "error": "refused: stopped by the Operator" });
+                studio.control.ended(&who, &what, &answer);
+                request.reply.send(answer);
+            }
         }
         // Waits, beside any action.
         let waits = std::mem::take(&mut studio.control.waits);
         for wait in waits {
-            if holds(studio, &wait.condition, &wait.agent) {
+            if holds(studio, &wait.condition, &wait.who.agent) {
                 let answer = json!({
                     "ok": true,
                     "did": wait.what,
@@ -1058,7 +1437,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                     "dialog": dialog_kind(studio),
                     "status": studio.status,
                 });
-                studio.control.record(&wait.agent, &wait.what, true, answer.clone());
+                studio.control.record(&wait.who, &wait.what, true, answer.clone());
                 wait.request.reply.send(answer);
             } else if now >= wait.until {
                 let answer = json!({ "ok": false, "error": format!(
@@ -1067,7 +1446,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                     dialog_kind(studio).unwrap_or_else(|| "none".into()),
                     studio.status
                 )});
-                studio.control.record(&wait.agent, &wait.what, false, answer.clone());
+                studio.control.record(&wait.who, &wait.what, false, answer.clone());
                 wait.request.reply.send(answer);
             } else {
                 studio.control.waits.push(wait);
@@ -1092,33 +1471,70 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
     let active = studio.update(cx, |studio, _| studio.control.active.take());
     if let Some(mut active) = active {
         changed = true;
+        let gate = studio.read(cx).control.gate;
+        if gate == Gate::Stop {
+            // Ended at once. A press is released away from its target, so
+            // no button stays down and the press does not become a click.
+            if let Some(Step::Release(_)) = active.steps.front() {
+                input::click(
+                    gpui::point(gpui::px(-1.0), gpui::px(-1.0)),
+                    false,
+                    window,
+                    cx,
+                );
+            }
+            let answer = json!({ "ok": false, "error": "refused: stopped by the Operator" });
+            studio.update(cx, |studio, _| {
+                studio.control.acting = None;
+                studio.control.refused = None;
+                studio.control.ended(&active.who, &active.what, &answer);
+            });
+            active.request.reply.send(answer);
+            return changed;
+        }
+        // Observer mode's pace.
+        let early = active.not_before.is_some_and(|at| Instant::now() < at);
+        // Pause holds before a typed character; Step lets one through.
+        let held = !early
+            && matches!(active.steps.front(), Some(Step::Char { .. }))
+            && match gate {
+                Gate::Pause => !std::mem::take(&mut active.stepped),
+                Gate::Step => {
+                    studio.update(cx, |studio, _| studio.control.gate = Gate::Pause);
+                    false
+                }
+                Gate::Run | Gate::Stop => false,
+            };
+        if early || held {
+            studio.update(cx, |studio, _| studio.control.active = Some(active));
+            return changed;
+        }
         match active.steps.pop_front() {
             None => {
                 let summary = studio.update(cx, |studio, _| {
                     studio.control.acting = None;
-                    if let Some(reason) = studio.control.refused.take() {
-                        let answer = json!({ "ok": false, "error": format!("refused: {reason}") });
-                        studio.control.record(&active.agent, &active.what, false, answer.clone());
-                        return answer;
-                    }
-                    let summary = json!({
-                        "ok": true,
-                        "did": active.what,
-                        "screen": screen(studio),
-                        "screenRevision": studio.control.screen_revision,
-                        "dialog": dialog_kind(studio),
-                        "status": studio.status,
-                        "selection": studio.selection.elements(&studio.scene).into_iter().map(|id| element_name(studio, id)).collect::<Vec<_>>(),
-                        "tookMs": active.started.elapsed().as_millis() as u64,
-                    });
-                    studio
-                        .control
-                        .record(&active.agent, &active.what, true, summary.clone());
-                    summary
+                    let answer = match studio.control.refused.take() {
+                        Some(reason) => json!({ "ok": false, "error": format!("refused: {reason}") }),
+                        None => json!({
+                            "ok": true,
+                            "did": active.what,
+                            "screen": screen(studio),
+                            "screenRevision": studio.control.screen_revision,
+                            "dialog": dialog_kind(studio),
+                            "status": studio.status,
+                            "selection": studio.selection.elements(&studio.scene).into_iter().map(|id| element_name(studio, id)).collect::<Vec<_>>(),
+                            "tookMs": active.started.elapsed().as_millis() as u64,
+                        }),
+                    };
+                    studio.control.ended(&active.who, &active.what, &answer);
+                    answer
                 });
                 active.request.reply.send(summary);
             }
             Some(step) => {
+                if matches!(step, Step::Char { .. }) {
+                    active.stepped = false;
+                }
                 let outcome = run_step(studio, step, &mut active, window, cx);
                 match outcome {
                     Ok(()) => studio.update(cx, |studio, _| studio.control.active = Some(active)),
@@ -1127,12 +1543,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                         studio.update(cx, |studio, _| {
                             studio.control.acting = None;
                             studio.control.refused = None;
-                            studio.control.record(
-                                &active.agent,
-                                &active.what,
-                                false,
-                                answer.clone(),
-                            )
+                            studio.control.ended(&active.who, &active.what, &answer)
                         });
                         active.request.reply.send(answer);
                     }
@@ -1156,13 +1567,14 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
             Ok(()) => studio.update(cx, |studio, _| {
                 if studio.control.gate == Gate::Step {
                     studio.control.gate = Gate::Pause;
+                    if let Some(active) = studio.control.active.as_mut() {
+                        active.stepped = true;
+                    }
                 }
             }),
             Err(refused) => {
-                let (request, answer, agent, what) = *refused;
-                studio.update(cx, |studio, _| {
-                    studio.control.record(&agent, &what, false, answer.clone())
-                });
+                let (request, answer, who, what) = *refused;
+                studio.update(cx, |studio, _| studio.control.ended(&who, &what, &answer));
                 request.reply.send(answer);
             }
         }
@@ -1176,18 +1588,44 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
     match body["op"].as_str().unwrap_or_default() {
         "hello" => json!({ "ok": true, "identity": identity(studio) }),
         "observe" => {
+            let digest = studio
+                .project
+                .as_ref()
+                .map(|project| studio.control.digest(project));
             let mut v = observe(
                 studio,
                 window,
                 body["detail"] == "full",
                 body["region"].as_str(),
             );
+            if let Some(digest) = digest {
+                v["project"]["digest"] = json!(digest);
+            }
             v["ok"] = json!(true);
             v
         }
         "events" => {
-            let since = body["since"].as_u64().unwrap_or(0);
+            let since = whole(&body["since"]).unwrap_or(0);
             json!({ "ok": true, "events": studio.control.events(since) })
+        }
+        // The agent lets the window go before its idle time is up.
+        "release" => {
+            let who = Who::of(body);
+            match studio.control.holder() {
+                Some(holder) if holder != who.agent => json!({
+                    "ok": false,
+                    "error": format!("the window is held by {holder}, not by {}", who.agent),
+                }),
+                _ => {
+                    let released = studio.control.release(&who.agent);
+                    if released {
+                        studio
+                            .control
+                            .record(&who, "release the window", true, json!({}));
+                    }
+                    json!({ "ok": true, "released": released })
+                }
+            }
         }
         "gate" => match body["mode"].as_str() {
             Some("pause") => {
@@ -1202,10 +1640,14 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
                 studio.resume_agents();
                 json!({ "ok": true, "gate": "run" })
             }
-            _ => json!({ "ok": false, "error": "`mode` is pause, step or run" }),
+            Some("stop") => {
+                studio.stop_agents();
+                json!({ "ok": true, "gate": "stop" })
+            }
+            _ => json!({ "ok": false, "error": "`mode` is pause, step, run or stop" }),
         },
         other => {
-            json!({ "ok": false, "error": format!("there is no operation `{other}`: hello, observe, act, events or gate") })
+            json!({ "ok": false, "error": format!("there is no operation `{other}`: hello, observe, act, release, events or gate") })
         }
     }
 }
@@ -1223,21 +1665,18 @@ fn cache_commit(studio: &mut Studio) {
     }
 }
 
-type Refused = Box<(Request, Value, String, String)>;
+type Refused = Box<(Request, Value, Who, String)>;
 
 /// Checks an action and plans its steps. A stale or impossible action is
-/// refused before anything happens.
+/// refused before anything happens, and so is one by an agent while
+/// another holds the window.
 fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
-    let agent = request.body["agent"]
-        .as_str()
-        .unwrap_or("an agent")
-        .to_string();
-    let why = request.body["why"].as_str().unwrap_or_default().to_string();
+    let who = Who::of(&request.body);
     let refuse = |request: Request, error: String, what: String| {
         Err(Box::new((
             request,
             json!({ "ok": false, "error": error }),
-            agent.clone(),
+            who.clone(),
             what,
         )))
     };
@@ -1246,6 +1685,20 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         Err(error) => return refuse(request, error, "an action that could not be read".into()),
     };
     let what = describe(&action);
+    // One agent at a time; the supervisor's own steps by rule and waiting
+    // (which only observes) neither take the window nor are refused.
+    let supervisor = request.endpoint && who.agent == SUPERVISOR;
+    let holds_window = !supervisor && !matches!(action, Action::Wait(..));
+    let now = Instant::now();
+    if holds_window
+        && let Some(holder) = studio.control.holder_at(now)
+        && holder != who.agent
+    {
+        let error = format!(
+            "refused: the window is in use by {holder}; act in your own test instance, or wait"
+        );
+        return refuse(request, error, what);
+    }
     if let Some(reason) = stale(studio, &request.body) {
         return refuse(request, reason, what);
     }
@@ -1277,7 +1730,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         }
         Action::Click(name) => match find(name) {
             Ok(d) => {
-                marked = Some((d.shown.unwrap_or(d.clip), d.control.label.to_string()));
+                marked = Some(d.shown.unwrap_or(d.clip));
                 steps.push_back(Step::Reveal(name.clone(), 6));
             }
             Err(error) => return refuse(request, error, what),
@@ -1291,7 +1744,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
                 return refuse(request, error, what);
             }
             Ok(d) => {
-                marked = Some((d.shown.unwrap_or(d.clip), d.control.label.to_string()));
+                marked = Some(d.shown.unwrap_or(d.clip));
                 steps.push_back(Step::Reveal(name.clone(), 6));
                 steps.push_back(Step::Fill(name.clone(), text.clone(), 10));
             }
@@ -1333,7 +1786,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             }
         }
         Action::OpenProject(folder) => {
-            if agent == "Assistant" {
+            if who.agent == "Assistant" {
                 return refuse(
                     request,
                     "refused: opening another project ends your own turn; ask the Operator to open it".into(),
@@ -1363,7 +1816,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             // Beside any action, until it holds or times out.
             studio.control.waits.push(Waiting {
                 request,
-                agent,
+                who,
                 what,
                 condition: condition.clone(),
                 until: Instant::now() + *timeout,
@@ -1372,26 +1825,34 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         }
     }
     steps.push_back(Step::Settle(3));
-    let shown = match &why {
-        why if why.is_empty() => format!("{agent}: {what}"),
-        why => format!("{agent}: {what} — {why}"),
+    let shown = match &who.why {
+        why if why.is_empty() => format!("{}: {what}", who.agent),
+        why => format!("{}: {what} — {why}", who.agent),
     };
-    if let Some((bounds, _)) = marked {
+    if let Some(bounds) = marked {
         studio.control.marks.push(Mark {
             bounds,
             label: shown.clone(),
             until: Instant::now() + MARK,
         });
     }
+    if holds_window {
+        // Free (checked above), or already this agent's.
+        let _ = studio.control.hold(&who.agent, now);
+    }
     studio.control.activity = Some((shown, Instant::now()));
     studio.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
     studio.control.refused = None;
+    let speed = studio.control_speed();
     studio.control.active = Some(Active {
         request,
-        agent,
+        who,
         what,
         steps,
         started: Instant::now(),
+        speed,
+        not_before: None,
+        stepped: false,
     });
     Ok(())
 }
@@ -1427,19 +1888,45 @@ fn run_step(
     // action started: its own controls are not an agent's either.
     if matches!(
         step,
-        Step::Press(..) | Step::Release(..) | Step::Keys(..) | Step::Type(..) | Step::Fill(..)
+        Step::Press(..)
+            | Step::Release(..)
+            | Step::Keys(..)
+            | Step::Type(..)
+            | Step::Fill(..)
+            | Step::Char { .. }
     ) && let Some(kind) = approval(studio.read(cx))
     {
         return Err(format!(
             "refused: the {kind} dialog opened; it asks for the Operator's own approval"
         ));
     }
-    let agent = active.agent.clone();
+    let agent = active.who.agent.clone();
     studio.update(cx, |studio, _| studio.control.acting = Some(agent));
     let result = carry_out(studio, step, active, window, cx);
     let clear = studio.clone();
     cx.defer(move |cx| clear.update(cx, |studio, _| studio.control.acting = None));
     result
+}
+
+/// The text's characters as steps, before the action's next steps, at the
+/// action's pace; or, at `instant`, typed now.
+fn type_into(
+    field: &str,
+    text: &str,
+    active: &mut Active,
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) {
+    if active.speed.typing().is_none() {
+        input::type_text(text, window, cx);
+        return;
+    }
+    for c in text.chars().rev() {
+        active.steps.push_front(Step::Char {
+            field: field.to_string(),
+            c,
+        });
+    }
 }
 
 fn carry_out(
@@ -1450,15 +1937,44 @@ fn carry_out(
     cx: &mut gpui::App,
 ) -> Result<(), String> {
     use crate::workspace::StudioExt;
+    let drawn_effect = |studio: &gpui::Entity<Studio>, cx: &mut gpui::App, effect: Effect| {
+        studio.update(cx, |studio, _| studio.control.effects.push(effect))
+    };
     match step {
-        Step::Press(at) => input::click(at, true, window, cx),
+        Step::Press(at) => {
+            input::click(at, true, window, cx);
+            if active.speed != Speed::Instant {
+                drawn_effect(
+                    studio,
+                    cx,
+                    Effect {
+                        at,
+                        scroll: None,
+                        started: Instant::now(),
+                    },
+                );
+            }
+        }
         Step::Release(at) => input::click(at, false, window, cx),
         Step::Keys(keys) => {
             for key in keys {
                 input::press(&key, window, cx)?;
             }
         }
-        Step::Scroll(at, dy) => input::scroll(at, dy, window, cx),
+        Step::Scroll(at, dy) => {
+            input::scroll(at, dy, window, cx);
+            if active.speed != Speed::Instant {
+                drawn_effect(
+                    studio,
+                    cx,
+                    Effect {
+                        at,
+                        scroll: Some(dy),
+                        started: Instant::now(),
+                    },
+                );
+            }
+        }
         Step::Command(id) => {
             window.dispatch_action(Box::new(crate::commands::Run(id)), cx);
         }
@@ -1488,12 +2004,43 @@ fn carry_out(
                     let at = shown.center();
                     active.steps.push_front(Step::Release(at));
                     active.steps.push_front(Step::Press(at));
+                    // Observer mode: the target, ringed and labelled, a
+                    // moment before the press.
+                    let dwell = active.speed.dwell();
+                    if !dwell.is_zero() {
+                        active.not_before = Some(Instant::now() + dwell);
+                    }
+                    studio.update(cx, |studio, _| {
+                        let label = studio
+                            .control
+                            .activity
+                            .as_ref()
+                            .map(|(text, _)| text.clone())
+                            .unwrap_or_default();
+                        studio.control.marks.retain(|m| m.label != label);
+                        studio.control.marks.push(Mark {
+                            bounds: shown,
+                            label,
+                            until: Instant::now() + dwell + MARK,
+                        });
+                    });
                 }
                 None if tries > 0 => {
                     // Scroll its panel by the distance to it, as the
                     // Operator would, and look again next frame.
                     let dy = f32::from(d.bounds.center().y - d.clip.center().y);
                     input::scroll(d.clip.center(), dy, window, cx);
+                    if active.speed != Speed::Instant {
+                        drawn_effect(
+                            studio,
+                            cx,
+                            Effect {
+                                at: d.clip.center(),
+                                scroll: Some(dy),
+                                started: Instant::now(),
+                            },
+                        );
+                    }
                     window.refresh();
                     active.steps.push_front(Step::Reveal(name, tries - 1));
                 }
@@ -1506,12 +2053,12 @@ fn carry_out(
         }
         Step::Fill(name, text, tries) => {
             let drawn = target::drawn();
-            let focused = drawn.iter().any(|d| {
+            let field = drawn.iter().find(|d| {
                 d.control.focused
                     && d.control.role == "field"
                     && (d.control.id == name.as_str() || d.control.label == name.as_str())
             });
-            if !focused {
+            let Some(field) = field else {
                 if tries == 0 {
                     return Err(format!(
                         "`{name}` did not take the focus, so nothing was typed"
@@ -1520,18 +2067,14 @@ fn carry_out(
                 window.refresh();
                 active.steps.push_front(Step::Fill(name, text, tries - 1));
                 return Ok(());
-            }
-            let region = drawn
-                .iter()
-                .find(|d| d.control.focused && d.control.role == "field")
-                .map(|d| d.region)
-                .unwrap_or(target::ROOT);
+            };
+            let (id, region) = (field.control.id.to_string(), field.region);
             input::press("ctrl-a", window, cx)?;
             input::press("backspace", window, cx)?;
-            input::type_text(&text, window, cx);
-            let agent = active.agent.clone();
+            type_into(&id, &text, active, window, cx);
+            let agent = active.who.agent.clone();
             studio.update(cx, |studio, _| {
-                studio.control.mark_typed(&name, region, &agent)
+                studio.control.mark_typed(&id, region, &agent)
             });
         }
         Step::Type(text) => {
@@ -1547,11 +2090,53 @@ fn carry_out(
             }
             let id = field.control.id.to_string();
             let region = field.region;
-            input::type_text(&text, window, cx);
-            let agent = active.agent.clone();
+            type_into(&id, &text, active, window, cx);
+            let agent = active.who.agent.clone();
             studio.update(cx, |studio, _| {
                 studio.control.mark_typed(&id, region, &agent)
             });
+        }
+        Step::Char { field, c } => {
+            // Only into the field the text was meant for: the Operator may
+            // have moved the focus meanwhile.
+            let drawn = target::drawn();
+            let focused = drawn.iter().rev().find(|d| d.control.focused);
+            let Some(d) = focused.filter(|d| d.control.role == "field" && d.control.id == field)
+            else {
+                let left = 1 + active
+                    .steps
+                    .iter()
+                    .filter(|s| matches!(s, Step::Char { .. }))
+                    .count();
+                return Err(format!(
+                    "the focus left `{field}` while typing, so the last {left} character(s) were not typed"
+                ));
+            };
+            let bounds = d.shown.unwrap_or(d.bounds);
+            if c == '\n' {
+                input::press("enter", window, cx)?;
+            } else {
+                input::type_char(c, window, cx);
+            }
+            // The field typed into stays ringed while the text goes in.
+            let pace = active.speed.typing().unwrap_or_default();
+            studio.update(cx, |studio, _| {
+                let label = studio
+                    .control
+                    .activity
+                    .as_ref()
+                    .map(|(text, _)| text.clone())
+                    .unwrap_or_default();
+                studio.control.marks.retain(|m| m.label != label);
+                studio.control.marks.push(Mark {
+                    bounds,
+                    label,
+                    until: Instant::now() + pace + MARK,
+                });
+            });
+            if !pace.is_zero() {
+                active.not_before = Some(Instant::now() + pace);
+            }
         }
         Step::Settle(frames) => {
             if frames > 1 {
@@ -1578,8 +2163,20 @@ impl Studio {
         true
     }
 
-    /// Pauses agents (C-53): the control interface holds their next action,
-    /// and the Assistant's running turn holds at its next tool call.
+    /// How fast agents' actions are carried out and shown: this process's
+    /// `--control-speed`, else the setting.
+    pub fn control_speed(&self) -> Speed {
+        self.args
+            .control_speed
+            .as_deref()
+            .and_then(Speed::from_name)
+            .or_else(|| Speed::from_name(&self.settings.text("control.speed")))
+            .unwrap_or(Speed::Observe)
+    }
+
+    /// Pauses agents (C-53): the control interface holds their next action
+    /// (or typed character), and the Assistant's running turn holds at its
+    /// next tool call.
     pub fn pause_agents(&mut self) {
         if self.refused_to_agents("pausing agents") {
             return;
@@ -1590,7 +2187,8 @@ impl Studio {
         self.mark(crate::studio::Dirty::STATUS);
     }
 
-    /// Lets one action (and one tool call) through, then holds again.
+    /// Lets one action, or one typed character (and one tool call), through,
+    /// then holds again.
     pub fn step_agents(&mut self) {
         if self.refused_to_agents("stepping agents") {
             return;
@@ -1602,17 +2200,31 @@ impl Studio {
         self.mark(crate::studio::Dirty::STATUS);
     }
 
-    /// Lets agents go on.
+    /// Lets agents go on (after a pause or a stop).
     pub fn resume_agents(&mut self) {
         if self.refused_to_agents("resuming agents") {
             return;
+        }
+        if self.control.gate == Gate::Stop {
+            self.status = "Agents may act again".into();
         }
         self.control.gate = Gate::Run;
         self.resume_assistant();
         self.mark(crate::studio::Dirty::STATUS);
     }
 
-    /// Whether agents are held (or will be at their next action).
+    /// Stops agents' actions (C-54): the one in progress ends at once, those
+    /// waiting are dropped, and further ones are refused until Resume.
+    pub fn stop_agents(&mut self) {
+        if self.refused_to_agents("stopping agents") {
+            return;
+        }
+        self.control.gate = Gate::Stop;
+        self.status = "Agents stopped: their actions are refused until you resume them".into();
+        self.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
+    }
+
+    /// Whether agents are held (or will be at their next action), or stopped.
     pub fn agents_paused(&self) -> bool {
         self.control.gate != Gate::Run || self.assistant_paused()
     }
@@ -1672,6 +2284,7 @@ mod tests {
             shown: None,
             clip: gpui::Bounds::default(),
             region,
+            layer: 0,
             order: 0,
         }
     }
@@ -1841,11 +2454,258 @@ mod tests {
         app.control.forget_typed("Value");
         assert!(!app.control.begin_typed_commit(Some("Value")));
         app.control.mark_typed("Guard", "inspector", "evaluator");
-        app.control.forget_all_typed();
+        app.control.another_project();
         assert!(!app.control.begin_typed_commit(Some("Guard")));
         // A dialog's fields are read when its confirm is pressed: not marked.
         app.control.mark_typed("Name", "dialog", "evaluator");
         assert!(!app.control.begin_typed_commit(Some("Name")));
+    }
+
+    /// An action request as the endpoint or a tool sends it, against the
+    /// Studio's first screen.
+    fn act(app: &Studio, agent: &str, action: Value, endpoint: bool) -> Request {
+        let (reply, _) = std::sync::mpsc::channel();
+        let mut request = Request::new(
+            json!({
+                "op": "act", "agent": agent, "why": "a reason", "goal": "a goal",
+                "expect": { "instance": app.control.instance },
+                "observed": app.control.screen_revision,
+                "action": action,
+            }),
+            Reply::Channel(reply),
+            Duration::from_secs(5),
+        );
+        request.endpoint = endpoint;
+        request
+    }
+
+    fn refusal(result: Result<(), Refused>) -> Option<String> {
+        result
+            .err()
+            .map(|refused| refused.1["error"].as_str().unwrap_or_default().to_string())
+    }
+
+    #[test]
+    fn one_agent_holds_the_window_until_it_releases_it_or_is_idle() {
+        let mut control = ControlState::default();
+        let t0 = Instant::now();
+        assert_eq!(control.hold("explorer", t0), Ok(()));
+        assert_eq!(control.holder_at(t0), Some("explorer"));
+        // Another agent meanwhile is refused with who holds the window.
+        let refused = control.hold("evaluator", t0 + Duration::from_secs(5));
+        assert_eq!(
+            refused,
+            Err("the window is in use by explorer; act in your own test instance, or wait".into())
+        );
+        // The holder acting again keeps it, and its idle time starts again.
+        assert_eq!(
+            control.hold("explorer", t0 + Duration::from_secs(20)),
+            Ok(())
+        );
+        assert_eq!(
+            control.holder_at(t0 + Duration::from_secs(45)),
+            Some("explorer")
+        );
+        // Idle for IDLE: the window is free.
+        let later = t0 + Duration::from_secs(20) + IDLE;
+        assert_eq!(control.holder_at(later), None);
+        assert_eq!(control.hold("evaluator", later), Ok(()));
+        // Only the holder releases it.
+        assert!(!control.release("explorer"));
+        assert!(control.release("evaluator"));
+        assert_eq!(control.holder_at(later), None);
+    }
+
+    #[test]
+    fn an_agent_is_refused_while_another_holds_the_window_but_waiting_and_the_supervisor_are_not() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("window-hold");
+        let graph = json!({ "kind": "command", "id": "graph" });
+        let request = act(&app, "explorer", graph.clone(), true);
+        assert_eq!(refusal(start(&mut app, request)), None);
+        assert_eq!(app.control.holder(), Some("explorer"));
+        // The explorer's action ends; it still holds the window.
+        app.control.active = None;
+        assert_eq!(app.control.holder(), Some("explorer"));
+        let request = act(&app, "evaluator", graph.clone(), true);
+        let refused = refusal(start(&mut app, request)).expect("refused");
+        assert_eq!(
+            refused,
+            "refused: the window is in use by explorer; act in your own test instance, or wait"
+        );
+        // Waiting only observes.
+        let wait = json!({ "kind": "wait", "until": { "dialog": null }, "timeoutMs": 10 });
+        let request = act(&app, "evaluator", wait, true);
+        assert_eq!(refusal(start(&mut app, request)), None);
+        // The supervisor's own step by rule, through the endpoint, neither
+        // waits for the window nor takes it; the same name from inside the
+        // Studio is an agent like any other.
+        let request = act(&app, SUPERVISOR, graph.clone(), true);
+        assert_eq!(refusal(start(&mut app, request)), None);
+        app.control.active = None;
+        assert_eq!(app.control.holder(), Some("explorer"));
+        let request = act(&app, SUPERVISOR, graph.clone(), false);
+        assert!(refusal(start(&mut app, request)).is_some());
+        // An agent whose turn is stopped lets the window go.
+        app.control.cancel("explorer", "stopped");
+        assert_eq!(app.control.holder(), None);
+        let request = act(&app, "evaluator", graph, true);
+        assert_eq!(refusal(start(&mut app, request)), None);
+        // How an action ended goes to the trace, with the reason, the goal
+        // and who held the window, and to the agents chip.
+        app.control.ended(
+            &Who {
+                agent: "evaluator".into(),
+                why: "a reason".into(),
+                goal: "a goal".into(),
+            },
+            "command graph",
+            &json!({ "ok": false, "error": "refused: the window is in use by explorer" }),
+        );
+        let event = serde_json::to_value(app.control.events(0).last().unwrap()).unwrap();
+        assert_eq!(event["why"], "a reason");
+        assert_eq!(event["goal"], "a goal");
+        assert_eq!(event["holder"], "evaluator");
+        assert_eq!(event["ok"], false);
+        let outcome = app.control.outcome().expect("the chip shows how it ended");
+        assert_eq!(
+            outcome.refused.as_deref(),
+            Some("the window is in use by explorer")
+        );
+    }
+
+    #[test]
+    fn stop_is_the_operators_and_lasts_until_resume() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("stop-agents");
+        app.control.acting = Some("explorer".into());
+        app.stop_agents();
+        assert_eq!(app.control.gate, Gate::Run, "an agent cannot stop agents");
+        app.control.acting = None;
+        app.control.refused = None;
+        app.stop_agents();
+        assert_eq!(app.control.gate, Gate::Stop);
+        assert!(app.agents_paused());
+        app.control.acting = Some("explorer".into());
+        app.resume_agents();
+        assert_eq!(app.control.gate, Gate::Stop, "nor resume them");
+        app.control.acting = None;
+        app.resume_agents();
+        assert_eq!(app.control.gate, Gate::Run);
+        let chip = [drawn("agents-stop", "button", "title", false)];
+        assert!(operators_only(&app, &Action::Click("agents-stop".into()), &chip).is_some());
+    }
+
+    #[test]
+    fn observed_controls_and_commands_say_whether_agents_may_act_on_them() {
+        let (app, _folder) = crate::edit::app_tests::studio("operator-only");
+        let only = |id: &str, role: &'static str, region: &'static str| {
+            operator_only(&app, &drawn(id, role, region, false))
+        };
+        assert!(!only("dialog-confirm", "button", "dialog"));
+        assert!(!only("palette-graph", "option", "palette"));
+        assert!(!only("palette-search", "field", "palette"));
+        assert!(!only("Name", "field", "inspector"));
+        assert!(only("palette-lock", "option", "palette"));
+        assert!(only("menu-lock", "item", target::ROOT));
+        assert!(only("settings-save", "button", "settings"));
+        assert!(
+            only("Automatic", "item", "conversation"),
+            "a menu the Conversation opened"
+        );
+        assert!(only("objective-intent", "field", "inspector"));
+        assert!(only("objective-merge", "switch", "inspector"));
+        assert!(only("window-close", "button", "title"));
+        assert!(only("agents-pause", "button", "title"));
+        assert!(only("inspector-lock", "button", "inspector"));
+        assert!(only("trust-local", "button", "inspector"));
+        assert!(!only("status-problems", "button", "status"));
+        let command = |id| operators_only(&app, &Action::Command(id), &[]).is_some();
+        assert!(command(CommandId::Lock));
+        assert!(command(CommandId::Undo));
+        assert!(!command(CommandId::Graph));
+        // One source of truth: the same rule refuses the click.
+        let palette = [drawn("palette-lock", "option", "palette", false)];
+        let refused = operators_only(&app, &Action::Click("palette-lock".into()), &palette);
+        assert_eq!(refused.as_deref(), Some("`lock` is the Operator's to use"));
+    }
+
+    #[test]
+    fn the_models_digest_follows_its_text_and_comes_back_with_undo() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("digest");
+        let digest = |app: &mut Studio| {
+            let project = app.project.as_ref().unwrap();
+            app.control.digest(project)
+        };
+        let before = digest(&mut app);
+        assert_eq!(before.len(), 16);
+        assert_eq!(digest(&mut app), before, "stable");
+        crate::edit::app_tests::part(&mut app, "api");
+        let after = digest(&mut app);
+        assert_ne!(after, before);
+        app.execute(CommandId::Undo);
+        assert_eq!(digest(&mut app), before, "undo restores the text exactly");
+        app.execute(CommandId::Redo);
+        assert_eq!(digest(&mut app), after);
+        // Worked out once per revision; another project starts afresh.
+        app.control.digest = Some((u64::MAX, "stale".into()));
+        app.control.another_project();
+        assert_eq!(app.control.digest, None);
+    }
+
+    /// The digest's cost at 10k elements (W12.2): worked out once per model
+    /// revision, so observing stays cheap.
+    #[test]
+    #[cfg_attr(debug_assertions, ignore = "budgets are measured in release builds")]
+    fn the_models_digest_is_worked_out_once_per_revision_at_ten_thousand_elements() {
+        let (mut app, folder) = crate::edit::app_tests::studio("digest-10k");
+        let project = folder.0.join("P");
+        std::fs::write(
+            project.join("model").join("P.sysml"),
+            crate::edit::app_tests::large_model(850),
+        )
+        .unwrap();
+        app.open_project(&project);
+        let elements = app.project.as_ref().unwrap().state().tree().len();
+        assert!(elements >= 10_000, "{elements} elements");
+        let project = app.project.as_ref().unwrap();
+        let started = Instant::now();
+        app.control.digest(project);
+        let first = started.elapsed();
+        let started = Instant::now();
+        app.control.digest(project);
+        let again = started.elapsed();
+        println!(
+            "the model's digest at {elements} elements: {first:?} after a change, {again:?} otherwise"
+        );
+        assert!(again < Duration::from_millis(1), "{again:?}");
+    }
+
+    #[test]
+    fn speeds_and_whole_numbers_are_read_as_declared() {
+        assert_eq!(Speed::from_name("observe"), Some(Speed::Observe));
+        assert_eq!(Speed::from_name("slow"), None);
+        for name in Speed::NAMES {
+            assert!(Speed::from_name(name).is_some(), "{name}");
+            assert!(
+                crate::settings::allowed(
+                    crate::settings::setting("control.speed").unwrap(),
+                    &json!(name)
+                ),
+                "{name} is a choice of the setting"
+            );
+        }
+        // Observe: about twelve characters a second, and a moment on the
+        // target; instant types at once.
+        let per_second = 1000 / Speed::Observe.typing().unwrap().as_millis();
+        assert!((11..=13).contains(&per_second), "{per_second}");
+        assert_eq!(Speed::Observe.dwell(), Duration::from_millis(300));
+        assert_eq!(Speed::Fast.typing(), Some(Duration::ZERO));
+        assert_eq!(Speed::Instant.typing(), None);
+        let (app, _folder) = crate::edit::app_tests::studio("speed");
+        assert_eq!(app.control_speed(), Speed::Observe, "the default");
+        assert_eq!(whole(&json!(7)), Some(7));
+        assert_eq!(whole(&json!(7.0)), Some(7));
+        assert_eq!(whole(&json!(7.5)), None);
+        assert_eq!(whole(&json!("7")), None);
     }
 
     #[test]

@@ -155,6 +155,9 @@ impl Workspace {
         // Weak: the ticker must not keep the Studio alive.
         let controlled = studio.downgrade();
         let ticker = cx.spawn_in(window, async move |this, cx| {
+            // Agents were busy at the last tick: one more frame takes what
+            // they left on screen (the chip, marks) away.
+            let mut was_busy = false;
             loop {
                 cx.background_executor()
                     .timer(Duration::from_millis(16))
@@ -170,9 +173,12 @@ impl Workspace {
                 };
                 let _ = cx.update(|window, cx| {
                     let changed = crate::control::tick(&controlled, window, cx);
-                    if changed || controlled.read(cx).control.busy() {
+                    let busy = controlled.read(cx).control.busy();
+                    let was = std::mem::replace(&mut was_busy, busy);
+                    if changed || busy || was {
                         controlled.act(cx, |studio| {
                             studio.control.live_marks();
+                            studio.control.live_effects();
                             studio.mark(Dirty::STATUS | Dirty::OVERLAY)
                         });
                     }
@@ -521,6 +527,7 @@ impl Workspace {
             let mut item = MenuItem::action(label, move |_, cx| {
                 studio.act(cx, |studio| studio.execute(id))
             })
+            .id(format!("menu-{}", crate::control::command_name(id)))
             .shortcut(command.shortcut)
             .disabled(commands::unavailable(id, &context));
             if let Some(glyph) = command_icon(id) {
@@ -767,6 +774,14 @@ impl Render for Workspace {
             .filter(|m| m.until > now)
             .cloned()
             .collect();
+        let effects: Vec<crate::control::Effect> = studio
+            .control
+            .effects
+            .iter()
+            .filter(|e| e.progress(now) < 1.0)
+            .cloned()
+            .collect();
+        let reduced_motion = studio.reduced_motion;
         let root = div()
             .id("workspace")
             .key_context("Workspace")
@@ -845,6 +860,7 @@ impl Render for Workspace {
                     .child(ui::target::region_end())
             })
             .children(agent_marks(&marks, &theme))
+            .children(agent_effects(&effects, now, reduced_motion, &theme))
             .when_some(context_menu, |this, (position, menu)| {
                 this.child(
                     deferred(
@@ -943,6 +959,140 @@ fn agent_marks(marks: &[crate::control::Mark], theme: &ui::theme::Theme) -> Vec<
         .collect()
 }
 
+/// Where agents clicked and scrolled (observer mode, C-54): a ripple at a
+/// click's point, an arrow at a scroll's, fading out. Under reduced motion
+/// the ripple does not grow.
+fn agent_effects(
+    effects: &[crate::control::Effect],
+    now: std::time::Instant,
+    reduced_motion: bool,
+    theme: &ui::theme::Theme,
+) -> Vec<gpui::AnyElement> {
+    effects
+        .iter()
+        .map(|effect| {
+            let t = effect.progress(now);
+            let fade = 1.0 - t;
+            match effect.scroll {
+                None => {
+                    let size = if reduced_motion {
+                        22.0
+                    } else {
+                        10.0 + 28.0 * t
+                    };
+                    div()
+                        .absolute()
+                        .left(effect.at.x - px(size / 2.0))
+                        .top(effect.at.y - px(size / 2.0))
+                        .size(px(size))
+                        .rounded_full()
+                        .border_2()
+                        .border_color(theme.accent.solid.opacity(fade))
+                        .bg(theme.accent.solid.opacity(0.18 * fade))
+                        .into_any_element()
+                }
+                Some(dy) => div()
+                    .absolute()
+                    .left(effect.at.x - px(14.0))
+                    .top(effect.at.y - px(14.0))
+                    .size(px(28.0))
+                    .rounded_full()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .bg(theme.accent.solid.opacity(0.85 * fade))
+                    .child(
+                        icon(if dy < 0.0 {
+                            IconName::ChevronUp
+                        } else {
+                            IconName::ChevronDown
+                        })
+                        .size(16.0)
+                        .color(theme.accent.on_solid.opacity(fade)),
+                    )
+                    .into_any_element(),
+            }
+        })
+        .collect()
+}
+
+/// What the latest agent action was for and how it ended, under the agents
+/// chip for a few seconds (observer mode, C-54): the agent and its goal,
+/// its decision (the reason it gave) and the outcome.
+fn agent_outcome(outcome: &crate::control::Outcome, theme: &ui::theme::Theme) -> gpui::AnyElement {
+    let line = |text: String, colour: gpui::Hsla| {
+        div()
+            .min_w_0()
+            .overflow_hidden()
+            .text_ellipsis()
+            .whitespace_nowrap()
+            .text_color(colour)
+            .child(text)
+    };
+    let (glyph, colour, result) = match &outcome.refused {
+        None if !outcome.ended => (
+            IconName::Agent,
+            theme.text_secondary,
+            format!("Doing: {}", outcome.what),
+        ),
+        None => (
+            IconName::CircleCheck,
+            theme.success.text,
+            format!("Done: {}", outcome.what),
+        ),
+        Some(reason) => (
+            IconName::CircleX,
+            theme.danger.text,
+            format!("Refused: {reason}"),
+        ),
+    };
+    div()
+        .id("agents-outcome")
+        .w(r(340.0))
+        .p(r(10.0))
+        .flex()
+        .flex_col()
+        .gap(r(3.0))
+        .rounded(r(crate::tokens::radius::MENU))
+        .bg(theme.overlay)
+        .border_1()
+        .border_color(theme.border)
+        .shadow(theme.shadow_overlay())
+        .text_size(r(theme::text::XS))
+        .role(gpui::Role::Status)
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .gap(r(6.0))
+                .child(icon(IconName::Agent).size(12.0).color(theme.accent.solid))
+                .child(
+                    div()
+                        .font_weight(theme::SEMIBOLD)
+                        .text_color(theme.text)
+                        .child(outcome.agent.clone()),
+                )
+                .when(!outcome.goal.is_empty(), |this| {
+                    this.child(line(format!("· {}", outcome.goal), theme.text_secondary))
+                }),
+        )
+        .when(!outcome.why.is_empty(), |this| {
+            this.child(line(
+                format!("Decision: {}", outcome.why),
+                theme.text_secondary,
+            ))
+        })
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .gap(r(6.0))
+                .child(icon(glyph).size(12.0).color(colour))
+                .child(line(result, colour)),
+        )
+        .into_any_element()
+}
+
 /// The hairline between the Surface and a docked column; drag it to resize
 /// the column.
 fn splitter(dock: Dock, cx: &App) -> impl IntoElement {
@@ -1008,19 +1158,37 @@ impl Workspace {
         let height = 40.0;
         // What agents are doing (C-53): the latest action, and the gate.
         let agents_paused = studio.agents_paused();
+        let agents_stopped = studio.control.gate == crate::control::Gate::Stop;
         let agents_shown = studio.control.busy()
             || agents_paused
             || (studio.conversation.running() && studio.conversation.steerable);
-        let agent_activity = studio
-            .control
-            .activity()
-            .map(str::to_string)
-            .or_else(|| studio.conversation.phase.map(|p| format!("Assistant: {p}")))
-            .unwrap_or_else(|| "Agents".to_string());
+        let agent_activity = if agents_stopped {
+            "Agents stopped".to_string()
+        } else {
+            studio
+                .control
+                .activity()
+                .map(str::to_string)
+                .or_else(|| studio.conversation.phase.map(|p| format!("Assistant: {p}")))
+                .unwrap_or_else(|| "Agents".to_string())
+        };
         let held = studio.control.held();
+        // The action being carried out, or how the latest ended for a few
+        // seconds (C-54), under the chip.
+        let outcome = studio.control.shown();
+        // The window moves by the bar's empty stretches only: Windows asks
+        // which area is under the pointer and GPUI answers with the first
+        // window-control area there, so a drag area around the buttons
+        // would take their presses (and min, max and close their own).
+        let drag = || {
+            div()
+                .flex_1()
+                .min_w_0()
+                .h_full()
+                .window_control_area(WindowControlArea::Drag)
+        };
         div()
             .id("title-bar")
-            .window_control_area(WindowControlArea::Drag)
             .flex_none()
             .h(r(height))
             .pl(r(12.0))
@@ -1056,7 +1224,7 @@ impl Workspace {
                         this.child(save_state(&saved, uncommitted, &theme))
                     }),
             )
-            .child(div().flex_1().min_w_0())
+            .child(drag())
             // Agents at work (C-53): what the latest one did, Pause or
             // Resume, and Step.
             .when(agents_shown, |this| {
@@ -1067,13 +1235,15 @@ impl Workspace {
                         .flex()
                         .items_center()
                         .gap(r(4.0))
-                        .max_w(r(420.0))
+                        .max_w(r(460.0))
                         .min_w_0()
                         .px(r(8.0))
                         .h(r(26.0))
                         .rounded(r(crate::tokens::radius::CONTROL))
                         .border_1()
-                        .border_color(if agents_paused {
+                        .border_color(if agents_stopped {
+                            theme.danger.solid
+                        } else if agents_paused {
                             theme.warning.solid
                         } else {
                             theme.accent.solid
@@ -1122,13 +1292,13 @@ impl Workspace {
                                 })
                                 .into_any_element()
                         })
-                        .when(agents_paused, |this| {
+                        .when(agents_paused && !agents_stopped, |this| {
                             this.child(
                                 Button::new("agents-step", "Step")
                                     .small()
                                     .ghost()
                                     .tooltip(
-                                        "Let one action or tool call through, then hold again",
+                                        "Let one action, typed character or tool call through, then hold again",
                                         None,
                                     )
                                     .on_click({
@@ -1137,6 +1307,39 @@ impl Workspace {
                                             studio.act(cx, |studio| studio.step_agents())
                                         }
                                     }),
+                            )
+                        })
+                        .when(!agents_stopped, |this| {
+                            this.child(
+                                Button::new("agents-stop", "Stop")
+                                    .small()
+                                    .ghost()
+                                    .icon(IconName::Stop)
+                                    .tooltip(
+                                        "End agents' action at once and refuse their actions until you resume them",
+                                        None,
+                                    )
+                                    .on_click({
+                                        let studio = studio.clone();
+                                        move |_: &ClickEvent, _, cx| {
+                                            studio.act(cx, |studio| studio.stop_agents())
+                                        }
+                                    }),
+                            )
+                        })
+                        .when_some(outcome, |this, outcome| {
+                            let card = agent_outcome(&outcome, &theme);
+                            // Hung from the chip's lower right corner.
+                            this.relative().child(
+                                div().absolute().top_full().right_0().mt(r(6.0)).child(
+                                    deferred(
+                                        anchored()
+                                            .anchor(gpui::Anchor::TopRight)
+                                            .snap_to_window()
+                                            .child(card),
+                                    )
+                                    .with_priority(1),
+                                ),
                             )
                         }),
                 )
@@ -1183,11 +1386,12 @@ impl Workspace {
                         .child("Settings"),
                 )
             })
-            .child(div().flex_1().min_w_0())
+            .child(drag())
             // Search, and the panels' switches.
             .child(
                 div()
                     .id("search")
+                    .relative()
                     .flex()
                     .items_center()
                     .gap(r(8.0))
@@ -1209,6 +1413,10 @@ impl Workspace {
                     .role(gpui::Role::Button)
                     .aria_label("Search or run a command")
                     .on_click(run(studio_entity.clone(), CommandId::Palette))
+                    .child(ui::target::control(
+                        ui::target::Control::new("button", "Search or run a command")
+                            .id("title-search"),
+                    ))
                     .child(icon(IconName::Search).size(14.0))
                     .child(div().flex_1().min_w_0().child("Search or run a command"))
                     .child(ui::KeyCaps::new("Ctrl+K")),
@@ -1331,6 +1539,7 @@ impl Workspace {
             .child(
                 div()
                     .id("status-problems")
+                    .relative()
                     .flex()
                     .items_center()
                     .gap(r(5.0))
@@ -1343,6 +1552,13 @@ impl Workspace {
                     })
                     .role(gpui::Role::Button)
                     .aria_label(SharedString::from(format!("{problems} problems")))
+                    .child(ui::target::control(
+                        ui::target::Control::new(
+                            "button",
+                            format!("{problems} problems: show them"),
+                        )
+                        .id("status-problems"),
+                    ))
                     .on_click(move |_, _, cx| {
                         studio_entity.act(cx, |studio| {
                             studio.panel = crate::studio::Panel::Problems;
@@ -1447,7 +1663,11 @@ fn save_state(
 /// Minimize, maximize or restore, and close, drawn by the Studio since the
 /// title bar is its own; Windows handles them through their areas.
 fn window_controls(maximized: bool, theme: &ui::Theme) -> impl IntoElement {
-    let control = |id: &'static str, area: WindowControlArea, glyph: &'static str, danger: bool| {
+    let control = |id: &'static str,
+                   label: &'static str,
+                   area: WindowControlArea,
+                   glyph: &'static str,
+                   danger: bool| {
         let hover = if danger {
             gpui::rgb(0xc42b1c).into()
         } else {
@@ -1456,6 +1676,9 @@ fn window_controls(maximized: bool, theme: &ui::Theme) -> impl IntoElement {
         div()
             .id(id)
             .window_control_area(area)
+            .relative()
+            .role(gpui::Role::Button)
+            .aria_label(label)
             .w(r(46.0))
             .h_full()
             .flex()
@@ -1472,6 +1695,9 @@ fn window_controls(maximized: bool, theme: &ui::Theme) -> impl IntoElement {
                     style
                 }
             })
+            .child(ui::target::control(
+                ui::target::Control::new("button", label).id(id),
+            ))
             .child(glyph)
     };
     div()
@@ -1480,18 +1706,21 @@ fn window_controls(maximized: bool, theme: &ui::Theme) -> impl IntoElement {
         .ml(r(4.0))
         .child(control(
             "window-minimize",
+            "Minimize",
             WindowControlArea::Min,
             "\u{E921}",
             false,
         ))
         .child(control(
             "window-maximize",
+            if maximized { "Restore" } else { "Maximize" },
             WindowControlArea::Max,
             if maximized { "\u{E923}" } else { "\u{E922}" },
             false,
         ))
         .child(control(
             "window-close",
+            "Close",
             WindowControlArea::Close,
             "\u{E8BB}",
             true,

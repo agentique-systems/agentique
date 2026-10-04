@@ -40,6 +40,20 @@ enum Action {
     Block(agq_library::BlockRef),
 }
 
+impl Action {
+    /// The row's control id for agents (C-54): `palette-<command>` (as the
+    /// control interface names commands), `palette-element-<id>`,
+    /// `palette-block-<reference>`.
+    fn control_id(&self) -> SharedString {
+        match self {
+            Action::Command(id) => format!("palette-{}", crate::control::command_name(*id)),
+            Action::Element(id) => format!("palette-element-{}", id.raw()),
+            Action::Block(block) => format!("palette-block-{block}"),
+        }
+        .into()
+    }
+}
+
 #[derive(Clone)]
 struct Row {
     action: Action,
@@ -474,10 +488,23 @@ fn nearest_names(query: &str, tree: &agq_language::Tree) -> Vec<String> {
 }
 
 impl Render for Palette {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme().clone();
         let rows = self.rows.clone();
         let selected = self.selected;
+        // The search field, for agents (C-54).
+        let search = ui::target::Control::new(
+            "field",
+            match self.mode {
+                PaletteMode::Commands => "Search commands",
+                PaletteMode::Elements => "Go to an element",
+                PaletteMode::Library { .. } => "Search building blocks",
+                PaletteMode::Usages(_) => "Filter the usages",
+            },
+        )
+        .id("palette-search")
+        .value(self.input.read(cx).value().to_string())
+        .focused(self.input.read(cx).focus_handle(cx).is_focused(window));
         let count = rows.len();
         let entity = cx.entity();
         let mode_chip = match self.mode {
@@ -543,7 +570,14 @@ impl Render for Palette {
                     .gap(r(10.0))
                     .text_size(r(theme::text::LG))
                     .child(icon(IconName::Search).size(16.0).color(theme.text_muted))
-                    .child(div().flex_1().min_w_0().child(Input::new(&self.input)))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .relative()
+                            .child(ui::target::control(search))
+                            .child(Input::new(&self.input)),
+                    )
                     .when_some(mode_chip, |this, chip| this.child(chip)),
             )
             .child(ui::divider(cx))
@@ -594,6 +628,13 @@ impl Render for Palette {
                                         .role(gpui::Role::ListBoxOption)
                                         .aria_selected(current)
                                         .aria_label(row.title.clone())
+                                        .relative()
+                                        .child(ui::target::control(
+                                            ui::target::Control::new("option", row.title.clone())
+                                                .id(row.action.control_id())
+                                                .enabled(enabled)
+                                                .selected(current && enabled),
+                                        ))
                                         .h(r(ROW))
                                         .px(r(10.0))
                                         .flex()

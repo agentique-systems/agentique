@@ -59,6 +59,7 @@ pub struct TextField {
     height: f32,
     mono: bool,
     name: Option<SharedString>,
+    id: Option<SharedString>,
 }
 
 impl TextField {
@@ -71,11 +72,19 @@ impl TextField {
             height: crate::tokens::space::CONTROL,
             mono: false,
             name: None,
+            id: None,
         }
     }
-    /// The field's name for the scripted journeys.
+    /// The field's name for agents and the scripted journeys: what the
+    /// Operator reads beside it (its control id too, unless
+    /// [`control_id`](Self::control_id) gives another).
     pub fn target(mut self, name: impl Into<SharedString>) -> TextField {
         self.name = Some(name.into());
+        self
+    }
+    /// A stable control id other than the field's name.
+    pub fn control_id(mut self, id: impl Into<SharedString>) -> TextField {
+        self.id = Some(id.into());
         self
     }
     pub fn invalid(mut self, invalid: bool) -> TextField {
@@ -114,7 +123,10 @@ impl RenderOnce for TextField {
             .w_full()
             .relative()
             .when_some(self.name, |this, name| {
-                let control = crate::ui::target::Control::new("field", name).focused(focused);
+                let mut control = crate::ui::target::Control::new("field", name).focused(focused);
+                if let Some(id) = self.id {
+                    control = control.id(id);
+                }
                 this.child(crate::ui::target::control(match value {
                     Some(value) => control.value(value),
                     None => control,
@@ -140,6 +152,7 @@ pub struct TextArea {
     invalid: bool,
     borderless: bool,
     name: Option<SharedString>,
+    id: Option<SharedString>,
 }
 
 impl TextArea {
@@ -149,11 +162,18 @@ impl TextArea {
             invalid: false,
             borderless: false,
             name: None,
+            id: None,
         }
     }
-    /// The field's name for the scripted journeys.
+    /// The field's name for agents and the scripted journeys (see
+    /// [`TextField::target`]).
     pub fn target(mut self, name: impl Into<SharedString>) -> TextArea {
         self.name = Some(name.into());
+        self
+    }
+    /// A stable control id other than the field's name.
+    pub fn control_id(mut self, id: impl Into<SharedString>) -> TextArea {
+        self.id = Some(id.into());
         self
     }
     pub fn invalid(mut self, invalid: bool) -> TextArea {
@@ -176,11 +196,13 @@ impl RenderOnce for TextArea {
             .relative()
             .child(Textarea::new(&self.state))
             .when_some(self.name, |this, name| {
-                this.child(crate::ui::target::control(
-                    crate::ui::target::Control::new("field", name)
-                        .value(value)
-                        .focused(focused),
-                ))
+                let mut control = crate::ui::target::Control::new("field", name)
+                    .value(value)
+                    .focused(focused);
+                if let Some(id) = self.id {
+                    control = control.id(id);
+                }
+                this.child(crate::ui::target::control(control))
             });
         if self.borderless {
             return div()

@@ -180,8 +180,10 @@ fn serve(stream: TcpStream, token: &str, sender: Sender<Request>, first: Duratio
                 }
                 let id = body["id"].clone();
                 let (reply, answer) = std::sync::mpsc::channel();
-                let request =
+                let mut request =
                     Request::new(body, Reply::Channel(reply), ANSWER - Duration::from_secs(5));
+                // From the instance's supervisor (who holds the token).
+                request.endpoint = true;
                 if sender.send(request).is_err() {
                     return;
                 }

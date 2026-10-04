@@ -784,7 +784,7 @@ impl ConversationView {
             })
             .icon(IconName::Settings),
         );
-        let menu = cx.new(|cx| Menu::new(items, cx).min_width(260.0));
+        let menu = cx.new(|cx| Menu::new(items, cx).min_width(260.0).owner("conversation"));
         let subscription = cx.subscribe_in(&menu, window, |this, _, _: &DismissEvent, _, cx| {
             this.model_menu = None;
             cx.notify();
