@@ -6,10 +6,14 @@
 //! adopted build), and passes on the Operator's Pause, Step, Resume, Stop
 //! and messages. An objective the adopted build is to continue starts again
 //! by itself; one interrupted when Agentique closed waits for Continue.
+//! Before an objective starts, the Studio resolves each role's model from
+//! Settings and the credentials (C-54) and records it in the objective; the
+//! Orchestrator builds every session of a role on that model, effort and
+//! credential, and never moves a role to another.
 
 use crate::studio::{Dirty, Studio};
-use agq_assistant::claude_agent::{self, ClaudeAgent, Installation};
-use agq_orchestrator::record::{Budgets, Objective, Permissions, Store};
+use agq_assistant::claude_agent::{self, Installation};
+use agq_orchestrator::record::{Access, Budgets, Objective, Permissions, Store};
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -88,16 +92,11 @@ impl Studio {
             .unwrap_or_else(|| builds.join("work"))
     }
 
-    /// What the Orchestrator works with: the Claude Agent runtime as the
-    /// Settings configure it, the keys never to be in a change, Agentique's
-    /// required checks, the protected paths.
+    /// What the Orchestrator works with: the Claude Agent runtime building
+    /// each role's sessions on the model, effort and credential the
+    /// objective recorded for it (C-54), the keys and token never to be in a
+    /// change, Agentique's required checks, the protected paths.
     fn objective_setup(&self, repository: &Path) -> Result<Setup, String> {
-        let endpoint =
-            crate::agent_runtime::model_access(self.settings.text("assistant.provider").as_str());
-        let provider = endpoint
-            .as_ref()
-            .map(|e| e.provider)
-            .unwrap_or(agq_providers::Provider::Anthropic);
         let node = claude_agent::find_node()?;
         let installation = Installation {
             root: Installation::default_root(),
@@ -107,33 +106,37 @@ impl Studio {
                 "the Claude Agent runtime is not installed: Settings › Assistant › Install".into(),
             );
         }
-        if agq_providers::runtime_key(provider)?.is_none() {
-            return Err(format!(
-                "the agents need a {} key: Settings › Providers",
-                provider.name()
-            ));
-        }
-        let model = endpoint
-            .as_ref()
-            .map(|_| crate::agent_runtime::DEEPSEEK_MODEL.to_string());
         let data = self.claude_agent_data();
-        let runtime: RuntimeFactory = Box::new(move |_| {
-            let key = agq_providers::runtime_key(provider)?
-                .ok_or_else(|| format!("the {} key is gone", provider.name()))?;
-            let mut agent = ClaudeAgent::new(
+        let runtime: RuntimeFactory = Box::new(move |model, _| {
+            // The credential recorded for the role, and no other: a token
+            // or key that is gone stops the session, never moves it to
+            // another credential or account.
+            let credential = match model.access {
+                Access::Subscription => agq_providers::Credential::ClaudeSubscription,
+                Access::Key => agq_providers::Credential::Key(model.model.provider),
+            };
+            let secret = agq_providers::runtime_credential(credential)?.ok_or_else(|| {
+                format!(
+                    "the {} the {} runs on is gone; it does not move to another credential",
+                    credential.name(),
+                    model.role
+                )
+            })?;
+            crate::agent_runtime::runtime_on(
+                credential,
+                secret,
                 node.clone(),
                 installation.clone(),
                 data.clone(),
-                model.clone(),
-                None,
-                key,
-            );
-            agent.endpoint = endpoint.clone();
-            Ok(agent)
+                Some(model.model.model.clone()),
+                model.effort.clone(),
+            )
         });
         let keys = agq_providers::Provider::ALL
             .into_iter()
-            .filter_map(|p| agq_providers::runtime_key(p).ok().flatten())
+            .map(agq_providers::Credential::Key)
+            .chain([agq_providers::Credential::ClaudeSubscription])
+            .filter_map(|c| agq_providers::runtime_credential(c).ok().flatten())
             .map(|k| k.expose().to_string())
             .filter(|k| k.len() >= 12)
             .collect();
@@ -191,10 +194,20 @@ impl Studio {
             ));
         }
         let setup = self.objective_setup(&repository)?;
-        let objective = store.create(intent, &repository, "main", budgets, permissions)?;
+        // Each role's model, resolved now and recorded (C-54): nothing
+        // starts half-configured. Whether this computer has a Claude login
+        // is known first, so a fallback's reason says it.
+        self.login_now();
+        let models = self
+            .agent_models()
+            .map_err(|problems| problems.join("; "))?;
+        let mut objective = store.create(intent, &repository, "main", budgets, permissions)?;
+        objective.models = models;
+        store.save(&objective)?;
         self.objectives.activity.clear();
         self.objectives
             .note("orchestrator", format!("Started: {intent}"));
+        self.note_models(&objective);
         self.objectives.current = Some(objective.clone());
         self.objectives.handle = Some(run::start(setup, objective));
         self.objectives.message = None;
@@ -212,10 +225,20 @@ impl Studio {
             return Ok(());
         }
         let store = self.objective_store();
-        let objective = store.active().ok_or("there is no objective to continue")?;
+        let mut objective = store.active().ok_or("there is no objective to continue")?;
         let setup = self.objective_setup(&objective.repository)?;
+        // The models it started with stay its models (C-54); an objective
+        // a build before C-54 started gets them now.
+        if objective.models.is_empty() {
+            self.login_now();
+            objective.models = self
+                .agent_models()
+                .map_err(|problems| problems.join("; "))?;
+            store.save(&objective)?;
+        }
         self.objectives
             .note("orchestrator", format!("Continuing: {}", objective.intent));
+        self.note_models(&objective);
         self.objectives.current = Some(objective.clone());
         self.objectives.handle = Some(run::start(setup, objective));
         self.objectives.message = None;
@@ -348,6 +371,19 @@ impl Studio {
             self.mark(Dirty::LAYOUT | Dirty::STATUS);
         }
         changed
+    }
+
+    /// Each role's model in the activity, with why a fallback was taken.
+    fn note_models(&mut self, objective: &Objective) {
+        for model in &objective.models {
+            let why = model
+                .fallback
+                .as_ref()
+                .map(|why| format!(" (instead of {}: {why})", model.configured))
+                .unwrap_or_default();
+            self.objectives
+                .note(&model.role, format!("model: {}{why}", model.label()));
+        }
     }
 
     /// One line for the status bar while an objective runs.

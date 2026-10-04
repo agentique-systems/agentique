@@ -164,6 +164,41 @@ pub const SETTINGS: &[Setting] = &[
         invalid: "A key hint is text.",
     },
     Setting {
+        id: "providers.anthropic.tokenHint",
+        label: "Claude subscription token",
+        description: "What Settings shows of the saved token (from `claude setup-token`): its prefix and last four characters, never the token.",
+        synonyms: &[
+            "oauth",
+            "setup-token",
+            "plan",
+            "max",
+            "pro",
+            "secret",
+            "credential",
+        ],
+        default: DefaultValue::Text(""),
+        scope: Scope::App,
+        allowed: Allowed::Text,
+        invalid: "A token hint is text.",
+    },
+    Setting {
+        id: "providers.anthropic.credential",
+        label: "Anthropic credential for agents",
+        description: "With both an API key and a Claude subscription token, which one the Claude Agent runtime's sessions use: the token counts against your Claude plan's limits, the key is billed per token. Direct calls always need the key.",
+        synonyms: &[
+            "subscription",
+            "oauth",
+            "api key",
+            "billing",
+            "plan",
+            "token",
+        ],
+        default: DefaultValue::Text("subscription"),
+        scope: Scope::App,
+        allowed: Allowed::Choice(&["subscription", "key"]),
+        invalid: "Choose subscription or key.",
+    },
+    Setting {
         id: "providers.openai.keyHint",
         label: "OpenAI key",
         description: "What Settings shows of the saved key: its prefix and last four characters, never the key.",
@@ -225,9 +260,262 @@ pub const SETTINGS: &[Setting] = &[
     },
 ];
 
+/// The models a role's session or call may run on, as `provider/model`:
+/// those the capability table knows and the Claude Agent runtime reaches
+/// (a test checks both).
+const AGENT_MODELS: &[&str] = &[
+    "anthropic/claude-opus-5-5",
+    "anthropic/claude-sonnet-5-5",
+    "anthropic/claude-opus-5",
+    "anthropic/claude-haiku-4-5",
+    "deepseek/deepseek-v4-pro",
+    "deepseek/deepseek-flash",
+];
+const AGENT_FALLBACKS: &[&str] = &[
+    "",
+    "anthropic/claude-opus-5-5",
+    "anthropic/claude-sonnet-5-5",
+    "anthropic/claude-opus-5",
+    "anthropic/claude-haiku-4-5",
+    "deepseek/deepseek-v4-pro",
+    "deepseek/deepseek-flash",
+];
+/// The known pinned typed-decision models (C-52).
+const DECISION_MODELS: &[&str] = &["typesafe/jev-1.13.0"];
+const DECISION_FALLBACKS: &[&str] = &["", "typesafe/jev-1.13.0"];
+/// Every effort level a model of the table offers; empty for its default.
+/// A level the chosen model does not offer gives way to its default.
+const EFFORTS: &[&str] = &["", "low", "medium", "high", "xhigh", "max"];
+
+/// One row of [`AGENTS`].
+const fn agent_row(
+    id: &'static str,
+    label: &'static str,
+    description: &'static str,
+    default: &'static str,
+    allowed: &'static [&'static str],
+) -> Setting {
+    Setting {
+        id,
+        label,
+        description,
+        synonyms: &["agent", "role", "model", "orchestrator", "objective", "llm"],
+        default: DefaultValue::Text(default),
+        scope: Scope::App,
+        allowed: Allowed::Choice(allowed),
+        invalid: "Choose one of the models or levels Settings offer.",
+    }
+}
+
+/// The Orchestrator's roles (C-54, ROADMAP §4.16 "Models per role"): for
+/// each, a model, its effort and a fallback with its effort, resolved before
+/// an objective starts (`agq_orchestrator::models`). The Assistant's model
+/// is `assistant.provider`, `assistant.model` and `assistant.effort`.
+pub const AGENTS: &[Setting] = &[
+    agent_row(
+        "agents.lead.model",
+        "Lead",
+        "The lead proposes each cycle's improvement: its provider and model.",
+        "anthropic/claude-opus-5-5",
+        AGENT_MODELS,
+    ),
+    agent_row(
+        "agents.lead.effort",
+        "Lead effort",
+        "How much the lead's model thinks; empty uses the model's default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.lead.fallback",
+        "Lead fallback",
+        "The model the lead uses when its own has no credential Agentique may use; empty for none.",
+        "deepseek/deepseek-v4-pro",
+        AGENT_FALLBACKS,
+    ),
+    agent_row(
+        "agents.lead.fallbackEffort",
+        "Lead fallback effort",
+        "How much the lead's fallback thinks; empty uses its default.",
+        "max",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.implementer.model",
+        "Implementer",
+        "The implementer makes the change in the cycle's worktree: its provider and model.",
+        "anthropic/claude-sonnet-5-5",
+        AGENT_MODELS,
+    ),
+    agent_row(
+        "agents.implementer.effort",
+        "Implementer effort",
+        "How much the implementer's model thinks; empty uses the model's default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.implementer.fallback",
+        "Implementer fallback",
+        "The model the implementer uses when its own has no credential Agentique may use; empty for none.",
+        "deepseek/deepseek-v4-pro",
+        AGENT_FALLBACKS,
+    ),
+    agent_row(
+        "agents.implementer.fallbackEffort",
+        "Implementer fallback effort",
+        "How much the implementer's fallback thinks; empty uses its default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.reviewer.model",
+        "Reviewer",
+        "The reviewer judges the change independently: its provider and model.",
+        "anthropic/claude-opus-5-5",
+        AGENT_MODELS,
+    ),
+    agent_row(
+        "agents.reviewer.effort",
+        "Reviewer effort",
+        "How much the reviewer's model thinks; empty uses the model's default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.reviewer.fallback",
+        "Reviewer fallback",
+        "The model the reviewer uses when its own has no credential Agentique may use; empty for none.",
+        "deepseek/deepseek-v4-pro",
+        AGENT_FALLBACKS,
+    ),
+    agent_row(
+        "agents.reviewer.fallbackEffort",
+        "Reviewer fallback effort",
+        "How much the reviewer's fallback thinks; empty uses its default.",
+        "max",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.evaluator.model",
+        "Evaluator",
+        "The evaluator tries the change in a test instance: its provider and model.",
+        "anthropic/claude-sonnet-5-5",
+        AGENT_MODELS,
+    ),
+    agent_row(
+        "agents.evaluator.effort",
+        "Evaluator effort",
+        "How much the evaluator's model thinks; empty uses the model's default.",
+        "medium",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.evaluator.fallback",
+        "Evaluator fallback",
+        "The model the evaluator uses when its own has no credential Agentique may use; empty for none.",
+        "deepseek/deepseek-v4-pro",
+        AGENT_FALLBACKS,
+    ),
+    agent_row(
+        "agents.evaluator.fallbackEffort",
+        "Evaluator fallback effort",
+        "How much the evaluator's fallback thinks; empty uses its default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.explorer.model",
+        "Explorer",
+        "The explorer chooses each step of an exploration, one call at a time (an API key, never the subscription token): its provider and model.",
+        "deepseek/deepseek-flash",
+        AGENT_MODELS,
+    ),
+    agent_row(
+        "agents.explorer.effort",
+        "Explorer effort",
+        "How much the explorer's model thinks; empty uses the model's default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.explorer.fallback",
+        "Explorer fallback",
+        "The model the explorer uses when its own has no key; empty for none.",
+        "",
+        AGENT_FALLBACKS,
+    ),
+    agent_row(
+        "agents.explorer.fallbackEffort",
+        "Explorer fallback effort",
+        "How much the explorer's fallback thinks; empty uses its default.",
+        "",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.escalation.model",
+        "Escalation",
+        "The reasoning model a typed decision escalates to when it is unsure, called directly (an API key, never the subscription token).",
+        "anthropic/claude-opus-5-5",
+        AGENT_MODELS,
+    ),
+    agent_row(
+        "agents.escalation.effort",
+        "Escalation effort",
+        "How much the escalation model thinks; empty uses the model's default.",
+        "high",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.escalation.fallback",
+        "Escalation fallback",
+        "The model escalation uses when its own has no key; empty for none.",
+        "deepseek/deepseek-v4-pro",
+        AGENT_FALLBACKS,
+    ),
+    agent_row(
+        "agents.escalation.fallbackEffort",
+        "Escalation fallback effort",
+        "How much the escalation fallback thinks; empty uses its default.",
+        "max",
+        EFFORTS,
+    ),
+    agent_row(
+        "agents.decisions.model",
+        "Typed decisions",
+        "The model of fast typed decisions in operation (Jev, a known pinned version).",
+        "typesafe/jev-1.13.0",
+        DECISION_MODELS,
+    ),
+    agent_row(
+        "agents.decisions.effort",
+        "Typed decisions effort",
+        "Typed-decision models take no effort.",
+        "",
+        &[""],
+    ),
+    agent_row(
+        "agents.decisions.fallback",
+        "Typed decisions fallback",
+        "Another pinned typed-decision model when its own has no key; empty for none.",
+        "",
+        DECISION_FALLBACKS,
+    ),
+    agent_row(
+        "agents.decisions.fallbackEffort",
+        "Typed decisions fallback effort",
+        "Typed-decision models take no effort.",
+        "",
+        &[""],
+    ),
+];
+
 /// The row for `id`.
 pub fn setting(id: &str) -> Option<&'static Setting> {
-    SETTINGS.iter().find(|setting| setting.id == id)
+    SETTINGS
+        .iter()
+        .chain(AGENTS)
+        .find(|setting| setting.id == id)
 }
 
 /// Whether `value` is allowed for `setting`.
@@ -399,6 +687,8 @@ impl Settings {
 pub enum Section {
     Providers,
     Assistant,
+    /// The Orchestrator's roles and their models (C-54).
+    Agents,
     Appearance,
     Keyboard,
     Projects,
@@ -407,9 +697,10 @@ pub enum Section {
 }
 
 impl Section {
-    pub const ALL: [Section; 7] = [
+    pub const ALL: [Section; 8] = [
         Section::Providers,
         Section::Assistant,
+        Section::Agents,
         Section::Appearance,
         Section::Keyboard,
         Section::Projects,
@@ -421,6 +712,7 @@ impl Section {
         match self {
             Section::Providers => "Providers",
             Section::Assistant => "Assistant",
+            Section::Agents => "Agents",
             Section::Appearance => "Appearance",
             Section::Keyboard => "Keyboard",
             Section::Projects => "Projects",
@@ -465,6 +757,34 @@ impl SettingsStore {
             self.text("assistant.effort"),
         );
         agq_assistant::ModelChoice::configured(Some(&provider), Some(&model), Some(&effort))
+    }
+
+    /// The Orchestrator's roles as these settings configure them (C-54): a
+    /// model and effort each, and a fallback when one is set.
+    pub fn agent_configuration(&self) -> Vec<agq_orchestrator::models::Configured> {
+        use agq_orchestrator::models::{Choice, Configured, ROLES};
+        let choice = |model: String, effort: String| {
+            agq_providers::ModelRef::parse(&self.text(&model)).map(|model| Choice {
+                model,
+                effort: Some(self.text(&effort)).filter(|e| !e.is_empty()),
+            })
+        };
+        ROLES
+            .iter()
+            .filter_map(|(role, _)| {
+                Some(Configured {
+                    role: role.to_string(),
+                    model: choice(
+                        format!("agents.{role}.model"),
+                        format!("agents.{role}.effort"),
+                    )?,
+                    fallback: choice(
+                        format!("agents.{role}.fallback"),
+                        format!("agents.{role}.fallbackEffort"),
+                    ),
+                })
+            })
+            .collect()
     }
 
     /// Takes the appearance a Stage 4 session remembered, once.
@@ -544,7 +864,7 @@ mod tests {
     #[test]
     fn every_row_is_complete_and_its_default_allowed() {
         let mut ids = std::collections::BTreeSet::new();
-        for row in SETTINGS {
+        for row in SETTINGS.iter().chain(AGENTS) {
             assert!(ids.insert(row.id), "{} twice", row.id);
             assert!(row.id.contains('.'), "{}", row.id);
             assert!(
@@ -580,6 +900,71 @@ mod tests {
         assert!(text.contains("\"format\": 1"));
         assert!(text.contains("editor.font") && text.contains("1.3"));
         assert!(!text.contains("appearance.theme"));
+    }
+
+    /// C-54: every role has its four rows; the models offered are the
+    /// capability table's, able to do the role's work; and the defaults
+    /// configure each role as the ROADMAP says.
+    #[test]
+    fn the_agents_rows_offer_the_tables_models_and_default_to_c_54() {
+        use agq_orchestrator::models::{Kind, ROLES};
+        use agq_providers::{ModelRef, capabilities, price};
+        for (role, kind) in ROLES {
+            for field in ["model", "effort", "fallback", "fallbackEffort"] {
+                let id = format!("agents.{role}.{field}");
+                let row = setting(&id).unwrap_or_else(|| panic!("{id}"));
+                let Allowed::Choice(choices) = row.allowed else {
+                    panic!("{id} is a choice");
+                };
+                for choice in choices.iter().filter(|c| !c.is_empty()) {
+                    if field.ends_with("ffort") {
+                        continue;
+                    }
+                    let model = ModelRef::parse(choice).unwrap();
+                    let caps = capabilities(&model);
+                    assert!(price(&model).is_some(), "{choice}");
+                    assert!(
+                        match kind {
+                            Kind::Session => caps.agent_runtime && caps.tools,
+                            Kind::Direct => caps.chat,
+                            Kind::Decisions => caps.decisions,
+                        },
+                        "{id}: {choice}"
+                    );
+                }
+            }
+        }
+        let store = SettingsStore::load(std::env::temp_dir().join("agq-no-settings-here.json"));
+        let configured = store.agent_configuration();
+        assert_eq!(configured.len(), 7);
+        let shown: Vec<String> = configured
+            .iter()
+            .map(|c| {
+                format!(
+                    "{} {} {} -> {}",
+                    c.role,
+                    c.model.model,
+                    c.model.effort.as_deref().unwrap_or("-"),
+                    c.fallback
+                        .as_ref()
+                        .map(|f| format!("{} {}", f.model, f.effort.as_deref().unwrap_or("-")))
+                        .unwrap_or_else(|| "none".into())
+                )
+            })
+            .collect();
+        assert_eq!(
+            shown,
+            [
+                "lead anthropic/claude-opus-5-5 high -> deepseek/deepseek-v4-pro max",
+                "implementer anthropic/claude-sonnet-5-5 high -> deepseek/deepseek-v4-pro high",
+                "reviewer anthropic/claude-opus-5-5 high -> deepseek/deepseek-v4-pro max",
+                "evaluator anthropic/claude-sonnet-5-5 medium -> deepseek/deepseek-v4-pro high",
+                "explorer deepseek/deepseek-flash high -> none",
+                "escalation anthropic/claude-opus-5-5 high -> deepseek/deepseek-v4-pro max",
+                "decisions typesafe/jev-1.13.0 - -> none",
+            ]
+        );
+        assert_eq!(store.text("providers.anthropic.credential"), "subscription");
     }
 
     #[test]

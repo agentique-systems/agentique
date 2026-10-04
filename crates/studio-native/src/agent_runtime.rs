@@ -4,12 +4,18 @@
 //! endpoint), the development session it gets in a project with a code
 //! repository, and its setup and health check for Settings. The runtime
 //! itself is `agq_assistant::claude_agent`; this decides when to use it and
-//! says what it needs.
+//! says what it needs. Since C-54 also: which Anthropic credential sessions
+//! use (an API key, or the Operator's Claude subscription token), whether
+//! this computer has a Claude login (never used), and each Orchestrator
+//! role's model, resolved from Settings and the credentials.
 
 use crate::studio::{Dirty, Studio};
-use agq_assistant::claude_agent::{self, ClaudeAgent, Effective, Installation, Node, Verified};
+use agq_assistant::claude_agent::{
+    self, ClaudeAgent, Effective, Installation, Login, Node, Verified,
+};
 use agq_assistant::policy::{Development, Endpoint, Permissions, Place, Policy, Undecided};
-use agq_providers::{KeyStatus, Provider};
+use agq_orchestrator::record::RoleModel;
+use agq_providers::{Credential, KeyStatus, Provider, Secret};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -34,22 +40,82 @@ pub const CLAUDE_AGENT: &str = "claude-agent";
 /// SDK's own small tasks).
 pub const DEEPSEEK_MODEL: &str = "deepseek-v4-pro";
 
+/// Whether a key or token is there (the environment or the credential
+/// store).
+fn present(credential: Credential) -> bool {
+    matches!(
+        agq_providers::credential_status(credential),
+        KeyStatus::Stored | KeyStatus::FromEnvironment { .. }
+    )
+}
+
 /// Where the Claude Agent runtime's model answers, from the Settings'
 /// provider and the keys there are: Anthropic's API, or DeepSeek's
 /// Anthropic-compatible endpoint (C-53). With no provider chosen, Anthropic
-/// when its key is there, else DeepSeek when its key is.
+/// when an API key or the Claude subscription token is there (C-54), else
+/// DeepSeek when its key is.
 pub fn model_access(provider: &str) -> Option<Endpoint> {
-    let has = |p: Provider| {
-        matches!(
-            agq_providers::key_status(p),
-            KeyStatus::Stored | KeyStatus::FromEnvironment { .. }
-        )
-    };
+    let anthropic =
+        present(Credential::Key(Provider::Anthropic)) || present(Credential::ClaudeSubscription);
     match provider {
         "deepseek" => Some(Endpoint::deepseek()),
         "anthropic" => None,
-        _ if !has(Provider::Anthropic) && has(Provider::DeepSeek) => Some(Endpoint::deepseek()),
+        _ if !anthropic && present(Credential::Key(Provider::DeepSeek)) => {
+            Some(Endpoint::deepseek())
+        }
         _ => None,
+    }
+}
+
+/// Where the Claude Agent runtime reaches `provider`'s models: Anthropic's
+/// own API (`None`), or the provider's Anthropic-compatible endpoint.
+pub fn endpoint(provider: Provider) -> Result<Option<Endpoint>, String> {
+    match provider {
+        Provider::Anthropic => Ok(None),
+        Provider::DeepSeek => Ok(Some(Endpoint::deepseek())),
+        other => Err(format!(
+            "the Claude Agent runtime does not reach {}'s models",
+            other.name()
+        )),
+    }
+}
+
+/// A Claude Agent runtime on `credential`, with that credential's secret:
+/// a key (and its provider's endpoint), or the Claude subscription token on
+/// Anthropic's own API (C-54). Exactly one credential reaches the session.
+pub fn runtime_on(
+    credential: Credential,
+    secret: Secret,
+    node: Node,
+    installation: Installation,
+    data: PathBuf,
+    model: Option<String>,
+    effort: Option<String>,
+) -> Result<ClaudeAgent, String> {
+    Ok(match credential {
+        Credential::ClaudeSubscription => {
+            ClaudeAgent::new(node, installation, data, model, effort, Secret::new(""))
+                .with_subscription(secret)
+        }
+        Credential::Key(provider) => {
+            let mut agent = ClaudeAgent::new(node, installation, data, model, effort, secret);
+            agent.endpoint = endpoint(provider)?;
+            agent
+        }
+    })
+}
+
+/// Why a Claude login on this computer is not used, as Settings say it.
+pub fn login_line(login: Option<&Result<Login, String>>) -> String {
+    match login {
+        Some(Ok(login)) => match login.describe() {
+            Some(how) => format!(
+                "Claude login on this computer: {how}. Not used: Anthropic does not allow products built on the Claude Agent SDK to offer claude.ai login without its approval. To use Claude models, add an Anthropic API key from the Claude Console, or your own Claude subscription token from `claude setup-token`, in Settings › Providers › Anthropic."
+            ),
+            None => "No Claude login on this computer (Agentique would not use one: it uses only the keys and token in Settings or the environment).".into(),
+        },
+        Some(Err(why)) => format!("Whether this computer has a Claude login could not be checked: {why}"),
+        None => "Checking whether this computer has a Claude login…".into(),
     }
 }
 
@@ -107,9 +173,9 @@ impl Health {
             None => {}
         }
         lines.push(match key {
-            KeyStatus::Stored => (true, "The model's key is in the Windows Credential Manager".into()),
-            KeyStatus::FromEnvironment { variable } => (true, format!("The model's key comes from {variable}")),
-            KeyStatus::Missing => (false, "No key for the runtime's model: add an Anthropic key in Settings › Providers › Anthropic, or a DeepSeek key to use DeepSeek's Anthropic-compatible endpoint. A claude.ai login is not offered: Anthropic does not allow it for other products.".into()),
+            KeyStatus::Stored => (true, "The Assistant's credential is in the Windows Credential Manager".into()),
+            KeyStatus::FromEnvironment { variable } => (true, format!("The Assistant's credential comes from {variable}")),
+            KeyStatus::Missing => (false, "No credential for the runtime's model: add an Anthropic API key or your Claude subscription token (from `claude setup-token`) in Settings › Providers › Anthropic, or a DeepSeek key to use DeepSeek's Anthropic-compatible endpoint. This computer's own Claude login is not used.".into()),
             KeyStatus::Unavailable(why) => (false, format!("The credential store cannot be read: {why}")),
         });
         match &self.effective {
@@ -128,6 +194,13 @@ impl Health {
                         true,
                         "In a project with a code repository it is a development session (C-53): the SDK's own tools (files, commands, subagents, skills) under the project's permission policy, the model files protected, commands only with trusted-local execution, and the model's key kept out of its commands".into(),
                     ));
+                    lines.push((
+                        true,
+                        format!(
+                            "Every session uses only the one credential Agentique gives it, checked against what the SDK reports before its first model call (here: {}); one that would use another, such as this computer's own Claude login, stops",
+                            effective.credential()
+                        ),
+                    ));
                 } else {
                     lines.push((
                         false,
@@ -145,10 +218,85 @@ impl Health {
     }
 }
 
+/// Who pays for a provider's usage, in Settings' words (C-54).
+fn billed(credential: Credential) -> String {
+    match credential {
+        Credential::ClaudeSubscription => "counts against your Claude plan's usage limits; Agentique shows its usage at API prices (API-equivalent)".into(),
+        Credential::Key(Provider::Anthropic) => "billed per token to the Anthropic Console account of the key (Agentique cannot see which organisation)".into(),
+        Credential::Key(provider) => format!("billed per token to the {} account of the key", provider.name()),
+    }
+}
+
+impl Studio {
+    /// The credentials of the providers the agents use (the Assistant's,
+    /// and each role's model and fallback), where each comes from and who
+    /// pays, then this computer's Claude login (C-54): Settings' lines,
+    /// (fine, text).
+    pub fn credential_lines(&self) -> Vec<(bool, String)> {
+        let mut providers = vec![
+            model_access(self.settings.text("assistant.provider").as_str())
+                .map(|e| e.provider)
+                .unwrap_or(Provider::Anthropic),
+        ];
+        for configured in self.settings.agent_configuration() {
+            providers.push(configured.model.model.provider);
+            providers.extend(configured.fallback.map(|f| f.model.provider));
+        }
+        providers.sort();
+        providers.dedup();
+        let mut lines = Vec::new();
+        let mut credentials: Vec<Credential> =
+            providers.iter().map(|p| Credential::Key(*p)).collect();
+        if providers.contains(&Provider::Anthropic) {
+            credentials.insert(1, Credential::ClaudeSubscription);
+        }
+        for credential in credentials {
+            let name = credential.name();
+            lines.push(match agq_providers::credential_status(credential) {
+                KeyStatus::FromEnvironment { variable } => (
+                    true,
+                    format!("{name}: from {variable}; {}.", billed(credential)),
+                ),
+                KeyStatus::Stored => (
+                    true,
+                    format!(
+                        "{name}: saved in the Windows Credential Manager; {}.",
+                        billed(credential)
+                    ),
+                ),
+                KeyStatus::Missing => (false, format!("{name}: none (Settings › Providers).")),
+                KeyStatus::Unavailable(why) => (
+                    false,
+                    format!("{name}: the credential store cannot be read ({why})."),
+                ),
+            });
+        }
+        if providers.contains(&Provider::Anthropic) {
+            lines.push((
+                true,
+                format!(
+                    "Claude Agent runtime sessions on Anthropic use the {}; the roles that call their model directly (escalation, the explorer) and Agentique's own loop need the API key.",
+                    match self.anthropic_credential() {
+                        Credential::ClaudeSubscription => "Claude subscription token",
+                        _ => "API key",
+                    }
+                ),
+            ));
+        }
+        lines.push((
+            !matches!(&self.runtime.login, Some(Err(_))),
+            login_line(self.runtime.login.as_ref()),
+        ));
+        lines
+    }
+}
+
 /// Setup work running on its own thread.
 pub enum Work {
     Check(Receiver<Health>),
     Install(Receiver<Result<Health, String>>, Arc<AtomicBool>),
+    /// Whether this computer has a Claude login (C-54).
+    Login(Receiver<Result<Login, String>>),
 }
 
 #[derive(Default)]
@@ -158,6 +306,9 @@ pub struct RuntimeState {
     /// The Operator asked to install; the card asks once more.
     pub confirm_install: bool,
     pub message: Option<String>,
+    /// Whether this computer has a Claude login, once checked: shown, and
+    /// named in a fallback's reason, never used (C-54).
+    pub login: Option<Result<Login, String>>,
 }
 
 impl Studio {
@@ -167,6 +318,171 @@ impl Studio {
             CLAUDE_AGENT => CLAUDE_AGENT.into(),
             _ => LOOP.into(),
         }
+    }
+
+    /// Which Anthropic credential the Claude Agent runtime's sessions use
+    /// (C-54): the one Settings prefer when both are there (the Claude
+    /// subscription token by default), else whichever is there; the
+    /// preferred one when neither is.
+    pub fn anthropic_credential(&self) -> Credential {
+        let key = Credential::Key(Provider::Anthropic);
+        let token = Credential::ClaudeSubscription;
+        let (first, second) = if self.settings.text("providers.anthropic.credential") == "key" {
+            (key, token)
+        } else {
+            (token, key)
+        };
+        if present(first) || !present(second) {
+            first
+        } else {
+            second
+        }
+    }
+
+    /// Starts checking whether this computer has a Claude login, on its own
+    /// thread, unless that is known or other setup work runs (Settings and
+    /// the Objectives panel show it; C-54).
+    pub fn probe_login(&mut self) {
+        if self.runtime.login.is_some() || self.runtime.work.is_some() || self.safe_mode {
+            return;
+        }
+        let installation = Installation {
+            root: Installation::default_root(),
+        };
+        let node = match claude_agent::find_node() {
+            Ok(node) if installation.installed() => node,
+            Ok(_) => {
+                self.runtime.login = Some(Err(
+                    "the Claude Agent runtime is not installed (Settings › Assistant)".into(),
+                ));
+                return;
+            }
+            Err(why) => {
+                self.runtime.login = Some(Err(why));
+                return;
+            }
+        };
+        let (sender, receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = sender.send(claude_agent::login(&node, &installation));
+        });
+        self.runtime.work = Some(Work::Login(receiver));
+    }
+
+    /// Whether this computer has a Claude login, checked now if it is not
+    /// known yet (blocking, about a second; before an objective starts, so
+    /// its record says it).
+    pub fn login_now(&mut self) -> Option<&Login> {
+        if self.runtime.login.is_none() && !self.safe_mode {
+            let installation = Installation {
+                root: Installation::default_root(),
+            };
+            if let Ok(node) = claude_agent::find_node()
+                && installation.installed()
+            {
+                self.runtime.login = Some(claude_agent::login(&node, &installation));
+            }
+        }
+        self.runtime.login.as_ref().and_then(|l| l.as_ref().ok())
+    }
+
+    /// Each Orchestrator role's model as Settings configure it and the
+    /// credentials there are allow (C-54), or each role that has neither
+    /// its model nor its fallback, named with what is missing.
+    pub fn agent_models(&self) -> Result<Vec<RoleModel>, Vec<String>> {
+        self.resolving(agq_orchestrator::models::resolve)
+    }
+
+    /// [`agent_models`](Self::agent_models), role by role, for Settings and
+    /// the Objectives panel to show each one before an objective starts.
+    pub fn agent_models_each(&self) -> Vec<(&'static str, Result<RoleModel, String>)> {
+        self.resolving(agq_orchestrator::models::resolve_each)
+    }
+
+    /// Runs a resolution with the roles as Settings configure them and the
+    /// credentials there are (each looked up once: the environment, else
+    /// the credential store), and this computer's Claude login.
+    fn resolving<T>(
+        &self,
+        resolve: impl FnOnce(
+            &[agq_orchestrator::models::Configured],
+            &agq_orchestrator::models::Credentials,
+        ) -> T,
+    ) -> T {
+        let configured = self.settings.agent_configuration();
+        let known = std::cell::RefCell::new(std::collections::BTreeMap::new());
+        let status = |credential: Credential| {
+            known
+                .borrow_mut()
+                .entry(credential)
+                .or_insert_with(|| agq_providers::credential_status(credential))
+                .clone()
+        };
+        let credentials = agq_orchestrator::models::Credentials {
+            status: &status,
+            prefer_subscription: self.settings.text("providers.anthropic.credential") != "key",
+            login: self.runtime.login.as_ref().and_then(|l| l.as_ref().ok()),
+        };
+        resolve(&configured, &credentials)
+    }
+
+    /// The Assistant's model on the Claude Agent runtime now, and why it is
+    /// not the configured one when it is not (C-54): its label and the
+    /// reason. `None` on Agentique's own loop.
+    pub fn assistant_route(&self) -> Option<(String, Option<String>)> {
+        if self.runtime_setting() != CLAUDE_AGENT {
+            return None;
+        }
+        let configured = self.settings.text("assistant.provider");
+        let endpoint = model_access(configured.as_str());
+        let credential = match &endpoint {
+            Some(endpoint) => Credential::Key(endpoint.provider),
+            None => self.anthropic_credential(),
+        };
+        let (model, _) = self.runtime_model(endpoint.as_ref());
+        let model = model.unwrap_or_else(|| "the SDK's default".into());
+        let label = match credential {
+            Credential::ClaudeSubscription => {
+                format!("{model} · Claude subscription (your plan's limits apply)")
+            }
+            Credential::Key(provider) => format!("{model} · {} key", provider.name()),
+        };
+        let reason = (configured.is_empty() && endpoint.is_some()).then(|| {
+            let login = match &self.runtime.login {
+                Some(Ok(login)) => login.describe().map(|how| {
+                    format!(
+                        "; the Claude login on this computer ({how}) is not used: Anthropic does not allow products built on the Claude Agent SDK to offer claude.ai login without its approval"
+                    )
+                }),
+                _ => None,
+            };
+            format!(
+                "No Anthropic API key or Claude subscription token, so the Assistant runs on DeepSeek's Anthropic-compatible endpoint{}.",
+                login.unwrap_or_default()
+            )
+        });
+        Some((label, reason))
+    }
+
+    /// The model and effort the Claude Agent runtime's turns use: the
+    /// Settings' model and effort when they are the runtime's provider's,
+    /// otherwise its default (Sonnet 5.5 on Anthropic since C-54, as the
+    /// provider's default; `deepseek-v4-pro` on DeepSeek's endpoint).
+    fn runtime_model(&self, endpoint: Option<&Endpoint>) -> (Option<String>, Option<String>) {
+        let choice = self.settings.model_choice();
+        let provider = endpoint.map(|e| e.provider).unwrap_or(Provider::Anthropic);
+        let model = (choice.model.provider == provider)
+            .then(|| choice.model.model.clone())
+            .filter(|m| !m.is_empty())
+            .or_else(|| match endpoint {
+                Some(_) => Some(DEEPSEEK_MODEL.to_string()),
+                None => Some(Provider::Anthropic.default_model().to_string()),
+            });
+        let effort = choice
+            .effort
+            .clone()
+            .filter(|e| matches!(e.as_str(), "low" | "medium" | "high" | "xhigh" | "max"));
+        (model, effort)
     }
 
     /// Where the Claude Agent runtime keeps its configuration and sessions:
@@ -191,16 +507,15 @@ impl Studio {
             .as_ref()
             .map(|e| e.provider)
             .unwrap_or(Provider::Anthropic);
+        // The one credential its sessions get: the endpoint's provider's
+        // key, or the Anthropic credential Settings choose (C-54).
+        let credential = match &endpoint {
+            Some(_) => Credential::Key(provider),
+            None => self.anthropic_credential(),
+        };
         // The model and effort chosen for the runtime's provider carry over;
-        // otherwise its default (the SDK's for Anthropic).
-        let model = (choice.model.provider == provider)
-            .then(|| choice.model.model.clone())
-            .filter(|m| !m.is_empty())
-            .or_else(|| endpoint.as_ref().map(|_| DEEPSEEK_MODEL.to_string()));
-        let effort = choice
-            .effort
-            .clone()
-            .filter(|e| matches!(e.as_str(), "low" | "medium" | "high" | "xhigh" | "max"));
+        // otherwise its default.
+        let (model, effort) = self.runtime_model(endpoint.as_ref());
         let node = claude_agent::find_node();
         let installation = Installation {
             root: Installation::default_root(),
@@ -209,25 +524,29 @@ impl Studio {
         let problem = match (
             &node,
             installation.installed(),
-            agq_providers::key_status(provider),
+            agq_providers::credential_status(credential),
         ) {
             (Err(why), _, _) => Some(why.clone()),
             (_, false, _) => Some(
                 "The Claude Agent runtime is not installed: Settings › Assistant › Install.".into(),
             ),
+            (_, _, KeyStatus::Missing) if provider == Provider::Anthropic => Some(
+                "The Claude Agent runtime needs an Anthropic API key or your Claude subscription token (from `claude setup-token`): add one in Settings › Providers › Anthropic. Everything else works as usual.".into(),
+            ),
             (_, _, KeyStatus::Missing) => Some(format!(
                 "The Claude Agent runtime needs a {name} key: add it in Settings › Providers › {name}. Everything else works as usual."
             )),
             (_, _, KeyStatus::Unavailable(why)) => {
-                Some(format!("The {name} key cannot be read: {why}"))
+                Some(format!("The {} cannot be read: {why}", credential.name()))
             }
             _ => None,
         };
         let data = self.claude_agent_data();
-        let through = endpoint
-            .as_ref()
-            .map(|e| format!(" (through {})", e.provider.name()))
-            .unwrap_or_default();
+        let through = match (&endpoint, credential) {
+            (Some(e), _) => format!(" (through {})", e.provider.name()),
+            (None, Credential::ClaudeSubscription) => " (Claude subscription)".into(),
+            (None, _) => String::new(),
+        };
         let label = match &model {
             Some(model) => format!("Claude Agent · {model}{through}"),
             None => format!("Claude Agent{through}"),
@@ -238,26 +557,30 @@ impl Studio {
             label,
             problem,
             Box::new(move || -> Box<dyn agq_assistant::Runtime> {
-                match (node.clone(), agq_providers::runtime_key(provider)) {
-                    (Some(node), Ok(Some(key))) => {
-                        let mut agent = ClaudeAgent::new(
-                            node,
-                            installation.clone(),
-                            data.clone(),
-                            model.clone(),
-                            effort.clone(),
-                            key,
-                        );
-                        agent.endpoint = endpoint.clone();
+                let agent = match (node.clone(), agq_providers::runtime_credential(credential)) {
+                    (Some(node), Ok(Some(secret))) => runtime_on(
+                        credential,
+                        secret,
+                        node,
+                        installation.clone(),
+                        data.clone(),
+                        model.clone(),
+                        effort.clone(),
+                    ),
+                    (_, Err(why)) => {
+                        Err(format!("The {} cannot be read: {why}", credential.name()))
+                    }
+                    _ => Err(
+                        "The Claude Agent runtime is not ready: see Settings › Assistant.".into(),
+                    ),
+                };
+                match agent {
+                    Ok(mut agent) => {
                         agent.development = inputs.borrow().development.clone();
                         agent.steering = inputs.borrow().steering.clone().unwrap_or_default();
                         Box::new(agent)
                     }
-                    (_, result) => Box::new(Unavailable(match result {
-                        Err(why) => format!("The {} key cannot be read: {why}", provider.name()),
-                        _ => "The Claude Agent runtime is not ready: see Settings › Assistant."
-                            .into(),
-                    })),
+                    Err(why) => Box::new(Unavailable(why)),
                 }
             }),
         );
@@ -398,6 +721,19 @@ impl Studio {
                     Some(Err("The installation stopped without a result.".to_string()))
                 }
             },
+            Work::Login(receiver) => {
+                let login = match receiver.try_recv() {
+                    Ok(login) => login,
+                    Err(TryRecvError::Empty) => return false,
+                    Err(TryRecvError::Disconnected) => {
+                        Err("the check stopped without a result".to_string())
+                    }
+                };
+                self.runtime.work = None;
+                self.runtime.login = Some(login);
+                self.mark(Dirty::LAYOUT | Dirty::STATUS);
+                return true;
+            }
         };
         let Some(result) = finished else {
             return false;
@@ -411,6 +747,9 @@ impl Studio {
             Err(why) => self.runtime.message = Some(why),
         }
         self.apply_runtime_choice();
+        // A check (or an installation) looks at the Claude login again.
+        self.runtime.login = None;
+        self.probe_login();
         self.mark(Dirty::LAYOUT | Dirty::STATUS);
         true
     }

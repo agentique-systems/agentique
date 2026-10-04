@@ -3,7 +3,9 @@
 //! merged and the result adopted; then watches the objective's cycles (the
 //! phase, the proposal, the checks, the review, the pull request, the
 //! spend), pauses, steps, resumes or stops it, sends its agents a message,
-//! and reads what every agent did.
+//! and reads what every agent did. Before Start it shows each role's model,
+//! why a fallback was taken, the credential and who pays; then each role's
+//! model and spend (C-54).
 
 use super::InspectorColumn;
 use crate::{
@@ -11,7 +13,7 @@ use crate::{
     ui::{self, ActiveTheme, Button, Switch, TextArea, TextField, Tone, r, theme},
     workspace::StudioExt,
 };
-use agq_orchestrator::record::{Budgets, Objective, Permissions, State};
+use agq_orchestrator::record::{Access, Budgets, Objective, Permissions, RoleModel, State};
 use agq_orchestrator::run::Command;
 use gpui::{
     AppContext, ClickEvent, Context, Entity, InteractiveElement, IntoElement, ParentElement,
@@ -297,6 +299,7 @@ impl Fields {
                 }
             }
         };
+        let models = studio.read(cx).agent_models_each();
         let toggle = |which: bool| {
             let entity = entity.clone();
             move |on: bool, _: &mut Window, cx: &mut gpui::App| {
@@ -352,6 +355,12 @@ impl Fields {
                 .disabled(!self.merge)
                 .on_toggle(toggle(false)),
             )
+            .child(super::group("Models", None, cx))
+            .children(
+                models
+                    .into_iter()
+                    .map(|(role, model)| route(role, model, &theme)),
+            )
             .child(
                 div().flex().child(div().flex_1()).child(
                     Button::new("objective-start", "Start")
@@ -374,6 +383,102 @@ impl Fields {
             self.adopt = on;
         }
     }
+}
+
+/// A role's model before Start (C-54): the model, effort and credential,
+/// who pays, and why a fallback was taken; or why the role has none, which
+/// keeps the objective from starting.
+fn route(role: &str, model: Result<RoleModel, String>, theme: &ui::Theme) -> gpui::AnyElement {
+    let (head, detail, warn) = match model {
+        Ok(model) => (
+            format!("{role} · {}", model.label()),
+            match &model.fallback {
+                Some(why) => format!(
+                    "Its fallback: {} {why}. {}; {}.",
+                    model.configured, model.credential, model.billed
+                ),
+                None => format!("{}; {}.", model.credential, model.billed),
+            },
+            model.fallback.is_some(),
+        ),
+        Err(problem) => (
+            format!("{role} · not available"),
+            format!("{problem}. Nothing starts until it has a model."),
+            true,
+        ),
+    };
+    div()
+        .flex()
+        .flex_col()
+        .text_size(r(theme::text::XS))
+        .line_height(r(15.0))
+        .child(
+            div()
+                .text_color(theme.text_secondary)
+                .font_weight(theme::MEDIUM)
+                .child(head),
+        )
+        .child(
+            div()
+                .text_color(if warn {
+                    theme.warning.text
+                } else {
+                    theme.text_muted
+                })
+                .child(detail),
+        )
+        .into_any_element()
+}
+
+/// Each role's model and what it spent, by model within it (C-54); at API
+/// prices, "API-equivalent" for the Claude subscription.
+fn role_lines(objective: &Objective) -> Vec<String> {
+    let mut roles: Vec<String> = objective.models.iter().map(|m| m.role.clone()).collect();
+    for role in objective.spent.roles.keys() {
+        if !roles.contains(role) {
+            roles.push(role.clone());
+        }
+    }
+    let mut lines = Vec::new();
+    for role in roles {
+        let model = objective.models.iter().find(|m| m.role == role);
+        let cost = objective.spent.role(&role);
+        let equivalent = if model.is_some_and(|m| m.access == Access::Subscription) {
+            " API-equivalent"
+        } else {
+            ""
+        };
+        let mut line = format!(
+            "{role}: {}",
+            model
+                .map(RoleModel::label)
+                .unwrap_or_else(|| "model not recorded".into())
+        );
+        if cost.tokens > 0 || cost.usd > 0.0 {
+            line.push_str(&format!(
+                " — ${:.2}{equivalent}{}, {} tokens",
+                cost.usd,
+                if cost.unknown { " (some unpriced)" } else { "" },
+                cost.tokens
+            ));
+        }
+        if let Some(model) = model
+            && let Some(why) = &model.fallback
+        {
+            line.push_str(&format!(" (instead of {}: {why})", model.configured));
+        }
+        let by_model = objective.spent.roles.get(&role);
+        if by_model.is_some_and(|models| models.len() > 1) {
+            let parts: Vec<String> = by_model
+                .into_iter()
+                .flatten()
+                .map(|(model, cost)| format!("{model} ${:.2}", cost.usd))
+                .collect();
+            line.push_str(&format!("; by model: {}", parts.join(", ")));
+        }
+        lines.push(line);
+    }
+    lines
 }
 
 /// The objective's record, in a few lines.
@@ -416,6 +521,9 @@ fn summary(objective: &Objective, running: bool, theme: &ui::Theme) -> gpui::Any
             false,
         ),
     ];
+    for role in role_lines(objective) {
+        lines.push(line(role, false));
+    }
     for cycle in &objective.cycles {
         let mut text = format!("Cycle {}: {}", cycle.n, cycle.phase.label());
         if let Some(proposal) = &cycle.proposal {
@@ -472,4 +580,81 @@ fn summary(objective: &Objective, running: bool, theme: &ui::Theme) -> gpui::Any
         .border_color(theme.separator)
         .children(lines)
         .into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agq_orchestrator::record::{Cost, Store};
+    use agq_providers::{ModelRef, Provider};
+
+    /// C-54: the summary names each role's model, its spend (API-equivalent
+    /// on the Claude subscription), why a fallback was taken, and the
+    /// models within a role.
+    #[test]
+    fn each_roles_model_and_spend_are_summarised() {
+        let dir = std::env::temp_dir().join(format!("agq-role-lines-{}", std::process::id()));
+        let store = Store::new(&dir);
+        let mut objective = store
+            .create(
+                "Fix it",
+                std::path::Path::new("C:/agentique"),
+                "main",
+                Budgets::default(),
+                Permissions::default(),
+            )
+            .unwrap();
+        let opus = ModelRef::new(Provider::Anthropic, "claude-opus-5-5");
+        let pro = ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro");
+        objective.models = vec![
+            RoleModel {
+                role: "lead".into(),
+                model: opus.clone(),
+                effort: Some("high".into()),
+                access: Access::Subscription,
+                configured: opus.clone(),
+                fallback: None,
+                credential: "the Claude subscription token (CLAUDE_CODE_OAUTH_TOKEN)".into(),
+                billed: "your Claude plan".into(),
+            },
+            RoleModel {
+                role: "escalation".into(),
+                model: pro.clone(),
+                effort: Some("max".into()),
+                access: Access::Key,
+                configured: opus.clone(),
+                fallback: Some("needs an Anthropic API key".into()),
+                credential: "DEEPSEEK_API_KEY".into(),
+                billed: "DeepSeek".into(),
+            },
+        ];
+        let cost = |usd: f64| Cost {
+            usd,
+            tokens: 1000,
+            unknown: false,
+        };
+        objective.spent.add("lead", &opus, cost(0.40));
+        objective.spent.add(
+            "lead",
+            &ModelRef::new(Provider::Anthropic, "claude-haiku-4-5"),
+            cost(0.02),
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+        let lines = role_lines(&objective);
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert!(
+            lines[0].starts_with("lead: claude-opus-5-5 · high · Claude subscription")
+                && lines[0].contains("$0.42 API-equivalent, 2000 tokens")
+                && lines[0].contains(
+                    "by model: anthropic/claude-haiku-4-5 $0.02, anthropic/claude-opus-5-5 $0.40"
+                ),
+            "{}",
+            lines[0]
+        );
+        assert!(
+            lines[1].starts_with("escalation: deepseek-v4-pro · max · DeepSeek (instead of anthropic/claude-opus-5-5: needs an Anthropic API key)"),
+            "{}",
+            lines[1]
+        );
+    }
 }

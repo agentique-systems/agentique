@@ -1376,6 +1376,8 @@ impl Studio {
         self.settings_open = true;
         self.settings_section = section;
         self.palette = None;
+        // Settings say whether this computer has a Claude login (C-54).
+        self.probe_login();
     }
 
     // The session.

@@ -84,43 +84,9 @@ pub fn resolve(
 ) -> Result<Vec<RoleModel>, Vec<String>> {
     let mut models = Vec::new();
     let mut problems = Vec::new();
-    for (role, kind) in ROLES {
-        let Some(setting) = configured.iter().find(|c| c.role == role) else {
-            problems.push(format!("{role}: no model is set in Settings › Agents"));
-            continue;
-        };
-        let own = find(role, kind, &setting.model.model, credentials);
-        let found = match own {
-            Ok(found) => Ok((&setting.model, found, None)),
-            Err(reason) => match &setting.fallback {
-                Some(fallback) => match find(role, kind, &fallback.model, credentials) {
-                    Ok(found) => Ok((fallback, found, Some(reason))),
-                    Err(again) => Err(format!(
-                        "{role}: {} {reason}; its fallback {} {again}",
-                        setting.model.model, fallback.model
-                    )),
-                },
-                None => Err(format!(
-                    "{role}: {} {reason}, and no fallback is set (Settings › Agents)",
-                    setting.model.model
-                )),
-            },
-        };
-        match found {
-            Ok((choice, found, fallback)) => models.push(RoleModel {
-                role: role.to_string(),
-                model: choice.model.clone(),
-                effort: agq_assistant::ModelChoice::new(
-                    choice.model.clone(),
-                    choice.effort.clone(),
-                )
-                .effort,
-                access: found.access,
-                configured: setting.model.model.clone(),
-                fallback,
-                credential: found.credential,
-                billed: found.billed,
-            }),
+    for (_, resolved) in resolve_each(configured, credentials) {
+        match resolved {
+            Ok(model) => models.push(model),
             Err(problem) => problems.push(problem),
         }
     }
@@ -129,6 +95,59 @@ pub fn resolve(
     } else {
         Err(problems)
     }
+}
+
+/// [`resolve`], role by role, for Settings to show each one's outcome.
+pub fn resolve_each(
+    configured: &[Configured],
+    credentials: &Credentials,
+) -> Vec<(&'static str, Result<RoleModel, String>)> {
+    ROLES
+        .iter()
+        .map(|(role, kind)| (*role, resolve_one(role, *kind, configured, credentials)))
+        .collect()
+}
+
+fn resolve_one(
+    role: &str,
+    kind: Kind,
+    configured: &[Configured],
+    credentials: &Credentials,
+) -> Result<RoleModel, String> {
+    let setting = configured
+        .iter()
+        .find(|c| c.role == role)
+        .ok_or_else(|| format!("{role}: no model is set in Settings › Agents"))?;
+    let (choice, found, fallback) = match find(role, kind, &setting.model.model, credentials) {
+        Ok(found) => (&setting.model, found, None),
+        Err(reason) => match &setting.fallback {
+            Some(fallback) => match find(role, kind, &fallback.model, credentials) {
+                Ok(found) => (fallback, found, Some(reason)),
+                Err(again) => {
+                    return Err(format!(
+                        "{role}: {} {reason}; its fallback {} {again}",
+                        setting.model.model, fallback.model
+                    ));
+                }
+            },
+            None => {
+                return Err(format!(
+                    "{role}: {} {reason}, and no fallback is set (Settings › Agents)",
+                    setting.model.model
+                ));
+            }
+        },
+    };
+    Ok(RoleModel {
+        role: role.to_string(),
+        model: choice.model.clone(),
+        effort: agq_assistant::ModelChoice::new(choice.model.clone(), choice.effort.clone()).effort,
+        access: found.access,
+        configured: setting.model.model.clone(),
+        fallback,
+        credential: found.credential,
+        billed: found.billed,
+    })
 }
 
 /// The credential `model` would run on for a role of `kind`, or why there

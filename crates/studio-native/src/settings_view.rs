@@ -40,6 +40,7 @@ fn section_icon(section: Section) -> IconName {
     match section {
         Section::Providers => IconName::Key,
         Section::Assistant => IconName::Assistant,
+        Section::Agents => IconName::Agent,
         Section::Appearance => IconName::Palette,
         Section::Keyboard => IconName::Keyboard,
         Section::Projects => IconName::Folder,
@@ -73,6 +74,10 @@ pub struct SettingsView {
     drafts: BTreeMap<&'static str, Entity<InputState>>,
     confirm_reset: bool,
     open_menu: Option<(&'static str, Entity<Menu>, Subscription)>,
+    /// The Claude subscription token's field (C-54) and what its last save
+    /// or removal said.
+    token: Option<Entity<InputState>>,
+    token_message: Option<String>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -128,7 +133,32 @@ fn choice_label(choice: &str) -> String {
         "" => "Automatic".into(),
         "loop" => "Agentique".into(),
         "claude-agent" => "Claude Agent".into(),
+        "subscription" => "Claude subscription".into(),
+        "key" => "API key".into(),
         other => other.to_string(),
+    }
+}
+
+/// A role's model in a menu: `claude-opus-5-5 · Anthropic`; none for empty.
+fn model_label(value: &str) -> String {
+    match agq_providers::ModelRef::parse(value) {
+        Some(model) => format!("{} · {}", model.model, model.provider.name()),
+        None if value.is_empty() => "None".into(),
+        None => value.to_string(),
+    }
+}
+
+/// The title of a role's group in Settings › Agents.
+fn role_title(role: &str) -> &'static str {
+    match role {
+        "lead" => "Lead",
+        "implementer" => "Implementer",
+        "reviewer" => "Reviewer",
+        "evaluator" => "Evaluator",
+        "explorer" => "Explorer",
+        "escalation" => "Escalation",
+        "decisions" => "Typed decisions",
+        _ => "Role",
     }
 }
 
@@ -216,6 +246,8 @@ impl SettingsView {
             drafts: BTreeMap::new(),
             confirm_reset: false,
             open_menu: None,
+            token: None,
+            token_message: None,
             _subscriptions: subscriptions,
         }
     }
@@ -263,6 +295,7 @@ impl SettingsView {
                 match id.split('.').next() {
                     Some("appearance") => studio.apply_appearance(),
                     Some("assistant") => studio.apply_runtime_choice(),
+                    _ if id == "providers.anthropic.credential" => studio.apply_runtime_choice(),
                     _ => {}
                 }
             }
@@ -443,6 +476,149 @@ impl SettingsView {
             Err(error) => state.message = Some(error.0),
         }
         cx.notify();
+    }
+
+    /// Saves (or, with `None`, removes) the Claude subscription token in the
+    /// Credential Manager and its hint in the settings (C-54); it leaves the
+    /// field once saved, as a key does.
+    fn store_token(&mut self, token: Option<String>, window: &mut Window, cx: &mut Context<Self>) {
+        if self.studio.update(cx, |studio, _| {
+            studio.refused_to_agents("storing a Claude subscription token")
+        }) {
+            return;
+        }
+        let credential = agq_providers::Credential::ClaudeSubscription;
+        let result = match &token {
+            Some(token) => keys::store(credential, token).map(|_| keys::hint(token)),
+            None => keys::remove(credential).map(|_| String::new()),
+        };
+        match result {
+            Ok(hint) => {
+                if let Some(input) = &self.token {
+                    input.update(cx, |input, cx| input.set_value("", window, cx));
+                }
+                self.token_message = Some(if token.is_some() {
+                    "Saved in Windows Credential Manager. The SDK's own check confirms it when a session starts.".into()
+                } else {
+                    "The saved token was removed.".into()
+                });
+                self.set("providers.anthropic.tokenHint", json!(hint), cx);
+                self.studio
+                    .update(cx, |studio, _| studio.apply_runtime_choice());
+            }
+            Err(error) => self.token_message = Some(error.0),
+        }
+        cx.notify();
+    }
+
+    /// The Anthropic card's second credential (C-54): the Operator's Claude
+    /// subscription token from `claude setup-token`, which only the Claude
+    /// Agent runtime's sessions use, and which of the two they use.
+    fn subscription_block(&mut self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+        let theme = cx.theme().clone();
+        let input = match &self.token {
+            Some(input) => input.clone(),
+            None => {
+                let input = cx.new(|cx| {
+                    InputState::new(window, cx)
+                        .placeholder("Paste the token from claude setup-token")
+                        .masked(true)
+                });
+                self.token = Some(input.clone());
+                input
+            }
+        };
+        let status =
+            agq_providers::credential_status(agq_providers::Credential::ClaudeSubscription);
+        let hint = self
+            .studio
+            .read(cx)
+            .settings
+            .text("providers.anthropic.tokenHint");
+        let (line, stored, from_environment) = match &status {
+            KeyStatus::FromEnvironment { variable } => (
+                format!("From environment variable {variable} (a saved token is ignored)."),
+                false,
+                true,
+            ),
+            KeyStatus::Stored if hint.is_empty() => (
+                "Saved in Windows Credential Manager.".to_string(),
+                true,
+                false,
+            ),
+            KeyStatus::Stored => (
+                format!("Saved in Windows Credential Manager ({hint})."),
+                true,
+                false,
+            ),
+            KeyStatus::Missing => ("No token.".to_string(), false, false),
+            KeyStatus::Unavailable(why) => (why.clone(), false, false),
+        };
+        let has_input = !input.read(cx).value().trim().is_empty();
+        let save = {
+            let this = cx.entity();
+            let input = input.clone();
+            move |_: &ClickEvent, window: &mut Window, cx: &mut App| {
+                let token = input.read(cx).value().trim().to_string();
+                this.update(cx, |view, cx| view.store_token(Some(token), window, cx))
+            }
+        };
+        let remove = {
+            let this = cx.entity();
+            move |_: &ClickEvent, window: &mut Window, cx: &mut App| {
+                this.update(cx, |view, cx| view.store_token(None, window, cx))
+            }
+        };
+        let choice = self.setting_row("providers.anthropic.credential", None, window, cx);
+        div()
+            .pt(r(6.0))
+            .border_t_1()
+            .border_color(theme.separator)
+            .flex()
+            .flex_col()
+            .gap(r(8.0))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(r(2.0))
+                    .child(div().font_weight(theme::MEDIUM).child("Claude subscription token (from `claude setup-token`)"))
+                    .child(div().text_size(r(theme::text::SM)).text_color(theme.text_muted).child(line))
+                    .child(
+                        div()
+                            .text_size(r(theme::text::XS))
+                            .line_height(r(16.0))
+                            .text_color(theme.text_muted)
+                            .child("Your own subscription, for your own work: only the Claude Agent runtime's sessions use it, within your Claude plan's limits, and its usage is shown at API prices. Agentique's own loop and the roles that call their model directly need an API key. This computer's own Claude login is never read."),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(r(6.0))
+                    .when(from_environment, |this| this.opacity(0.5))
+                    .child(div().flex_1().min_w_0().child(TextField::new(&input).leading(IconName::Key)))
+                    .child(
+                        Button::new("save-anthropic-subscription", "Save")
+                            .primary()
+                            .disabled(!has_input || from_environment)
+                            .on_click(save),
+                    )
+                    .when(stored, |this| {
+                        this.child(
+                            Button::new("remove-anthropic-subscription", "Remove token")
+                                .small()
+                                .ghost()
+                                .on_click(remove),
+                        )
+                    }),
+            )
+            .when_some(self.token_message.clone(), |this, message| {
+                this.child(ui::inline_message(Tone::Neutral, message, cx))
+            })
+            .children(choice)
+            .into_any_element()
     }
 
     fn remove(&mut self, provider: Provider, window: &mut Window, cx: &mut Context<Self>) {
@@ -651,10 +827,23 @@ impl SettingsView {
     /// Install and Check actions (ROADMAP §4.7).
     fn runtime_card(&mut self, query: Option<&str>, cx: &mut Context<Self>) -> Option<AnyElement> {
         const TITLE: &str = "Claude Agent runtime";
-        const ABOUT: &str = "The Claude Agent SDK runs the Assistant's loop in a companion process, with Agentique's tools only: every model change still goes through the System State, every command through Execution, and every approval through you. Anthropic only; it needs Node.js and an Anthropic API key.";
-        if query
-            .is_some_and(|q| !matches(q, &[TITLE, ABOUT, "sdk", "node", "install", "claude agent"]))
-        {
+        const ABOUT: &str = "The Claude Agent SDK runs the Assistant's loop, and each session of the Orchestrator's agents, in a companion process: every model change still goes through the System State, every command through Execution, and every approval through you. It reaches Anthropic's API, with an Anthropic API key or your Claude subscription token, or DeepSeek's Anthropic-compatible endpoint with a DeepSeek key; it needs Node.js.";
+        if query.is_some_and(|q| {
+            !matches(
+                q,
+                &[
+                    TITLE,
+                    ABOUT,
+                    "sdk",
+                    "node",
+                    "install",
+                    "claude agent",
+                    "login",
+                    "credential",
+                    "billed",
+                ],
+            )
+        }) {
             return None;
         }
         let theme = cx.theme().clone();
@@ -664,17 +853,23 @@ impl SettingsView {
         let message = studio.runtime.message.clone();
         let confirm = studio.runtime.confirm_install;
         let safe_mode = studio.safe_mode;
-        let key = agq_providers::key_status(
-            crate::agent_runtime::model_access(studio.settings.text("assistant.provider").as_str())
-                .map(|e| e.provider)
-                .unwrap_or(Provider::Anthropic),
+        // The Assistant's one credential: the endpoint's provider's key, or
+        // the Anthropic credential Settings choose (C-54).
+        let key = agq_providers::credential_status(
+            match crate::agent_runtime::model_access(
+                studio.settings.text("assistant.provider").as_str(),
+            ) {
+                Some(endpoint) => agq_providers::Credential::Key(endpoint.provider),
+                None => studio.anthropic_credential(),
+            },
         );
-        let lines = studio
+        let mut lines = studio
             .runtime
             .health
             .as_ref()
             .map(|h| h.lines(&key))
             .unwrap_or_default();
+        lines.extend(studio.credential_lines());
         let studio_entity = self.studio.clone();
         let act = move |f: fn(&mut Studio)| {
             let studio = studio_entity.clone();
@@ -699,7 +894,7 @@ impl SettingsView {
                         .text_size(r(theme::text::SM))
                         .line_height(r(17.0))
                         .text_color(theme.text_muted)
-                        .child("These controls decide which tools the agent can call. They are not an operating-system sandbox: the runtime runs with your rights and reaches Anthropic's API."),
+                        .child("These controls decide which tools the agent can call. They are not an operating-system sandbox: the runtime runs with your rights and reaches its model's API."),
                 )
                 .into_any_element(),
         ];
@@ -1097,11 +1292,6 @@ impl SettingsView {
         let this = cx.entity();
         let control: AnyElement = match (id, setting.allowed) {
             ("assistant.provider", _) => {
-                let open = self
-                    .open_menu
-                    .as_ref()
-                    .filter(|(open, _, _)| *open == id)
-                    .map(|(_, menu, _)| menu.clone());
                 let choices: Vec<(String, String)> = std::iter::once((
                     String::new(),
                     "Automatic (first provider with a key)".to_string(),
@@ -1117,36 +1307,27 @@ impl SettingsView {
                     .map(|p| (p.id().to_string(), p.name().to_string())),
                 )
                 .collect();
-                let label = choices
-                    .iter()
-                    .find(|(v, _)| *v == current)
-                    .map_or(current.clone(), |(_, l)| l.clone());
-                let this = this.clone();
-                let current_value = current.clone();
-                div()
-                    .child(
-                        Button::new("provider-select", label)
-                            .trailing(IconName::ChevronsUpDown)
-                            .disabled(set_by.is_some())
-                            .on_click(move |_: &ClickEvent, window, cx| {
-                                let choices = choices.clone();
-                                let current = current_value.clone();
-                                this.update(cx, |view, cx| {
-                                    view.open_choice(id, choices, current, window, cx)
-                                })
-                            }),
-                    )
-                    .when_some(open, |this, menu| {
-                        this.child(
-                            deferred(
-                                anchored()
-                                    .snap_to_window()
-                                    .child(div().mt(r(32.0)).child(menu)),
-                            )
-                            .with_priority(3),
-                        )
-                    })
-                    .into_any_element()
+                self.menu(
+                    "provider-select".into(),
+                    id,
+                    choices,
+                    current.clone(),
+                    set_by.is_some(),
+                    cx,
+                )
+            }
+            // A role's model, fallback or effort (C-54): a menu of what the
+            // capability table offers for it.
+            (_, Allowed::Choice(choices)) if id.starts_with("agents.") => {
+                let choices = self.agent_choices(id, choices, cx);
+                self.menu(
+                    SharedString::from(format!("select-{id}")),
+                    id,
+                    choices,
+                    current.clone(),
+                    false,
+                    cx,
+                )
             }
             (_, Allowed::Toggle) => {
                 let on = value.as_bool().unwrap_or(true);
@@ -1237,6 +1418,210 @@ impl SettingsView {
         )
     }
 
+    /// A button that opens a menu of `choices` (value, label) for `id`.
+    fn menu(
+        &mut self,
+        button: SharedString,
+        id: &'static str,
+        choices: Vec<(String, String)>,
+        current: String,
+        disabled: bool,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let open = self
+            .open_menu
+            .as_ref()
+            .filter(|(open, _, _)| *open == id)
+            .map(|(_, menu, _)| menu.clone());
+        let label = choices
+            .iter()
+            .find(|(v, _)| *v == current)
+            .map_or(current.clone(), |(_, l)| l.clone());
+        let this = cx.entity();
+        div()
+            .child(
+                Button::new(button, label)
+                    .trailing(IconName::ChevronsUpDown)
+                    .disabled(disabled)
+                    .on_click(move |_: &ClickEvent, window, cx| {
+                        let choices = choices.clone();
+                        let current = current.clone();
+                        this.update(cx, |view, cx| {
+                            view.open_choice(id, choices, current, window, cx)
+                        })
+                    }),
+            )
+            .when_some(open, |this, menu| {
+                this.child(
+                    deferred(
+                        anchored()
+                            .snap_to_window()
+                            .child(div().mt(r(32.0)).child(menu)),
+                    )
+                    .with_priority(3),
+                )
+            })
+            .into_any_element()
+    }
+
+    /// What a role's row offers (C-54): its models from the table, or the
+    /// effort levels the row's model offers, with its default first.
+    fn agent_choices(
+        &self,
+        id: &str,
+        allowed: &[&str],
+        cx: &Context<Self>,
+    ) -> Vec<(String, String)> {
+        let settings = &self.studio.read(cx).settings;
+        if !id.ends_with("ffort") {
+            return allowed
+                .iter()
+                .map(|value| (value.to_string(), model_label(value)))
+                .collect();
+        }
+        let model_id = if id.ends_with(".fallbackEffort") {
+            id.replace(".fallbackEffort", ".fallback")
+        } else {
+            id.replace(".effort", ".model")
+        };
+        let Some(model) = agq_providers::ModelRef::parse(&settings.text(&model_id)) else {
+            return vec![(String::new(), "None".into())];
+        };
+        let offered = agq_providers::capabilities(&model);
+        let default = match offered.default_effort {
+            Some(level) => format!("The model's default ({level})"),
+            None => "None (the model takes no effort)".into(),
+        };
+        let mut choices: Vec<(String, String)> = std::iter::once((String::new(), default))
+            .chain(
+                offered
+                    .efforts
+                    .iter()
+                    .map(|e| (e.to_string(), e.to_string())),
+            )
+            .collect();
+        let current = settings.text(id);
+        if !choices.iter().any(|(v, _)| *v == current) {
+            choices.push((
+                current.clone(),
+                format!("{current} (not offered: the default is used)"),
+            ));
+        }
+        choices
+    }
+
+    /// Settings › Agents (C-54): the Assistant's model as Settings ›
+    /// Assistant choose it, then each of the Orchestrator's roles with its
+    /// model, effort and fallback, and what it resolves to now.
+    fn agents_section(
+        &mut self,
+        query: Option<&str>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Option<AnyElement> {
+        let theme = cx.theme().clone();
+        let studio = self.studio.read(cx);
+        let resolved = studio.agent_models_each();
+        let assistant = studio.assistant_route();
+        let choice = studio.settings.model_choice();
+        let mut blocks: Vec<AnyElement> = Vec::new();
+        let line = |text: String, tone: Option<Tone>, cx: &App| -> AnyElement {
+            match tone {
+                Some(tone) => div()
+                    .px(r(16.0))
+                    .py(r(10.0))
+                    .child(ui::inline_message(tone, text, cx))
+                    .into_any_element(),
+                None => div()
+                    .px(r(16.0))
+                    .py(r(10.0))
+                    .text_size(r(theme::text::SM))
+                    .line_height(r(17.0))
+                    .text_color(theme.text_secondary)
+                    .child(text)
+                    .into_any_element(),
+            }
+        };
+        if query.is_none_or(|q| matches(q, &["assistant", "conversation", "model"])) {
+            let mut rows = vec![line(
+                "The Assistant's provider, model and effort are in Settings › Assistant; on the Claude Agent runtime its Anthropic default is claude-sonnet-5-5.".into(),
+                None,
+                cx,
+            )];
+            rows.push(match assistant {
+                Some((label, None)) => line(format!("Now: {label}"), Some(Tone::Success), cx),
+                Some((label, Some(why))) => line(format!("Now: {label}. {why}"), Some(Tone::Warning), cx),
+                None => line(
+                    format!("Now: {} on Agentique's own loop, which calls its model directly (an API key; a Claude subscription token works only in the Claude Agent runtime).", choice.label()),
+                    None,
+                    cx,
+                ),
+            });
+            blocks.push(group(Some("Assistant"), rows, cx).into_any_element());
+        }
+        for (role, outcome) in resolved {
+            let no_fallback = self
+                .studio
+                .read(cx)
+                .settings
+                .text(&format!("agents.{role}.fallback"))
+                .is_empty();
+            let mut rows: Vec<AnyElement> = ["model", "effort", "fallback", "fallbackEffort"]
+                .iter()
+                .filter(|field| **field != "fallbackEffort" || !no_fallback)
+                .filter_map(|field| {
+                    let id = settings::AGENTS
+                        .iter()
+                        .find(|row| row.id == format!("agents.{role}.{field}"))?
+                        .id;
+                    self.setting_row(id, query, window, cx)
+                })
+                .collect();
+            if rows.is_empty() {
+                continue;
+            }
+            rows.push(match outcome {
+                Ok(model) => match &model.fallback {
+                    None => line(
+                        format!(
+                            "Now: {} · credential: {} · billed: {}",
+                            model.label(),
+                            model.credential,
+                            model.billed
+                        ),
+                        Some(Tone::Success),
+                        cx,
+                    ),
+                    Some(why) => line(
+                        format!(
+                            "Now on its fallback: {}, since {} {why}. Credential: {}; billed: {}.",
+                            model.label(),
+                            model.configured,
+                            model.credential,
+                            model.billed
+                        ),
+                        Some(Tone::Warning),
+                        cx,
+                    ),
+                },
+                Err(problem) => line(
+                    format!("Not available, so no objective starts: {problem}"),
+                    Some(Tone::Danger),
+                    cx,
+                ),
+            });
+            blocks.push(group(Some(role_title(role)), rows, cx).into_any_element());
+        }
+        (!blocks.is_empty()).then(|| {
+            div()
+                .flex()
+                .flex_col()
+                .gap(r(16.0))
+                .children(blocks)
+                .into_any_element()
+        })
+    }
+
     fn providers(
         &mut self,
         query: Option<&str>,
@@ -1305,6 +1690,8 @@ impl SettingsView {
         let message = state.message.clone();
         let confirm_remove = state.confirm_remove;
         let models = state.models.clone();
+        let subscription =
+            (provider == Provider::Anthropic).then(|| self.subscription_block(window, cx));
         let note = match provider {
             Provider::Anthropic => Some(
                 "The Claude Agent runtime uses the key saved here. Agentique's own loop reads Anthropic's key from ANTHROPIC_API_KEY until Anthropic moves onto the provider layer (W5.7).",
@@ -1566,6 +1953,7 @@ impl SettingsView {
                     Err(error) => ui::inline_message(Tone::Warning, error, cx).into_any_element(),
                 })
             })
+            .children(subscription)
             .into_any_element()
     }
 }
@@ -1657,6 +2045,7 @@ impl Render for SettingsView {
             vec![
                 Section::Providers,
                 Section::Assistant,
+                Section::Agents,
                 Section::Appearance,
                 Section::Keyboard,
             ]
@@ -1685,6 +2074,7 @@ impl Render for SettingsView {
                             .into_any_element()
                     })
                 }
+                Section::Agents => self.agents_section(query, window, cx),
                 Section::Appearance => {
                     let rows: Vec<AnyElement> = ["appearance.theme", "appearance.uiScale", "appearance.reducedMotion"]
                         .into_iter()
@@ -1983,6 +2373,7 @@ impl Render for SettingsView {
                                         .child(div().text_size(r(theme::text::SM)).text_color(theme.text_muted).child(match section {
                                             Section::Providers => "Keys for the model providers, kept in the Windows Credential Manager; each is tested before it is saved.",
                                             Section::Assistant => "Which model the Assistant uses, and what it shows.",
+                                            Section::Agents => "The model of each of the Orchestrator's agents, its effort and its fallback. An objective resolves them when it starts and keeps them; Sonnet and Opus need an Anthropic API key or your Claude subscription token.",
                                             Section::Appearance => "Theme, scale and motion. Choices apply at once.",
                                             Section::Keyboard => "Every command and its shortcut.",
                                             Section::Projects => "Where new projects go, and the projects you opened.",

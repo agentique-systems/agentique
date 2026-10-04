@@ -306,6 +306,11 @@ impl Render for InspectorColumn {
                                 .on_click(move |_: &ClickEvent, _, cx| {
                                     studio.act(cx, |studio| {
                                         studio.panel = tab;
+                                        // The Objectives panel shows each
+                                        // role's model and why (C-54).
+                                        if tab == Panel::Objectives {
+                                            studio.probe_login();
+                                        }
                                         studio.mark(Dirty::LAYOUT);
                                     })
                                 })
