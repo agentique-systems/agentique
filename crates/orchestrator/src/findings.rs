@@ -23,6 +23,12 @@ use serde_json::{Value, json};
 /// debug build.
 pub const ACTION_BUDGET_MS: u64 = 2000;
 
+/// What each character an action types adds to its budget: an agent's fill
+/// types its whole text in one step, while each character is a keystroke
+/// that must answer within the 100 ms feedback budget (ROADMAP §3.3). (A
+/// 300-character fill takes about 9 s in a debug build, 30 ms a keystroke.)
+pub const TYPED_CHARACTER_MS: u64 = 100;
+
 /// What a status line says when a program fault reaches it, rather than a
 /// message written for the Operator (lowercase).
 const INTERNAL_ERRORS: [&str; 7] = [
@@ -57,7 +63,8 @@ pub enum Check {
     UndoRestores,
     /// A dialog other than an approval closes by its Cancel or Escape.
     DialogsClose,
-    /// An action finishes within [`ACTION_BUDGET_MS`].
+    /// An action finishes within [`ACTION_BUDGET_MS`] (and
+    /// [`TYPED_CHARACTER_MS`] for each character it types).
     ActionTime,
     /// The status line reports no internal error.
     NoInternalError,
@@ -381,15 +388,19 @@ pub fn failures(outcome: &Outcome) -> Vec<Failed> {
         return failed;
     }
     // Within its budget.
+    let typed = step.action["text"]
+        .as_str()
+        .map_or(0, |t| t.chars().count() as u64);
+    let budget = ACTION_BUDGET_MS + TYPED_CHARACTER_MS * typed;
     if let Some(took) = answer["tookMs"].as_u64()
-        && took > ACTION_BUDGET_MS
+        && took > budget
         && step.action["kind"] != "wait"
     {
         failed.push(Failed {
             check: Check::ActionTime,
             control: target.clone(),
             message: format!(
-                "{} took {took} ms (budget {ACTION_BUDGET_MS} ms)",
+                "{} took {took} ms (budget {budget} ms)",
                 step.action["kind"].as_str().unwrap_or_default()
             ),
             evidence: json!({ "tookMs": took }),
@@ -905,6 +916,23 @@ mod tests {
         });
         let checks: Vec<Check> = found.iter().map(|f| f.check).collect();
         assert_eq!(checks, vec![Check::ActionTime, Check::DialogsClose]);
+        // Typing has a keystroke's budget for each character.
+        let long = step(json!({ "kind": "fill", "control": "Name", "text": "x".repeat(300) }));
+        let slow_but_typing = json!({ "ok": true, "tookMs": 9000 });
+        let mut closed = before.clone();
+        closed["dialog"] = Value::Null;
+        let within = |s: &Step, a: &Value| {
+            failures(&Outcome {
+                before: &before,
+                step: Some(s),
+                answer: Some(a),
+                after: &closed,
+            })
+            .is_empty()
+        };
+        assert!(within(&long, &slow_but_typing));
+        let short = step(json!({ "kind": "fill", "control": "Name", "text": "x" }));
+        assert!(!within(&short, &slow_but_typing));
         // Refused as disabled while the same screen still offers it.
         let sync = step(json!({ "kind": "click", "control": "sync" }));
         let refused = json!({ "ok": false, "error": "`Sync` is disabled now" });

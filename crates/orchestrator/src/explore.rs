@@ -725,8 +725,9 @@ pub struct Deciding<'a> {
     /// The explorer's model and effort: the Model way.
     pub explorer: ModelRef,
     pub effort: Option<String>,
-    /// The model Jev escalates to.
+    /// The model Jev escalates to, and its effort.
     pub escalation: ModelRef,
+    pub escalation_effort: Option<String>,
     /// Jev's confidence at or above which its answer is used.
     pub threshold: f64,
 }
@@ -755,7 +756,7 @@ pub struct Chosen {
 
 const INSTRUCTIONS: &str = "An explorer tests the Agentique application by operating it toward a goal, to find problems. Choose its next action among the options; each is valid on this screen and safe in this test instance. Prefer behaviour not covered before, toward the areas the goal names; do not repeat the last actions; leave a dialog or panel once its behaviour is covered.";
 
-const FORMAT: &str = "{\"choice\": \"<one option id>\", \"input\": \"<text to type; only when the option is a field>\", \"expect\": {<optional: what the next observation will show, any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains>}, \"why\": \"<one short line>\"}";
+const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains";
 
 /// The typed question for the next action: the best `n` of the rules'
 /// order as options `a1`, `a2`, …
@@ -815,6 +816,8 @@ fn read_answer(
     let input = match &answer["input"] {
         Value::Null => None,
         Value::String(text) if candidate.field => Some(text.chars().take(1000).collect()),
+        // Nothing to type is no input, whatever the option.
+        Value::String(text) if text.is_empty() => None,
         Value::String(_) => {
             return Err(format!(
                 "`input` is only for a field, and {choice} is not one"
@@ -965,7 +968,13 @@ fn choose(
         Err(failure) => ((failure.millis, failure.usd), failure.error),
     };
     if way == Way::Escalating {
-        model(&deciding.escalation, None, spent, note, Source::Escalated)
+        model(
+            &deciding.escalation,
+            deciding.escalation_effort.as_deref(),
+            spent,
+            note,
+            Source::Escalated,
+        )
     } else {
         by_rule(ranked, Some(spent), note)
     }
@@ -1797,6 +1806,9 @@ mod tests {
             read(r#"{"choice": "a1", "input": "x"}"#).is_err(),
             "text for a button"
         );
+        // An empty text for a button is no input.
+        let (_, (input, _, _)) = read(r#"{"choice": "a1", "input": ""}"#).unwrap();
+        assert_eq!(input, None);
         assert!(
             read(r#"{"choice": "a1", "expect": {"pixels": 3}}"#).is_err(),
             "not checkable"

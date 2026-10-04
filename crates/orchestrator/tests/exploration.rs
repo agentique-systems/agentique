@@ -129,6 +129,7 @@ fn deciding(answers: &dyn Answers) -> Deciding<'_> {
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: None,
         escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        escalation_effort: None,
         threshold: 0.6,
     }
 }
@@ -939,6 +940,7 @@ fn live_exploration_compared_by_way_of_deciding() {
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: Some("low".into()),
         escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        escalation_effort: Some("low".into()),
         threshold: decider.threshold,
     };
     let base = std::env::temp_dir().join(format!("agq-explore-{}", std::process::id()));
@@ -966,7 +968,7 @@ fn live_exploration_compared_by_way_of_deciding() {
             let plan = Plan {
                 goal: task.goal.clone(),
                 way,
-                seed: 17 + n as u64,
+                seed: 17,
                 steps: steps.unwrap_or(task.steps),
                 seconds: 900,
                 usd: 0.15,
