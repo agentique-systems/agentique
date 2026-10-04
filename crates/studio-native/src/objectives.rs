@@ -1,7 +1,8 @@
 //! Objectives in the Studio (C-53, ROADMAP §4.16): the Operator gives an
 //! intent with budgets and permissions in the Objectives panel; the
 //! Orchestrator (`agq-orchestrator`) takes it through its cycles on its own
-//! thread, and the Studio shows its record and activity, carries its
+//! thread, and the Studio shows its record and its thread (C-54: read from
+//! the objective's records, then followed as entries are added), carries its
 //! requests (an observation of this Studio for the lead, the handover to an
 //! adopted build), and passes on the Operator's Pause, Step, Resume, Stop
 //! and messages. An objective the adopted build is to continue starts again
@@ -15,27 +16,21 @@ use crate::studio::{Dirty, Studio};
 use agq_assistant::claude_agent::{self, Installation};
 use agq_orchestrator::record::{Access, Budgets, Objective, Permissions, Store};
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
-use std::collections::VecDeque;
+use agq_orchestrator::thread::{Author, Kind, ThreadEntry};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-/// Activity lines kept.
-const ACTIVITY: usize = 300;
-
-/// One line of an objective's activity.
-#[derive(Clone, Debug)]
-pub struct Line {
-    pub at: String,
-    pub role: String,
-    pub text: String,
-}
+/// The latest entries of the shown objective's thread kept in memory (the
+/// thread itself is in its records).
+const SHOWN: usize = 1000;
 
 #[derive(Default)]
 pub struct ObjectivesState {
     pub handle: Option<Handle>,
     /// The objective shown: the running one, or the last one.
     pub current: Option<Objective>,
-    pub activity: VecDeque<Line>,
+    /// The latest entries of its thread, in order.
+    pub thread: Vec<ThreadEntry>,
     /// Why the last start or command did not happen.
     pub message: Option<String>,
     /// Looked at start for an objective to continue.
@@ -58,15 +53,32 @@ impl ObjectivesState {
         self.handle.is_some() || !self.looked
     }
 
-    fn note(&mut self, role: &str, text: impl Into<String>) {
-        let now = agq_launcher::now();
-        self.activity.push_back(Line {
-            at: now.get(11..19).unwrap_or(&now).to_string(),
-            role: role.to_string(),
-            text: text.into(),
-        });
-        while self.activity.len() > ACTIVITY {
-            self.activity.pop_front();
+    /// Shows `entry` of the thread in its place (entries can arrive out of
+    /// order from the Orchestrator's thread and the Studio's own); an entry
+    /// that could not be kept (number 0) goes last.
+    pub fn add(&mut self, entry: ThreadEntry) {
+        if entry.seq != 0 && self.thread.iter().any(|e| e.seq == entry.seq) {
+            return;
+        }
+        let at = if entry.seq == 0 {
+            self.thread.len()
+        } else {
+            self.thread
+                .iter()
+                .rposition(|e| e.seq != 0 && e.seq < entry.seq)
+                .map_or(0, |i| i + 1)
+        };
+        self.thread.insert(at, entry);
+        if self.thread.len() > SHOWN {
+            self.thread.drain(..self.thread.len() - SHOWN);
+        }
+    }
+
+    /// Reads the thread of objective `id` from its records.
+    fn read(&mut self, store: &Store, id: &str) {
+        self.thread.clear();
+        for entry in store.thread(id, 0) {
+            self.add(entry);
         }
     }
 }
@@ -207,10 +219,9 @@ impl Studio {
         objective.models = resolved.models;
         objective.roles_unavailable = resolved.unavailable.into_iter().collect();
         store.save(&objective)?;
-        self.objectives.activity.clear();
-        self.objectives
-            .note("orchestrator", format!("Started: {intent}"));
-        self.note_models(&objective);
+        // Its thread starts with the intent and each role's model, written
+        // by the Orchestrator as it starts.
+        self.objectives.thread.clear();
         self.objectives.current = Some(objective.clone());
         self.objectives.handle = Some(run::start(setup, objective));
         self.objectives.message = None;
@@ -243,16 +254,20 @@ impl Studio {
             objective.roles_unavailable = resolved.unavailable.into_iter().collect();
             store.save(&objective)?;
         }
-        self.objectives
-            .note("orchestrator", format!("Continuing: {}", objective.intent));
-        if resolved_now {
-            self.objectives.note(
-                "orchestrator",
-                "its record had no models (an earlier build saved it): they were resolved now from the current Settings",
-            );
-        }
-        self.note_models(&objective);
+        self.objectives.read(&store, &objective.id);
         self.objectives.current = Some(objective.clone());
+        if resolved_now {
+            self.objective_note(
+                Author::Agentique,
+                "Its record had no models (an earlier build saved it): they were resolved now from the current Settings",
+            );
+            for model in &objective.models {
+                self.objective_note(
+                    Author::Agentique,
+                    format!("The {} runs on {}", model.role, model.label()),
+                );
+            }
+        }
         self.objectives.handle = Some(run::start(setup, objective));
         self.objectives.message = None;
         self.mark(Dirty::LAYOUT | Dirty::STATUS);
@@ -270,8 +285,29 @@ impl Studio {
             objective.note = Some("Stopped by the Operator.".into());
             let _ = store.save(&objective);
             self.objectives.current = Some(objective);
+            self.objective_note(Author::Operator, "Stopped");
             self.mark(Dirty::LAYOUT);
         }
+    }
+
+    /// Adds an event to the shown objective's thread and shows it: the
+    /// Studio's own part (the Operator's stop of an objective not running,
+    /// an adoption refused, the project read again).
+    fn objective_note(&mut self, author: Author, text: impl Into<String>) {
+        let Some(id) = self.objectives.current.as_ref().map(|o| o.id.clone()) else {
+            return;
+        };
+        let entry = ThreadEntry::new(Kind::Event, author, text);
+        let shown = self
+            .objective_store()
+            .append_thread(&id, entry.clone())
+            .unwrap_or_else(|error| ThreadEntry {
+                objective: id,
+                at: agq_launcher::now(),
+                text: format!("{} (not kept in the thread: {error})", entry.text),
+                ..entry
+            });
+        self.objectives.add(shown);
     }
 
     /// The Operator's command to the running objective.
@@ -279,13 +315,9 @@ impl Studio {
         if self.refused_to_agents("steering an objective") {
             return;
         }
+        // The Orchestrator puts it in the thread as it takes it.
         if let Some(handle) = &self.objectives.handle {
-            let what = match &command {
-                Command::Message(text) => format!("you: {text}"),
-                other => format!("you: {other:?}").to_lowercase(),
-            };
             handle.send(command);
-            self.objectives.note("operator", what);
             self.mark(Dirty::LAYOUT);
         }
     }
@@ -315,6 +347,7 @@ impl Studio {
             self.objectives.looked = true;
             let store = self.objective_store();
             if let Some(active) = store.active() {
+                self.objectives.read(&store, &active.id);
                 self.objectives.current = Some(active.clone());
                 changed = true;
                 if active.continuation.is_some() && !self.safe_mode {
@@ -341,7 +374,7 @@ impl Studio {
             changed = true;
             match event {
                 Event::Changed(objective) => self.objectives.current = Some(*objective),
-                Event::Activity { role, text } => self.objectives.note(&role, text),
+                Event::Thread(entry) => self.objectives.add(entry),
                 Event::Control { body, reply } => {
                     self.control.submit(crate::control::Request::new(
                         body,
@@ -362,15 +395,16 @@ impl Studio {
                     };
                     if let Some(folder) = open.filter(|f| same(f, &repository)) {
                         self.open_project(&folder);
-                        self.objectives
-                            .note("orchestrator", "the project was read again after the merge");
+                        self.objective_note(
+                            Author::Agentique,
+                            "The project was read again after the merge",
+                        );
                     }
                 }
                 Event::Adopt { build, reply } => {
                     let result = self.use_build(&build);
                     if let Err(problem) = &result {
-                        self.objectives
-                            .note("orchestrator", format!("Not adopted: {problem}"));
+                        self.objective_note(Author::Agentique, format!("Not adopted: {problem}"));
                     }
                     let _ = reply.send(result);
                 }
@@ -384,25 +418,6 @@ impl Studio {
             self.mark(Dirty::LAYOUT | Dirty::STATUS);
         }
         changed
-    }
-
-    /// Each role's model in the activity, with why a fallback was taken.
-    fn note_models(&mut self, objective: &Objective) {
-        for model in &objective.models {
-            let why = model
-                .fallback
-                .as_ref()
-                .map(|why| format!(" (instead of {}: {why})", model.configured))
-                .unwrap_or_default();
-            self.objectives
-                .note(&model.role, format!("model: {}{why}", model.label()));
-        }
-        for (role, why) in &objective.roles_unavailable {
-            self.objectives.note(
-                role,
-                format!("no model, which this objective does not need: {why}"),
-            );
-        }
     }
 
     /// One line for the status bar while an objective runs.

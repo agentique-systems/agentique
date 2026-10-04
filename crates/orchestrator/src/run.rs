@@ -5,11 +5,13 @@
 //! used up, on no progress, or when the Operator stops it.
 
 use crate::control::{Client, TestInstance};
+use crate::record;
 use crate::record::{
-    Attempt, Check, Continuation, Cost, Criterion, Cycle, Objective, Outcome, Phase, Review,
-    RoleModel, State, Store,
+    Attempt, Check, Continuation, Cost, Criterion, Cycle, DirectiveStatus, Objective, Outcome,
+    Phase, Recipient, Review, RoleModel, State, Store,
 };
 use crate::roles::{self, Role};
+use crate::thread::{self, Author, Kind, ThreadEntry};
 use crate::{builds, forge, gates};
 use agq_assistant::conversation::{Conversation, Entry, ToolResult};
 use agq_assistant::model_tools::WorkingModel;
@@ -46,8 +48,10 @@ pub enum Command {
 pub enum Event {
     /// The record, after each change.
     Changed(Box<Objective>),
-    /// What an agent or the Orchestrator does now.
-    Activity { role: String, text: String },
+    /// An entry added to the objective's thread (C-54): what an agent, the
+    /// Operator or the Orchestrator did. Its number is 0 when it could not
+    /// be kept.
+    Thread(ThreadEntry),
     /// A request for the running Studio's control interface (the lead
     /// observes the application).
     Control { body: Value, reply: Sender<Value> },
@@ -109,6 +113,77 @@ impl Handle {
     }
 }
 
+/// Adds entries to an objective's thread and tells the Studio of each.
+#[derive(Clone)]
+struct Poster {
+    store: Store,
+    objective: String,
+    events: Sender<Event>,
+}
+
+impl Poster {
+    fn post(&self, entry: ThreadEntry) {
+        let shown = match self.store.append_thread(&self.objective, entry.clone()) {
+            Ok(added) => added,
+            // Shown all the same, unnumbered, saying it was not kept.
+            Err(error) => ThreadEntry {
+                objective: self.objective.clone(),
+                at: agq_launcher::now(),
+                text: format!("{} (not kept in the thread: {error})", entry.text),
+                ..entry
+            },
+        };
+        let _ = self.events.send(Event::Thread(shown));
+    }
+}
+
+/// An attempt's outcomes, a line each, as the thread folds them.
+fn outcome_lines(attempt: &Attempt) -> String {
+    attempt
+        .checks
+        .iter()
+        .chain(&attempt.criteria)
+        .chain(&attempt.gates)
+        .map(|o| format!("- {}: {}", o.name, o.verdict))
+        .collect::<Vec<_>>()
+        .join(
+            "
+",
+        )
+}
+
+/// The agent of `role` in `objective`, with the model recorded for it.
+fn agent_of(objective: &Objective, role: &str) -> Author {
+    Author::agent(
+        role,
+        objective
+            .models
+            .iter()
+            .find(|m| m.role == role)
+            .map(|m| m.model.clone()),
+    )
+}
+
+/// The Operator's command as its thread shows it.
+fn command_entry(command: &Command) -> Option<ThreadEntry> {
+    let text = match command {
+        Command::Message(text) => {
+            return Some(ThreadEntry::new(
+                Kind::Human,
+                Author::Operator,
+                text.clone(),
+            ));
+        }
+        Command::Pause => "Paused",
+        Command::Step => "One step",
+        Command::Resume => "Resumed",
+        Command::Stop => "Stopped",
+        // Agentique closes: the objective says so as it saves.
+        Command::Interrupt => return None,
+    };
+    Some(ThreadEntry::new(Kind::Event, Author::Operator, text))
+}
+
 /// Starts (or resumes) `objective` on its own thread.
 pub fn start(setup: Setup, objective: Objective) -> Handle {
     let (commands, received) = std::sync::mpsc::channel();
@@ -118,20 +193,29 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         controls.apply(Command::Pause);
     }
     let paused = controls.paused.clone();
+    let poster = Poster {
+        store: setup.store.clone(),
+        objective: objective.id.clone(),
+        events: events.clone(),
+    };
     // The Operator's commands take effect as they arrive, also while an
-    // agent works (its session reads the same steering and stop).
+    // agent works (its session reads the same steering and stop), and go
+    // into the thread.
     let applied = controls.clone();
+    let commanded = poster.clone();
     std::thread::spawn(move || {
         let received: Receiver<Command> = received;
         for command in received {
+            if let Some(entry) = command_entry(&command) {
+                commanded.post(entry);
+            }
             applied.apply(command);
         }
     });
     if let Err(error) = cargo_settings(&setup.work) {
-        let _ = events.send(Event::Activity {
-            role: "orchestrator".into(),
-            text: format!("The build settings could not be written: {error}"),
-        });
+        poster.post(ThreadEntry::event(format!(
+            "The build settings could not be written: {error}"
+        )));
     }
     let thread = std::thread::Builder::new()
         .name("agentique-objective".into())
@@ -140,6 +224,7 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
                 setup,
                 objective,
                 events,
+                poster,
                 controls,
                 last: Instant::now(),
             };
@@ -293,6 +378,7 @@ struct Driver {
     setup: Setup,
     objective: Objective,
     events: Sender<Event>,
+    poster: Poster,
     controls: Controls,
     /// Since when time worked is not yet counted.
     last: Instant,
@@ -308,20 +394,64 @@ struct Session {
 type Next = Result<Phase, String>;
 
 impl Driver {
-    fn note(&self, role: &str, text: impl Into<String>) {
-        let _ = self.events.send(Event::Activity {
-            role: role.to_string(),
-            text: text.into(),
-        });
+    /// Agentique's event in the thread.
+    fn event(&self, text: impl Into<String>) {
+        self.poster.post(ThreadEntry::event(text));
+    }
+
+    fn post(&self, entry: ThreadEntry) {
+        self.poster.post(entry);
+    }
+
+    /// The agent of `role`, with the model the objective recorded for it.
+    fn agent(&self, role: &str) -> Author {
+        agent_of(&self.objective, role)
+    }
+
+    /// Records a directive of `author` for `recipient` and shows it in the
+    /// thread as `text`, with `details` (what it hands over) folded under
+    /// it; returns its id.
+    fn direct(
+        &mut self,
+        author: &str,
+        recipient: Recipient,
+        scope: record::Scope,
+        refers_to: Option<String>,
+        text: String,
+        details: String,
+    ) -> String {
+        let id = self.objective.direct(author, recipient, scope, refers_to);
+        self.save();
+        self.post(
+            ThreadEntry::new(Kind::Directive, self.agent(author), text)
+                .with_details(details)
+                .for_directive(Some(&id)),
+        );
+        id
+    }
+
+    /// Settles every directive still running in this objective (it
+    /// stopped, or its cycle ended).
+    fn settle_running(&mut self, status: DirectiveStatus, result: &str) {
+        let running: Vec<String> = self
+            .objective
+            .directives
+            .iter()
+            .filter(|d| d.status == DirectiveStatus::Running)
+            .map(|d| d.id.clone())
+            .collect();
+        for id in running {
+            self.objective
+                .settle(&id, status.clone(), Some(result.to_string()));
+        }
     }
 
     fn save(&mut self) {
         self.count_time();
         if let Err(error) = self.setup.store.save(&self.objective) {
-            self.note(
-                "orchestrator",
-                format!("The objective's record could not be saved: {error}"),
-            );
+            self.event(format!(
+                "The objective's record could not be saved: {error}"
+            ));
         }
         let _ = self
             .events
@@ -412,11 +542,51 @@ impl Driver {
         None
     }
 
+    /// The thread's first entries: the intent, as its author gave it, and
+    /// each role's model with why a fallback was taken; or, for an
+    /// objective going on, where it goes on from.
+    fn opening(&mut self) {
+        let id = self.id();
+        if !self.setup.store.thread(&id, 0).is_empty() {
+            let at = self
+                .objective
+                .cycle()
+                .map(|c| format!("cycle {}, {}", c.n, c.phase.label().to_lowercase()))
+                .unwrap_or_else(|| "its start".into());
+            self.event(format!("Going on from {at}"));
+            return;
+        }
+        let author = match &self.objective.requested_by {
+            Some(by) => agent_of(&self.objective, &by.role),
+            None => Author::Operator,
+        };
+        self.post(ThreadEntry::new(
+            Kind::Human,
+            author,
+            self.objective.intent.clone(),
+        ));
+        for model in self.objective.models.clone() {
+            let why = model
+                .fallback
+                .as_ref()
+                .map(|why| format!(" (instead of {}: {why})", model.configured))
+                .unwrap_or_default();
+            self.event(format!(
+                "The {} runs on {}{why}; billed {}",
+                model.role,
+                model.label(),
+                model.billed
+            ));
+        }
+        for (role, why) in self.objective.roles_unavailable.clone() {
+            self.event(format!(
+                "The {role} has no model, which this objective does not need: {why}"
+            ));
+        }
+    }
+
     fn run(&mut self) {
-        self.note(
-            "orchestrator",
-            format!("Objective: {}", self.objective.intent),
-        );
+        self.opening();
         if self.objective.continuation.is_some()
             && let Some(cycle) = self.objective.cycle_mut()
         {
@@ -459,10 +629,7 @@ impl Driver {
                 }
                 Some(phase) => phase,
             };
-            self.note(
-                "orchestrator",
-                format!("Cycle {}: {}", self.cycle().n, phase.label()),
-            );
+            self.event(format!("Cycle {}: {}", self.cycle().n, phase.label()));
             let next = match phase {
                 Phase::Propose => self.propose(),
                 Phase::Implement => self.implement(String::new()),
@@ -495,6 +662,9 @@ impl Driver {
             match next {
                 Ok(next) => {
                     self.cycle_mut().phase = next;
+                    if next == Phase::Done {
+                        self.settle_running(DirectiveStatus::Done, "the cycle is done");
+                    }
                     self.save();
                 }
                 Err(_) if self.interrupted() => return,
@@ -507,17 +677,16 @@ impl Driver {
                 Err(blocker) if blocker.starts_with("paused:") => {
                     // Waits for the Operator (their working copy, say), then
                     // tries the same phase again.
+                    let why = blocker.trim_start_matches("paused:").trim().to_string();
+                    self.event(format!("Paused until you resume it: {why}"));
                     self.objective.state = State::Paused;
-                    self.objective.note =
-                        Some(blocker.trim_start_matches("paused:").trim().to_string());
+                    self.objective.note = Some(why);
                     self.controls.apply(Command::Pause);
                     self.save();
                 }
                 Err(blocker) => {
-                    self.note(
-                        "orchestrator",
-                        format!("Cycle {} stopped: {blocker}", self.cycle().n),
-                    );
+                    self.event(format!("Cycle {} stopped: {blocker}", self.cycle().n));
+                    self.settle_running(DirectiveStatus::Failed, &blocker);
                     let cycle = self.cycle_mut();
                     cycle.blocker = Some(blocker);
                     cycle.phase = Phase::Failed;
@@ -536,12 +705,19 @@ impl Driver {
         self.objective.note = Some(
             "Interrupted when Agentique closed; continue it from the Objectives panel.".into(),
         );
+        self.event("Interrupted when Agentique closed; it goes on when you continue it");
         self.save();
         true
     }
 
     fn end(&mut self, state: State, note: String) {
-        self.note("orchestrator", note.clone());
+        self.event(note.clone());
+        let settled = match state {
+            State::Stopped => DirectiveStatus::Stopped,
+            State::Done => DirectiveStatus::Done,
+            _ => DirectiveStatus::Failed,
+        };
+        self.settle_running(settled, &note);
         self.objective.state = state;
         self.objective.note = Some(note);
         self.save();
@@ -619,10 +795,6 @@ impl Driver {
         let events = self.events.clone();
         let role_name = role.name().to_string();
         let mut executor = |call: &ToolCall| -> ToolResult {
-            let _ = events.send(Event::Activity {
-                role: role_name.clone(),
-                text: format!("{} {}", agq_assistant::phase(&call.name), call.name),
-            });
             match call.name.as_str() {
                 roles::SUBMIT_PROPOSAL
                 | roles::SUBMIT_IMPLEMENTATION
@@ -693,6 +865,21 @@ impl Driver {
         };
         let session_id: RefCell<Option<String>> = RefCell::new(None);
         let stop = self.controls.stop.clone();
+        // Its tool calls go into the thread as its activity, under the
+        // directive it works on (C-54): each once its input is whole.
+        let author = self.agent(role.name());
+        let directive = self
+            .objective
+            .running_for(role.name())
+            .map(|d| d.id.clone());
+        let poster = self.poster.clone();
+        let activity = |text: String, details: Option<String>| {
+            let mut entry = ThreadEntry::new(Kind::Activity, author.clone(), text)
+                .for_directive(directive.as_deref());
+            entry.details = details;
+            poster.post(entry);
+        };
+        let calls: RefCell<Vec<(String, String, String)>> = RefCell::new(Vec::new());
         let mut on_event = |event: TurnEvent| match event {
             TurnEvent::Stream(StreamEvent::ModelUsage { model, usage }) => {
                 let tokens = usage.input_tokens
@@ -728,39 +915,54 @@ impl Driver {
                     stop.store(true, Ordering::SeqCst);
                 }
             }
-            TurnEvent::Stream(StreamEvent::ToolCallStarted { name, .. }) => {
-                let _ = self.events.send(Event::Activity {
-                    role: role.name().into(),
-                    text: format!("{}: {name}", agq_assistant::phase(&name)),
-                });
+            TurnEvent::Stream(StreamEvent::ToolCallStarted { id, name }) => {
+                calls.borrow_mut().push((id, name, String::new()));
+            }
+            TurnEvent::Stream(StreamEvent::ToolInput { id, json }) => {
+                let mut calls = calls.borrow_mut();
+                if let Some(at) = calls.iter().position(|(i, ..)| *i == id) {
+                    calls[at].2.push_str(&json);
+                    if let Ok(input) = serde_json::from_str::<Value>(&calls[at].2) {
+                        let (_, name, _) = calls.remove(at);
+                        let (text, details) = thread::activity(&name, &input);
+                        activity(text, details);
+                    }
+                }
+            }
+            TurnEvent::ToolFinished(result) => {
+                // A call whose input never came whole: shown by its name.
+                let mut calls = calls.borrow_mut();
+                if let Some(at) = calls.iter().position(|(i, ..)| *i == result.tool_use_id) {
+                    let (_, name, _) = calls.remove(at);
+                    activity(thread::activity(&name, &Value::Null).0, None);
+                }
             }
             TurnEvent::Activity(Activity::Task {
                 description,
                 agent,
                 event,
                 ..
-            }) => {
-                let _ = self.events.send(Event::Activity {
-                    role: role.name().into(),
-                    text: format!(
-                        "subagent {} {:?}: {description}",
-                        agent.unwrap_or_default(),
-                        event
-                    )
-                    .to_lowercase(),
-                });
-            }
+            }) => activity(
+                format!(
+                    "subagent {} {:?}: {description}",
+                    agent.unwrap_or_default(),
+                    event
+                )
+                .to_lowercase(),
+                None,
+            ),
             TurnEvent::Entry(Entry::Session { id, .. }) => *session_id.borrow_mut() = Some(id),
-            TurnEvent::Entry(Entry::Notice { text }) => {
-                let _ = self.events.send(Event::Activity {
-                    role: role.name().into(),
-                    text,
-                });
-            }
+            TurnEvent::Entry(Entry::Notice { text }) => activity(text, None),
             _ => {}
         };
-        self.note(role.name(), format!("model: {}", assigned.label()));
-        self.note(role.name(), "starts");
+        activity(
+            format!(
+                "{} its session on {}",
+                if resume { "resumes" } else { "starts" },
+                assigned.label()
+            ),
+            None,
+        );
         agent.run(
             &mut conversation,
             &toolset,
@@ -833,13 +1035,10 @@ impl Driver {
             }
         }
         if !removed.is_empty() {
-            self.note(
-                "orchestrator",
-                format!(
-                    "removed build settings an agent left: {}",
-                    removed.join(", ")
-                ),
-            );
+            self.event(format!(
+                "removed build settings an agent left: {}",
+                removed.join(", ")
+            ));
         }
         Ok(())
     }
@@ -854,10 +1053,10 @@ impl Driver {
         let mut dialogs = Vec::new();
         for (dialog, decision) in made {
             self.objective.spent.decisions += 1;
-            self.note(
-                "orchestrator",
-                format!("a {dialog} dialog was in the way: {}", decision.choice),
-            );
+            self.event(format!(
+                "a {dialog} dialog was in the way: {}",
+                decision.choice
+            ));
             dialogs.push(dialog);
         }
         match cleared {
@@ -981,6 +1180,17 @@ impl Driver {
         }
         let base = self.cycle().base.clone().unwrap_or(head.commit);
         self.cycle_mut().base = Some(base.clone());
+        // Proposed and handed over before a restart: not asked again.
+        let handed = format!("cycle-{}/proposal", self.cycle().n);
+        if self.cycle().proposal.is_some()
+            && self
+                .objective
+                .directives
+                .iter()
+                .any(|d| d.refers_to.as_deref() == Some(handed.as_str()))
+        {
+            return Ok(Phase::Implement);
+        }
         let lead = self.checkout("lead", &base)?;
         let policy = self.policy(&lead, false, false);
         let mut brief = roles::brief(Role::Lead, &self.objective, "");
@@ -995,8 +1205,22 @@ impl Driver {
             )?;
             match session.submitted.as_ref().map(roles::read_proposal) {
                 Some(Ok(proposal)) => {
-                    self.note("lead", format!("proposes: {}", proposal.title));
+                    // The proposal, frozen, handed to the implementer.
+                    let title = proposal.title.clone();
+                    let text = roles::proposal_text(&proposal);
                     self.cycle_mut().proposal = Some(proposal);
+                    self.direct(
+                        "lead",
+                        Recipient::Role("implementer".into()),
+                        record::Scope {
+                            instruction: format!("Implement the frozen proposal “{title}”"),
+                            budgets: None,
+                            permissions: None,
+                        },
+                        Some(handed.clone()),
+                        format!("Proposes: {title}"),
+                        text,
+                    );
                     let _ = git::remove_worktree(
                         &repository,
                         &format!("{}-{}-lead", self.id(), self.cycle().n),
@@ -1052,13 +1276,43 @@ impl Driver {
         let policy = self.policy(&work, true, true);
         let repairing = !context.is_empty();
         let brief = roles::brief(Role::Implementer, &self.objective, &context);
+        let directive = self
+            .objective
+            .running_for("implementer")
+            .map(|d| d.id.clone());
         let session = self.session(Role::Implementer, &work, policy, brief, repairing, None)?;
-        let summary = session
+        let submitted = session
             .submitted
             .as_ref()
             .and_then(|v| v["summary"].as_str())
-            .map(str::to_string)
+            .map(str::to_string);
+        let summary = submitted
+            .clone()
             .unwrap_or_else(|| format!("(no summary; it said: {})", session.said));
+        self.post(
+            ThreadEntry::new(
+                Kind::Result,
+                self.agent("implementer"),
+                match &submitted {
+                    Some(_) => "Submits the implementation",
+                    None => "Ends without submitting the implementation",
+                },
+            )
+            .with_details(summary.clone())
+            .for_directive(directive.as_deref()),
+        );
+        // A repair it was directed to make is done when it hands it over;
+        // the proposal's directive goes on until the cycle ends.
+        if let Some(id) = &directive
+            && self.objective.directive(id).is_some_and(|d| {
+                d.refers_to
+                    .as_deref()
+                    .is_some_and(|r| r.contains("/review-"))
+            })
+        {
+            self.objective
+                .settle(id, DirectiveStatus::Done, Some(summary.clone()));
+        }
         let a = self.cycle().attempts.len() as u32 + 1;
         let message = format!(
             "{} (objective {id}, cycle {n}, attempt {a})",
@@ -1090,10 +1344,10 @@ impl Driver {
         if commit == base || Some(&commit) == previous.as_ref() {
             return Err("the implementer changed nothing".into());
         }
-        self.note(
-            "implementer",
-            format!("committed {}", builds::short(&commit)),
-        );
+        self.event(format!(
+            "Committed the implementer's work as {} (attempt {a})",
+            builds::short(&commit)
+        ));
         self.cycle_mut().attempts.push(Attempt {
             n: a,
             commit: Some(commit),
@@ -1244,7 +1498,7 @@ impl Driver {
             if self.controls.stopped() {
                 return Err("stopped".into());
             }
-            self.note("orchestrator", format!("check: {}", words.join(" ")));
+            self.event(format!("check: {}", words.join(" ")));
             checks.push(self.command(&verify, &words, Duration::from_secs(3600)));
         }
         let mut criteria = Vec::new();
@@ -1387,16 +1641,17 @@ impl Driver {
         attempt.criteria = criteria;
         attempt.gates = gates;
         let failed = attempt.failures();
+        let outcomes = outcome_lines(attempt);
         if failed.is_empty() {
-            self.note(
-                "orchestrator",
-                "every required check, command criterion and gate passed",
+            self.post(
+                ThreadEntry::event("Every required check, command criterion and gate passed")
+                    .with_details(outcomes),
             );
             Ok(Phase::Evaluate)
         } else {
-            self.note(
-                "orchestrator",
-                format!("{} failed: {}", failed.len(), failed.join("; ")),
+            self.post(
+                ThreadEntry::event(format!("{} failed: {}", failed.len(), failed.join("; ")))
+                    .with_details(outcomes),
             );
             Ok(Phase::Repair)
         }
@@ -1419,7 +1674,7 @@ impl Driver {
             .and_then(|a| a.commit.clone())
             .ok_or("nothing to evaluate")?;
         let verify = self.checkout("verify", &commit)?;
-        self.note("orchestrator", "building the change for a test instance");
+        self.event("building the change for a test instance");
         let exe = builds::debug_studio(&verify, &self.target(), self.controls.stop.clone())?;
         let mut instance = TestInstance::start(&exe, &self.folder("instance"), &verify, &verify)?;
         let mut client = instance.connect(Duration::from_secs(180))?;
@@ -1462,6 +1717,32 @@ impl Driver {
                 Some(&mut client),
             )?;
             let reported = session.submitted.unwrap_or_default();
+            self.post(
+                ThreadEntry::new(
+                    Kind::Result,
+                    self.agent("evaluator"),
+                    "Reports the criteria it judged",
+                )
+                .with_details(
+                    reported["criteria"]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                        .map(|c| {
+                            format!(
+                                "- {}: {} ({})",
+                                c["id"].as_str().unwrap_or_default(),
+                                c["outcome"].as_str().unwrap_or("not run"),
+                                c["observations"].as_str().unwrap_or_default()
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(
+                            "
+",
+                        ),
+                ),
+            );
             for criterion in judged {
                 let found = reported["criteria"]
                     .as_array()
@@ -1489,9 +1770,23 @@ impl Driver {
         }
         let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
         attempt.criteria.extend(outcomes);
-        if attempt.failures().is_empty() {
+        let failed = attempt.failures();
+        let lines = outcome_lines(attempt);
+        if failed.is_empty() {
+            self.post(
+                ThreadEntry::event("The test instance showed every behavioural criterion")
+                    .with_details(lines),
+            );
             Ok(Phase::Review)
         } else {
+            self.post(
+                ThreadEntry::event(format!(
+                    "In the test instance, {} failed: {}",
+                    failed.len(),
+                    failed.join("; ")
+                ))
+                .with_details(lines),
+            );
             Ok(Phase::Repair)
         }
     }
@@ -1549,10 +1844,65 @@ impl Driver {
             test_changes_accepted: verdict["test_changes_accepted"] == true,
             commit: commit.clone(),
         };
-        self.note(
-            "reviewer",
-            format!("{}: {}", review.verdict, review.findings.join("; ")),
+        let findings = review
+            .findings
+            .iter()
+            .map(|f| format!("- {f}"))
+            .collect::<Vec<_>>()
+            .join(
+                "
+",
+            );
+        self.post(
+            ThreadEntry::new(
+                Kind::Result,
+                self.agent("reviewer"),
+                if review.verdict == "approve" {
+                    format!("Approves {}", builds::short(&commit))
+                } else {
+                    format!("Asks for changes to {}", builds::short(&commit))
+                },
+            )
+            .with_details(findings.clone()),
         );
+        if review.verdict != "approve" {
+            // Its findings, handed to the implementer for repair (a
+            // repeated review of the same attempt replaces the earlier).
+            let refers = format!("cycle-{}/review-{}", self.cycle().n, attempt.n);
+            let earlier: Vec<String> = self
+                .objective
+                .directives
+                .iter()
+                .filter(|d| {
+                    d.refers_to.as_deref() == Some(refers.as_str())
+                        && d.status == DirectiveStatus::Running
+                })
+                .map(|d| d.id.clone())
+                .collect();
+            for id in earlier {
+                self.objective.settle(
+                    &id,
+                    DirectiveStatus::Stopped,
+                    Some("a later review of the same attempt replaced it".into()),
+                );
+            }
+            self.direct(
+                "reviewer",
+                Recipient::Role("implementer".into()),
+                record::Scope {
+                    instruction: format!(
+                        "Repair attempt {} as the review asks:
+{findings}",
+                        attempt.n
+                    ),
+                    budgets: None,
+                    permissions: None,
+                },
+                Some(refers),
+                "Asks the implementer to repair what the review found".into(),
+                findings,
+            );
+        }
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         let baseline = gates::baseline(&patch, &proposal, Some(&review));
         let approved = review.verdict == "approve";
@@ -1698,13 +2048,10 @@ impl Driver {
                 pr
             }
         };
-        self.note(
-            "orchestrator",
-            format!(
-                "pull request {} opened; waiting for the repository's checks",
-                pr.url
-            ),
-        );
+        self.event(format!(
+            "pull request {} opened; waiting for the repository's checks",
+            pr.url
+        ));
         // The host has the pushed commit as the pull request's head before
         // its checks are read (a re-push's checks, not the last ones).
         let since = Instant::now();
@@ -1741,10 +2088,7 @@ impl Driver {
             })?;
         self.cycle_mut().merged = Some(merged.clone());
         self.save();
-        self.note(
-            "orchestrator",
-            format!("merged as {}", builds::short(&merged)),
-        );
+        self.event(format!("merged as {}", builds::short(&merged)));
         if let Err(problem) = forge::follow(&repository, &base_branch, &merged) {
             return Err(format!("paused: {problem}"));
         }
@@ -1819,10 +2163,7 @@ impl Driver {
                     .collect()
             })
             .unwrap_or_default();
-        self.note(
-            "orchestrator",
-            format!("release build of {}", builds::short(&merged)),
-        );
+        self.event(format!("release build of {}", builds::short(&merged)));
         let repository = self.objective.repository.clone();
         let root = self.setup.builds.clone();
         let stop = self.controls.stop.clone();
@@ -1832,6 +2173,7 @@ impl Driver {
             &format!("cycle-{n}/build-{}", builds::short(&merged)),
             || builds::build(&repository, &merged, Some(task), checks, &root, stop).map(|m| m.id),
         )?;
+        self.event(format!("Built {build}"));
         self.cycle_mut().build = Some(build);
         Ok(Phase::Try)
     }
@@ -1897,6 +2239,22 @@ impl Driver {
         }
         drop(instance);
         let passed = outcomes.iter().all(Outcome::passed);
+        let lines = outcomes
+            .iter()
+            .map(|o| format!("- {}: {}", o.name, o.verdict))
+            .collect::<Vec<_>>()
+            .join(
+                "
+",
+            );
+        self.post(
+            ThreadEntry::event(if passed {
+                format!("The build {build} passed its trial")
+            } else {
+                format!("The build {build} did not pass its trial")
+            })
+            .with_details(lines),
+        );
         self.cycle_mut().trial = outcomes;
         if passed {
             Ok(Phase::Adopt)
@@ -1921,7 +2279,7 @@ impl Driver {
         });
         self.cycle_mut().phase = Phase::Resume;
         self.save();
-        self.note("orchestrator", format!("handing over to {build}"));
+        self.event(format!("handing over to {build}"));
         let (reply, answer) = std::sync::mpsc::channel();
         let _ = self.events.send(Event::Adopt {
             build: build.clone(),
@@ -1951,10 +2309,10 @@ impl Driver {
         let running = self.setup.running_build.clone();
         if running.as_deref() == Some(continuation.build.as_str()) {
             self.cycle_mut().adopted = true;
-            self.note(
-                "orchestrator",
-                format!("running the adopted build {}; going on", continuation.build),
-            );
+            self.event(format!(
+                "running the adopted build {}; going on",
+                continuation.build
+            ));
             Ok(Phase::Done)
         } else {
             Err(format!(

@@ -37,6 +37,30 @@ pub struct Budgets {
     pub attempts: u32,
     /// Hours worked (not counting time paused) at most.
     pub hours: f64,
+    /// Actions an exploration run may take (C-54).
+    #[serde(default = "default_steps")]
+    pub steps: u32,
+    /// Model calls a session of a role may make, by role (C-54); a role not
+    /// named has its default ([`DEFAULT_CALLS`]).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub calls: BTreeMap<String, u32>,
+}
+
+/// The actions of an exploration run when the Operator sets none: the
+/// step budget of the fixed exploration tasks (W12.4).
+pub const DEFAULT_STEPS: u32 = 20;
+
+/// Each session role's model calls when the Operator sets none (the bounds
+/// Stage 11's cycles ran with).
+pub const DEFAULT_CALLS: [(&str, u32); 4] = [
+    ("lead", 80),
+    ("implementer", 160),
+    ("reviewer", 60),
+    ("evaluator", 80),
+];
+
+fn default_steps() -> u32 {
+    DEFAULT_STEPS
 }
 
 impl Default for Budgets {
@@ -46,6 +70,53 @@ impl Default for Budgets {
             cycles: 1,
             attempts: 4,
             hours: 6.0,
+            steps: DEFAULT_STEPS,
+            calls: BTreeMap::new(),
+        }
+    }
+}
+
+impl Budgets {
+    /// The model calls a session of `role` may make.
+    pub fn calls_of(&self, role: &str) -> u32 {
+        self.calls.get(role).copied().unwrap_or_else(|| {
+            DEFAULT_CALLS
+                .iter()
+                .find(|(r, _)| *r == role)
+                .map_or(80, |(_, n)| *n)
+        })
+    }
+
+    /// Whether the Operator's budgets are within what an objective may set:
+    /// a start form shows the problems and starts nothing.
+    pub fn check(&self) -> Result<(), Vec<String>> {
+        let mut problems = Vec::new();
+        if !(0.05..=100.0).contains(&self.usd) {
+            problems.push("the spend budget is between $0.05 and $100".to_string());
+        }
+        if !(1..=10).contains(&self.cycles) {
+            problems.push("an objective makes 1 to 10 improvements".into());
+        }
+        if !(1..=10).contains(&self.attempts) {
+            problems.push("a cycle has 1 to 10 attempts".into());
+        }
+        if !(0.1..=48.0).contains(&self.hours) {
+            problems.push("the time budget is between 0.1 and 48 hours".into());
+        }
+        if !(1..=500).contains(&self.steps) {
+            problems.push("an exploration takes 1 to 500 steps".into());
+        }
+        for (role, calls) in &self.calls {
+            if !DEFAULT_CALLS.iter().any(|(r, _)| r == role) {
+                problems.push(format!("{role} is not a role with a session"));
+            } else if !(1..=1000).contains(calls) {
+                problems.push(format!("the {role} makes 1 to 1000 model calls"));
+            }
+        }
+        if problems.is_empty() {
+            Ok(())
+        } else {
+            Err(problems)
         }
     }
 }
@@ -443,6 +514,75 @@ impl Cycle {
     }
 }
 
+/// An agent role of an objective: who wrote a directive, who asked for a
+/// child objective (C-54).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoleRef {
+    pub role: String,
+    pub objective: String,
+}
+
+/// Whom a directive is for: a role within the objective, or a child
+/// objective (its id).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "id", rename_all = "lowercase")]
+pub enum Recipient {
+    Role(String),
+    Child(String),
+}
+
+/// What a directive asks: the instruction, and for a child objective its
+/// budgets and permissions.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Scope {
+    pub instruction: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budgets: Option<Budgets>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permissions: Option<Permissions>,
+}
+
+/// Where a directive is.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", rename_all = "lowercase")]
+pub enum DirectiveStatus {
+    Running,
+    Done,
+    Failed,
+    Stopped,
+    /// The Orchestrator did not accept it, with why.
+    Refused {
+        reason: String,
+    },
+}
+
+/// One agent's instruction to another (C-54, ROADMAP §4.16 "Directives and
+/// delegation"): created only by the Orchestrator (a handoff within a cycle,
+/// or a tool call it validated), never by text alone, and kept in the
+/// objective's record.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Directive {
+    /// `<objective>/d<n>`.
+    pub id: String,
+    pub author: RoleRef,
+    pub recipient: Recipient,
+    /// The objective it belongs to.
+    pub parent: String,
+    pub scope: Scope,
+    pub status: DirectiveStatus,
+    /// What came of it, in a few lines.
+    #[serde(default)]
+    pub result: Option<String>,
+    /// The record it hands over: `cycle-<n>/proposal`, `cycle-<n>/review-<attempt>`.
+    #[serde(default)]
+    pub refers_to: Option<String>,
+    pub created: String,
+    pub updated: String,
+}
+
 /// Where an objective goes on after its Studio hands over to an adopted
 /// build.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -485,6 +625,29 @@ pub struct Objective {
     /// explorer, escalation or typed decisions.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub roles_unavailable: BTreeMap<String, String>,
+    /// Its cycles start by exploring the running build (C-54).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub explore: bool,
+    /// The objective that delegated it, for a child objective (C-54).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<String>,
+    /// 0 for the Operator's; one more than its parent's for a child.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub depth: u8,
+    /// The agent that asked for it, for a child objective.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requested_by: Option<RoleRef>,
+    /// The directives of its agents, in the order they were made.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub directives: Vec<Directive>,
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
+}
+
+fn is_zero(value: &u8) -> bool {
+    *value == 0
 }
 
 impl Objective {
@@ -499,6 +662,57 @@ impl Objective {
     /// Whether it is still going (running or paused).
     pub fn active(&self) -> bool {
         matches!(self.state, State::Running | State::Paused)
+    }
+
+    /// Records a new directive of `author` (a role of this objective) for
+    /// `recipient`, running, and returns its id.
+    pub fn direct(
+        &mut self,
+        author: &str,
+        recipient: Recipient,
+        scope: Scope,
+        refers_to: Option<String>,
+    ) -> String {
+        let now = agq_launcher::now();
+        let id = format!("{}/d{}", self.id, self.directives.len() + 1);
+        self.directives.push(Directive {
+            id: id.clone(),
+            author: RoleRef {
+                role: author.to_string(),
+                objective: self.id.clone(),
+            },
+            recipient,
+            parent: self.id.clone(),
+            scope,
+            status: DirectiveStatus::Running,
+            result: None,
+            refers_to,
+            created: now.clone(),
+            updated: now,
+        });
+        id
+    }
+
+    pub fn directive(&self, id: &str) -> Option<&Directive> {
+        self.directives.iter().find(|d| d.id == id)
+    }
+
+    /// Moves directive `id` to `status`, with what came of it.
+    pub fn settle(&mut self, id: &str, status: DirectiveStatus, result: Option<String>) {
+        if let Some(directive) = self.directives.iter_mut().find(|d| d.id == id) {
+            directive.status = status;
+            if result.is_some() {
+                directive.result = result;
+            }
+            directive.updated = agq_launcher::now();
+        }
+    }
+
+    /// The latest directive for `role` that is still running.
+    pub fn running_for(&self, role: &str) -> Option<&Directive> {
+        self.directives.iter().rev().find(|d| {
+            d.status == DirectiveStatus::Running && d.recipient == Recipient::Role(role.into())
+        })
     }
 }
 
@@ -559,6 +773,11 @@ impl Store {
             note: None,
             models: Vec::new(),
             roles_unavailable: BTreeMap::new(),
+            explore: false,
+            parent: None,
+            depth: 0,
+            requested_by: None,
+            directives: Vec::new(),
         };
         self.save(&objective)?;
         Ok(objective)
@@ -840,6 +1059,11 @@ mod tests {
                 "decisions".to_string(),
                 "typesafe/jev-1.13.0 needs a TypeSafe AI key".to_string(),
             )]),
+            explore: false,
+            parent: None,
+            depth: 0,
+            requested_by: None,
+            directives: Vec::new(),
         };
         objective.spent.add(
             "lead",
@@ -929,6 +1153,155 @@ mod tests {
         store.save(&objective).unwrap();
         assert_eq!(store.load(&objective.id).unwrap(), objective);
         assert!(!include_str!("record.rs").contains(concat!("deny_unknown", "_fields")));
+    }
+
+    /// `objective.json` stays format 1 with what W12.5 and W12.6 add (C-54,
+    /// §7.6 locked part (4)): exploring, a child's parent, depth and
+    /// requester, directives, and the step and call budgets are optional;
+    /// the previous build (`main` with W12.3, whose reader is these types
+    /// without them, `Previous` and `PreviousBudgets` here) reads a record
+    /// that has them, and this build reads one it wrote with its defaults.
+    #[test]
+    fn a_record_with_directives_and_new_budgets_stays_format_1() {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct PreviousBudgets {
+            usd: f64,
+            cycles: u32,
+            attempts: u32,
+            hours: f64,
+        }
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct Previous {
+            format: u32,
+            id: String,
+            intent: String,
+            created: String,
+            state: State,
+            budgets: PreviousBudgets,
+            permissions: Permissions,
+            repository: PathBuf,
+            base_branch: String,
+            #[serde(default)]
+            cycles: Vec<Cycle>,
+            #[serde(default)]
+            spent: Spend,
+            continuation: Option<Continuation>,
+            note: Option<String>,
+            #[serde(default)]
+            models: Vec<RoleModel>,
+            #[serde(default)]
+            roles_unavailable: BTreeMap<String, String>,
+        }
+        let mut objective = with_models();
+        objective.explore = true;
+        objective.parent = Some("objective-0".into());
+        objective.depth = 1;
+        objective.requested_by = Some(RoleRef {
+            role: "lead".into(),
+            objective: "objective-0".into(),
+        });
+        objective.budgets.steps = 40;
+        objective.budgets.calls.insert("lead".into(), 30);
+        let id = objective.direct(
+            "lead",
+            Recipient::Role("implementer".into()),
+            Scope {
+                instruction: "Implement the proposal".into(),
+                budgets: None,
+                permissions: None,
+            },
+            Some("cycle-1/proposal".into()),
+        );
+        assert_eq!(id, "objective-1/d1");
+        let child = objective.direct(
+            "lead",
+            Recipient::Child("objective-1-d2".into()),
+            Scope {
+                instruction: "Explore the History panel".into(),
+                budgets: Some(Budgets {
+                    usd: 0.5,
+                    ..Budgets::default()
+                }),
+                permissions: Some(Permissions::default()),
+            },
+            None,
+        );
+        objective.settle(
+            &child,
+            DirectiveStatus::Refused {
+                reason: "over budget".into(),
+            },
+            None,
+        );
+        objective.settle(&id, DirectiveStatus::Done, Some("Implemented".into()));
+        assert_eq!(objective.running_for("implementer"), None);
+        let text = serde_json::to_string_pretty(&objective).unwrap();
+        for field in [
+            "\"explore\"",
+            "\"parent\"",
+            "\"depth\"",
+            "\"requestedBy\"",
+            "\"directives\"",
+            "\"refersTo\"",
+            "\"steps\"",
+            "\"calls\"",
+            "\"refused\"",
+        ] {
+            assert!(text.contains(field), "{field}");
+        }
+        // The previous build reads it, and sees what it knew.
+        let previous: Previous = serde_json::from_str(&text).unwrap();
+        assert_eq!(previous.format, 1);
+        assert_eq!(previous.budgets.attempts, 4);
+        assert_eq!(previous.models.len(), 1);
+        // This build reads it back whole.
+        let read: Objective = serde_json::from_str(&text).unwrap();
+        assert_eq!(read, objective);
+        assert_eq!(read.budgets.calls_of("lead"), 30);
+        assert_eq!(read.budgets.calls_of("implementer"), 160);
+        assert!(matches!(
+            read.directive(&child).unwrap().status,
+            DirectiveStatus::Refused { .. }
+        ));
+        // A record the previous build wrote reads with the defaults, and a
+        // record of an objective that does not explore writes none of them.
+        let plain = with_models();
+        let text = serde_json::to_string_pretty(&plain).unwrap();
+        for field in [
+            "\"explore\"",
+            "\"parent\"",
+            "\"depth\"",
+            "\"directives\"",
+            "\"calls\"",
+        ] {
+            assert!(!text.contains(field), "{field}");
+        }
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        old["budgets"].as_object_mut().unwrap().remove("steps");
+        let read: Objective = serde_json::from_value(old).unwrap();
+        assert_eq!(read.budgets.steps, DEFAULT_STEPS);
+        assert!(!read.explore && read.parent.is_none() && read.directives.is_empty());
+        assert_eq!(read, plain);
+    }
+
+    #[test]
+    fn budgets_are_checked_before_an_objective_starts() {
+        assert!(Budgets::default().check().is_ok());
+        let wrong = Budgets {
+            usd: 0.0,
+            cycles: 0,
+            attempts: 11,
+            hours: 0.0,
+            steps: 0,
+            calls: BTreeMap::from([("explorer".to_string(), 5), ("lead".to_string(), 0)]),
+        };
+        let problems = wrong.check().unwrap_err();
+        assert_eq!(problems.len(), 7, "{problems:?}");
+        assert_eq!(Budgets::default().calls_of("reviewer"), 60);
     }
 
     #[test]

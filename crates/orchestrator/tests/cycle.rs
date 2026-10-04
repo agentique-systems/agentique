@@ -12,7 +12,9 @@ use agq_assistant::claude_agent::{ClaudeAgent, Installation, find_node};
 use agq_orchestrator::record::{
     Access, Budgets, Objective, Permissions, Phase, RoleModel, State, Store,
 };
+use agq_orchestrator::record::{DirectiveStatus, Recipient};
 use agq_orchestrator::run::{self, Command, Event, Setup};
+use agq_orchestrator::thread::{Author, Kind};
 use agq_providers::{ModelRef, Provider, Secret};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -66,6 +68,7 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
                     cycles: 1,
                     attempts: 3,
                     hours: 1.0,
+                    ..Budgets::default()
                 },
                 Permissions::default(),
             )
@@ -82,8 +85,8 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
             "the cycle did not end: {activity:#?}"
         );
         while let Ok(event) = handle.events.try_recv() {
-            if let Event::Activity { role, text } = event {
-                activity.push(format!("{role}: {text}"));
+            if let Event::Thread(entry) = event {
+                activity.push(format!("{}: {}", entry.author.label(), entry.text));
             }
         }
         std::thread::sleep(Duration::from_millis(50));
@@ -195,6 +198,61 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
             .iter()
             .any(|line| line.key == "cycle-1/attempt-2/commit")
     );
+    // The thread (C-54): the intent first, as the Operator's; each role's
+    // model; the lead's proposal as a directive to the implementer, which
+    // refers to it; the implementer's submissions and the reviewer's
+    // verdict as results; the checks as events; each role's tool calls as
+    // its activity, under the directive it worked on; in order.
+    let thread = store.thread(&id, 0);
+    assert_eq!(
+        thread.iter().map(|e| e.seq).collect::<Vec<_>>(),
+        (1..=thread.len() as u64).collect::<Vec<_>>()
+    );
+    assert_eq!(thread[0].kind, Kind::Human);
+    assert_eq!(thread[0].author, Author::Operator);
+    assert_eq!(thread[0].text, "Leave a note of the improvement");
+    assert!(
+        thread.iter().any(
+            |e| e.kind == Kind::Event && e.text.starts_with("The lead runs on deepseek-v4-pro")
+        ),
+        "{activity:#?}"
+    );
+    let directive = &record.directives[0];
+    assert_eq!(directive.recipient, Recipient::Role("implementer".into()));
+    assert_eq!(directive.refers_to.as_deref(), Some("cycle-1/proposal"));
+    assert_eq!(directive.author.role, "lead");
+    // The cycle stopped at the merge: its directive failed with it.
+    assert_eq!(directive.status, DirectiveStatus::Failed);
+    let proposed = thread
+        .iter()
+        .find(|e| e.kind == Kind::Directive)
+        .expect("the proposal in the thread");
+    assert_eq!(proposed.directive.as_deref(), Some(directive.id.as_str()));
+    assert!(
+        proposed
+            .details
+            .as_deref()
+            .unwrap_or_default()
+            .contains("Acceptance criteria")
+    );
+    let results: Vec<_> = thread.iter().filter(|e| e.kind == Kind::Result).collect();
+    assert_eq!(
+        results.len(),
+        3,
+        "two submissions and a verdict: {activity:#?}"
+    );
+    assert!(results[2].text.starts_with("Approves"));
+    assert!(
+        thread.iter().any(|e| e.kind == Kind::Activity
+            && e.text == "submit_implementation"
+            && e.directive.as_deref() == Some(directive.id.as_str())),
+        "{activity:#?}"
+    );
+    assert!(
+        thread
+            .iter()
+            .any(|e| e.kind == Kind::Event && e.text.contains("failed: "))
+    );
     // The main branch is untouched.
     let head = std::process::Command::new("git")
         .args(["log", "--oneline", "main"])
@@ -295,6 +353,7 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
                     cycles: 1,
                     attempts: 3,
                     hours: 1.0,
+                    ..Budgets::default()
                 },
                 Permissions::default(),
             )
@@ -309,8 +368,9 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
     while !working {
         assert!(Instant::now() < deadline, "the implementer never started");
         while let Ok(event) = handle.events.try_recv() {
-            if let Event::Activity { role, text } = event {
-                working |= role == "implementer" && text == "starts";
+            if let Event::Thread(entry) = event {
+                working |= matches!(&entry.author, Author::Agent { role, .. } if role == "implementer")
+                    && entry.text.starts_with("starts its session");
             }
         }
         std::thread::sleep(Duration::from_millis(50));

@@ -8,7 +8,10 @@
 //! adopted build.
 //!
 //! - [`record`]: the objective's durable record and its journal of side
-//!   effects, so a restart neither repeats nor loses one.
+//!   effects, so a restart neither repeats nor loses one; its agents'
+//!   directives.
+//! - [`thread`]: the objective's thread, what happened in time order as the
+//!   Conversation and the Objectives panel show it (C-54).
 //! - [`gates`]: deterministic gates on a change (protected paths, keys,
 //!   the baseline guard on tests and checks).
 //! - [`forge`]: the branch, pull request, the repository's checks, the merge.
@@ -40,3 +43,4 @@ pub mod observed;
 pub mod record;
 pub mod roles;
 pub mod run;
+pub mod thread;
