@@ -529,6 +529,11 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
             if OPERATORS_CONTROLS.contains(&d.control.id.as_ref()) {
                 return Some("pausing and resuming agents is the Operator's".into());
             }
+            // The system's folder picker is a window of its own that no
+            // observation shows and no action reaches.
+            if d.control.id.starts_with("browse-") {
+                return Some("it opens the system's folder picker, which an agent cannot see or operate; fill the folder field instead".into());
+            }
             if d.control.id.starts_with("objective-") {
                 return Some("objectives are the Operator's to start, steer and stop".into());
             }
@@ -769,6 +774,8 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
         },
         "settings": studio.settings_open.then(|| studio.settings_section_name()),
         "dialog": dialog_kind(studio),
+        // A dialog asking for the Operator's approval: no agent answers it.
+        "approval": approval(studio),
         "palette": studio.palette.as_ref().map(|m| format!("{m:?}")),
         "selection": selection,
         "status": studio.status,

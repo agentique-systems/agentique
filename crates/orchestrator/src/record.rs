@@ -79,7 +79,7 @@ pub struct Spend {
     #[serde(default)]
     pub unknown: bool,
     pub tokens: u64,
-    /// Typed decisions asked (and their part of `usd`).
+    /// Dialogs in a test instance's way decided (by rule, at no cost).
     #[serde(default)]
     pub decisions: u32,
     /// Time worked, not counting time paused.
