@@ -817,29 +817,21 @@ impl Driver {
 
     /// Clears dialogs a criterion's setup left in a test instance's way,
     /// by rule (§4.16: the answer is known, so no model is asked): an
-    /// approval waits, any other dialog is cancelled. Returns what was
-    /// cleared, for the criterion's record; a dialog that cannot be cleared
-    /// is the Orchestrator's problem, not the change's.
+    /// approval waits, any other dialog is cancelled. Returns the dialogs
+    /// cleared, for the criterion's record.
     fn clear_dialogs(&mut self, client: &mut Client, goal: &str) -> Result<Vec<String>, String> {
-        let decider = crate::decide::Decider::default();
-        let (made, cleared) = crate::decide::clear_dialogs(
-            client,
-            &decider,
-            crate::decide::Way::Cancel,
-            goal,
-            4,
-            true,
-        );
-        let mut what = Vec::new();
-        for decision in &made {
+        let by_rule = |s: &crate::decide::Situation| Ok(crate::decide::cancel(s));
+        let (made, cleared) = crate::decide::clear_dialogs(client, &by_rule, goal, 4, true);
+        let mut dialogs = Vec::new();
+        for (dialog, decision) in made {
             self.objective.spent.decisions += 1;
-            what.push(decision.choice.clone());
             self.note(
                 "orchestrator",
-                format!("a dialog was in the way: {}", decision.choice),
+                format!("a {dialog} dialog was in the way: {}", decision.choice),
             );
+            dialogs.push(dialog);
         }
-        cleared.map(|_| what)
+        cleared.map(|()| dialogs)
     }
 
     /// The dialog a test instance shows as it starts, if any: a finding
@@ -852,20 +844,31 @@ impl Driver {
     }
 
     /// An observation criterion in a test instance: dialogs a previous
-    /// criterion left are cleared (and said in the detail), its setup acts,
+    /// criterion left are cleared (and named in the detail), its setup acts,
     /// and its expectation is observed. A setup action that fails fails the
-    /// criterion; a dialog that cannot be cleared is the Orchestrator's
-    /// error, not the change's.
+    /// criterion; when the way cannot be cleared (an approval left open, or
+    /// the instance gone), the criterion is not run, which is no pass.
     fn observe_criterion(
         &mut self,
         client: &mut Client,
         criterion: &Criterion,
         setup: &[Value],
         expect: &Value,
-    ) -> Result<Outcome, String> {
-        let cleared = self
-            .clear_dialogs(client, &criterion.statement)
-            .map_err(|e| format!("a dialog in the test instance could not be cleared: {e}"))?;
+    ) -> Outcome {
+        let outcome = |verdict: &str, detail: String| Outcome {
+            name: criterion.id.clone(),
+            verdict: verdict.into(),
+            detail,
+        };
+        let cleared = match self.clear_dialogs(client, &criterion.statement) {
+            Ok(cleared) => cleared,
+            Err(problem) => {
+                return outcome(
+                    "not run",
+                    format!("the way to it could not be cleared: {problem}"),
+                );
+            }
+        };
         let mut result = Ok(());
         for action in setup {
             result = match client.act("orchestrator", &criterion.id, action.clone()) {
@@ -889,13 +892,9 @@ impl Driver {
             Err(problem) => ("failed", problem),
         };
         if !cleared.is_empty() {
-            detail = format!("{detail} (first cleared: {})", cleared.join(", "));
+            detail = format!("{detail} (first cancelled: {})", cleared.join(", "));
         }
-        Ok(Outcome {
-            name: criterion.id.clone(),
-            verdict: verdict.into(),
-            detail,
-        })
+        outcome(verdict, detail)
     }
 
     fn policy(&self, folder: &Path, write: bool, commands: bool) -> Policy {
@@ -1398,7 +1397,7 @@ impl Driver {
         }
         for criterion in &behavioural {
             if let Check::Observation { setup, expect } = &criterion.check {
-                let outcome = self.observe_criterion(&mut client, criterion, setup, expect)?;
+                let outcome = self.observe_criterion(&mut client, criterion, setup, expect);
                 outcomes.push(outcome);
             }
         }
@@ -1854,8 +1853,7 @@ impl Driver {
                 let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
                 for criterion in &proposal.criteria {
                     if let Check::Observation { setup, expect } = &criterion.check {
-                        let outcome =
-                            self.observe_criterion(&mut client, criterion, setup, expect)?;
+                        let outcome = self.observe_criterion(&mut client, criterion, setup, expect);
                         outcomes.push(outcome);
                     }
                 }

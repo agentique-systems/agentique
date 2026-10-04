@@ -22,6 +22,9 @@ use agq_orchestrator::decide::{
 };
 use serde_json::{Value, json};
 
+mod common;
+use common::outside_the_repository;
+
 struct Task {
     id: String,
     situation: Situation,
@@ -226,20 +229,5 @@ fn live_typed_decisions_compared_with_the_rules_and_the_reasoning_model() {
     if let Some(path) = outside_the_repository("AGENTIQUE_EVALUATION_OUT") {
         let report = json!({ "summary": summary, "rows": rows, "jevModel": decider.jev_model, "model": decider.model.model, "threshold": decider.threshold });
         std::fs::write(path, serde_json::to_string_pretty(&report).unwrap()).unwrap();
-    }
-}
-
-/// The results file the variable names, if it lies outside the repository
-/// (evaluation results are never committed).
-fn outside_the_repository(variable: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::PathBuf::from(std::env::var_os(variable)?);
-    let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let repository = repository.canonicalize().ok()?;
-    let parent = path.parent()?.canonicalize().ok()?;
-    if parent.starts_with(&repository) {
-        eprintln!("{variable} is inside the repository: the results are not written");
-        None
-    } else {
-        Some(path)
     }
 }

@@ -79,8 +79,7 @@ pub struct Spend {
     #[serde(default)]
     pub unknown: bool,
     pub tokens: u64,
-    /// Decisions about dialogs in a test instance's way (by rule or by
-    /// model; a model's part is in `usd`).
+    /// Dialogs in a test instance's way decided (by rule, at no cost).
     #[serde(default)]
     pub decisions: u32,
     /// Time worked, not counting time paused.

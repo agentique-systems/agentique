@@ -17,7 +17,7 @@ use agq_providers::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::time::{Duration, Instant};
 
 /// The option meaning "press nothing; the Operator decides".
@@ -469,21 +469,21 @@ fn only_waiting(situation: &Situation) -> Option<Decision> {
 }
 
 /// Clears the dialogs standing in the way of `goal` in a test instance: for
-/// each, a decision and the action it names. It stops at a dialog asking
-/// for the Operator's approval (the journey waits), at a field the goal
-/// gives no text for, or after `limit` decisions. With `guarded`, only a
-/// dialog's Cancel is pressed: a dialog in the way of a goal is not the
-/// goal's to answer, whatever a model judges (deterministic code has the
-/// last word). Returns the decisions made (also when it stops), and whether
-/// the way is clear.
+/// each, a decision by `decide` and the action it names. It stops at a
+/// dialog asking for the Operator's approval (the journey waits), at a field
+/// the goal gives no text for, or after `limit` decisions. With `guarded`,
+/// only a dialog's Cancel is pressed: a dialog in the way of a goal is not
+/// the goal's to answer, whatever a model judges (deterministic code has the
+/// last word). Returns each dialog with the decision made about it (a failed
+/// decision as waiting, with its time and cost), also when it stops, and
+/// whether the way is clear.
 pub fn clear_dialogs(
     client: &mut crate::control::Client,
-    decider: &Decider,
-    way: Way,
+    decide: &dyn Fn(&Situation) -> Result<Decision, Failure>,
     goal: &str,
     limit: usize,
     guarded: bool,
-) -> (Vec<Decision>, Result<(), String>) {
+) -> (Vec<(String, Decision)>, Result<(), String>) {
     let mut made = Vec::new();
     for _ in 0..limit {
         let observation = match client.observe(true) {
@@ -493,11 +493,24 @@ pub fn clear_dialogs(
         let Some(situation) = Situation::from_observation(goal, &observation) else {
             return (made, Ok(()));
         };
-        let decision = match decider.decide_with(way, &situation) {
+        let decision = match decide(&situation) {
             Ok(decision) => decision,
-            Err(failure) => return (made, Err(failure.error)),
+            Err(failure) => {
+                made.push((
+                    situation.dialog.clone(),
+                    Decision {
+                        choice: WAIT.into(),
+                        source: Source::Model,
+                        confidence: None,
+                        millis: failure.millis,
+                        usd: failure.usd,
+                        note: failure.error.clone(),
+                    },
+                ));
+                return (made, Err(failure.error));
+            }
         };
-        made.push(decision.clone());
+        made.push((situation.dialog.clone(), decision.clone()));
         if decision.choice == WAIT {
             return (
                 made,
@@ -552,19 +565,27 @@ pub fn clear_dialogs(
 
 /// The option the model's JSON names, if it is one of the options.
 fn parse_choice(said: &str, situation: &Situation) -> Result<String, String> {
-    // The last JSON object in the text that names a choice.
-    let choice = said
+    // Every JSON object in the text that names a choice: they must agree.
+    let named: BTreeSet<String> = said
         .char_indices()
-        .rev()
         .filter(|(_, c)| *c == '{')
-        .find_map(|(at, _)| {
+        .filter_map(|(at, _)| {
             let value = serde_json::Deserializer::from_str(&said[at..])
                 .into_iter::<Value>()
                 .next()?
                 .ok()?;
             value["choice"].as_str().map(str::to_string)
         })
+        .collect();
+    let mut named = named.into_iter();
+    let choice = named
+        .next()
         .ok_or("the model gave no JSON naming a choice")?;
+    if let Some(other) = named.next() {
+        return Err(format!(
+            "the model named more than one choice (`{choice}`, `{other}`)"
+        ));
+    }
     if choice == WAIT || situation.controls.iter().any(|c| c.id == choice) {
         Ok(choice)
     } else {
@@ -660,6 +681,14 @@ mod tests {
             )
             .unwrap(),
             "dialog-confirm"
+        );
+        // Answers that disagree are no answer.
+        assert!(
+            parse_choice(
+                "{\"choice\": \"dialog-cancel\"}, not {\"choice\": \"dialog-confirm\"}",
+                &s
+            )
+            .is_err()
         );
         assert!(parse_choice("{\"choice\": \"delete-everything\"}", &s).is_err());
         assert!(parse_choice("no json", &s).is_err());
