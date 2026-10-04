@@ -365,7 +365,7 @@ pub fn definitions() -> Value {
         },
         {
             "name": OBSERVE_APP,
-            "description": "What the Agentique application shows now, as text (C-53): its identity (pass `identity.instance` back in act_in_app's `expect`), the screen and its revision (pass `screenRevision` back as `observed`), view, panels, dialog, palette, selection, status, problems, the conversation, a running task and builds, every control on screen (id, role, label, value, enabled, selected, focused, bounds) and the available commands. `full` also lists unavailable commands with why, and the cards in view. You never see pixels: work from this text.",
+            "description": "What the Agentique application shows now, as text (C-53): its identity (pass `identity.instance` back in act_in_app's `expect`), the screen and its revision (pass `screenRevision` back as `observed`), view, panels, dialog, palette, selection, status, problems, the conversation, a running task and builds, every control on screen (id, role, label, value, enabled, selected, focused, bounds, and `operatorOnly` where agents may not act on it), the available commands (likewise marked), and the project's revision. `full` also gives the project's `digest` (a hash of the model's text: undo restores it exactly), and lists unavailable commands with why, and the cards in view. You never see pixels: work from this text.",
             "input_schema": {
                 "type": "object",
                 "properties": {
@@ -376,7 +376,7 @@ pub fn definitions() -> Value {
         },
         {
             "name": ACT_IN_APP,
-            "description": "Act in the Agentique application as the Operator would, visibly: a command (`{kind: command, id}` from the observation's commands), a click on a control (`{kind: click, control}` by id or label), filling a field (`{kind: fill, control, text}`), keys (`{kind: key, keys: \"ctrl-s\"}`, GPUI syntax, several separated by spaces), typing into the focused field (`{kind: type, text}`), scrolling (`{kind: scroll, control, dy}`), selecting a model element (`{kind: select, element}`, qualified name), opening a project (`{kind: open_project, folder}`), or waiting (`{kind: wait, until: {dialog, screen, control, enabled, statusContains, idle}, timeoutMs}`). The action is refused as stale, and nothing happens, when `expect.instance` is not this application, or the screen (its dialog, settings or selection) changed since `observed`, or the control is gone or disabled: observe again. What is the Operator's own is refused: a dialog asking for the Operator's approval, Settings, the Conversation, locking, and pausing agents; text goes only to a focused field. A fill leaves a panel's field pending until Enter (or the focus leaving) commits it. A change your action makes is recorded as the Assistant's. Answers what was done and the screen after it. Agents can be paused by the Operator; then the action waits.",
+            "description": "Act in the Agentique application as the Operator would, visibly: a command (`{kind: command, id}` from the observation's commands), a click on a control (`{kind: click, control}` by id or label), filling a field (`{kind: fill, control, text}`), keys (`{kind: key, keys: \"ctrl-s\"}`, GPUI syntax, several separated by spaces), typing into the focused field (`{kind: type, text}`), scrolling (`{kind: scroll, control, dy}`), selecting a model element (`{kind: select, element}`, qualified name), opening a project (`{kind: open_project, folder}`), or waiting (`{kind: wait, until: {dialog, screen, control, enabled, statusContains, idle}, timeoutMs}`). The action is refused as stale, and nothing happens, when `expect.instance` is not this application, or the screen (its dialog, settings or selection) changed since `observed`, or the control is gone or disabled: observe again. What is the Operator's own is refused: a dialog asking for the Operator's approval, Settings, the Conversation, locking, and pausing agents; text goes only to a focused field. A fill leaves a panel's field pending until Enter (or the focus leaving) commits it. A change your action makes is recorded as the Assistant's. One agent acts in a window at a time: while another holds it (until it has been idle for 30 seconds), your action is refused with who holds it. Answers what was done and the screen after it. Agents can be paused by the Operator; then the action waits; stopped by the Operator, it is refused.",
             "input_schema": {
                 "type": "object",
                 "properties": {
@@ -406,7 +406,8 @@ pub fn definitions() -> Value {
                         "required": ["instance"]
                     },
                     "observed": { "type": "integer", "description": "screenRevision from the observation this action is based on." },
-                    "why": name("What the action is for, in a few words; shown to the Operator on screen.")
+                    "why": name("What the action is for, in a few words; shown to the Operator on screen."),
+                    "goal": name("Optional: the goal this action serves, in a few words; shown with it on screen.")
                 },
                 "required": ["action", "expect", "observed", "why"],
                 "additionalProperties": false
@@ -523,30 +524,56 @@ pub fn check_input_against(definitions: &Value, tool: &str, input: &Value) -> Re
     check(schema, input, "input")
 }
 
+/// The parts of JSON Schema [`check_input`] checks. A tool definition uses
+/// no other keyword ([`check_definitions`]), so every constraint a schema
+/// declares is checked.
+pub const SCHEMA_KEYWORDS: [&str; 8] = [
+    "type",
+    "description",
+    "properties",
+    "required",
+    "additionalProperties",
+    "items",
+    "minItems",
+    "enum",
+];
+
 /// Checks `value` (found at `at`) against the parts of JSON Schema the tool
-/// definitions use.
+/// definitions use. A refusal says what was expected and what was given.
 fn check(schema: &Value, value: &Value, at: &str) -> Result<(), String> {
     let types: Vec<&str> = match &schema["type"] {
         Value::String(name) => vec![name.as_str()],
         Value::Array(names) => names.iter().filter_map(Value::as_str).collect(),
         _ => Vec::new(),
     };
-    let fits = |name: &&str| match *name {
-        "object" => value.is_object(),
-        "array" => value.is_array(),
-        "string" => value.is_string(),
-        "number" => value.is_number(),
-        "boolean" => value.is_boolean(),
-        _ => false,
-    };
-    if !types.is_empty() && !types.iter().any(fits) {
-        return Err(format!("`{at}` must be {}", types.join(" or ")));
+    if !types.is_empty() && !types.iter().any(|name| fits(name, value)) {
+        let expected: Vec<&str> = types.iter().map(|name| a_type(name)).collect();
+        let expected = match expected.split_last() {
+            Some((last, rest)) if !rest.is_empty() => format!("{} or {last}", rest.join(", ")),
+            _ => expected.join(""),
+        };
+        // A short description says what the field is (the observation's
+        // screenRevision, say); a long one is in the tool's definition.
+        let about = schema["description"]
+            .as_str()
+            .map(|d| d.trim().trim_end_matches('.'))
+            .filter(|d| !d.is_empty() && d.chars().count() <= 80)
+            .map(|d| format!(" ({d})"))
+            .unwrap_or_default();
+        return Err(format!(
+            "`{at}` must be {expected}{about}; got {}",
+            given(value)
+        ));
     }
     if let Value::Array(allowed) = &schema["enum"]
         && !allowed.contains(value)
     {
         let names: Vec<String> = allowed.iter().map(Value::to_string).collect();
-        return Err(format!("`{at}` must be one of {}", names.join(", ")));
+        return Err(format!(
+            "`{at}` must be one of {}; got {}",
+            names.join(", "),
+            given(value)
+        ));
     }
     match value {
         Value::Object(fields) => {
@@ -558,12 +585,18 @@ fn check(schema: &Value, value: &Value, at: &str) -> Result<(), String> {
                 }
             }
             for (name, field) in fields {
-                match schema["properties"].get(name) {
-                    Some(field_schema) => check(field_schema, field, &format!("{at}.{name}"))?,
-                    None if schema["additionalProperties"] == false => {
+                let field_at = format!("{at}.{name}");
+                match (
+                    schema["properties"].get(name),
+                    &schema["additionalProperties"],
+                ) {
+                    (Some(field_schema), _) => check(field_schema, field, &field_at)?,
+                    (None, Value::Bool(false)) => {
                         return Err(format!("`{at}` has no field `{name}`"));
                     }
-                    None => {}
+                    // Fields of any name, each of this schema.
+                    (None, extra @ Value::Object(_)) => check(extra, field, &field_at)?,
+                    (None, _) => {}
                 }
             }
         }
@@ -571,13 +604,169 @@ fn check(schema: &Value, value: &Value, at: &str) -> Result<(), String> {
             if let Some(least) = schema["minItems"].as_u64()
                 && (items.len() as u64) < least
             {
-                return Err(format!("`{at}` needs at least {least} item(s)"));
+                return Err(format!(
+                    "`{at}` needs at least {least} item(s); got {}",
+                    items.len()
+                ));
             }
             for (index, item) in items.iter().enumerate() {
                 check(&schema["items"], item, &format!("{at}[{index}]"))?;
             }
         }
         _ => {}
+    }
+    Ok(())
+}
+
+/// JSON Schema's types; [`fits`] knows each.
+const TYPES: [&str; 7] = [
+    "object", "array", "string", "number", "integer", "boolean", "null",
+];
+
+/// Whether `value` is of the JSON Schema type `name`. An integer is a
+/// number with no fractional part that fits in 64 bits (`7`, or `7.0`).
+fn fits(name: &str, value: &Value) -> bool {
+    match name {
+        "object" => value.is_object(),
+        "array" => value.is_array(),
+        "string" => value.is_string(),
+        "number" => value.is_number(),
+        "integer" => {
+            value.is_i64()
+                || value.is_u64()
+                || value.as_f64().is_some_and(|n| {
+                    n.fract() == 0.0 && n >= i64::MIN as f64 && n <= u64::MAX as f64
+                })
+        }
+        "boolean" => value.is_boolean(),
+        "null" => value.is_null(),
+        _ => false,
+    }
+}
+
+/// A JSON Schema type in words: "an integer".
+fn a_type(name: &str) -> &str {
+    match name {
+        "object" => "an object",
+        "array" => "an array",
+        "string" => "a string",
+        "number" => "a number",
+        "integer" => "an integer",
+        "boolean" => "a boolean",
+        "null" => "null",
+        other => other,
+    }
+}
+
+/// What was given, in words: `the string "7"`, `the number 7.5`.
+fn given(value: &Value) -> String {
+    let short = |text: String| {
+        if text.chars().count() > 60 {
+            format!("{}…", text.chars().take(60).collect::<String>())
+        } else {
+            text
+        }
+    };
+    match value {
+        Value::String(_) => format!("the string {}", short(value.to_string())),
+        Value::Number(n) => format!("the number {n}"),
+        Value::Bool(b) => format!("{b}"),
+        Value::Null => "null".into(),
+        Value::Array(items) => format!("an array of {} item(s)", items.len()),
+        Value::Object(_) => "an object".into(),
+    }
+}
+
+/// Checks a set of tool definitions against the checker: each schema uses
+/// only [`SCHEMA_KEYWORDS`] and the JSON Schema types, and a minimal input
+/// (the required fields) and a full one (every field), made from the schema
+/// itself, pass [`check_input_against`]. A declared type or constraint the
+/// checker does not know would refuse every model's input, so it fails here.
+pub fn check_definitions(definitions: &Value) -> Result<(), String> {
+    fn keywords(schema: &Value, at: &str) -> Result<(), String> {
+        let Value::Object(fields) = schema else {
+            return Err(format!("{at} is not a schema"));
+        };
+        for (keyword, inner) in fields {
+            if !SCHEMA_KEYWORDS.contains(&keyword.as_str()) {
+                return Err(format!(
+                    "{at} uses `{keyword}`, which the input checker does not check"
+                ));
+            }
+            match keyword.as_str() {
+                "properties" => {
+                    for (name, field) in inner.as_object().into_iter().flatten() {
+                        keywords(field, &format!("{at}.{name}"))?;
+                    }
+                }
+                "items" => keywords(inner, &format!("{at}[]"))?,
+                "additionalProperties" if inner.is_object() => keywords(inner, &format!("{at}.*"))?,
+                "type" => {
+                    let names: Vec<&Value> = match inner {
+                        Value::Array(names) => names.iter().collect(),
+                        other => vec![other],
+                    };
+                    for name in names {
+                        if !name.as_str().is_some_and(|n| TYPES.contains(&n)) {
+                            return Err(format!(
+                                "{at} has the type {name}, which JSON Schema does not have"
+                            ));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+    /// An input the schema allows: the first allowed value, or one of the
+    /// first type, with the required fields (or, `full`, every field).
+    fn sample(schema: &Value, full: bool) -> Value {
+        if let Some(first) = schema["enum"].as_array().and_then(|values| values.first()) {
+            return first.clone();
+        }
+        let kind = match &schema["type"] {
+            Value::String(name) => name.as_str(),
+            Value::Array(names) => names.first().and_then(Value::as_str).unwrap_or("string"),
+            _ => "string",
+        };
+        match kind {
+            "object" => {
+                let required: Vec<&str> = schema["required"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .collect();
+                let fields = schema["properties"]
+                    .as_object()
+                    .into_iter()
+                    .flatten()
+                    .filter(|(name, _)| full || required.contains(&name.as_str()))
+                    .map(|(name, field)| (name.clone(), sample(field, full)))
+                    .collect();
+                Value::Object(fields)
+            }
+            "array" => {
+                let count = schema["minItems"].as_u64().unwrap_or(1).max(1);
+                Value::Array((0..count).map(|_| sample(&schema["items"], full)).collect())
+            }
+            "integer" => json!(7),
+            "number" => json!(1.5),
+            "boolean" => json!(true),
+            "null" => Value::Null,
+            _ => json!("text"),
+        }
+    }
+    for definition in definitions.as_array().into_iter().flatten() {
+        let name = definition["name"].as_str().unwrap_or("a tool");
+        let schema = &definition["input_schema"];
+        keywords(schema, name)?;
+        for full in [false, true] {
+            let input = sample(schema, full);
+            check_input_against(definitions, name, &input)
+                .map_err(|refused| format!("{name} refuses its own example {input}: {refused}"))?;
+        }
     }
     Ok(())
 }

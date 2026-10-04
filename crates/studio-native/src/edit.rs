@@ -1016,7 +1016,7 @@ pub(crate) mod app_tests {
     /// About twelve elements per component (as System State's performance
     /// test): part defs with ports, an attribute and an inner part, used and
     /// connected in one system.
-    fn large_model(components: usize) -> String {
+    pub(crate) fn large_model(components: usize) -> String {
         use std::fmt::Write;
         let mut text = String::from(
             "package P {

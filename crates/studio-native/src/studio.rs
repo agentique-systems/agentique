@@ -647,7 +647,7 @@ impl Studio {
 
     fn install_project(&mut self, project: Project) {
         self.save_session();
-        self.control.forget_all_typed();
+        self.control.another_project();
         let folder = project.folder().to_path_buf();
         let remembered = self.session.views.get(&folder).cloned().unwrap_or_default();
         self.fixture = None;
@@ -1147,7 +1147,7 @@ impl Studio {
         // Whatever route reached it (a key, the palette, a menu), what is
         // the Operator's own is refused to agents (C-53); opening another
         // project would end the Assistant's own turn.
-        if crate::control::OPERATORS_COMMANDS.contains(&id)
+        if crate::control::operators_command(self, id)
             && self.refused_to_agents(&format!("`{}`", crate::control::command_name(id)))
         {
             return;

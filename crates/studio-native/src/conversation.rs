@@ -43,6 +43,9 @@ pub struct RuntimeInputs {
     pub steering: Option<agq_assistant::policy::Steering>,
 }
 
+/// How the notice of a message the Operator added to a running turn begins.
+pub const STEERED: &str = "You added, while the Assistant worked: ";
+
 /// The Conversation panel's state.
 pub struct ConversationPanel {
     pub conversation: Conversation,
@@ -72,6 +75,9 @@ pub struct ConversationPanel {
     pub phase: Option<&'static str>,
     /// Tokens used in this session.
     pub usage: Usage,
+    /// Their estimated cost in USD since the Studio started; none once some
+    /// usage could not be priced.
+    pub spent: Option<f64>,
     /// The running or last turn's model and tokens, for its estimated cost.
     pub turn_model: Option<agq_providers::ModelRef>,
     pub turn_usage: Usage,
@@ -191,6 +197,7 @@ impl ConversationPanel {
             thinking: false,
             phase: None,
             usage: Usage::default(),
+            spent: Some(0.0),
             turn_model: None,
             turn_usage: Usage::default(),
             model_name: choice.label(),
@@ -434,7 +441,7 @@ impl Studio {
     /// Sends the message in the input. While a question is open, the message
     /// answers it instead.
     pub fn send_message(&mut self) {
-        if self.refused_to_agents("speaking in the Conversation") {
+        if self.refused_in_operators_window("speaking in the Conversation") {
             return;
         }
         let text = self.conversation.input.trim().to_string();
@@ -453,7 +460,7 @@ impl Studio {
             panel.input.clear();
             panel.input_set += 1;
             self.add_entry(Entry::Notice {
-                text: format!("You added, while the Assistant worked: {text}"),
+                text: format!("{STEERED}{text}"),
             });
             return;
         }
@@ -501,6 +508,9 @@ impl Studio {
         panel.turn_model = runtime.model();
         panel.turn_usage = Usage::default();
         panel.turn = Some(BackgroundTurn::start(runtime, panel.conversation.clone()));
+        // An agent's message (in a test instance) started it: the Assistant
+        // acts in the window within that agent's hold.
+        self.control.asked_by = self.control.acting.clone();
     }
 
     /// Takes the running turn's events. Called every frame; never blocks.
@@ -584,14 +594,18 @@ impl Studio {
                 StreamEvent::Usage(usage) => {
                     panel.usage.add(usage);
                     panel.turn_usage.add(usage);
-                    if let Some(cost) = panel.turn_model.as_ref().and_then(|m| usage.cost_usd(m)) {
+                    let cost = panel.turn_model.as_ref().and_then(|m| usage.cost_usd(m));
+                    panel.spent = panel.spent.zip(cost).map(|(spent, cost)| spent + cost);
+                    if let Some(cost) = cost {
                         self.daily_cost.add(cost);
                     }
                 }
                 StreamEvent::ModelUsage { model, usage } => {
                     panel.usage.add(usage);
                     panel.turn_usage.add(usage);
-                    if let Some(cost) = usage.cost_usd(&model) {
+                    let cost = usage.cost_usd(&model);
+                    panel.spent = panel.spent.zip(cost).map(|(spent, cost)| spent + cost);
+                    if let Some(cost) = cost {
                         self.daily_cost.add(cost);
                     }
                 }
@@ -668,6 +682,7 @@ impl Studio {
                 }
                 // Nothing waits for an answer any more.
                 self.close_waiting(None);
+                self.control.turn_ended();
             }
         }
     }
@@ -791,7 +806,7 @@ impl Studio {
     /// Answers the Assistant's open question. Returns false when no question
     /// is open or the turn that asked it is gone.
     pub fn answer_question(&mut self, answer: &str) -> bool {
-        if self.refused_to_agents("answering the Assistant") {
+        if self.refused_in_operators_window("answering the Assistant") {
             return false;
         }
         let panel = &mut self.conversation;
@@ -934,7 +949,7 @@ impl Studio {
     /// Assistant's, and those of others when [`ConversationPanel::undoable`]
     /// says so. Each can be redone.
     pub fn undo_assistant_changes(&mut self) {
-        if self.refused_to_agents("undoing the turn's changes") {
+        if self.refused_in_operators_window("undoing the turn's changes") {
             return;
         }
         let Some(project) = &self.project else { return };
@@ -1050,7 +1065,7 @@ impl Studio {
 
     /// Puts the selected elements' qualified names into the message.
     pub fn insert_selection(&mut self) {
-        if self.refused_to_agents("writing in the Conversation") {
+        if self.refused_in_operators_window("writing in the Conversation") {
             return;
         }
         let Some(project) = &self.project else { return };

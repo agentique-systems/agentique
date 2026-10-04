@@ -106,6 +106,16 @@ pub const SETTINGS: &[Setting] = &[
         invalid: "Choose system, on or off.",
     },
     Setting {
+        id: "control.speed",
+        label: "Agents' speed in the window",
+        description: "How fast agents act where you can see them: observe (typing about 12 characters a second, a pause on each target before a click), fast (a character a frame) or instant.",
+        synonyms: &["observer", "watch", "typing", "slow", "agents", "control"],
+        default: DefaultValue::Text("observe"),
+        scope: Scope::App,
+        allowed: Allowed::Choice(&["observe", "fast", "instant"]),
+        invalid: "Choose observe, fast or instant.",
+    },
+    Setting {
         id: "assistant.runtime",
         label: "Runtime",
         description: "What runs the Assistant's turns: Agentique's own loop, with any provider, or the Claude Agent SDK's loop (Anthropic, or DeepSeek's Anthropic-compatible endpoint), which in a project with a code repository is a full development session under the project's permission policy.",

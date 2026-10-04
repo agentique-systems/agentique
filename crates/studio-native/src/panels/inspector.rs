@@ -177,10 +177,12 @@ impl Field {
     /// The field's control id, for the ones agents can operate.
     fn target(self) -> Option<&'static str> {
         match self {
+            Field::Name => Some("Name"),
             Field::Type => Some("Type"),
+            Field::Multiplicity => Some("Multiplicity"),
             Field::Value => Some("Value"),
             Field::Guard => Some("Guard"),
-            _ => None,
+            Field::Doc => Some("Docs"),
         }
     }
 }
@@ -274,7 +276,13 @@ impl Fields {
             window,
             |column, _, event: &InputEvent, window, cx| {
                 if matches!(event, InputEvent::Blur) {
+                    // What an agent typed here commits as its change (C-53).
+                    let studio = column.inspector.studio.clone();
+                    let began = studio.update(cx, |studio, _| {
+                        studio.control.begin_typed_commit(Field::Doc.target())
+                    });
                     column.inspector.commit(Field::Doc, window, cx);
+                    studio.update(cx, |studio, _| studio.control.end_typed_commit(began));
                 }
             },
         ));
@@ -755,7 +763,7 @@ impl Fields {
                     .flex()
                     .flex_col()
                     .gap(r(8.0))
-                    .when(namespace, |this| this.child(row("Name", TextField::new(&self.name), cx)))
+                    .when(namespace, |this| this.child(row("Name", TextField::new(&self.name).target("Name"), cx)))
                     .when(!kinds.is_empty(), |this| {
                         let column = column.clone();
                         this.child(row(
@@ -781,6 +789,12 @@ impl Fields {
                                                 let column = column.clone();
                                                 div()
                                                     .id(("type-match", index))
+                                                    .relative()
+                                                    .child(ui::target::control(
+                                                        ui::target::Control::new("option", name.clone())
+                                                            .id(format!("type-match-{index}"))
+                                                            .selected(index == 0),
+                                                    ))
                                                     .h(r(26.0))
                                                     .px(r(8.0))
                                                     .flex()
@@ -814,7 +828,7 @@ impl Fields {
                                 .flex()
                                 .flex_col()
                                 .gap(r(4.0))
-                                .child(TextField::new(&self.multiplicity).mono().invalid(self.multiplicity_error.is_some()))
+                                .child(TextField::new(&self.multiplicity).mono().invalid(self.multiplicity_error.is_some()).target("Multiplicity"))
                                 .when_some(self.multiplicity_error.clone(), |this, error| {
                                     this.child(ui::inline_message(Tone::Danger, error, cx))
                                 }),
@@ -889,7 +903,7 @@ impl Fields {
                         ))
                     })
                     .when(namespace, |this| {
-                        this.child(row("Docs", TextArea::new(&self.doc), cx))
+                        this.child(row("Docs", TextArea::new(&self.doc).target("Docs"), cx))
                     }),
             )
             .child(

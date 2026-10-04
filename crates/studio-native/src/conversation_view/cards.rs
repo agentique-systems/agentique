@@ -223,6 +223,12 @@ pub fn tool_card(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> AnyElement {
     let aria = SharedString::from(tool.accessible_name());
     let header = div()
         .id(SharedString::from(format!("tool-{}", tool.id)))
+        .relative()
+        .child(ui::target::control(
+            ui::target::Control::new("item", super::control_label(tool.accessible_name()))
+                .id(format!("tool-{}", tool.id))
+                .selected(open),
+        ))
         .flex()
         .items_center()
         .gap(r(8.0))
@@ -583,6 +589,14 @@ fn question_card(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> AnyElement {
     };
     div()
         .id(SharedString::from(format!("question-{}", tool.id)))
+        .relative()
+        .child(ui::target::control(
+            ui::target::Control::new(
+                "item",
+                super::control_label(format!("The Assistant asks: {question}")),
+            )
+            .id(format!("question-{}", tool.id)),
+        ))
         .role(gpui::Role::Group)
         .aria_label(SharedString::from(format!(
             "The Assistant asks: {question}"
@@ -699,6 +713,12 @@ pub fn thinking_row(ctx: &Rc<Ctx>, key: String, text: &str, live: bool, cx: &App
         .child(
             div()
                 .id(SharedString::from(format!("thinking-{key}")))
+                .relative()
+                .child(ui::target::control(
+                    ui::target::Control::new("item", format!("Thinking: {summary}"))
+                        .id(format!("thinking-{key}"))
+                        .selected(open),
+                ))
                 .flex()
                 .items_center()
                 .gap(r(6.0))

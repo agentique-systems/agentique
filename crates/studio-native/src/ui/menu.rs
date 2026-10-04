@@ -31,6 +31,8 @@ type Handler = Rc<dyn Fn(&mut Window, &mut App)>;
 
 pub enum MenuItem {
     Action {
+        /// Its control id for agents; the label when none is given.
+        id: Option<SharedString>,
         label: SharedString,
         icon: Option<IconName>,
         shortcut: Option<&'static str>,
@@ -52,6 +54,7 @@ impl MenuItem {
         handler: impl Fn(&mut Window, &mut App) + 'static,
     ) -> MenuItem {
         MenuItem::Action {
+            id: None,
             label: label.into(),
             icon: None,
             shortcut: None,
@@ -60,6 +63,13 @@ impl MenuItem {
             danger: false,
             handler: Rc::new(handler),
         }
+    }
+    /// A stable control id for agents (`menu-<command>` for a command).
+    pub fn id(mut self, value: impl Into<SharedString>) -> MenuItem {
+        if let MenuItem::Action { id, .. } = &mut self {
+            *id = Some(value.into());
+        }
+        self
     }
     pub fn icon(mut self, name: IconName) -> MenuItem {
         if let MenuItem::Action { icon, .. } = &mut self {
@@ -101,6 +111,8 @@ pub struct Menu {
     selected: Option<usize>,
     focus: FocusHandle,
     min_width: f32,
+    /// The region that opened it: its items are that region's controls.
+    owner: Option<&'static str>,
 }
 
 impl EventEmitter<DismissEvent> for Menu {}
@@ -118,11 +130,19 @@ impl Menu {
             selected: None,
             focus: cx.focus_handle(),
             min_width: 200.0,
+            owner: None,
         }
     }
 
     pub fn min_width(mut self, width: f32) -> Menu {
         self.min_width = width;
+        self
+    }
+
+    /// Opened by `region` (`settings`, `conversation`): the rules for agents
+    /// there hold for its items.
+    pub fn owner(mut self, region: &'static str) -> Menu {
+        self.owner = Some(region);
         self
     }
 
@@ -170,6 +190,7 @@ impl Render for Menu {
         let theme = cx.theme().clone();
         let selected = self.selected;
         let min_width = self.min_width;
+        let owner = self.owner;
         div()
             .id("menu")
             .key_context(CONTEXT)
@@ -221,6 +242,7 @@ impl Render for Menu {
                         .child(text.clone())
                         .into_any_element(),
                     MenuItem::Action {
+                        id,
                         label,
                         icon: glyph,
                         shortcut,
@@ -238,10 +260,16 @@ impl Render for Menu {
                         } else {
                             theme.text
                         };
+                        let control = crate::ui::target::Control::new("item", label.clone())
+                            .id(id.clone().unwrap_or_else(|| label.clone()))
+                            .enabled(enabled)
+                            .selected(*checked);
                         div()
                             .id(ElementId::NamedInteger("menu-item".into(), index as u64))
                             .role(gpui::Role::MenuItem)
                             .aria_label(label.clone())
+                            .relative()
+                            .child(crate::ui::target::control_in(owner, control))
                             .h(r(28.0))
                             .px(r(8.0))
                             .flex()

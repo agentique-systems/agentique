@@ -211,7 +211,7 @@ fn highlight(strength: f32) -> BoxShadow {
 }
 
 impl RenderOnce for Button {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.theme().clone();
         let height = self.size.height();
         let square = self.label.is_none();
@@ -295,7 +295,15 @@ impl RenderOnce for Button {
         let name = self.label_for_screen_readers.clone().or(self.label.clone());
         let id_text = self.id.to_string();
         let (disabled, selected) = (self.disabled, self.selected);
+        // Its own focus handle, so agents' observations say when it has the
+        // focus (Space or Enter then reaches it).
+        let focus = window
+            .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
+            .read(cx)
+            .clone();
+        let focused = focus.is_focused(window);
         let mut button = gpui_base::Button::new(self.id)
+            .track_focus(&focus)
             .group(group)
             .relative()
             .disabled(self.disabled)
@@ -332,7 +340,8 @@ impl RenderOnce for Button {
                     crate::ui::target::Control::new("button", name)
                         .id(id_text)
                         .enabled(!disabled)
-                        .selected(selected),
+                        .selected(selected)
+                        .focused(focused),
                 ))
             });
         if let Some(label) = self.label_for_screen_readers.or(self.label) {

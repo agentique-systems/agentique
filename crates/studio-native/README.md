@@ -261,15 +261,120 @@ cargo build --release -p agq-studio-native --features automation
 target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-chat\session.json --scenario chat --project %TEMP%\agq-chat\project --scenario-report %TEMP%\agq-chat\report.json
 ```
 
+## The control interface (C-53, C-54)
+
+Agents operate the real, visible Studio without seeing pixels (ROADMAP
+§4.16; `control/`): the Assistant through its `observe_app` and
+`act_in_app` tools, the Orchestrator's explorers and evaluators through a
+test instance's local endpoint (`--control <file>`: a port and a token on
+127.0.0.1; `control/server.rs`).
+
+- **Observation** (`op: observe`): the identity, the screen and its
+  `screenRevision`, view, panels, dialog, palette, selection, status and
+  problems, the conversation, tasks and builds; the project's folder,
+  revision and, in a full observation (`detail: "full"`, or `digest:
+  true`), `digest` (16 hex digits of the SHA-256 of the model's printed
+  text, what History saves, worked out once per revision: undo restores it
+  exactly); `agents` (the gate, actions held, the window's
+  `holder`, the `speed`); every drawn control (`ui/target.rs`: id, role,
+  label, value except a key's, enabled, selected, focused (fields, buttons
+  and switches), region, the
+  bounds of its visible part, `hidden`, and `operatorOnly` where agents may
+  not act on it); and the commands, available or why not, likewise marked.
+  `operatorOnly` comes from the same rules that refuse an agent's action up
+  front (the Operator's commands and regions, and one table of controls by
+  id), so the mark follows those refusals; the effects themselves are
+  refused where they happen as well. A menu's items are controls of the
+  region that opened it (`Menu::owner`).
+- **Labels.** Every control an agent can operate (button, field, tab,
+  option, item, switch, link) has a label a person reads, not just its
+  machine id: the palette's rows (`palette-<command>`, `palette-element-<id>`)
+  and search field (`palette-search`), switches (role `switch`, value
+  `on`/`off`), the Inspector's and Settings' fields, the title bar's search
+  and window buttons, menu items. `tests/control_journey.rs` asserts the
+  rule on the welcome screen, a dialog, the Surface, the palette, Settings
+  and the Objectives panel.
+- **Actions** (`op: act`, with `agent`, `why`, an optional `goal`,
+  `expect.instance` and `observed`): commands, click, fill, key, type,
+  scroll, select, open a project, wait (`until`: `dialog`, `screen`,
+  `control` with `enabled`, `statusContains`, `idle` for every job, or
+  `conversationIdle` for the Conversation's turn alone). Stale ones
+  (another instance, a screen that changed, a control gone or disabled) and
+  the Operator's own are refused before anything happens, and the
+  Operator's own effects are refused where they happen too. A refused
+  action's answer carries `kind` beside `error`, so clients need not read
+  the words: `operator-own`, `stale`, `gone`, `disabled`, `unavailable`,
+  `held`, `stopped`, `expired`, `invalid`, `timeout` or `failed`
+  (`control::Refusal`).
+- **A test instance** (`--test-instance`, for a Studio started with app data
+  of its own: it refuses to start without `--session`, or with the
+  Operator's; the Orchestrator is to pass it in W12.5): agents may also use the
+  Conversation as a person would (focus the composer, type, send or answer
+  with Enter or Send, stop the turn, open cards, scroll) and undo and redo,
+  so exploration tests them through the real input handlers. Steering the
+  turn, retrying, editing, a new conversation, the model, Settings,
+  locking, appearance, approvals and the agents chip stay the Operator's,
+  and the `operatorOnly` marks follow. Keys come only from the environment
+  there (`agq_providers::keys::without_store`): the instance never spends a
+  key of the Operator's that it was not given, and Settings › Providers
+  says so. The observation's `conversation` says whether a turn is
+  `running`, the current or last turn's `toolCalls` (the last 12,
+  `toolCallsOmitted` counting earlier ones: tool and state, running, done,
+  failed with its `error`, or not run), its `notices` since the last
+  message, the `error` a failed turn ended with, `keyMissing`, and `usd`,
+  the conversation's estimated spend since the Studio started (null when
+  some of it is unpriced), all bounded. Its messages, tool cards and
+  thinking rows are controls (items), the composer is the field `Message`,
+  Send and Stop are `send` and `stop`. The Conversation's text (the
+  `lastMessage`, the `lastReply`, the labels of its messages, tool cards,
+  questions and thinking, any value such as the Operator's unsent draft, a
+  message the Operator added to a running turn) is observed only in a test
+  instance: in the Operator's own window an observation could reach an
+  agent's provider, so its items read "Message 2 from you", "Reply 3, part
+  2", "Tool call 4" or "Tool error 4", "A question for you", numbered by
+  their own count, with their ids unchanged.
+- **One agent at a time.** The first agent to act holds the window until it
+  sends `op: release` or has been idle for 30 s (`control::IDLE`); another
+  agent's action is refused with "the window is in use by <agent>; act in
+  your own test instance, or wait". Observing and waiting are never refused,
+  nor is the Operator's own input. The Orchestrator's own steps by rule
+  through the endpoint (agent `orchestrator`, such as cancelling a dialog in
+  its way) are the supervisor's and pass a hold. In a test instance, the
+  Assistant's turn that an agent's message started acts within that agent's
+  hold (and keeps it); when its turn ends, the Assistant holds nothing.
+- **Observer mode.** `control.speed` (Settings › Appearance, or
+  `--control-speed` for a process; default `observe`): `observe` types about
+  12 characters a second and rings the target with the agent's label for
+  300 ms before a click; `fast` types a character a frame; `instant` acts at
+  once, as tests want. At `observe` and `fast`, clicks ripple and scrolls
+  show which way. The agents chip in the title bar shows the action in
+  progress or the latest outcome for a few seconds (the agent, its goal,
+  its decision, done or refused with the reason) and offers Pause, Step and
+  Stop; Pause and Step take effect between typed characters, Stop ends the
+  action at once and refuses agents until Resume (a press still down is
+  let go away from its control, as the agent's input, so it becomes
+  neither a click nor a drag); stopping the Assistant
+  ends its action in progress the same way. The endpoint's holder has the
+  same through `op: gate` (`pause`, `step`, `run`, `stop`), except that it
+  cannot lift a Stop the Operator gave in the window. Nothing is
+  drawn and no frame is asked for while no agent acts.
+- **Trace** (`op: events`): every action and refusal, with the agent, its
+  `why` and `goal`, and who held the window.
+
+```text
+cargo test -p agq-studio-native --test control_journey -- --ignored --nocapture
+```
+
 ## Journeys, screenshots and benchmarks
 
 With `--features automation` the Studio can drive itself: a journey runs one
 step at the start of every frame, through the window's own input dispatch
 (pointer, keys, typed text), and checks the Studio's state
 (`automation.rs`); the camera and Conversation benchmarks do the same
-(`stress_automation.rs`). Controls record where they are drawn only in this
-build (`ui/target.rs`). `--screenshot` and `--gallery` save frames with
-GPUI's frame capture, which needs the same feature.
+(`stress_automation.rs`). Controls record where they are drawn in every
+build (`ui/target.rs`), for the journeys and the control interface alike.
+`--screenshot` and `--gallery` save frames with GPUI's frame capture, which
+needs the same feature.
 
 ```text
 cargo build --release -p agq-studio-native --features automation

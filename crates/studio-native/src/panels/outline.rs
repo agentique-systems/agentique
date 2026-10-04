@@ -146,12 +146,12 @@ impl OutlineView {
             .role(gpui::Role::Navigation)
             .aria_label("Outline")
             .child(
-                div()
-                    .flex_none()
-                    .px(r(8.0))
-                    .pt(r(8.0))
-                    .pb(r(4.0))
-                    .child(TextField::new(&self.filter).leading(IconName::Search)),
+                div().flex_none().px(r(8.0)).pt(r(8.0)).pb(r(4.0)).child(
+                    TextField::new(&self.filter)
+                        .leading(IconName::Search)
+                        .target("Filter elements")
+                        .control_id("outline-filter"),
+                ),
             )
             .child(if empty {
                 div()

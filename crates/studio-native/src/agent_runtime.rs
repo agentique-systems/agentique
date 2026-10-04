@@ -455,7 +455,12 @@ impl Studio {
     /// thread, unless that is known or being checked (Settings and the
     /// Objectives panel show it; C-54). Other setup work goes on beside it.
     pub fn probe_login(&mut self) {
-        if self.runtime.login.is_some() || self.runtime.login_probe.is_some() || self.safe_mode {
+        // A test instance reads nothing of the Operator's credentials.
+        if self.runtime.login.is_some()
+            || self.runtime.login_probe.is_some()
+            || self.safe_mode
+            || self.args.test_instance
+        {
             return;
         }
         let installation = Installation {

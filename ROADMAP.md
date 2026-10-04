@@ -2279,18 +2279,33 @@ budget. A test instance of an unreviewed build (evaluation) receives no
 credential; its Assistant runs on the scripted stand-in the journeys use, so
 the Conversation's own behaviour is testable, and a criterion that needs a
 real model there is not run, never a pass. A test instance can also start
-with a recorded objective, so its thread can be observed and operated.
+with a recorded objective, so its thread can be observed and operated. A
+Studio started with `--test-instance` must have its own app data (its own
+`--session`, not the Operator's), reads keys only from its environment,
+never from the operating system's credential store, and does not probe the
+machine's Claude login; this keeps accidents out, while real isolation from
+code an unreviewed build runs needs the operating system (§1.6).
 
 **Control ownership and observer mode.** One agent acts in a window at a
 time: the first to act holds it until it releases it or has been idle for 30
 seconds, and another agent's action is refused with who holds it; the
-Operator's own input is never refused. Each explorer and evaluator has its
-own test instance. Observer mode extends the visible agents above with a
-speed the Operator sets: `observe` (typing about 12 characters a second, a
-short pause on the target before a click), `fast` (a character a frame) or
-`instant` (as before, for tests); clicks, focus, scrolling, the acting agent,
-its goal, its last decision and the outcome are drawn in the window. Pause,
-Step and Resume take effect between characters, and Stop at once.
+Operator's own input is never refused. The supervisor (the endpoint's
+holder, which drives a test instance for the Orchestrator) acts without
+holding the window, and an Assistant turn an agent's message started acts
+within that agent's hold. Each explorer and evaluator has its own test
+instance. Observer mode extends the visible agents above with a speed the
+Operator sets (the setting `control.speed`, or `--control-speed` for a test
+instance): `observe` (typing about 12 characters a second, a short pause on
+the target before a click), `fast` (a character a frame) or `instant` (as
+before, for tests); clicks, focus, scrolling, the acting agent, its goal, its
+last decision and the outcome are drawn in the window. Pause, Step and Resume
+take effect between characters, and Stop at once; after the Operator's Stop,
+only the Operator resumes. Every refused action carries a kind (the
+Operator's own, stale, gone, disabled, unavailable, held, stopped, expired,
+invalid, timeout, failed) beside its reason, so clients never read meaning
+from wording. In the Operator's own window, an observation names the
+Conversation's entries without their text and leaves out the composer's
+draft; a test instance shows them, for self-testing.
 
 **Evidence, gates and bounds added (C-54).** A criterion shows a defect on
 the original implementation only by behaviour: a replay or observation that

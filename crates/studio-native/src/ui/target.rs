@@ -15,7 +15,9 @@
 //! afresh each frame. A control records its bounds, the part of them that
 //! is visible (within its scroll area's mask) and that mask, in painting
 //! order, so the topmost of several is the last. Recording costs one map
-//! entry per drawn control and nothing waits for it.
+//! entry per drawn control and nothing waits for it. A control drawn in an
+//! overlay that a region opened (a menu) is that region's
+//! ([`control_in`]), so the rules for that region hold for it too.
 use gpui::{AnyElement, Bounds, IntoElement, Pixels, SharedString, Styled, Window};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -35,7 +37,8 @@ pub const ROOT: &str = "root";
 pub struct Control {
     /// Stable within a screen: the control's element id, or its name.
     pub id: SharedString,
-    /// `button`, `field`, `tab`, `option`, `item`, `link`, `dialog`, `area`.
+    /// `button`, `field`, `tab`, `option`, `item`, `switch`, `link`,
+    /// `dialog`, `area`.
     pub role: &'static str,
     pub label: SharedString,
     pub value: Option<SharedString>,
@@ -89,7 +92,11 @@ pub struct Drawn {
     pub shown: Option<Bounds<Pixels>>,
     /// What its scroll area or column shows: where scrolling reveals it.
     pub clip: Bounds<Pixels>,
+    /// The region it belongs to: where it was drawn, or the region that
+    /// opened the overlay it was drawn in.
     pub region: &'static str,
+    /// Its layer: overlays above the docked columns and the centre.
+    pub layer: u8,
     /// When it was painted: later is on top.
     pub order: u64,
 }
@@ -107,17 +114,24 @@ struct Registry {
 }
 
 impl Registry {
-    fn push(&mut self, control: Control, bounds: Bounds<Pixels>, clip: Bounds<Pixels>) {
-        let region = self.stack.last().copied().unwrap_or(ROOT);
+    fn push(
+        &mut self,
+        control: Control,
+        bounds: Bounds<Pixels>,
+        clip: Bounds<Pixels>,
+        owner: Option<&'static str>,
+    ) {
+        let drawn_in = self.stack.last().copied().unwrap_or(ROOT);
         let order = self.next;
         self.next += 1;
         let shown = bounds.intersect(&clip);
-        self.regions.entry(region).or_default().push(Drawn {
+        self.regions.entry(drawn_in).or_default().push(Drawn {
             control,
             bounds,
             shown: (!shown.is_empty()).then_some(shown),
             clip,
-            region,
+            region: owner.unwrap_or(drawn_in),
+            layer: layer(drawn_in),
             order,
         });
     }
@@ -191,9 +205,23 @@ pub fn region_end() -> AnyElement {
 /// A child that records its parent's bounds as `control`; the parent must
 /// be `relative()`.
 pub fn control(control: Control) -> AnyElement {
+    recorded(control, None)
+}
+
+/// [`control`], for an overlay `owner` opened (a menu): the control is
+/// that region's.
+pub fn control_in(owner: Option<&'static str>, control: Control) -> AnyElement {
+    recorded(control, owner)
+}
+
+fn recorded(control: Control, owner: Option<&'static str>) -> AnyElement {
     with_canvas(move |bounds, window| {
         let clip = window.content_mask().bounds;
-        REGISTRY.with(|registry| registry.borrow_mut().push(control.clone(), bounds, clip))
+        REGISTRY.with(|registry| {
+            registry
+                .borrow_mut()
+                .push(control.clone(), bounds, clip, owner)
+        })
     })
 }
 
@@ -205,7 +233,7 @@ pub fn target(name: impl Into<SharedString>) -> AnyElement {
 /// Records bounds measured elsewhere (the Surface's viewport).
 pub fn record(name: &str, bounds: Bounds<Pixels>) {
     let control = Control::new("area", SharedString::from(name.to_string()));
-    REGISTRY.with(|registry| registry.borrow_mut().push(control, bounds, bounds))
+    REGISTRY.with(|registry| registry.borrow_mut().push(control, bounds, bounds, None))
 }
 
 /// Overlays above the docked columns and the centre: dialogs, the palette,
@@ -233,13 +261,7 @@ pub fn drawn() -> Vec<Drawn> {
         // Overlays above everything; the docked columns and the centre, which
         // do not overlap, in a fixed order, so which of two same-named
         // controls wins does not depend on which column was painted again.
-        all.sort_by_key(|d| {
-            (
-                layer(d.region),
-                (layer(d.region) == 0).then_some(d.region),
-                d.order,
-            )
-        });
+        all.sort_by_key(|d| (d.layer, (d.layer == 0).then_some(d.region), d.order));
         all
     })
 }
@@ -265,6 +287,7 @@ mod tests {
             shown: None,
             clip: Bounds::default(),
             region: ROOT,
+            layer: layer(ROOT),
             order,
         }
     }

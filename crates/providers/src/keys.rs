@@ -9,9 +9,23 @@
 //! from the environment; there is no plain-text fallback.
 
 use crate::Credential;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
+
+/// Whether this process uses the credential store (see [`without_store`]).
+static STORE: AtomicBool = AtomicBool::new(true);
+
+/// This process keeps out of the credential store: keys come only from its
+/// environment, and none is stored or removed. A test instance of the
+/// Studio (C-54) runs so, holding no key of the Operator's that its
+/// supervisor did not give it.
+pub fn without_store() {
+    STORE.store(false, Ordering::SeqCst);
+}
+
+const NO_STORE: &str = "This Agentique keeps no keys: it uses only the keys its environment gives.";
 
 /// How long one credential operation may take.
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -93,6 +107,10 @@ fn ask<T>(command: impl FnOnce(Sender<Result<T, KeyError>>) -> Command) -> Resul
 /// read (R-25 point 5: say so, never guess).
 pub(crate) fn stored(credential: impl Into<Credential>) -> Result<Option<String>, KeyError> {
     let credential = credential.into();
+    // Nothing is read from the store, a subscription token no more than a key.
+    if !STORE.load(Ordering::SeqCst) {
+        return Ok(None);
+    }
     ask(|reply| Command::Get(credential, reply))
 }
 
@@ -103,6 +121,9 @@ pub fn store(credential: impl Into<Credential>, key: &str) -> Result<(), KeyErro
     let key = key.trim();
     if key.is_empty() {
         return Err(KeyError("The key is empty.".into()));
+    }
+    if !STORE.load(Ordering::SeqCst) {
+        return Err(KeyError(NO_STORE.into()));
     }
     // CREDENTIALW holds at most 2,560 bytes of secret [47]; the store
     // writes UTF-16.
@@ -118,6 +139,9 @@ pub fn store(credential: impl Into<Credential>, key: &str) -> Result<(), KeyErro
 /// an error.
 pub fn remove(credential: impl Into<Credential>) -> Result<(), KeyError> {
     let credential = credential.into();
+    if !STORE.load(Ordering::SeqCst) {
+        return Err(KeyError(NO_STORE.into()));
+    }
     ask(|reply| Command::Delete(credential, reply))
 }
 

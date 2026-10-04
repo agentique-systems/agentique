@@ -164,9 +164,11 @@ impl Fields {
                     .flex()
                     .gap(r(6.0))
                     .child(
-                        div()
-                            .flex_1()
-                            .child(TextField::new(&field).target("objective-message")),
+                        div().flex_1().child(
+                            TextField::new(&field)
+                                .target("Message to the agents")
+                                .control_id("objective-message"),
+                        ),
                     )
                     .child(Button::new("objective-send", "Send").small().on_click(send)),
             );
@@ -314,7 +316,11 @@ impl Fields {
             .flex_col()
             .gap(r(8.0))
             .child(super::group("New objective", None, cx))
-            .child(TextArea::new(&self.intent).target("objective-intent"))
+            .child(
+                TextArea::new(&self.intent)
+                    .target("What should Agentique improve in itself?")
+                    .control_id("objective-intent"),
+            )
             .child(
                 div()
                     .flex()
@@ -326,7 +332,11 @@ impl Fields {
                             .flex_col()
                             .gap(r(3.0))
                             .child(label("Spend budget (USD)"))
-                            .child(TextField::new(&self.usd).target("objective-usd")),
+                            .child(
+                                TextField::new(&self.usd)
+                                    .target("Spend budget (USD)")
+                                    .control_id("objective-usd"),
+                            ),
                     )
                     .child(
                         div()
@@ -335,18 +345,24 @@ impl Fields {
                             .flex_col()
                             .gap(r(3.0))
                             .child(label("Improvements"))
-                            .child(TextField::new(&self.cycles).target("objective-cycles")),
+                            .child(
+                                TextField::new(&self.cycles)
+                                    .target("Improvements")
+                                    .control_id("objective-cycles"),
+                            ),
                     ),
             )
-            .child(
+            .child(switch_row(
                 Switch::new(
                     "objective-merge",
                     self.merge,
                     "Merge reviewed changes that pass every check",
                 )
                 .on_toggle(toggle(true)),
-            )
-            .child(
+                "Merge reviewed changes that pass every check",
+                &theme,
+            ))
+            .child(switch_row(
                 Switch::new(
                     "objective-adopt",
                     self.merge && self.adopt,
@@ -354,7 +370,9 @@ impl Fields {
                 )
                 .disabled(!self.merge)
                 .on_toggle(toggle(false)),
-            )
+                "Build, try and restart in the result",
+                &theme,
+            ))
             .child(super::group("Models", None, cx))
             .children(
                 models
@@ -486,6 +504,16 @@ fn role_lines(objective: &Objective) -> Vec<String> {
         lines.push(line);
     }
     lines
+}
+
+/// A switch with its text beside it, as the Operator reads it.
+fn switch_row(switch: Switch, text: &'static str, theme: &ui::Theme) -> gpui::Div {
+    div().flex().items_center().gap(r(8.0)).child(switch).child(
+        div()
+            .text_size(r(theme::text::SM))
+            .text_color(theme.text_secondary)
+            .child(text),
+    )
 }
 
 /// The objective's record, in a few lines.
