@@ -77,6 +77,15 @@ impl Default for Budgets {
 }
 
 impl Budgets {
+    /// The defaults of an objective that explores (C-54): three cycles, so
+    /// it explores, fixes and explores the adopted build again.
+    pub fn exploring() -> Budgets {
+        Budgets {
+            cycles: 3,
+            ..Budgets::default()
+        }
+    }
+
     /// The model calls a session of `role` may make.
     pub fn calls_of(&self, role: &str) -> u32 {
         self.calls.get(role).copied().unwrap_or_else(|| {
@@ -1652,6 +1661,8 @@ mod tests {
     #[test]
     fn budgets_are_checked_before_an_objective_starts() {
         assert!(Budgets::default().check().is_ok());
+        assert_eq!(Budgets::exploring().cycles, 3);
+        assert!(Budgets::exploring().check().is_ok());
         let wrong = Budgets {
             usd: 0.0,
             cycles: 0,

@@ -27,7 +27,8 @@
 //!   place.
 //! - [`models`]: each role's model, resolved before an objective starts
 //!   (C-54).
-//! - [`run`]: the driver.
+//! - [`run`]: the driver; its modules run exploring cycles, evidence on
+//!   the base and delegated child objectives (C-54).
 #![forbid(unsafe_code)]
 
 pub mod builds;

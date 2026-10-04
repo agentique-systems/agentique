@@ -1533,8 +1533,8 @@ the flag tier blanked them. The general-purpose and Explore subagents of a
 | W12.2 Control interface, complete and observable | — | Built: on `stage12/control` (below): tool inputs checked as declared, every interactive control observed with a readable label and an `operatorOnly` mark, title-bar buttons that answer the operating system's clicks, one agent per window, observer mode with Stop, the trace's why, goal and holder, the model's digest; with the coordinator's additions, test instances where agents also use the Conversation and undo, keys only from the environment there, and refusal kinds. Tested: unit tests, three control journeys on real windows, a real-input title-bar check |
 | W12.3 Models per role and credentials | — | Built on `stage12/models` (not merged): Settings › Agents, each role resolved and recorded before an objective starts, its sessions on its own model, effort and credential, spend by role and model, typed decisions from the `escalation` and `decisions` roles; the Claude subscription token as Anthropic's second credential; the companion's credential check and `claude auth status` probe; Claude 5.5 prices |
 | W12.4 Exploration and testing knowledge | #112 | Built, not yet in cycles (W12.5): `explore` (the explorer's run behind an `Instance` boundary: a test instance started fresh from a copy of the start project inside its own folder, or a stand-in; the actions valid there that the observation offers to agents, fields with fixed input classes and the Conversation's composer with fixed request classes; the rules, Jev among the rules' best eight, the explorer's model with its answer checked, or Jev escalating; recovery from stale refusals, dialogs in the way, dead ends, exits and hangs), `findings` (the checks `answers`, `offered-acts`, `readable-labels`, `undo-restores`, `dialogs-close`, `action-time`, `no-internal-error`, `turn-ends`, `turn-stops` and the explorer's `expectation`; identities normalised; `replay`, `reproduce` by two replays, `reduce` within a bound) and `knowledge` (`testing/<project>/knowledge.json`, format 1, atomic, bounded); `decide` asks one typed question for dialogs and exploration, the dialog decisions unchanged; fixed exploration tasks, tuning and held-out (`tests/fixtures/exploration.json`); measured live, preliminary (below) |
-| W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | — | Not started |
-| W12.6 The Conversation as the one window: threads, directives, delegation | — | The Studio's side built on `stage12/conversation` (not merged; below): one set of objective commands for the Conversation, the Objectives panel and the palette; one start form (in the Conversation from the message or the Assistant's `propose_objective`, else in the panel) with explore, budgets, permissions and each role's model; the objective's thread in the Conversation in time order (messages with where each went, directives with their recorded status, results, events, tool calls folded with diffs, children nested, directives streaming at the observer speed); replies through the composer addressed explicitly; the panel as a dashboard; agents operate it in test instances (`--assistant-stand-in`), never in the Operator's window. The `delegate` tool, child objectives and the routing of messages are W12.5's |
+| W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | #113, #114 (records); the rest on `stage12/loop` | Built (below), not merged: Explore and Reproduce before Propose, the finding's replay as a frozen criterion, evidence on the base, evaluation of user-facing changes, failure identity, budgets of steps and calls, stated conditions, a loop that continues through adoption and recovery, bounds on worktrees, builds and branches; the Orchestrator's half of W12.6 (delegation, message routing) with it |
+| W12.6 The Conversation as the one window: threads, directives, delegation | #116 | The Studio's side built (below): one set of objective commands for the Conversation, the Objectives panel and the palette; one start form (in the Conversation from the message or the Assistant's `propose_objective`, else in the panel) with explore, budgets, permissions and each role's model; the objective's thread in the Conversation in time order (messages with where each went, directives with their recorded status, results, events, tool calls folded with diffs, children nested, directives streaming at the observer speed); replies through the composer addressed explicitly; the panel as a dashboard; agents operate it in test instances (`--assistant-stand-in`), never in the Operator's window. The `delegate` tool, child objectives and the routing of messages are W12.5's |
 | W12.7 Proof | — | Not started |
 
 **W12.4 measured, preliminary** (live, 2026-10-04, on `stage12/explore` at the code of `2e56d6dc`, as rebased onto `c563d23a`; a debug Studio built from that branch, before W12.2's control-interface changes; Jev `jev-1.13.0` through TypeSafe AI with threshold 0.6 and a 4 s deadline; the explorer's model and the escalation both DeepSeek's `deepseek-flash` at effort `low`, to compare like with like; results kept outside the repository)
@@ -1830,3 +1830,155 @@ built in parallel and the Operator used the machine):
   Operator's, and no input was sent for the Operator); a child objective
   stopped alone (it needs a `Command` for one child: until then Stop acts
   on the whole run).
+
+**W12.5 built** (branch `stage12/loop`, 2026-10-04; the thread and
+directive records (Step 0) and their review fixes merged as #113 and #114;
+the rest not merged; nothing here says the Operator accepted anything).
+
+- **Explore and Reproduce before Propose** (`run/explore.rs`) when an
+  objective explores (`Objective.explore`; the cycle's sub-phase is in
+  `Cycle.exploring`, so `phase` stays `propose` and the previous build reads
+  the record). The lead plans first: a short session with
+  `submit_exploration`, its goal recorded as the lead's directive to the
+  explorer, and `delegate` (below); an objective two deep has no planning
+  session. The explored build is the cycle's base: the running build when
+  its manifest is of the base commit, else a debug build of the base
+  checkout whose executable is kept with the cycle. Fixed findings not yet
+  replayed in that build go first (one that fails again is a regression and
+  is reproduced). The explorer's run then starts in a test instance
+  (`--test-instance`, `--control-speed` at the Operator's `control.speed`),
+  from a copy of `models/url-shortener` or of `model/`, alternating by cycle
+  and exploration, with the recent changes since the last explored commit
+  (`git log`, bounded) and successive ways of deciding (Jev escalating, the
+  model, the rules; the rules alone when the objective recorded no
+  exploring models). A merged build's instance gets the explorer's provider
+  key in its environment only, its Assistant preset to that model, so it may
+  send requests, whose spend counts as the explorer's; an unreviewed build's
+  never gets one. Spend is counted by the role that decided (`decisions`,
+  `explorer`, `escalation`). The run goes to the testing knowledge with the
+  build and commit the Orchestrator chose (`RunRecord.commit`, read back by
+  `last_commit`). Reproduce takes at most three new findings, most severe
+  first (`Check::severity`: exit, hang, internal error; a refused offered
+  action; an expectation, undo or a dialog; a label; slowness), each
+  replayed twice and reduced within six replays; the knowledge keeps what
+  became of each. Nothing reproduced explores again from another start and
+  way, within the cycle's attempts; two explorations in a row with nothing
+  new reproduced end the objective as "Nothing new reproduced", an outcome.
+- **Propose:** the lead's brief lists the cycle's reproduced findings (`f1`,
+  `f2`, …: check, steps, reduced steps, evidence, build) and the testing
+  knowledge in short; `submit_proposal` names the one it fixes (`finding`,
+  required when there are any), and the Orchestrator freezes that finding
+  with the proposal (`Cycle.replay`), its replay being the criterion
+  `replay`. A proposal naming the part `Studio` without an observation,
+  judgment or finding is refused and asked again; an observation criterion
+  may name a stated condition.
+- **Evidence on the base** (`run/evidence.rs`, requirement
+  `DefectShownBefore`), once per cycle: the replay on the base build (its
+  reproduction in the cycle is reused; otherwise it runs again there);
+  command criteria on the base checkout with the change's new and changed
+  test files brought over, evidence only when a test ran and failed (a
+  compile or load error, no test, a timeout or a run that did not finish is
+  `no evidence`, with the reason); observation criteria in test instances of
+  the base build; a judgment is no evidence. The gate "the criteria show the
+  defect on the base" needs one with evidence and none passing; it replaces
+  "the criteria fail before the change".
+- **Evaluate** whenever a criterion is behavioural, the cycle has a replay,
+  or the diff touches the Studio's code (the part `Studio`'s crate links,
+  outside tests; `gates::user_facing`): the replay must pass on the
+  change's build; a user-facing change also gets a 10-step exploration by
+  the rules from the URL shortener toward the areas it touched, where an
+  invariant failure the knowledge did not hold before fails it; observation
+  criteria share one instance unless they name a condition. Instances of the
+  change get no credential and `--assistant-stand-in` once the Studio
+  supports it (flags are read from the build's `--help`, so an older build
+  starts without the ones it does not know). A user-facing change whose
+  frozen criteria have no behavioural one stops the cycle (a later attempt
+  cannot add one).
+- **Failure identity** (`Outcome::failure`): a judgment by its criterion and
+  verdict (`Outcome.judged`); a reviewer's request for changes is the
+  failure `review`; numbers and long hexadecimal ids normalised.
+- **Test instances in a stated condition** (`control::prepare`):
+  `recovered` (a builds registry with a build that did not start, and
+  `--recovered-from` it) and `with an objective` (a finished objective with
+  its thread beside the instance's session, as W12.6 shows one).
+- **Continuing and durable:** `Objective.interrupted` marks an objective
+  interrupted because the Operator closed Agentique (it waits for
+  Continue; an older record's note counts too); one that was running when
+  its Studio ended otherwise, started again supervised or with
+  `--recovered-from`, goes on by itself and says so in its thread, as after
+  an adoption; `Objective.resumes` counts resumes without progress, and two
+  stop it (`Objective::on_start`). Pause is kept in the record and holds
+  across restarts. Exploring objectives default to three cycles
+  (`Budgets::exploring`, which the start form of W12.6 uses).
+- **Budgets:** `Budgets.steps` (an exploration's actions, 20 by default)
+  and `Budgets.calls` (model calls per session role; `DEFAULT_CALLS` keeps
+  80, 160, 60 and 80), checked by `Budgets::check`.
+- **Bounds:** a cycle that ends removes its worktrees and folders but, when
+  it failed or was interrupted, its `work` worktree, of which the three most
+  recent across objectives are kept; then `git worktree prune`. A merge
+  passes `--delete-branch` and the local branch is deleted. One build at a
+  time: `builds::lock` (the builds folder's `build.lock`), taken by release
+  builds (Settings › Builds and the Orchestrator) and debug builds. Test
+  instances' folders are removed after use.
+
+**W12.6, the Orchestrator's half: the delegation backend** (branch
+`stage12/loop`, with W12.5; not merged).
+
+- The lead's `delegate` tool (`{ instruction, focus?, usd, steps }`), in
+  planning and in Propose of an objective that explores, checked by the
+  Orchestrator (`run/children.rs`, requirement `ChildWorkBounded`): a budget
+  above nothing and within what is left, steps within the parent's, at most
+  two deep, one child at a time, three per turn. A refused one is recorded as
+  a refused directive with the reason and shown at once; an accepted one is
+  recorded as the lead's directive to the child (with its budgets and
+  permissions: explore only, no push, merge or adopt), the child objective
+  (`<parent>-c<k>`, one deeper, `requested_by` the lead, the parent's models)
+  created once under the journal, and the lead's turn ends. The child runs
+  inside the parent's run, on its Handle (its thread entries with its own
+  objective id, `Event::Changed` for its record): it plans, explores and
+  reproduces, then ends with its result (findings, coverage, spend), which
+  is recorded on the directive, in its thread and in the parent's as a
+  result `to` the lead. Its spend is added to the parent's; its reproduced
+  findings join the parent's cycle. A child interrupted with its parent goes
+  on first when the parent does. `Command::StopChild(id)` stops one child
+  (also one about to start): its directive ends as stopped with "stopped by
+  the Operator", and the lead goes on with that; Stop stops the children
+  too. `Store::active` returns only the Operator's objectives.
+- **The Operator's messages:** to the implementer at its next tool call
+  while its session runs (the thread entry `to` is `implementer`),
+  otherwise to the lead's next turn (`to` is `lead`; never the reviewer or
+  the explorer); what the implementer's session ended before taking goes to
+  the lead, and the thread says so. The lead's sessions open with what waits
+  for it (the Operator's messages and children's results after
+  `Objective.delivered`), which is then marked delivered, with a thread
+  event.
+
+Checked for W12.5 and the delegation backend (2026-10-04):
+
+- **Tested with stand-ins** (`tests/exploring.rs`: the scripted companion
+  `fixtures/explore-companion.mjs` and the stand-in Studio, whose builds are
+  checkouts and whose instance has an unlabelled button until a build holds
+  the fix): an exploring cycle explores the base build, reproduces and
+  reduces the finding to one step, the replay fails on the base (its
+  reproduction reused) and a brought-over test fails there too, the change
+  passes both, the testing knowledge keeps the run and the finding, and the
+  failed cycle keeps only its `work`; two explorations without a new problem
+  end the objective; a delegation over budget is refused and recorded, one
+  within it runs as a child whose result reaches the lead and whose spend
+  counts in the parent's; a child stopped alone; messages to the
+  implementer at work and to the lead. Four runs in a row passed. Unit
+  tests: stated conditions, flag probing, failure identity, evidence on the
+  base, user-facing files by the links, the build lock, `Objective::on_start`,
+  the record of an exploring cycle read by the previous build.
+- **Exercised live** (a debug Studio built from this branch; windows, no
+  key, no model): test instances start as test instances at `instant`; the
+  `recovered` one's status names the build that did not start; the `with an
+  objective` one has the objective in its app data; an 8-step exploration by
+  the rules runs in a live instance; every instance folder is removed. This
+  found that an exploration given no spend budget stopped before its first
+  step, which the rules' exploration of a change had; fixed.
+- **Not tried:** a whole exploring cycle on the real Studio with real
+  models, a pull request, merge and branch deletion through GitHub, an
+  adoption that goes on to explore the adopted build, the Studio's own
+  start-up decision on a real restart (unit-tested only), and the explorer's
+  key in a test instance (no exploring roles with keys were used).

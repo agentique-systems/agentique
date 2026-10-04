@@ -743,6 +743,69 @@
       "kind": "symbol",
       "path": "crates/studio-native/src/develop.rs",
       "symbol": "Studio::use_build"
+    },
+    {
+      "element": 1407,
+      "name": "AgentiqueArchitecture::FindingsReproduce",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploration.rs",
+      "symbol": "planted_defects_reproduce_and_a_flaky_one_does_not"
+    },
+    {
+      "element": 1407,
+      "name": "AgentiqueArchitecture::FindingsReproduce",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploration.rs",
+      "symbol": "a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without"
+    },
+    {
+      "element": 1407,
+      "name": "AgentiqueArchitecture::FindingsReproduce",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it"
+    },
+    {
+      "element": 1410,
+      "name": "AgentiqueArchitecture::DefectShownBefore",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it"
+    },
+    {
+      "element": 1410,
+      "name": "AgentiqueArchitecture::DefectShownBefore",
+      "kind": "test",
+      "path": "crates/orchestrator/src/gates.rs",
+      "symbol": "the_defect_is_shown_on_the_base_only_with_evidence"
+    },
+    {
+      "element": 1410,
+      "name": "AgentiqueArchitecture::DefectShownBefore",
+      "kind": "test",
+      "path": "crates/orchestrator/src/run/evidence.rs",
+      "symbol": "a_run_on_the_base_is_evidence_only_when_a_test_ran_and_failed"
+    },
+    {
+      "element": 1410,
+      "name": "AgentiqueArchitecture::DefectShownBefore",
+      "kind": "test",
+      "path": "crates/orchestrator/src/gates.rs",
+      "symbol": "user_facing_code_is_the_studios_by_its_links_outside_tests"
+    },
+    {
+      "element": 1413,
+      "name": "AgentiqueArchitecture::ChildWorkBounded",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "the_lead_delegates_a_child_within_its_budget_and_gets_its_result"
+    },
+    {
+      "element": 1413,
+      "name": "AgentiqueArchitecture::ChildWorkBounded",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "a_child_stopped_alone_lets_its_parent_go_on"
     }
   ],
   "protected": [
