@@ -492,7 +492,11 @@ fn tool_input_is_checked_against_the_schema() {
         assert_eq!(tools::check_input(tool, &input), Ok(()), "{tool} {input}");
     }
     let invalid = [
-        (READ_MODEL, json!([]), "`input` must be object"),
+        (
+            READ_MODEL,
+            json!([]),
+            "`input` must be an object; got an array of 0 item(s)",
+        ),
         (
             READ_MODEL,
             json!({ "elementName": "X" }),
@@ -516,12 +520,12 @@ fn tool_input_is_checked_against_the_schema() {
         (
             APPLY_CHANGES,
             json!({ "description": "Add", "operations": [{ "op": "create", "value": [1] }] }),
-            "`input.operations[0].value` must be string or number or boolean",
+            "`input.operations[0].value` must be a string, a number or a boolean (create, set: the value of an attribute); got an array of 1 item(s)",
         ),
         (
             ASK_OPERATOR,
             json!({ "question": "Q", "options": [1] }),
-            "`input.options[0]` must be string",
+            "`input.options[0]` must be a string; got the number 1",
         ),
         ("delete_everything", json!({}), "no tool called"),
     ];
@@ -529,6 +533,104 @@ fn tool_input_is_checked_against_the_schema() {
         let message = tools::check_input(tool, &input).unwrap_err();
         assert!(message.contains(expected), "{tool} {input}: {message}");
     }
+}
+
+/// `act_in_app` was refused to every model (W12.2): its `observed` is an
+/// integer, which the checker did not know.
+#[test]
+fn an_action_in_the_application_is_checked_as_declared() {
+    let act = |observed: serde_json::Value, timeout: serde_json::Value| {
+        json!({
+            "action": { "kind": "wait", "until": { "dialog": null }, "timeoutMs": timeout },
+            "expect": { "instance": "4f2a" },
+            "observed": observed,
+            "why": "wait for the dialog to close",
+            "goal": "check that undo restores the model",
+        })
+    };
+    assert_eq!(
+        tools::check_input("act_in_app", &act(json!(7), json!(5000))),
+        Ok(())
+    );
+    // A whole number written with a fraction is still a whole number.
+    assert_eq!(
+        tools::check_input("act_in_app", &act(json!(7.0), json!(5000))),
+        Ok(())
+    );
+    assert_eq!(
+        tools::check_input("act_in_app", &act(json!("7"), json!(5000))),
+        Err("`input.observed` must be an integer (screenRevision from the observation this action is based on); got the string \"7\"".to_string())
+    );
+    assert_eq!(
+        tools::check_input("act_in_app", &act(json!(7.5), json!(5000))),
+        Err("`input.observed` must be an integer (screenRevision from the observation this action is based on); got the number 7.5".to_string())
+    );
+    let message = tools::check_input("act_in_app", &act(json!(7), json!("soon"))).unwrap_err();
+    assert!(
+        message.starts_with("`input.action.timeoutMs` must be an integer")
+            && message.ends_with("got the string \"soon\""),
+        "{message}"
+    );
+    // An unknown field is named with where it is.
+    let mut extra = act(json!(7), json!(5000));
+    extra["expect"]["screen"] = json!("surface");
+    assert_eq!(
+        tools::check_input("act_in_app", &extra),
+        Ok(()),
+        "`expect` allows more fields"
+    );
+    extra["mood"] = json!("happy");
+    assert_eq!(
+        tools::check_input("act_in_app", &extra),
+        Err("`input` has no field `mood`".to_string())
+    );
+}
+
+/// The values of fields of any name (`features`, `values`) are checked by
+/// their schema too.
+#[test]
+fn fields_of_any_name_are_checked_by_their_schema() {
+    let input = |value: serde_json::Value| {
+        json!({ "description": "Add", "operations": [
+            { "op": "create", "kind": "part", "name": "cache", "features": { "ttl": value } }
+        ] })
+    };
+    assert_eq!(tools::check_input(APPLY_CHANGES, &input(json!(60))), Ok(()));
+    let message = tools::check_input(APPLY_CHANGES, &input(json!([60]))).unwrap_err();
+    assert!(
+        message.starts_with(
+            "`input.operations[0].features.ttl` must be a string, a number or a boolean"
+        ),
+        "{message}"
+    );
+}
+
+/// Every tool definition passes its own minimal and full example through
+/// the checker and uses only what the checker checks, so a declared type
+/// or constraint the checker does not know cannot come back.
+#[test]
+fn every_tool_definition_is_checked_as_declared() {
+    for (set, definitions) in [
+        ("the Assistant's", tools::definitions()),
+        ("the worker's", agq_assistant::worker::definitions()),
+        (
+            "the worker's toolset",
+            agq_assistant::worker::toolset().definitions,
+        ),
+    ] {
+        assert_eq!(tools::check_definitions(&definitions), Ok(()), "{set}");
+    }
+    // What the check catches.
+    let tool = |schema: serde_json::Value| json!([{ "name": "t", "input_schema": schema }]);
+    let unknown_keyword = tool(json!({
+        "type": "object",
+        "properties": { "limit": { "type": "integer", "minimum": 1 } }
+    }));
+    let error = tools::check_definitions(&unknown_keyword).unwrap_err();
+    assert!(error.contains("`minimum`"), "{error}");
+    let unknown_type =
+        tool(json!({ "type": "object", "properties": { "at": { "type": "date" } } }));
+    assert!(tools::check_definitions(&unknown_type).is_err());
 }
 
 #[test]
