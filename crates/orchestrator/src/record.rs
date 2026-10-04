@@ -538,6 +538,9 @@ pub enum Recipient {
 #[serde(rename_all = "camelCase")]
 pub struct Scope {
     pub instruction: String,
+    /// The area a child objective explores (the `delegate` tool's `focus`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub focus: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub budgets: Option<Budgets>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -705,6 +708,20 @@ impl Objective {
                 directive.result = result;
             }
             directive.updated = agq_launcher::now();
+        }
+    }
+
+    /// Settles every directive still running in it (it stopped, or its
+    /// cycle ended), with what came of them.
+    pub fn settle_running(&mut self, status: DirectiveStatus, result: &str) {
+        let running: Vec<String> = self
+            .directives
+            .iter()
+            .filter(|d| d.status == DirectiveStatus::Running)
+            .map(|d| d.id.clone())
+            .collect();
+        for id in running {
+            self.settle(&id, status.clone(), Some(result.to_string()));
         }
     }
 
@@ -1211,6 +1228,7 @@ mod tests {
             Recipient::Role("implementer".into()),
             Scope {
                 instruction: "Implement the proposal".into(),
+                focus: None,
                 budgets: None,
                 permissions: None,
             },
@@ -1222,6 +1240,7 @@ mod tests {
             Recipient::Child("objective-1-d2".into()),
             Scope {
                 instruction: "Explore the History panel".into(),
+                focus: None,
                 budgets: Some(Budgets {
                     usd: 0.5,
                     ..Budgets::default()

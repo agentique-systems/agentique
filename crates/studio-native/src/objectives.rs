@@ -54,8 +54,9 @@ impl ObjectivesState {
     }
 
     /// Shows `entry` of the thread in its place (entries can arrive out of
-    /// order from the Orchestrator's thread and the Studio's own); an entry
-    /// that could not be kept (number 0) goes last.
+    /// order from the Orchestrator's thread and the Studio's own), each
+    /// once; an entry that could not be kept (number 0) stays where it
+    /// arrived, after what was shown then.
     pub fn add(&mut self, entry: ThreadEntry) {
         if entry.seq != 0 && self.thread.iter().any(|e| e.seq == entry.seq) {
             return;
@@ -63,10 +64,15 @@ impl ObjectivesState {
         let at = if entry.seq == 0 {
             self.thread.len()
         } else {
-            self.thread
+            let mut at = self
+                .thread
                 .iter()
                 .rposition(|e| e.seq != 0 && e.seq < entry.seq)
-                .map_or(0, |i| i + 1)
+                .map_or(0, |i| i + 1);
+            while self.thread.get(at).is_some_and(|e| e.seq == 0) {
+                at += 1;
+            }
+            at
         };
         self.thread.insert(at, entry);
         if self.thread.len() > SHOWN {
@@ -254,6 +260,16 @@ impl Studio {
             objective.roles_unavailable = resolved.unavailable.into_iter().collect();
             store.save(&objective)?;
         }
+        // A record an earlier build saved has no thread yet: it starts with
+        // the intent, as the Operator gave it.
+        if store.thread_last(&objective.id) == 0
+            && let Err(error) = store.append_thread(
+                &objective.id,
+                ThreadEntry::new(Kind::Human, Author::Operator, objective.intent.clone()),
+            )
+        {
+            self.objectives.message = Some(format!("The objective's thread: {error}"));
+        }
         self.objectives.read(&store, &objective.id);
         self.objectives.current = Some(objective.clone());
         if resolved_now {
@@ -283,6 +299,10 @@ impl Studio {
         if let Some(mut objective) = store.active() {
             objective.state = agq_orchestrator::record::State::Stopped;
             objective.note = Some("Stopped by the Operator.".into());
+            objective.settle_running(
+                agq_orchestrator::record::DirectiveStatus::Stopped,
+                "stopped by the Operator",
+            );
             let _ = store.save(&objective);
             self.objectives.current = Some(objective);
             self.objective_note(Author::Operator, "Stopped");
@@ -434,5 +454,57 @@ impl Studio {
             objective.spent.usd,
             objective.budgets.usd
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(seq: u64, text: &str) -> ThreadEntry {
+        ThreadEntry {
+            seq,
+            ..ThreadEntry::event(text)
+        }
+    }
+
+    /// The thread as shown: in order whatever order entries arrive in (the
+    /// Orchestrator's thread and the Studio's own), each once, one that
+    /// could not be kept (number 0) where it arrived, and at most the latest
+    /// [`SHOWN`].
+    #[test]
+    fn the_thread_shown_is_in_order_once_and_bounded() {
+        let mut state = ObjectivesState::default();
+        for seq in [2, 1, 4, 3, 3, 2] {
+            state.add(entry(seq, &seq.to_string()));
+        }
+        state.add(entry(0, "not kept"));
+        state.add(entry(5, "5"));
+        let shown: Vec<(u64, String)> = state
+            .thread
+            .iter()
+            .map(|e| (e.seq, e.text.clone()))
+            .collect();
+        assert_eq!(
+            shown,
+            vec![
+                (1, "1".to_string()),
+                (2, "2".into()),
+                (3, "3".into()),
+                (4, "4".into()),
+                (0, "not kept".into()),
+                (5, "5".into()),
+            ]
+        );
+        for seq in 6..(SHOWN as u64 + 50) {
+            state.add(entry(seq, "x"));
+        }
+        assert_eq!(state.thread.len(), SHOWN);
+        assert_eq!(
+            state.thread.last().map(|e| e.seq),
+            Some(SHOWN as u64 + 49),
+            "the latest are kept"
+        );
+        assert!(state.thread.iter().all(|e| e.seq > 5 || e.seq == 0));
     }
 }

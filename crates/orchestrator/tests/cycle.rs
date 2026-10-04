@@ -221,8 +221,9 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
     assert_eq!(directive.recipient, Recipient::Role("implementer".into()));
     assert_eq!(directive.refers_to.as_deref(), Some("cycle-1/proposal"));
     assert_eq!(directive.author.role, "lead");
-    // The cycle stopped at the merge: its directive failed with it.
-    assert_eq!(directive.status, DirectiveStatus::Failed);
+    // The review approved its implementation: the directive is done, though
+    // the cycle stopped at the merge it may not make.
+    assert_eq!(directive.status, DirectiveStatus::Done);
     let proposed = thread
         .iter()
         .find(|e| e.kind == Kind::Directive)
@@ -253,6 +254,15 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
             .iter()
             .any(|e| e.kind == Kind::Event && e.text.contains("failed: "))
     );
+    // Each role's activity folds under the start of its session.
+    for activity in thread.iter().filter(|e| e.kind == Kind::Activity) {
+        let step = thread
+            .iter()
+            .find(|e| Some(e.seq) == activity.under)
+            .expect("its step");
+        assert_eq!(step.author, activity.author);
+        assert!(step.text.contains("s its session on "), "{}", step.text);
+    }
     // The main branch is untouched.
     let head = std::process::Command::new("git")
         .args(["log", "--oneline", "main"])
@@ -370,7 +380,7 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
         while let Ok(event) = handle.events.try_recv() {
             if let Event::Thread(entry) = event {
                 working |= matches!(&entry.author, Author::Agent { role, .. } if role == "implementer")
-                    && entry.text.starts_with("starts its session");
+                    && entry.text.starts_with("Starts its session");
             }
         }
         std::thread::sleep(Duration::from_millis(50));
