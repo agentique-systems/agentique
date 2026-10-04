@@ -20,6 +20,13 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
+Stage 11 (Agentique improves itself, C-53, ROADMAP §6.8) is in progress: the
+Operator gives an objective in the Objectives panel and Agentique's agents
+propose, implement, check, review, merge, build, try and adopt an improvement
+of Agentique itself, which then restarts in the new version (below, "Agentique
+improves itself"). Its proof ran live on 2026-10-04 and waits for the
+Operator's acceptance; see [docs/stages.md](docs/stages.md).
+
 Stages 7–8 (the factory loop, C-50, ROADMAP §6.5) are in progress: agents
 in the model, scenarios that run against the model, recordings, a live model
 or the real code, implementation links and checks, and a supervised
@@ -97,6 +104,31 @@ linked). Then:
   a model the provider layer does not know is refused, never replaced.
   Replay answers only from recordings made with the same provider, model
   and mapping.
+
+Agentique improves itself (Scenario J, ROADMAP §2.11). Once, to bootstrap:
+save a DeepSeek or Anthropic key in Settings › Providers; choose the Claude
+Agent runtime in Settings › Assistant and install it; start the Studio on
+this repository (`cargo run --release -p agq-studio-native -- --project <this repository>`),
+allow "Trusted-local execution…" (Ctrl+K), then in Settings › About › Builds
+choose Build and, when it is built, "Use this build…". That installs the
+launcher in `%LOCALAPPDATA%\Agentique\builds`. From then on start Agentique
+supervised, for example from a shortcut:
+
+```text
+%LOCALAPPDATA%\Agentique\builds\agentique-launcher.exe --supervise --project <this repository>
+```
+
+Then open the Objectives tab (beside Problems), say what to improve, set the
+spend budget and how many improvements, leave merging and adopting on, and
+press Start. The panel and the status line show each phase, the activity of
+the lead, implementer, reviewer and evaluator, and the spend; Pause holds the
+agents before their next tool call, Step lets one through, Stop ends the
+objective, and a message reaches the agent at work. A change is merged only
+when the required checks, its criteria, the gates and an independent review
+pass and CI passes on the pushed commit; Agentique then builds it, tries it in
+a test instance and restarts in it. Closing Agentique interrupts an objective
+(Continue resumes it); a build that does not start gives way to the last
+known good one, which says why.
 
 The design tokens, the generated themes and the components are shown in one
 place by the component gallery:
