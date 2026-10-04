@@ -502,14 +502,14 @@ watches; agents explore, delegate, fix and adopt in visible windows.
 
 | Step | What happens | Observable success | Failure and recovery behaviour |
 |---|---|---|---|
-| K1 | **Intent.** The Operator writes one broad objective ("Find and fix problems in …") with exploration on, budgets and permissions, and starts it. | Before any agent starts, the panel shows each role's effective model, why a fallback was chosen, the credential and who is billed. | A role with neither its model nor a fallback available, or a credential Agentique may not use, is named; nothing starts half-configured. |
+| K1 | **Intent.** The Operator writes one broad intent in the Conversation ("Find and fix problems in …") and starts it as an objective, with exploration on, budgets and permissions. | Before any agent starts, the Conversation (and the Objectives panel) shows each role's effective model, why a fallback was chosen, the credential and who is billed. | A role with neither its model nor a fallback available, or a credential Agentique may not use, is named; nothing starts half-configured. |
 | K2 | **Explore.** An explorer operates a test instance of the running build through the control interface. Each action is chosen from the observation, the intent, what is not yet covered, earlier findings and recent changes, among the actions that are valid there; fast typed decisions choose where they can and escalate when unsure. | The test instance's window shows the typing, clicks, focus and scrolling, the agent, its goal, each decision and its outcome, at the speed the Operator set; Pause, Step and Resume take effect between characters, Stop at once. | A crash, a hang, an unexpected dialog or a refused stale action is recovered from (restart from the same start, cancel by rule, observe again) and recorded; it never ends the run silently. |
 | K3 | **Reproduce.** A finding is a deterministic check that failed: an invariant of the application or an expectation stated before the action. It is replayed from a fresh start of the same build and reduced to the steps that still reproduce it. | Each finding shows its check, its steps, the build and whether it reproduced; only reproduced findings go on. | A finding that does not reproduce is kept as such and proposes nothing. |
-| K4 | **Delegate.** The lead may delegate a child objective (for example, to explore one area further) by a directive the Orchestrator enters in the Objectives panel, as the lead. | The Operator sees who asked whom, the child's budget and permissions within the parent's, its progress and its result returning to the parent. | A child that would exceed the parent's permissions, budget or depth is refused with the reason. |
+| K4 | **Delegate.** The lead may delegate a child objective (for example, to explore one area further) with its `delegate` tool; the directive streams into the objective's thread in the Conversation. | The Operator sees who asked whom, the child's budget and permissions within the parent's, its progress and its result returning to the parent, and can steer or stop it there. | A child that would exceed the parent's permissions, budget or depth is refused with the reason. |
 | K5 | **Propose.** The lead chooses one reproduced finding and proposes an improvement; the finding's replay is among its frozen criteria. | The replay fails on the original build before any change is made. | A proposal whose regression does not fail on the original implementation is refused as no evidence. |
 | K6 | **Implement, check, evaluate, review.** As J3–J5; a user-facing change is verified in a test instance. | Every criterion has an explicit outcome on the change, the replay among them. | As J3–J5. |
 | K7 | **Merge, build, try, adopt.** As J6–J7. | As J6–J7. | As J6–J7. |
-| K8 | **Continue informed.** The next exploration runs in the adopted build: it first replays the fixed finding, then prefers behaviour not yet covered and areas just changed. | The record shows coverage growing across runs, the fixed finding passing, and what each run cost. | A fixed finding that fails again is reported as a regression. |
+| K8 | **Continue informed.** Without another message from the Operator, the next exploration runs in the adopted build: it first replays the fixed finding, then prefers behaviour not yet covered and areas just changed. | The record shows coverage growing across runs, the fixed finding passing, and what each run cost. | A fixed finding that fails again is reported as a regression. |
 
 **Stage mapping.** Scenario K is Stage 12 (§6.9).
 
@@ -2038,11 +2038,14 @@ answer a dialog that asks for the Operator's approval (integrating a task,
 changing locked elements, trusted-local execution, a paid live run, starting
 an implementation), act in Settings (it may leave them), in the
 Conversation or in the Objectives panel, lock or unlock, undo, change the
-appearance, or pause and resume agents. Two exceptions follow C-54: the
-Orchestrator may enter an objective's lead's directive in the Objectives
-panel's delegation field, as the lead ("Delegation" below); and in a test
-instance, which holds no work of the Operator's, agents may undo and redo, so
-exploration can check that undo restores the model. This holds where each of those effects happens, whatever
+appearance, or pause and resume agents. One exception follows C-54: in a
+**test instance** (a build the Orchestrator starts with `--test-instance`,
+its own app data and no work of the Operator's), agents may operate the
+Conversation (focus the composer, type, send, stop a turn) and undo and redo,
+so self-testing exercises them as a person would; approvals stay refused
+there too. In the Operator's own window, agents never type into the
+Conversation or act as the Operator: their directives and results reach it as
+their own entries ("The Conversation, one window" below). This holds where each of those effects happens, whatever
 route reached it (a click, keys, focus and Space, the palette), for as long
 as a step of an agent's action and the work it dispatched run; requests are
 also refused up front with the reason where that can be told, and text goes
@@ -2195,19 +2198,71 @@ typed decision chooses is adopted only on evidence from fixed exploration
 tasks held out from its tuning; the tasks that judge it are never weakened to
 let it pass.
 
-**Delegation.** An objective's lead may delegate a **child objective**: a
-directive, a budget within what the parent has left, and permissions within
-the parent's (an exploration child never merges or adopts). The Orchestrator
-enters the directive in the parent's delegation field in the Objectives panel
-through the control interface, as the lead and at the observer speed set, and
-the Studio starts the child with its parent named. A child counts against its
-parent's budgets, children nest at most two deep, one runs at a time per
-parent, it stops when its parent stops, and its result returns to the
-parent's lead, which continues; the Operator sees, steers and stops it like
-any objective. Agents still cannot start,
-steer or stop the Operator's own objectives, answer the Operator's approvals
-or speak in the Conversation as the Operator; what an agent entered is shown
-as that agent's, never as the Operator's.
+**The Conversation, one window (C-54, the Operator's clarification of
+2026-10-04).** The Conversation is where the Operator gives intent, follows
+every agent and steers; the Objectives panel is a dashboard of the same
+objectives (budgets, phases, effective models and spend per role, the tree of
+child objectives, Pause, Step, Resume, Stop). Both read the same objective
+records and use the same application commands (start, message, pause, step,
+resume, stop). The Assistant is the Operator's entry point and answers
+ordinary requests on its own role's model. Autonomous work becomes an
+objective: the Operator starts it from the Conversation (or the panel) with
+its budgets, permissions and effective models shown first, or the Assistant
+proposes one with a tool and the Operator starts it; starting stays the
+Operator's own. From then on the objective's **thread** appears in the
+Conversation in time order: the Operator's messages, agents' directives and
+results, and system events (phases, checks, pull requests, merges, builds,
+adoptions, recoveries), each marked with who wrote it (role and effective
+model, or "you", or Agentique), with tool activity and diffs folded under
+the step they belong to. No agent forwards messages: the Operator's reply in
+an objective's thread is queued into the session of the role working at that
+moment, through the same command as the panel's message field. The thread is
+kept with the objective's records (`objectives/<id>/thread.jsonl`), not in
+the conversation file, and no model receives it whole.
+
+**Directives and delegation.** A **directive** is a first-class record of
+one agent's instruction to another: its author (role and objective), its
+recipient (a role, or a child objective), its parent objective, its scope
+(the instruction, and for a child its budgets and permissions), its status
+(started, running, done, failed, stopped or refused, with the reason) and its
+result. The Orchestrator's handoffs within a cycle are directives (the lead's
+proposal to the implementer, the reviewer's findings for repair), and so is
+delegation: an objective's lead calls its `delegate` tool, and the
+Orchestrator validates and records the directive and starts the **child
+objective**, with a budget within what the parent has left and permissions
+within the parent's (an exploration child never merges or adopts). Text in
+the Conversation is never a directive by itself: only the tool, validated by
+the Orchestrator, creates one, and the Conversation shows what was recorded.
+The directive's text streams into the thread as it is recorded, and the
+child's work and result follow it. Each session receives only its own
+handoff (the directive and the result it needs), never another agent's
+transcript, and no agent answers events it merely observes. A child counts
+against its parent's budgets, children nest at most two deep, one runs at a
+time per parent, it stops when its parent stops, and its result returns to
+the parent's lead, which continues; the Operator sees, steers and stops it
+like any objective. Agents cannot start, steer or stop the Operator's own
+objectives, answer the Operator's approvals, act as the Operator or widen
+their scope.
+
+**Durable, continuing work.** An objective's progress lives in its records,
+not in the Conversation or a model's context: closing the Conversation,
+compaction of a session, an adoption, a crash recovered by the launcher, or
+the Operator closing and reopening Agentique leaves it able to continue from
+its saved point without repeating a completed side effect, and an objective
+the Operator did not pause or stop continues on its own after a restart,
+saying so in its thread. Within the Operator's budgets and permissions, one
+intent runs a continuing loop: an exploring objective explores, fixes,
+adopts, and explores the adopted build again, cycle after cycle, without
+waiting for another message, until its budgets are used up, it stops
+finding reproduced problems in the areas of its intent, or the Operator
+stops it.
+
+**Credentials of test instances.** A test instance of a merged build
+(exploration) may be given the explorer's provider key for its own Assistant,
+so self-testing reaches real answers within the objective's spend budget; a
+test instance of an unreviewed build (evaluation, trial before merging)
+receives no credential, so a criterion that needs a model there is not run,
+never a pass.
 
 **Control ownership and observer mode.** One agent acts in a window at a
 time: the first to act holds it until it releases it or has been idle for 30
@@ -3329,9 +3384,10 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-04 | Typed decisions under C-53 (W11.6), after their review: a dialog in the Orchestrator's way is decided by rule (cancel it; an approval waits); Jev, the reasoning model and Jev escalating are compared live on 33 situations from the Studio's real dialogs and on a live application-control workflow (`docs/stages.md`); the comparison's reasoning model is `deepseek-v4-pro` through DeepSeek, fixed in `Decider::default` rather than taken from Settings. | §4.16 puts a known answer in deterministic code, and the measurements show no model does better there; DeepSeek is the only reasoning provider with a key on the reference machine. The self-model's Orchestrator doc ("each bounded choice in operation by a typed decision") is read with §4.16's rule for known answers; the locked part is unchanged. |
 | 2026-10-04 | W11.7 under C-53, run live with an AI agent standing in for the Operator: after the bootstrap (and #103, a bootstrap fix made before the proof: an installed build did not know its repository), Agentique merged and adopted three of its own improvements (#104, #105, #106) from objectives entered in its window, each started in the build the previous one adopted or recovered to; interruption and resume, a failing gate repaired, a stale action and a failed launch with recovery were shown on purpose; what was not done (the Windows journeys and the reference run on the final `main`) and what the proof found are listed in `docs/stages.md` | The record of the run; the gate needs the Operator's own run and acceptance (§6.8, §8.3) |
 | 2026-10-04 | **C-54, the Operator's direction:** Agentique tests and improves itself. Stage 12 (§6.9) with Scenario K (§2.12); §1.5 gains its paragraph; the §1.6 row on a multi-agent factory gains delegation within one objective; §4.16 gains models per role, credentials, exploration, testing knowledge, delegation, control ownership and observer mode, and the added evidence, gates and bounds; the glossary gains exploration, finding, testing knowledge, child objective and observer mode, each a concept no existing term names (exploration is not a scenario run, a finding is not a check's verdict, testing knowledge is not a run result, a child objective is not a subagent, observer mode is a speed of the visible agents) | The Operator's instruction in this session; Stage 11's loop is complete but is fed objectives from outside and judges command-only changes without the GUI |
-| 2026-10-04 | Locked parts under C-54, named before they are built: **(1) `Orchestrator`**: models per role, resolved by the Studio before an objective starts, recorded with their reasons and used for every session of the role; the phases Explore and Reproduce before Propose when an objective explores; the criterion kind `replay` (a reproduced finding's steps and check, run on the base build, where it must fail, and on the change); evidence on the base as §4.16 states; evaluation of user-facing changes whatever the other criteria; failure identity by criterion and verdict; budgets for attempts, time, steps and model calls per role; child objectives within the parent's permissions and budgets, at most two deep; a cycle's worktrees removed when it ends; one build at a time; merged branches deleted; the escalation and decision models taken from Settings (amending the W11.6 entry's fixed `Decider::default`). **(2) `ClaudeAgentRuntime`**: the credential source the SDK reports is checked against the credential the Studio gave before the first model call, and a session that would use another stops with an `auth` error; `accountInfo()` and the source are reported in `init`; a status probe runs the bundled `claude auth status` with the Operator's configuration folder to report whether a local Claude login exists and of which kind, never its token, email or organisation; effort, the subagents' model and a spend ceiling (`maxBudgetUsd`) are passed per session. **(3) The Studio's rules for agents**: the Objectives panel's delegation field of a running objective accepts that objective's lead's directive, entered by the Orchestrator through the control interface and recorded as the lead's; in a test instance (started as one by the Orchestrator, holding no work of the Operator's), agents may undo and redo; a window is held by one agent at a time; every other Operator-own rule stands. **(4) Persistence**: the project's format is unchanged; the testing knowledge (`testing/<project>/knowledge.json`) and an objective's activity (`objectives/<id>/activity.jsonl`) are new files among the Orchestrator's records, covered by its existing `objectives` data format (1), which a previous build reads without touching files it does not know; `objective.json` gains optional fields only, so that format stays 1 if, and only if, the previous build's reader is shown to ignore them, otherwise it changes and adoption is blocked until data rollback is supported. The launcher and Execution are unchanged | R-16 and §8.1 rule 4 ask for an explicit decision; C-54 authorises these changes when documented, reviewed, tested and recoverable |
+| 2026-10-04 | Locked parts under C-54, named before they are built: **(1) `Orchestrator`**: models per role, resolved by the Studio before an objective starts, recorded with their reasons and used for every session of the role; the phases Explore and Reproduce before Propose when an objective explores; the criterion kind `replay` (a reproduced finding's steps and check, run on the base build, where it must fail, and on the change); evidence on the base as §4.16 states; evaluation of user-facing changes whatever the other criteria; failure identity by criterion and verdict; budgets for attempts, time, steps and model calls per role; child objectives within the parent's permissions and budgets, at most two deep; a cycle's worktrees removed when it ends; one build at a time; merged branches deleted; the escalation and decision models taken from Settings (amending the W11.6 entry's fixed `Decider::default`). **(2) `ClaudeAgentRuntime`**: the credential source the SDK reports is checked against the credential the Studio gave before the first model call, and a session that would use another stops with an `auth` error; `accountInfo()` and the source are reported in `init`; a status probe runs the bundled `claude auth status` with the Operator's configuration folder to report whether a local Claude login exists and of which kind, never its token, email or organisation; effort, the subagents' model and a spend ceiling (`maxBudgetUsd`) are passed per session. **(3) The Studio's rules for agents**: in a test instance (started with `--test-instance` by the Orchestrator, holding no work of the Operator's), agents may operate the Conversation and undo and redo (as amended by the Operator's clarification below; the earlier delegation field is not built); a window is held by one agent at a time; every other Operator-own rule stands. **(4) Persistence**: the project's format is unchanged; the testing knowledge (`testing/<project>/knowledge.json`) and an objective's thread (`objectives/<id>/thread.jsonl`) are new files among the Orchestrator's records, covered by its existing `objectives` data format (1), which a previous build reads without touching files it does not know; `objective.json` gains optional fields only, so that format stays 1 if, and only if, the previous build's reader is shown to ignore them, otherwise it changes and adoption is blocked until data rollback is supported. The launcher and Execution are unchanged | R-16 and §8.1 rule 4 ask for an explicit decision; C-54 authorises these changes when documented, reviewed, tested and recoverable |
 | 2026-10-04 | Under C-54, credentials as found on the reference machine: the Operator's machine has a claude.ai login (Claude Max) and no Anthropic API key, Console profile or cloud-provider credentials; Agentique does not use the claude.ai login (the SDK's documentation requires Anthropic's prior approval for products offering it [108]), so the Claude models of the role defaults cannot be tried live here, and each role falls back explicitly to DeepSeek's models with the reason shown. The capability table's `claude-opus-5-5` cache-read price is to be corrected from $0.40 to $0.20 and `claude-sonnet-5-5` added in W12.3 [109] | §4.16 credentials; report a provider limit as it is, never as a pass |
 | 2026-10-04 | **C-54 amended by the Operator:** the Operator gave Agentique their own Claude subscription token (`CLAUDE_CODE_OAUTH_TOKEN`, from the documented `claude setup-token` [108]) for their own work on this machine. Agentique uses it only in the Claude Agent runtime, as one explicit credential beside the API key, checked against the source the SDK reports before the first prompt, kept out of the session's subprocesses and never logged; it still never offers a claude.ai login, never reads the CLI's stored login and never extracts a credential. A live check through the pinned SDK 0.3.287 the same day: `accountInfo()` answers before any prompt with `apiProvider: firstParty` and `tokenSource: CLAUDE_CODE_OAUTH_TOKEN`, the init message says `apiKeySource: none`, and `claude-opus-5-5` and `claude-sonnet-5-5` answered. Roles that call Claude directly (escalation, the Assistant's own loop) still need an API key and take their fallbacks here | The Operator's instruction in this session; the SDK's rule is about products offering claude.ai login to others, and the Operator decides how their own subscription is used |
+| 2026-10-04 | **C-54 clarified by the Operator** ("one window, role models"): the Conversation is the one window for intent, agent communication, observation and steering, and the Objectives panel a dashboard of the same objectives, both on the same records and commands; the Assistant is the entry point and answers ordinary requests on its role's model, while an objective started from the Conversation (or the panel) runs the lead and the specialists on theirs, with no agent forwarding messages; directives are first-class records (author, recipient, parent objective, scope, status, result) created only by a tool the Orchestrator validates, streamed into the objective's thread, with scoped handoffs and separate sessions; an objective continues by itself through cycles, adoptions and supported restarts within its budgets; agents genuinely operate the Conversation in test instances (`--test-instance`), never in the Operator's window; exploration instances of merged builds may get the explorer's provider key, unreviewed builds none. §4.16 ("The Operator's own", the Conversation, directives and delegation, durable work, test instances' credentials), Scenario K (K1, K4, K8), the glossary (Conversation, Objectives panel, directive, thread) and the self-model follow; the thread replaces the activity file named in the locked-parts row, under the same `objectives` data format | The Operator's instruction in this session; it replaces the delegation field typed into the Objectives panel with structured directives the Conversation shows |
 
 ### 7.7 The original requirements
 
@@ -3460,7 +3516,8 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
   (C-50), runtime, build, test instance, launcher (C-51), objective, cycle,
   permission policy, control interface, observation, typed decision
   (C-53), exploration, finding, testing knowledge, child objective,
-  observer mode (C-54); the explorer joins the agent roles.
+  observer mode, directive, thread (C-54); the explorer joins the agent
+  roles.
 - A new product term needs a reason that no standard term fits, and an entry in
   the glossary (§9).
 
@@ -3519,7 +3576,7 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Studio** | The Agentique application |
 | **Surface** | The main visual, spatial view of the System State |
 | **Panels** | Side panels for detail (Outline, Inspector, Requirements, Problems, History, the Run panel, the Objectives panel) |
-| **Conversation** | Chat with the Assistant |
+| **Conversation** | Chat with the Assistant, and the one window in which the Operator gives intent and follows and steers every objective's agents (C-54) |
 | **Assistant** | The AI agent the Operator works with, with tools and skills; its sessions also do an objective's work for the Orchestrator |
 | **Orchestrator** | The part that runs objectives: it directs the Assistant's agent sessions (lead, implementer, reviewer, evaluator, explorer) through cycles, while deterministic checks and review decide (C-53, C-54) |
 | **System State** | The live, authoritative KerML/SysML description of the system being built |
@@ -3570,12 +3627,14 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Permission policy** | What a Claude Agent runtime session may do: where it may read and write, protected paths, refused commands, network, pushing and pull requests; enforced in the companion, decided by the Studio |
 | **Control interface** | The Studio's structured observation and actions, through which agents operate the real, visible application without computer vision |
 | **Observation** | A text snapshot of the Studio's visible state (identity, screen, dialog, selection, controls, commands, tasks) that actions are checked against; not to be confused with a run's results, which are observations of a system under stated conditions |
-| **Objectives panel** | The Studio's panel where the Operator writes an objective and follows, steers, pauses or stops it |
+| **Objectives panel** | The Studio's dashboard of objectives: budgets, phases, effective models and spend per role, child objectives, and Pause, Step, Resume and Stop; it starts and steers objectives with the same commands as the Conversation |
 | **Typed decision** | One atomic question with explicit inputs and typed options answered by a fast decision model (Jev) under a deadline; uncertain or failed answers escalate (C-52, C-53) |
 | **Exploration** | An explorer agent operating a test instance through the control interface toward a goal, choosing each action among the valid ones from what it observes and what is not yet covered, while invariants are checked after every action (C-54) |
 | **Finding** | A deterministic check that failed during exploration (an invariant, or an expectation stated before the action), with the steps and build that produced it; reproduced when two replays from a fresh start both fail the same way (C-54) |
 | **Testing knowledge** | The Orchestrator's record per project of what exploration has covered, the findings and their state, and how each run did, used to choose the next tests (C-54) |
-| **Child objective** | An objective a lead delegated within its parent objective's permissions and budgets, entered visibly in the Objectives panel as the lead; its result returns to the parent (C-54) |
+| **Child objective** | An objective a lead delegated with a directive, within its parent objective's permissions and budgets; its thread and result appear in the parent's thread (C-54) |
+| **Directive** | A recorded instruction from one agent to another (author, recipient, parent objective, scope, status, result), created only by a tool the Orchestrator validates, never by text alone (C-54) |
+| **Thread** | An objective's entries in the Conversation: the Operator's messages, directives, results and system events, with tool activity folded under each step; kept with the objective's records (C-54) |
 | **Observer mode** | The visible agents (§4.16) at a speed the Operator sets: agents' typing drawn character by character, clicks, focus and scrolling, with the agent, its goal and its decisions; `instant` turns it off (C-54) |
 | **Archive tag** | `archive/pre-realignment`, the preserved state before Stage 0 |
 

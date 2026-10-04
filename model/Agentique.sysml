@@ -270,6 +270,15 @@ package AgentiqueArchitecture {
         attribute depth : Natural;
     }
 
+    item def Directive {
+        doc /* One agent's instruction to another (C-54): its author, recipient,
+             * parent objective, scope and status; created only by a tool the
+             * Orchestrator validates, shown in the objective's thread. `depth` is the
+             * depth of the child objective it starts, or 0 for a handoff within a
+             * cycle. */
+        attribute depth : Natural;
+    }
+
     item def CycleReport {
         doc /* One cycle's outcome as the Objectives panel shows it: the findings its
              * exploration reproduced (C-54), whether its change was merged and
@@ -387,8 +396,10 @@ package AgentiqueArchitecture {
     }
 
     port def ObjectivePort {
-        doc /* The Orchestrator's side: objectives in, cycle reports out. */
+        doc /* The Orchestrator's side: objectives in; directives and cycle reports out,
+             * for the objective's thread in the Conversation and the dashboard. */
         in item goal : ObjectiveRequest;
+        out item directive : Directive;
         out item cycle : CycleReport;
     }
 
@@ -491,11 +502,14 @@ package AgentiqueArchitecture {
              * handlers as the Operator's input, refusing stale ones and actions by an
              * agent that does not hold the window (C-54); observer mode draws each
              * agent's typing, clicks, focus and scrolling with its goal and decisions,
-             * at the Operator's speed. The Orchestrator may enter a lead's directive in
-             * the Objectives panel's delegation field, as the lead, and agents may undo
-             * in a test instance; everything else the Operator's own stays refused to
-             * agents. Settings name each agent role's model, effort and fallback, and
-             * the Studio resolves them before an objective starts (C-54).
+             * at the Operator's speed; in a test instance agents may also operate the
+             * Conversation and undo, and everything else the Operator's own stays
+             * refused to them. The Conversation is the one window for intent and every
+             * objective's thread (the Operator's messages, agents' directives and
+             * results, system events), and the Objectives panel a dashboard of the same
+             * records, both through the same commands. Settings name each agent role's
+             * model, effort and fallback, and the Studio resolves them before an
+             * objective starts (C-54).
              * Owns presentation (cameras, layouts, selection), the session, Settings,
              * the control interface's event trace and each project's app data
              * (conversation, jobs, runs, required checks). */
@@ -726,11 +740,15 @@ package AgentiqueArchitecture {
              * continue), each judgment by an agent session of the Assistant's runtime on
              * its role's resolved model, each bounded choice in operation by a rule
              * where the answer is known, otherwise by a typed decision that escalates
-             * when unsure; child objectives an agent delegated run within their
-             * parent's permissions and budgets. Owns the objectives' records (app data:
-             * state, journal, sessions, effective models, results, spend per role,
-             * activity, continuation) and each project's testing knowledge (coverage,
-             * findings with their replays, runs). Contract: deterministic code decides
+             * when unsure; agents hand work to each other only as directives it
+             * validates and records (author, recipient, parent objective, scope,
+             * status, result), and child objectives a lead delegated run within their
+             * parent's permissions and budgets; an objective continues by itself
+             * through cycles, adoptions and restarts within its budgets. Owns the
+             * objectives' records (app data: state, journal, sessions, effective
+             * models, results, spend per role, directives, the thread, continuation)
+             * and each project's testing knowledge (coverage, findings with their
+             * replays, runs). Contract: deterministic code decides
              * the next phase from recorded results; a finding is a deterministic check
              * that failed and reproduced; a cycle merges only when every required check
              * and acceptance criterion passed on the reviewed commit, one criterion
@@ -963,9 +981,10 @@ package AgentiqueArchitecture {
 
     requirement def ChildWorkBounded {
         doc /* Work an agent delegates has at most its parent's permissions, counts
-             * against the parent's budgets, nests at most two deep and is entered
-             * visibly as that agent; an agent never grants itself a permission or
-             * answers the Operator's approvals (C-54). */
+             * against the parent's budgets, nests at most two deep and is started only
+             * as a directive the Orchestrator validated and recorded; an agent never
+             * grants itself a permission, answers the Operator's approvals or speaks as
+             * the Operator (C-54). */
         subject orchestrator : Orchestrator;
     }
 
