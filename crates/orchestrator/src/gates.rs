@@ -63,23 +63,24 @@ fn outcome(name: &str, problems: Vec<String>) -> Outcome {
 pub const USER_FACING: &str = "AgentiqueArchitecture::Studio";
 
 /// Whether `path` is a test's (one rule for the baseline guard, the files
-/// brought over to the base and user-facing code): in a `tests`, `test` or
-/// `benches` folder, a Node test file (`.test.`), a Python one (`test_`), or
-/// a Rust file of tests (`tests.rs`, `_test.rs`).
+/// brought over to the base and user-facing code): a file in a directory
+/// named `tests`, `test` or `benches` (anywhere, `src/test/` too: such a
+/// folder holds tests in Node and Python projects as in this one's
+/// `claude-agent/test/`), a Node test file (`.test.` in its name), a Python
+/// one (`test_…`), or a Rust file of tests by its whole name (`tests.rs`,
+/// `…_tests.rs`, `…_test.rs`; never `contests.rs`).
 pub fn test_path(path: &str) -> bool {
     let lower = path.replace('\\', "/").to_lowercase();
-    lower.contains("/tests/")
-        || lower.starts_with("tests/")
-        || lower.contains("/benches/")
-        || lower.ends_with("_test.rs")
-        || lower.ends_with("tests.rs")
-        || lower.contains(".test.")
-        || lower.contains("/test/")
-        || lower.starts_with("test/")
-        || lower
-            .rsplit('/')
-            .next()
-            .is_some_and(|n| n.starts_with("test_"))
+    let mut parts: Vec<&str> = lower.split('/').collect();
+    let name = parts.pop().unwrap_or_default();
+    parts
+        .iter()
+        .any(|part| matches!(*part, "tests" | "test" | "benches"))
+        || name.contains(".test.")
+        || name.starts_with("test_")
+        || name == "tests.rs"
+        || name.ends_with("_tests.rs")
+        || name.ends_with("_test.rs")
 }
 
 /// The files of `changed` that are user-facing code: the code of the part
@@ -464,6 +465,11 @@ mod evidence_tests {
         assert!(
             test_path("claude-agent/test/policy.test.ts") && test_path("crates/x/benches/b.rs")
         );
+        // Whole names: a file whose name ends like one is not one.
+        assert!(test_path("crates/x/src/tests.rs") && test_path("crates/x/src/thread_tests.rs"));
+        assert!(test_path("crates/x/src/gate_test.rs") && test_path("crates/x/src/test/a.rs"));
+        assert!(!test_path("crates/x/src/contests.rs") && !test_path("crates/x/src/latest.rs"));
+        assert!(!test_path("crates/x/src/attests.rs") && !test_path("crates/testing/src/lib.rs"));
     }
 }
 

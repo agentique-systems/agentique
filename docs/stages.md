@@ -1865,9 +1865,10 @@ the rest not merged; nothing here says the Operator accepted anything).
   first (`Check::severity`: exit, hang, internal error; a refused offered
   action; an expectation, undo or a dialog; a label; slowness), each
   replayed twice and reduced within six replays; the knowledge keeps what
-  became of each. Nothing new reproduced offers again a reproduced finding
-  the knowledge keeps that no cycle fixed and the objective tried fewer than
-  twice; with none, it explores again from another start and way, within
+  became of each. Nothing new reproduced reproduces again, on this base, a
+  reproduced finding the knowledge keeps that no cycle fixed and the
+  objective tried fewer than twice, and offers it only if it still fails
+  here (one that no longer does is recorded as not reproduced); with none, it explores again from another start and way, within
   the cycle's attempts; two explorations in a row with nothing new
   reproduced, and no such finding left, end the objective as "Nothing new
   reproduced", an outcome. A finding records the build the Orchestrator
@@ -1885,10 +1886,13 @@ the rest not merged; nothing here says the Operator accepted anything).
   reused only when the finding's own build is the base build; otherwise it
   runs again there, from the base's start project); command criteria in a
   checkout of the base of their own with the checked commit's new and
-  changed test files brought over, evidence only when a test ran and an
-  assertion failed (a compile or load error, an error that is no assertion,
-  no test, a timeout or a run that did not finish is `no evidence`, with the
-  reason); observation criteria in test instances of the base build, where
+  changed test files brought over, evidence only when a failing test's own
+  output shows an assertion that failed (cargo: its `---- name stdout ----`
+  section, any panic but an `unwrap` on nothing or an error, by its message,
+  or an `expect`, by the line it points to; Node: the failing subtest's own
+  block, an `AssertionError`; Python: a `FAIL`, not an `ERROR`); a compile
+  or load error, another error, no test, a timeout or a run that did not
+  finish is `no evidence`, with the reason; observation criteria in test instances of the base build, where
   only the criterion's own expectation failing is evidence (a setup action
   refused, a broken connection, a way not cleared or an instance that did
   not start is no evidence); a judgment, or a base that does not build, is
@@ -1912,8 +1916,9 @@ the rest not merged; nothing here says the Operator accepted anything).
   test instance with `--assistant-stand-in` and no credential; a build
   without those flags is not started (its criteria are not run, no pass).
   Flags are read from the build's `--help`, run with only what a process
-  needs in its environment and ended after 20 s; a merged build without the
-  newer flags still starts. A user-facing change whose frozen criteria have
+  needs in its environment, read while it runs and ended after 20 s; a
+  merged build without the newer flags still starts, and gets no explorer
+  key unless it starts as a test instance. A user-facing change whose frozen criteria have
   no behavioural one stops the cycle (a later attempt cannot add one).
 - **Failure identity** (`Outcome::failure`): a judgment by its criterion and
   verdict (`Outcome.judged`); a reviewer's request for changes is the

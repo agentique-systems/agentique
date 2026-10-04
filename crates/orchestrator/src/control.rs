@@ -185,6 +185,13 @@ impl Flags {
             .spawn()
             .ok()
             .and_then(|mut child| {
+                // Read while it runs: a long help never fills the pipe.
+                let mut stdout = child.stdout.take()?;
+                let reader = std::thread::spawn(move || {
+                    let mut text = String::new();
+                    let _ = std::io::Read::read_to_string(&mut stdout, &mut text);
+                    text
+                });
                 let started = Instant::now();
                 loop {
                     match child.try_wait() {
@@ -193,14 +200,14 @@ impl Flags {
                             std::thread::sleep(Duration::from_millis(50))
                         }
                         _ => {
+                            // Ended with its tree; the reader then ends too.
                             agq_execution::process::kill_tree(&mut child);
+                            let _ = reader.join();
                             return None;
                         }
                     }
                 }
-                let mut text = String::new();
-                std::io::Read::read_to_string(child.stdout.as_mut()?, &mut text).ok()?;
-                Some(text)
+                reader.join().ok()
             })
             .unwrap_or_default();
         Flags {
@@ -418,7 +425,10 @@ impl TestInstance {
         // A merged build that explores: its Assistant on the explorer's
         // provider and model, with that key in its environment only (a test
         // instance reads keys from nowhere else).
-        if let Some(key) = &options.key {
+        // Only a build known to start as a test instance (which reads keys
+        // from its environment alone) gets one; a build whose flags cannot
+        // be read gets none.
+        if let Some(key) = options.key.as_ref().filter(|_| flags.test_instance) {
             environment.push((
                 key.model.provider.key_variable().to_string(),
                 key.secret.expose().to_string(),

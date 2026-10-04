@@ -720,17 +720,77 @@ fn a_known_finding_left_unfixed_is_offered_again() {
     assert!(
         seen.iter().any(|e| e
             .text
-            .contains("known finding(s) not yet fixed are offered again")),
+            .contains("known finding(s) not yet fixed still fail here and are offered again")),
         "{}",
         texts(&seen)
     );
     assert!(cycle.proposal.as_ref().unwrap().finding.is_some());
+    // Reproduced again on this base, so its reproduction is reused there.
     let replay = cycle.before.iter().find(|o| o.name == "replay").unwrap();
     assert_eq!(replay.verdict, "failed");
     assert!(
-        !replay.detail.contains("when it was reproduced"),
-        "replayed again on this base: {}",
+        replay.detail.contains("when it was reproduced"),
+        "{}",
         replay.detail
+    );
+}
+
+/// A known finding that no longer reproduces on the new base (fixed some
+/// other way) is not offered: it costs no cycle, and the testing knowledge
+/// learns it does not reproduce.
+#[test]
+fn a_known_finding_that_no_longer_fails_is_not_offered() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node.clone(), true);
+    let first = exploring(&store, &repository, "Find and fix problems", budgets());
+    run_to_end(setup, first, |_, _| {});
+    // The Studio no longer has the defect.
+    let (setup, _) = setup_with(dir.path(), &store, node, false);
+    let second = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = second.id.clone();
+    let seen = run_to_end(setup, second, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert!(
+        seen.iter()
+            .any(|e| e.text.starts_with("A known finding no longer reproduces")),
+        "{}",
+        texts(&seen)
+    );
+    assert!(
+        record.cycle().unwrap().proposal.is_none(),
+        "nothing offered"
+    );
+    assert!(
+        record
+            .note
+            .as_deref()
+            .unwrap_or_default()
+            .starts_with("Nothing new reproduced"),
+        "{:?}",
+        record.note
+    );
+    let knowledge = Knowledge::load(
+        &Knowledge::file(&store, &repository),
+        &Knowledge::key(&repository),
+    )
+    .unwrap();
+    assert!(
+        knowledge
+            .findings
+            .iter()
+            .all(|f| f.state == FoundState::NotReproduced),
+        "{:?}",
+        knowledge
+            .findings
+            .iter()
+            .map(|f| f.state)
+            .collect::<Vec<_>>()
     );
 }
 

@@ -549,14 +549,51 @@ impl Driver {
             return Ok(Phase::Propose);
         }
         // Nothing new: a reproduced finding that no cycle has fixed, and
-        // that this objective tried fewer than TRIES times, is offered again.
-        let untried = self.untried();
-        if !untried.is_empty() {
+        // that this objective tried fewer than TRIES times, is reproduced
+        // again on this base, and offered only if it still fails here (a
+        // stale one costs no cycle; the knowledge learns it no longer
+        // reproduces).
+        let mut still = Vec::new();
+        for mut known in self.untried().into_iter().take(REPRODUCED) {
+            if self.controls.stopped() {
+                return Err("stopped".into());
+            }
+            known.build = built.build.clone();
+            known.commit = built.commit.clone();
+            known.state = Found::Open;
+            known.replays.clear();
+            known.reduced = None;
+            let mut instance = self.setup.studios.instance(
+                &built.exe,
+                &checkout.join(&known.start),
+                &self.folder("reproduce"),
+                self.explore_options(),
+            );
+            let controls = self.controls.clone();
+            findings::reproduce(instance.as_mut(), &mut known, REPLAYS, &mut || {
+                controls.stopped()
+            });
+            drop(instance);
+            if self.controls.stopped() {
+                return Err("stopped".into());
+            }
+            Knowledge::change(&file, &project, |k| k.update(&known))?;
+            if known.state == Found::Reproduced {
+                still.push(known);
+            } else {
+                self.event(format!(
+                    "A known finding no longer reproduces on this base: {}",
+                    finding_line(&known)
+                ));
+            }
+        }
+        if !still.is_empty() {
             self.event(format!(
-                "Nothing new reproduced; {} known finding(s) not yet fixed are offered again",
-                untried.len()
+                "Nothing new reproduced; {} known finding(s) not yet fixed still fail here and are offered again",
+                still.len()
             ));
-            self.cycle_mut().findings.extend(untried);
+            self.cycle_mut().findings.extend(still);
+            self.save();
             return Ok(Phase::Propose);
         }
         if self.empty_explorations() >= 2 {
@@ -574,7 +611,8 @@ impl Driver {
 
     /// Reproduced findings the testing knowledge keeps that no cycle has
     /// fixed and this objective tried to fix fewer than [`TRIES`] times,
-    /// not in the cycle yet: they stay eligible after a cycle that failed.
+    /// not in the cycle yet: they stay eligible after a cycle that failed,
+    /// once reproduced again on the cycle's base.
     pub(super) fn untried(&self) -> Vec<Finding> {
         let repository = &self.objective.repository;
         let Ok(knowledge) = Knowledge::load(
@@ -600,13 +638,7 @@ impl Driver {
             .iter()
             .filter(|f| matches!(f.state, Found::Reproduced | Found::FailingAgain))
             .filter(|f| !here.contains(&f.identity.as_str()) && tried(&f.identity) < TRIES)
-            .map(|f| {
-                let mut f = f.clone();
-                // Offered as reproduced; its replay on this base is run
-                // again (it was found in another build).
-                f.state = Found::Reproduced;
-                f
-            })
+            .cloned()
             .collect()
     }
 

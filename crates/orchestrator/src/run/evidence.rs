@@ -14,7 +14,7 @@
 //! its start data), and a change to user-facing code is explored briefly by
 //! the rules in the areas it touched, where no new invariant may fail.
 
-use super::{Driver, number_after, tests_ran};
+use super::{Driver, tests_ran};
 use crate::control::Options;
 use crate::explore::{self, Changes, Plan};
 use crate::findings::{self, Check as Found, Finding, Replay};
@@ -39,41 +39,153 @@ const NOT_BUILT: [&str; 10] = [
     "ERR_MODULE_NOT_FOUND",
 ];
 
-/// How many tests a run says failed: cargo's `test result:` lines, Node's
-/// `# fail` / `ℹ fail`, Python's `FAILED (failures=…)` (its `errors=` are
-/// exceptions, not assertions that failed).
-pub fn tests_failed(output: &str) -> Option<usize> {
-    let mut total = None;
-    for line in output.lines() {
-        let n = if line.contains("test result:") {
-            number_after(line, "passed; ")
-        } else if line.contains("# fail") || line.contains("ℹ fail") {
-            number_after(line, "# fail").or_else(|| number_after(line, "ℹ fail"))
-        } else if line.starts_with("FAILED (") {
-            Some(number_after(line, "failures=").unwrap_or(0))
-        } else {
-            None
-        };
-        if let Some(n) = n {
-            total = Some(total.unwrap_or(0) + n);
-        }
-    }
-    total
+/// The failing tests of a run, each judged by its own output: those that
+/// failed an assertion, and those that ended with another error.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Failures {
+    pub assertions: usize,
+    pub errors: usize,
 }
 
-/// Whether a run's output shows an assertion that failed: cargo's
-/// `assertion failed` and `assertion `left == right` failed`, Node's and
-/// Python's `AssertionError` (`ERR_ASSERTION`). A test that ends with
-/// another error (a `TypeError`, an `unwrap` on nothing) shows none.
-fn asserted(output: &str) -> bool {
-    output.to_lowercase().contains("assertion")
+/// Panics that are errors, not assertions: `unwrap` and `unwrap_err` on
+/// nothing or an error (their messages say so).
+const UNWRAPPED: [&str; 3] = [
+    "called `Option::unwrap()` on a `None` value",
+    "called `Result::unwrap()` on an `Err` value",
+    "called `Result::unwrap_err()` on an `Ok` value",
+];
+
+/// Cargo's failing tests, each from its own `---- <name> stdout ----`
+/// section: a panic is an assertion (`assert!` with or without a message,
+/// `assert_eq!`, `panic!`), except an `unwrap` on nothing or an error (by
+/// its message) or an `expect` (by the line it points to, read in `folder`,
+/// the checkout the run was made in); no panic (a test returning `Err`) is
+/// an error.
+fn cargo_failures(output: &str, folder: Option<&Path>) -> Failures {
+    let mut failures = Failures::default();
+    let lines: Vec<&str> = output.lines().collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if !(line.starts_with("---- ") && line.ends_with(" stdout ----")) {
+            i += 1;
+            continue;
+        }
+        let mut section = Vec::new();
+        i += 1;
+        while i < lines.len() {
+            let next = lines[i].trim();
+            if next.starts_with("---- ") || next == "failures:" || next.starts_with("test result:")
+            {
+                break;
+            }
+            section.push(lines[i]);
+            i += 1;
+        }
+        if cargo_asserted(&section, folder) {
+            failures.assertions += 1;
+        } else {
+            failures.errors += 1;
+        }
+    }
+    failures
+}
+
+/// Whether a cargo test's section shows an assertion that failed.
+fn cargo_asserted(section: &[&str], folder: Option<&Path>) -> bool {
+    let Some(at) = section.iter().position(|l| l.contains("panicked at ")) else {
+        return false;
+    };
+    let message = section[at..].join("\n");
+    if UNWRAPPED.iter().any(|m| message.contains(m)) {
+        return false;
+    }
+    // `thread 'x' panicked at crates/a/tests/b.rs:12:5:` points to the line
+    // that panicked: an `expect` there is an error, whatever it says.
+    let place = section[at]
+        .split("panicked at ")
+        .nth(1)
+        .unwrap_or_default()
+        .trim_end_matches(':');
+    let mut parts = place.rsplitn(3, ':');
+    let (_column, line, file) = (parts.next(), parts.next(), parts.next());
+    if let (Some(folder), Some(file), Some(line)) =
+        (folder, file, line.and_then(|l| l.parse::<usize>().ok()))
+        && let Ok(text) = std::fs::read_to_string(folder.join(file))
+        && let Some(code) = text.lines().nth(line.saturating_sub(1))
+        && (code.contains(".expect(") || code.contains(".unwrap()"))
+        && !code.contains("assert")
+    {
+        return false;
+    }
+    true
+}
+
+/// Node's failing tests (TAP): each `not ok` block, an `AssertionError`
+/// (`ERR_ASSERTION`) being an assertion and any other error not; a parent
+/// whose subtests failed is counted by them.
+fn node_failures(output: &str) -> Failures {
+    let mut failures = Failures::default();
+    let lines: Vec<&str> = output.lines().collect();
+    for (i, line) in lines.iter().enumerate() {
+        if !line.trim_start().starts_with("not ok ") {
+            continue;
+        }
+        let indent = line.len() - line.trim_start().len();
+        let block: Vec<&str> = lines[i + 1..]
+            .iter()
+            .take_while(|l| {
+                let own = l.len() - l.trim_start().len();
+                !(own <= indent
+                    && (l.trim_start().starts_with("ok ") || l.trim_start().starts_with("not ok ")))
+                    && !(own == indent + 2 && l.trim() == "...")
+            })
+            .copied()
+            .collect();
+        let block = block.join("\n");
+        if block.contains("failureType: 'subtestsFailed'") {
+            continue;
+        }
+        if block.contains("name: 'AssertionError'") || block.contains("code: 'ERR_ASSERTION'") {
+            failures.assertions += 1;
+        } else {
+            failures.errors += 1;
+        }
+    }
+    failures
+}
+
+/// Python's unittest: `FAIL:` (an assertion) and `ERROR:` (another
+/// exception) sections.
+fn python_failures(output: &str) -> Failures {
+    Failures {
+        assertions: output.lines().filter(|l| l.starts_with("FAIL: ")).count(),
+        errors: output.lines().filter(|l| l.starts_with("ERROR: ")).count(),
+    }
+}
+
+/// The failing tests of a run's output, each judged by its own block.
+pub fn failures(output: &str, folder: Option<&Path>) -> Failures {
+    let (cargo, node, python) = (
+        cargo_failures(output, folder),
+        node_failures(output),
+        python_failures(output),
+    );
+    Failures {
+        assertions: cargo.assertions + node.assertions + python.assertions,
+        errors: cargo.errors + node.errors + python.errors,
+    }
 }
 
 /// A command criterion's run on the base, judged as evidence: `failed`
-/// only when it compiled, ran at least one test and an assertion failed;
-/// `passed` when it passed there (the gate fails); otherwise `no evidence`
-/// with the reason.
-pub fn on_base_verdict(run: Result<Finished, String>) -> (&'static str, String) {
+/// only when it compiled, ran at least one test and a failing test's own
+/// output shows an assertion that failed; `passed` when it passed there
+/// (the gate fails); otherwise `no evidence` with the reason. `folder` is
+/// the checkout it ran in (where an `expect` that panicked is read).
+pub fn on_base_verdict(
+    run: Result<Finished, String>,
+    folder: Option<&Path>,
+) -> (&'static str, String) {
     let finished = match run {
         Ok(finished) => finished,
         Err(error) => return ("no evidence", format!("it did not run: {error}")),
@@ -94,18 +206,21 @@ pub fn on_base_verdict(run: Result<Finished, String>) -> (&'static str, String) 
             format!("it did not compile or load on the base: {}", line.trim()),
         );
     }
-    let failed = tests_failed(&output).unwrap_or(0);
-    let ran = tests_ran(&output).unwrap_or(0).max(failed);
-    if failed > 0 && asserted(&output) {
+    let failed = failures(&output, folder);
+    let ran = tests_ran(&output)
+        .unwrap_or(0)
+        .max(failed.assertions + failed.errors);
+    if failed.assertions > 0 {
         return (
             "failed",
             format!(
-                "{failed} of its tests failed an assertion on the base: {}",
+                "{} of its tests failed an assertion on the base: {}",
+                failed.assertions,
                 agq_execution::process::last_lines(&output, 12)
             ),
         );
     }
-    if failed > 0 {
+    if failed.errors > 0 {
         return (
             "no evidence",
             format!(
@@ -376,9 +491,10 @@ impl Driver {
             };
             let (verdict, detail) = match crate::roles::test_command(program) {
                 Err(problem) => ("no evidence", problem),
-                Ok(()) => {
-                    on_base_verdict(self.execute(&folder, program, Duration::from_secs(1800)))
-                }
+                Ok(()) => on_base_verdict(
+                    self.execute(&folder, program, Duration::from_secs(1800)),
+                    Some(&folder),
+                ),
             };
             let detail = if brought.is_empty() {
                 detail
@@ -743,68 +859,126 @@ mod tests {
     }
 
     /// `DefectShownBefore`: a run on the base is evidence only if it
-    /// compiled, ran a test and an assertion failed.
+    /// compiled, ran a test and a failing test's own output shows an
+    /// assertion that failed.
     #[test]
-    fn a_run_on_the_base_is_evidence_only_when_a_test_ran_and_failed() {
-        let failed = on_base_verdict(finished(
-            false,
-            "running 2 tests\ntest a ... FAILED\nthread 'a' panicked at src/lib.rs:3:5:\nassertion `left == right` failed\ntest result: FAILED. 1 passed; 1 failed; 0 ignored",
-        ));
-        assert_eq!(failed.0, "failed", "{}", failed.1);
-        let compile = on_base_verdict(finished(
-            false,
-            "error[E0425]: cannot find function `fixed` in this scope\nerror: could not compile `agq-x`",
-        ));
-        assert_eq!(compile.0, "no evidence");
-        assert!(compile.1.contains("did not compile"));
-        let none = on_base_verdict(finished(
-            true,
-            "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out",
-        ));
+    fn a_run_on_the_base_is_evidence_only_when_a_test_failed_an_assertion() {
+        let verdict = |success, out: &str| on_base_verdict(finished(success, out), None).0;
+        // Cargo: `assert!` with a message only (this repository's style),
+        // `assert_eq!`, a plain panic are assertions.
+        let cargo = |body: &str| {
+            format!(
+                "running 2 tests\ntest tests::label_is_set ... FAILED\ntest tests::other ... ok\n\nfailures:\n\n---- tests::label_is_set stdout ----\n\nthread 'tests::label_is_set' panicked at crates/x/src/lib.rs:12:9:\n{body}\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    tests::label_is_set\n\ntest result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n"
+            )
+        };
         assert_eq!(
-            none,
-            ("no evidence", "it ran no test on the base".to_string())
+            verdict(false, &cargo("the Archive button has no label")),
+            "failed"
         );
-        let passed = on_base_verdict(finished(true, "test result: ok. 3 passed; 0 failed"));
-        assert_eq!(passed.0, "passed");
-        let timeout = on_base_verdict(Err("timed out after 1800 s".into()));
-        assert_eq!(timeout.0, "no evidence");
-        let node = on_base_verdict(finished(
-            false,
-            "not ok 1 - x\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n# tests 2\n# pass 1\n# fail 1",
-        ));
-        assert_eq!(node.0, "failed");
-        let python = on_base_verdict(finished(
-            false,
-            "AssertionError: 1 != 2\nRan 3 tests in 0.1s\n\nFAILED (failures=1)",
-        ));
-        assert_eq!(python.0, "failed");
-        let missing = on_base_verdict(finished(
-            false,
-            "Error: Cannot find module './note.mjs'\n# tests 0\n# fail 0",
-        ));
-        assert_eq!(missing.0, "no evidence");
-        let crashed = on_base_verdict(finished(
-            false,
-            "running 1 test\nerror: test failed, to rerun",
-        ));
-        assert_eq!(crashed.0, "no evidence");
-        // An error that is no assertion shows nothing.
-        let type_error = on_base_verdict(finished(
-            false,
-            "not ok 1 - x\n  error: 'fixed is not a function'\n  name: 'TypeError'\n# tests 1\n# pass 0\n# fail 1",
-        ));
-        assert_eq!(type_error.0, "no evidence", "{}", type_error.1);
-        let python_error = on_base_verdict(finished(
-            false,
-            "NameError: name 'fixed' is not defined\nRan 1 test in 0.1s\n\nFAILED (errors=1)",
-        ));
-        assert_eq!(python_error.0, "no evidence");
-        let unwrap = on_base_verdict(finished(
-            false,
-            "thread 'a' panicked at src/lib.rs:3:5:\ncalled `Option::unwrap()` on a `None` value\ntest result: FAILED. 0 passed; 1 failed",
-        ));
-        assert_eq!(unwrap.0, "no evidence");
+        assert_eq!(
+            verdict(
+                false,
+                &cargo("assertion `left == right` failed\n  left: 1\n right: 2")
+            ),
+            "failed"
+        );
+        assert_eq!(
+            verdict(false, &cargo("called `Option::unwrap()` on a `None` value")),
+            "no evidence"
+        );
+        assert_eq!(
+            verdict(
+                false,
+                &cargo("called `Result::unwrap()` on an `Err` value: NotFound")
+            ),
+            "no evidence"
+        );
+        // An `expect`, by the line it points to in the checkout.
+        let folder = tempfile::tempdir().unwrap();
+        let file = folder.path().join("crates/x/src/lib.rs");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        let mut code = "fn x() {}\n".repeat(11);
+        code.push_str("        let label = label().expect(\"a label\");\n");
+        std::fs::write(&file, code).unwrap();
+        let expected = on_base_verdict(
+            finished(false, &cargo("a label: NotFound")),
+            Some(folder.path()),
+        );
+        assert_eq!(expected.0, "no evidence", "{}", expected.1);
+        // A passing test named for assertions, or a log line, does not turn
+        // an error into evidence.
+        let named = "running 2 tests\ntest tests::assertion_holds ... ok\ntest tests::label ... FAILED\nassertion log line\n\nfailures:\n\n---- tests::label stdout ----\nthread 'tests::label' panicked at crates/x/src/lib.rs:3:5:\ncalled `Option::unwrap()` on a `None` value\n\nfailures:\n    tests::label\n\ntest result: FAILED. 1 passed; 1 failed; 0 ignored";
+        assert_eq!(verdict(false, named), "no evidence");
+        // A test returning an error: no panic, an error.
+        let returned = "running 1 test\ntest t ... FAILED\n\nfailures:\n\n---- t stdout ----\nError: NotFound\n\nfailures:\n    t\n\ntest result: FAILED. 0 passed; 1 failed";
+        assert_eq!(verdict(false, returned), "no evidence");
+        // Node: the failing subtest's own block.
+        let node = |name: &str, code: &str| {
+            format!(
+                "TAP version 13\n# Subtest: assertion helpers stay quiet\nok 1 - assertion helpers stay quiet\n  ---\n  duration_ms: 0.4\n  ...\n# Subtest: the note says it improved\nnot ok 2 - the note says it improved\n  ---\n  duration_ms: 1.2\n  failureType: 'testCodeFailure'\n  error: \"x\"\n  code: '{code}'\n  name: '{name}'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 1\n# fail 1\n"
+            )
+        };
+        assert_eq!(
+            verdict(false, &node("AssertionError", "ERR_ASSERTION")),
+            "failed"
+        );
+        assert_eq!(
+            verdict(false, &node("TypeError", "ERR_TEST_FAILURE")),
+            "no evidence",
+            "a passing test named for assertions does not count"
+        );
+        // Python: FAIL is an assertion, ERROR is not.
+        let python = |kind: &str, error: &str| {
+            format!(
+                "======================================================================\n{kind}: test_label (tests.test_a.T.test_label)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"tests/test_a.py\", line 5, in test_label\n{error}\n\n----------------------------------------------------------------------\nRan 3 tests in 0.010s\n\nFAILED ({}=1)\n",
+                if kind == "FAIL" { "failures" } else { "errors" }
+            )
+        };
+        assert_eq!(
+            verdict(false, &python("FAIL", "AssertionError: 1 != 2")),
+            "failed"
+        );
+        assert_eq!(
+            verdict(
+                false,
+                &python("ERROR", "NameError: name 'fixed' is not defined")
+            ),
+            "no evidence"
+        );
+        // What runs no test, does not compile or does not finish.
+        assert_eq!(
+            verdict(
+                false,
+                "error[E0425]: cannot find function `fixed` in this scope\nerror: could not compile `agq-x`"
+            ),
+            "no evidence"
+        );
+        assert_eq!(
+            verdict(
+                true,
+                "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out"
+            ),
+            "no evidence"
+        );
+        assert_eq!(
+            verdict(true, "test result: ok. 3 passed; 0 failed"),
+            "passed"
+        );
+        assert_eq!(
+            on_base_verdict(Err("timed out after 1800 s".into()), None).0,
+            "no evidence"
+        );
+        assert_eq!(
+            verdict(
+                false,
+                "Error: Cannot find module './note.mjs'\n# tests 0\n# fail 0"
+            ),
+            "no evidence"
+        );
+        assert_eq!(
+            verdict(false, "running 1 test\nerror: test failed, to rerun"),
+            "no evidence"
+        );
     }
 
     /// An observation on the base is evidence only when its own expectation
