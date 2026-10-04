@@ -2474,10 +2474,18 @@ mod tests {
         assert!(!list.iter().any(|c| c.action["control"] == "dialog-confirm"));
         assert!(!list.iter().any(|c| c.action["keys"] == "enter"));
         assert!(list.iter().any(|c| c.action["control"] == "dialog-cancel"));
-        // Inside the instance's folder, it may be confirmed.
-        o["controls"][1]["value"] = json!("c:/explore/run/start-1/Shop");
+        // Inside the instance's folder, it may be confirmed, whichever
+        // separator the path uses.
+        o["controls"][1]["value"] = json!("C:/explore/run/start-1/Shop");
         let list = candidates(&o, Some(folder));
         assert!(list.iter().any(|c| c.action["control"] == "dialog-confirm"));
+        // Windows paths ignore case; other hosts' do not.
+        o["controls"][1]["value"] = json!("c:/explore/run/start-1/Shop");
+        let list = candidates(&o, Some(folder));
+        assert_eq!(
+            list.iter().any(|c| c.action["control"] == "dialog-confirm"),
+            cfg!(windows)
+        );
         // An approval leaves nothing; Settings only Escape.
         o["approval"] = json!("live run");
         assert!(candidates(&o, Some(folder)).is_empty());
