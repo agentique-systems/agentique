@@ -681,7 +681,9 @@ impl Studio {
             .as_ref()
             .map(|p| p.unmatched().to_vec())
             .unwrap_or_default();
-        self.status = if unmatched.is_empty() {
+        self.status = if let Some(note) = self.recovery_note() {
+            format!("{note} Opened {}.", folder.display())
+        } else if unmatched.is_empty() {
             format!("Opened {}", folder.display())
         } else {
             let listed: Vec<&str> = unmatched.iter().take(3).map(String::as_str).collect();
@@ -696,6 +698,15 @@ impl Studio {
         self.refresh();
         self.load_checks();
         self.save_session();
+    }
+
+    /// The sentence telling which build did not start, why, and that this is
+    /// the last known good version, when the launcher fell back to this one.
+    fn recovery_note(&self) -> Option<String> {
+        let (failed, reason) = self.develop.recovered.as_ref()?;
+        Some(format!(
+            "The build {failed} did not start ({reason}). This is the last known good version; your project and its data are as they were."
+        ))
     }
 
     pub fn show_fixture(&mut self, name: &str) {
@@ -1679,6 +1690,19 @@ impl Studio {
             }
         }
         self.save_implementation_links(&links)
+    }
+}
+
+#[cfg(test)]
+mod recovery_tests {
+    #[test]
+    fn opening_a_project_keeps_the_recovery_message() {
+        let (mut app, folder) = crate::edit::app_tests::studio("recovered-open");
+        app.develop.recovered = Some(("b1".into(), "it crashed".into()));
+        let project = folder.0.join("P");
+        app.open_project(&project);
+        assert!(app.status.contains("b1 did not start"), "{}", app.status);
+        assert!(app.status.contains("last known good"), "{}", app.status);
     }
 }
 
