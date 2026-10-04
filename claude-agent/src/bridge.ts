@@ -32,6 +32,7 @@ import {
   credentialProblem,
   given,
   initProblem,
+  projectCredentialProblem,
   qualified,
   sdkOptions,
 } from "./policy.ts";
@@ -58,6 +59,22 @@ export interface QueryLike extends AsyncIterable<Record<string, unknown>> {
   /** The SDK's answer to its start, before any prompt: its `account` says
    * which credential it uses. */
   initializationResult(): Promise<{ account?: Record<string, unknown> }>;
+}
+
+/** How long the SDK may take to answer its start (as the probe allows). */
+export const CREDENTIAL_LIMIT_MS = 60_000;
+
+/** The source a failed credential check names: the one that is not the given credential. */
+function offending(reported: (field: string) => string, kind: string): string {
+  const key = reported("apiKeySource");
+  const token = reported("tokenSource");
+  if (kind === "key") {
+    return key !== "ANTHROPIC_API_KEY" ? key : token;
+  }
+  if (token !== "CLAUDE_CODE_OAUTH_TOKEN") {
+    return token;
+  }
+  return key !== "" && key !== "none" ? key : reported("apiProvider");
 }
 
 /** The credential fields of the SDK's account, and nothing else of it. */
@@ -168,6 +185,20 @@ export class Turn {
 
   /** Runs the turn to its end. Resolves once the SDK is done. */
   async run(start: StartOptions): Promise<void> {
+    // A project's settings that bring a credential of their own: the
+    // session does not start (C-54).
+    const settings = projectCredentialProblem(start.cwd, start.settingSources);
+    if (settings !== null) {
+      this.over_ = true;
+      this.send({
+        type: "error",
+        kind: "auth",
+        message: `${settings[0].toUpperCase()}${settings.slice(1)}. The session was not started; remove them from the project's settings.`,
+        source: "project settings",
+      });
+      this.send({ type: "done" });
+      return;
+    }
     const names = start.tools.map((t) => t.name);
     const server = this.mcp(start.tools, (name, input, signal) =>
       this.call(name, input, names, signal),
@@ -375,13 +406,29 @@ export class Turn {
    */
   private async checkCredential(query: QueryLike): Promise<boolean> {
     let account: Record<string, unknown> | undefined;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     try {
-      account = (await query.initializationResult())?.account;
+      const late = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`no answer within ${CREDENTIAL_LIMIT_MS / 1000} seconds`)),
+          CREDENTIAL_LIMIT_MS,
+        );
+      });
+      account = (await Promise.race([query.initializationResult(), late]))?.account;
     } catch (error) {
+      // The SDK did not start (its binary failed, or it did not answer):
+      // a runtime failure, with its cause; still nothing was sent.
       if (this.stopped === null) {
-        void this.stop(`The SDK did not say which credential it uses (${describe(error)}); the session was stopped before anything reached the model.`, "auth", "");
+        void this.stop(
+          `The SDK did not start, so the session was stopped before anything reached the model: ${describe(error)}`,
+          "runtime",
+        );
       }
       return false;
+    } finally {
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
     }
     if (this.stopped !== null) {
       return false;
@@ -392,7 +439,7 @@ export class Turn {
       void this.stop(
         `${problem[0].toUpperCase()}${problem.slice(1)}; Agentique gives a session one credential and uses no other, so the session was stopped before anything reached the model.`,
         "auth",
-        reported("tokenSource") || reported("apiKeySource"),
+        offending(reported, given(this.from)),
       );
       return false;
     }

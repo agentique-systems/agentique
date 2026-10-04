@@ -8,11 +8,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { type McpFactory, type Sdk, Turn, limitReached } from "../src/bridge.ts";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   agentEnvironment,
   credentialProblem,
+  credentialSettings,
   initProblem,
   loginEnvironment,
+  projectCredentialProblem,
   readLogin,
   sdkOptions,
 } from "../src/policy.ts";
@@ -44,11 +49,12 @@ const start: StartOptions = {
  * one, emits nothing of a turn until it is given a prompt; `prompts` counts
  * what it was given.
  */
-function standIn(account: Record<string, unknown>, turn: (prompt: unknown) => Record<string, unknown>[]) {
+function standIn(account: Record<string, unknown> | Error, turn: (prompt: unknown) => Record<string, unknown>[]) {
   const mcp: McpFactory = () => ({ stand: "in" });
-  const seen = { prompts: 0 };
+  const seen = { prompts: 0, queries: 0 };
   const sdk: Sdk = {
     query({ prompt }) {
+      seen.queries += 1;
       const input = prompt[Symbol.asyncIterator]();
       const generator = (async function* () {
         for (;;) {
@@ -63,6 +69,9 @@ function standIn(account: Record<string, unknown>, turn: (prompt: unknown) => Re
       return Object.assign(generator, {
         initializationResult: async () => {
           await new Promise((resolve) => setTimeout(resolve, 5));
+          if (account instanceof Error) {
+            throw account;
+          }
           return { account };
         },
         interrupt: async () => void (await generator.return(undefined)),
@@ -209,4 +218,107 @@ test("a local Claude login is read as whether and how, never who", () => {
     GITHUB_TOKEN: "t",
   });
   assert.deepEqual(Object.keys(env).sort(), ["APPDATA", "PATH", "USERPROFILE"]);
+});
+
+/**
+ * The review of W12.3: the bundled Claude Code reports the token whenever
+ * its variable is set, yet uses a key or a helper instead when one is in
+ * effect (measured 2026-10-04): both sides of the report count.
+ */
+test("a second credential beside the given one stops the session unprompted", async () => {
+  const cases: [Record<string, string>, Record<string, unknown>, string][] = [
+    // A project's env.ANTHROPIC_API_KEY, or its apiKeyHelper, beside the token.
+    [TOKEN, { apiKeySource: "ANTHROPIC_API_KEY", tokenSource: "CLAUDE_CODE_OAUTH_TOKEN", apiProvider: "firstParty" }, "ANTHROPIC_API_KEY"],
+    [TOKEN, { apiKeySource: "apiKeyHelper", tokenSource: "CLAUDE_CODE_OAUTH_TOKEN", apiProvider: "firstParty" }, "apiKeyHelper"],
+    // A project's ANTHROPIC_AUTH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN or helper beside the key.
+    [KEY, { apiKeySource: "ANTHROPIC_API_KEY", tokenSource: "ANTHROPIC_AUTH_TOKEN", apiProvider: "firstParty" }, "ANTHROPIC_AUTH_TOKEN"],
+    [KEY, { apiKeySource: "ANTHROPIC_API_KEY", tokenSource: "CLAUDE_CODE_OAUTH_TOKEN", apiProvider: "firstParty" }, "CLAUDE_CODE_OAUTH_TOKEN"],
+    [KEY, { apiKeySource: "ANTHROPIC_API_KEY", tokenSource: "apiKeyHelper", apiProvider: "firstParty" }, "apiKeyHelper"],
+  ];
+  for (const [credential, account, source] of cases) {
+    const sent: CompanionMessage[] = [];
+    const { sdk, mcp, seen } = standIn(account, answered("none"));
+    await new Turn((m) => sent.push(m), sdk, mcp, credential, "agentique/test").run(start);
+    assert.equal(seen.prompts, 0, JSON.stringify(account));
+    const error = sent.find((m) => m.type === "error");
+    assert.equal(error?.type === "error" && error.kind, "auth", JSON.stringify(account));
+    assert.equal(error?.type === "error" && error.source, source);
+  }
+  // What the real SDK reports for the given credential alone passes.
+  assert.equal(credentialProblem({ apiKeySource: "ANTHROPIC_API_KEY", tokenSource: "none", apiProvider: "firstParty" }, KEY), null);
+  assert.equal(credentialProblem({ tokenSource: "CLAUDE_CODE_OAUTH_TOKEN", apiProvider: "firstParty" }, TOKEN), null);
+  assert.equal(credentialProblem({ apiKeySource: "none", tokenSource: "CLAUDE_CODE_OAUTH_TOKEN", apiProvider: "firstParty" }, TOKEN), null);
+});
+
+test("the flag tier turns off every credential the session was not given", () => {
+  const token = credentialSettings(TOKEN);
+  assert.deepEqual(token.env, {
+    ANTHROPIC_AUTH_TOKEN: "",
+    CLAUDE_CODE_USE_BEDROCK: "",
+    CLAUDE_CODE_USE_VERTEX: "",
+    CLAUDE_CODE_USE_FOUNDRY: "",
+    ANTHROPIC_API_KEY: "",
+  });
+  const key = credentialSettings(KEY);
+  assert.equal(key.env.CLAUDE_CODE_OAUTH_TOKEN, "");
+  assert.equal(key.env.ANTHROPIC_API_KEY, undefined, "the given key is never blanked or written here");
+  for (const settings of [token, key]) {
+    assert.equal(settings.apiKeyHelper, "");
+    assert.equal(settings.awsCredentialExport, "");
+  }
+  // Both kinds of session carry them; a development session keeps its own
+  // pins beside them.
+  const plain = sdkOptions(start, {}, new AbortController(), agentEnvironment(start, TOKEN, "t"), () => {});
+  assert.deepEqual((plain as unknown as { settings: { env: Record<string, string> } }).settings.env, token.env);
+  const policy = { read: [], write: [], protected: [], hidden: [], commands: false, refusedCommands: [], network: false, mcpServers: [], undecided: "refuse" as const };
+  const development = { ...start, policy };
+  const options = sdkOptions(development, {}, new AbortController(), agentEnvironment(development, KEY, "t"), () => {}) as unknown as {
+    settings: { env: Record<string, string>; apiKeyHelper: string };
+  };
+  assert.equal(options.settings.apiKeyHelper, "");
+  assert.equal(options.settings.env.CLAUDE_CODE_OAUTH_TOKEN, "");
+  assert.equal(options.settings.env.ANTHROPIC_AUTH_TOKEN, "");
+  assert.equal(options.settings.env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB, "1");
+  assert.equal(options.settings.env.ANTHROPIC_API_KEY, undefined);
+});
+
+test("a project's settings that bring a credential keep the session from starting", async () => {
+  const project = (files: Record<string, string>) => {
+    const dir = mkdtempSync(join(tmpdir(), "agq-project-"));
+    mkdirSync(join(dir, ".claude"));
+    for (const [name, text] of Object.entries(files)) {
+      writeFileSync(join(dir, ".claude", name), text);
+    }
+    return dir;
+  };
+  const replaced = project({ "settings.json": JSON.stringify({ env: { ANTHROPIC_API_KEY: "sk-other", RUST_LOG: "info" } }) });
+  assert.match(projectCredentialProblem(replaced, ["project"]) ?? "", /env[.]ANTHROPIC_API_KEY/);
+  assert.match(projectCredentialProblem(project({ "settings.json": JSON.stringify({ apiKeyHelper: "echo k" }) }), ["project"]) ?? "", /apiKeyHelper/);
+  assert.match(projectCredentialProblem(project({ "settings.json": JSON.stringify({ env: { CLAUDE_CODE_USE_BEDROCK: "1" } }) }), ["project"]) ?? "", /CLAUDE_CODE_USE_BEDROCK/);
+  assert.match(projectCredentialProblem(project({ "settings.json": "{ not json" }), ["project"]) ?? "", /cannot be read as JSON/);
+  // Ordinary settings, settings not loaded, and no settings start.
+  assert.equal(projectCredentialProblem(project({ "settings.json": JSON.stringify({ env: { RUST_LOG: "info" }, permissions: { allow: [] } }) }), ["project"]), null);
+  const local = project({ "settings.local.json": JSON.stringify({ env: { ANTHROPIC_AUTH_TOKEN: "x" } }) });
+  assert.equal(projectCredentialProblem(local, ["project"]), null);
+  assert.match(projectCredentialProblem(local, ["project", "local"]) ?? "", /ANTHROPIC_AUTH_TOKEN/);
+  assert.equal(projectCredentialProblem(replaced, []), null);
+  // The turn refuses before the SDK is even started.
+  const sent: CompanionMessage[] = [];
+  const { sdk, mcp, seen } = standIn({ apiKeySource: "ANTHROPIC_API_KEY", apiProvider: "firstParty" }, answered("ANTHROPIC_API_KEY"));
+  await new Turn((m) => sent.push(m), sdk, mcp, KEY, "agentique/test").run({ ...start, cwd: replaced, settingSources: ["project"] });
+  assert.equal(seen.queries, 0, "the SDK never started");
+  assert.deepEqual(sent.map((m) => m.type), ["error", "done"]);
+  const error = sent[0];
+  assert.equal(error.type === "error" && error.kind, "auth");
+  assert.equal(error.type === "error" && error.source, "project settings");
+});
+
+test("an SDK that does not start is a runtime failure with its cause, and nothing is sent", async () => {
+  const sent: CompanionMessage[] = [];
+  const { sdk, mcp, seen } = standIn(new Error("the Claude Code binary exited with code 3"), answered("ANTHROPIC_API_KEY"));
+  await new Turn((m) => sent.push(m), sdk, mcp, KEY, "agentique/test").run(start);
+  assert.equal(seen.prompts, 0);
+  const error = sent.find((m) => m.type === "error");
+  assert.equal(error?.type === "error" && error.kind, "runtime");
+  assert.match(error?.type === "error" ? error.message : "", /did not start.*exited with code 3/);
 });

@@ -21,7 +21,8 @@
 // These are gates on what the agent can do; they are not an operating-system
 // sandbox, and the Studio's own checks still decide every model change.
 
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { join } from "node:path";
 import type { Login, Policy, StartOptions } from "./protocol.ts";
 
 /** The MCP server's name: tools are `mcp__agentique__<name>`. */
@@ -499,35 +500,121 @@ function text(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+/** A source the SDK reports as "nothing of this kind". */
+function nothing(source: string): boolean {
+  return source === "" || source === "none";
+}
+
 /**
  * Why the credential the SDK reports is not the one the Studio gave, or
  * null when it is (C-54). `account` is what the SDK said before the first
- * model call (`initializationResult().account`): given a key, its
- * `apiKeySource` must be `ANTHROPIC_API_KEY`; given the subscription token,
- * its `tokenSource` must be `CLAUDE_CODE_OAUTH_TOKEN` on Anthropic's own API
- * (`firstParty`). Anything else, such as the machine's claude.ai login or an
- * `apiKeyHelper` from a project's settings, stops the session.
+ * model call (`initializationResult().account`), and both of its sides
+ * count: given a key, its `apiKeySource` must be `ANTHROPIC_API_KEY` and it
+ * must name no token (`tokenSource` absent or `none`); given the
+ * subscription token, its `tokenSource` must be `CLAUDE_CODE_OAUTH_TOKEN` on
+ * Anthropic's own API (`firstParty`) and it must name no key (the bundled
+ * Claude Code reports the token whenever its variable is set, but uses a key
+ * or an `apiKeyHelper` instead when one is in effect: measured 2026-10-04).
+ * Anything else, such as the machine's claude.ai login, an `apiKeyHelper`
+ * or an `ANTHROPIC_AUTH_TOKEN` from a project's settings, stops the session.
  */
 export function credentialProblem(
   account: Record<string, unknown> | null | undefined,
   from: Record<string, string | undefined>,
 ): string | null {
   const kind = given(from);
+  const key = text(account?.apiKeySource);
+  const token = text(account?.tokenSource);
   if (kind === "key") {
-    const source = text(account?.apiKeySource);
-    return source === KEY_VARIABLE ? null : `the SDK would use ${sourceWords(source)} instead of the key it was given`;
+    if (key !== KEY_VARIABLE) {
+      return `the SDK would use ${sourceWords(key)} instead of the key it was given`;
+    }
+    return nothing(token) ? null : `the SDK would also use the token "${token}" beside the key it was given`;
   }
   if (kind === "token") {
-    const token = text(account?.tokenSource);
     const api = text(account?.apiProvider);
-    if (token === TOKEN_VARIABLE && api === "firstParty") {
-      return null;
+    if (token !== TOKEN_VARIABLE) {
+      return `the SDK would use ${token === "" ? "a credential it did not name" : `the token "${token}"`} instead of the subscription token it was given`;
     }
-    return token !== TOKEN_VARIABLE
-      ? `the SDK would use ${token === "" ? "a credential it did not name" : `the token "${token}"`} instead of the subscription token it was given`
+    if (!nothing(key)) {
+      return `the SDK would use ${sourceWords(key)} instead of the subscription token it was given`;
+    }
+    return api === "firstParty"
+      ? null
       : `the SDK would send the subscription token to ${api === "" ? "an API it did not name" : `"${api}"`}, not Anthropic's API`;
   }
   return kind;
+}
+
+/**
+ * The flag-tier settings that keep every credential the session was not
+ * given out of it (C-54): the flag tier is the highest a project's settings
+ * cannot override, and its `env` wins key by key. A blank value turns a
+ * variable off; a blank `apiKeyHelper` turns a project's helper off
+ * (measured 2026-10-04 with the bundled Claude Code). The given credential
+ * itself is never written here: its value stays in the process environment
+ * alone.
+ */
+export function credentialSettings(from: Record<string, string | undefined>): {
+  env: Record<string, string>;
+  apiKeyHelper: string;
+  awsCredentialExport: string;
+  awsAuthRefresh: string;
+  gcpAuthRefresh: string;
+} {
+  const env: Record<string, string> = {
+    ANTHROPIC_AUTH_TOKEN: "",
+    CLAUDE_CODE_USE_BEDROCK: "",
+    CLAUDE_CODE_USE_VERTEX: "",
+    CLAUDE_CODE_USE_FOUNDRY: "",
+  };
+  if (given(from) === "token") {
+    env[KEY_VARIABLE] = "";
+  } else {
+    env[TOKEN_VARIABLE] = "";
+  }
+  return { env, apiKeyHelper: "", awsCredentialExport: "", awsAuthRefresh: "", gcpAuthRefresh: "" };
+}
+
+/** Settings keys that make a credential (helpers the CLI runs). */
+const CREDENTIAL_HELPERS = ["apiKeyHelper", "awsCredentialExport", "awsAuthRefresh", "gcpAuthRefresh"];
+
+/**
+ * Why a project's settings that the session would load must not run it, or
+ * null (C-54): settings that bring a credential of their own (an `env`
+ * variable that looks like a key, token or secret, or switches to a cloud
+ * provider; a credential helper). The flag tier turns most of them off, but
+ * a replaced `ANTHROPIC_API_KEY` would look like the given key to the SDK's
+ * own report, so the session does not start at all. A file that cannot be
+ * read as JSON is refused too, since nobody can say what it sets.
+ */
+export function projectCredentialProblem(cwd: string, sources: readonly string[]): string | null {
+  const files = [
+    ...(sources.includes("project") ? [join(cwd, ".claude", "settings.json")] : []),
+    ...(sources.includes("local") ? [join(cwd, ".claude", "settings.local.json")] : []),
+  ];
+  for (const file of files) {
+    let raw: string;
+    try {
+      raw = readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+    let value: unknown;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return `the project's settings ${file} cannot be read as JSON, so what they set is unknown`;
+    }
+    const settings = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
+    const helpers = CREDENTIAL_HELPERS.filter((name) => settings[name] !== undefined);
+    const env = typeof settings.env === "object" && settings.env !== null ? Object.keys(settings.env as object) : [];
+    const variables = env.filter((name) => SECRET.test(name) || /^CLAUDE_CODE_USE_/i.test(name));
+    if (helpers.length > 0 || variables.length > 0) {
+      return `the project's settings ${file} bring a credential of their own (${[...helpers, ...variables.map((v) => `env.${v}`)].join(", ")}); a session uses only the credential Agentique gives it`;
+    }
+  }
+  return null;
 }
 
 /**
@@ -682,6 +769,8 @@ export function sdkOptions(
         ],
       },
       strictMcpConfig: true,
+      // Every credential it was not given stays off (C-54).
+      settings: credentialSettings(env),
       // No filesystem settings, skills or plugins of the machine's own.
       settingSources: [] as never[],
       skills: [] as string[],
@@ -703,7 +792,9 @@ export function sdkOptions(
     // key scrub off or send the key elsewhere, and without trusted-local
     // execution their hooks (commands) do not run.
     settings: {
+      ...credentialSettings(env),
       env: {
+        ...credentialSettings(env).env,
         CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1",
         ANTHROPIC_BASE_URL: start.endpoint !== null ? start.endpoint.baseUrl : "https://api.anthropic.com",
         // Where the API traffic goes stays the Studio's: a project's own
