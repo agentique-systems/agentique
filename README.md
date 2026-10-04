@@ -24,8 +24,9 @@ Stage 11 (Agentique improves itself, C-53, ROADMAP §6.8) is in progress: the
 Operator gives an objective in the Objectives panel and Agentique's agents
 propose, implement, check, review, merge, build, try and adopt an improvement
 of Agentique itself, which then restarts in the new version (below, "Agentique
-improves itself"). Its proof ran live on 2026-10-04 and waits for the
-Operator's acceptance; see [docs/stages.md](docs/stages.md).
+improves itself"). Its proof ran live on 2026-10-04 with an AI agent standing
+in for the Operator, and waits for the Operator's own run and acceptance; see
+[docs/stages.md](docs/stages.md).
 
 Stages 7–8 (the factory loop, C-50, ROADMAP §6.5) are in progress: agents
 in the model, scenarios that run against the model, recordings, a live model

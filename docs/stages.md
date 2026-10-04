@@ -1311,7 +1311,7 @@ Found during the proof and not fixed (each could be an objective):
 - A judgment criterion that no test instance can reproduce cannot pass; verdicts worded differently each time escape the same-failures rule, and only "no fewer failures in two rounds" ends such a cycle, after three attempts.
 - The locked-code gate works at file level: a symbol link of a locked part protects its whole file.
 - After a recovery, the recovery message stays in front of every later "Opened …" in that session.
-- The Orchestrator keeps each finished cycle's worktrees (base, verify, trial, work) registered in the repository; 15 after this run.
+- The Orchestrator keeps each cycle's worktrees (base, verify, trial, work) registered in the repository; 15 after this run.
 - Clicks sent by input injection to the title bar's buttons (Settings) did nothing, though the keyboard shortcut worked; whether a physical mouse behaves the same was not checked.
 
 Checks after the proof:
