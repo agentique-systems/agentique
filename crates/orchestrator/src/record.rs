@@ -1516,6 +1516,83 @@ mod tests {
             read.directive(&child).unwrap().status,
             DirectiveStatus::Refused { .. }
         ));
+        // An exploring cycle as written (in a phase the previous build knows:
+        // a cycle explores while its phase stays `propose`), with its
+        // explorations, findings, replay, base build, conditions and judged
+        // outcomes: the previous build reads it, and this one whole.
+        let mut exploring = objective.clone();
+        let cycle = exploring.cycle_mut().unwrap();
+        cycle.exploring = Some(Exploring::Reproduce);
+        cycle.base_build = Some(BaseBuild {
+            build: "debug-abc".into(),
+            exe: PathBuf::from("C:/work/base-studio/agentique-studio.exe"),
+            commit: "abc".into(),
+        });
+        cycle.explorations.push(Exploration {
+            n: 1,
+            build: "debug-abc".into(),
+            start: "model".into(),
+            way: crate::decide::Way::Rules,
+            seed: 7,
+            steps: 20,
+            new_coverage: 3,
+            found: vec!["readable-labels|x|y".into()],
+            regressions: Vec::new(),
+            reproduced: 1,
+            usd: 0.0,
+            ended: "the step budget was used".into(),
+        });
+        let finding = crate::findings::Finding::new(
+            crate::findings::Failed {
+                check: crate::findings::Check::ReadableLabels,
+                control: "x".into(),
+                message: "y".into(),
+                evidence: serde_json::json!({}),
+            },
+            Vec::new(),
+            "b1",
+            "abc",
+            "model",
+        );
+        cycle.findings.push(finding.clone());
+        cycle.replay = Some(finding);
+        cycle.proposal = Some(Proposal {
+            title: "t".into(),
+            kind: "usability".into(),
+            why: "w".into(),
+            parts: Vec::new(),
+            plan: Vec::new(),
+            criteria: vec![Criterion {
+                id: "c1".into(),
+                statement: "s".into(),
+                check: Check::Observation {
+                    setup: Vec::new(),
+                    expect: serde_json::json!({ "screen": "surface" }),
+                    condition: Some("recovered".into()),
+                },
+            }],
+            intended_test_changes: Vec::new(),
+            finding: Some("readable-labels|x|y".into()),
+        });
+        cycle
+            .before
+            .push(Outcome::new(REPLAY, "failed", "it fails on the base"));
+        cycle.attempts.push(Attempt {
+            n: 1,
+            criteria: vec![Outcome {
+                judged: true,
+                ..Outcome::new("c2", "passed", "seen")
+            }],
+            ..Attempt::default()
+        });
+        exploring.interrupted = true;
+        exploring.resumes = 1;
+        exploring.delivered = 12;
+        let text = serde_json::to_string_pretty(&exploring).unwrap();
+        assert!(text.contains("\"phase\": \"propose\""));
+        let previous: Previous = serde_json::from_str(&text).unwrap();
+        assert_eq!(previous.cycles[0].attempts.len(), 1);
+        assert_eq!(serde_json::from_str::<Objective>(&text).unwrap(), exploring);
         // A record the previous build wrote reads with the defaults, and a
         // record of an objective that does not explore writes none of them.
         let plain = with_models();
@@ -1606,6 +1683,48 @@ mod tests {
         assert_ne!(
             attempt("test a ... FAILED").failures(),
             attempt("test b ... FAILED").failures()
+        );
+    }
+
+    /// Failure identity (C-54): a judgment by its criterion and verdict,
+    /// whatever its wording; a review's request for changes as `review`;
+    /// numbers and long hexadecimal ids normalised.
+    #[test]
+    fn a_failure_is_identified_by_what_failed_not_its_wording() {
+        let judged = |detail: &str| Outcome {
+            judged: true,
+            ..Outcome::new("c2", "failed", detail)
+        };
+        assert_eq!(
+            judged("The button reads Archive, not Store").failure(),
+            judged("Still unlabelled; I saw no change").failure()
+        );
+        assert_eq!(judged("x").failure(), "c2: failed");
+        assert_ne!(
+            judged("x").failure(),
+            Outcome {
+                judged: true,
+                ..Outcome::new("c2", "not run", "x")
+            }
+            .failure()
+        );
+        assert_eq!(
+            Outcome::new(REVIEW, "failed", "a.rs:3 is wrong").failure(),
+            Outcome::new(REVIEW, "failed", "b.rs:9 is wrong in another way").failure()
+        );
+        assert_eq!(
+            Outcome::new(
+                "cargo test",
+                "failed",
+                "error: at deadbeef12 FAILED in 1.2s"
+            )
+            .failure(),
+            Outcome::new(
+                "cargo test",
+                "failed",
+                "error: at 0123abcdef FAILED in 9.9s"
+            )
+            .failure()
         );
     }
 }

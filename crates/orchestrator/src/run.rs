@@ -473,10 +473,14 @@ impl Controls {
     /// same pause, steering and interruption, and a stop of its own, which
     /// this run's stop also sets.
     fn child(&self, id: &str) -> Controls {
-        let stop = Arc::new(AtomicBool::new(self.stopped()));
-        if let Ok(mut children) = self.children.lock() {
-            children.insert(id.to_string(), stop.clone());
-        }
+        let stop = match self.children.lock() {
+            // Stopped already (the Operator's stop came first), or new.
+            Ok(mut children) => children
+                .entry(id.to_string())
+                .or_insert_with(|| Arc::new(AtomicBool::new(self.stopped())))
+                .clone(),
+            Err(_) => Arc::new(AtomicBool::new(self.stopped())),
+        };
         Controls {
             stop,
             ..self.clone()
@@ -523,8 +527,12 @@ impl Controls {
                 self.steering.set_gate(Gate::Run);
             }
             Command::StopChild(id) => {
-                if let Some(stop) = self.children.lock().ok().and_then(|c| c.get(&id).cloned()) {
-                    stop.store(true, Ordering::SeqCst);
+                // Kept for a child about to start, too.
+                if let Ok(mut children) = self.children.lock() {
+                    children
+                        .entry(id)
+                        .or_insert_with(|| Arc::new(AtomicBool::new(false)))
+                        .store(true, Ordering::SeqCst);
                 }
             }
             Command::Message(text) => self.steering.queue(&text),
@@ -566,6 +574,19 @@ struct With<'a> {
     test: Option<&'a mut Client>,
     kit: Option<Toolset>,
     offered: Vec<(String, String)>,
+}
+
+/// What an exploration by the rules decides with: they ask no model, so
+/// the models named are never used.
+fn by_rules(answers: &crate::decide::Decider) -> crate::explore::Deciding<'_> {
+    let none = agq_providers::ModelRef::new(agq_providers::Provider::DeepSeek, "none");
+    crate::explore::Deciding {
+        answers,
+        explorer: none.clone(),
+        effort: None,
+        escalation: none,
+        escalation_effort: None,
+    }
 }
 
 /// What supervises an exploration or a replay in the driver: the
@@ -1245,6 +1266,9 @@ impl Driver {
             .objective
             .running_for(role.name())
             .map(|d| d.id.clone());
+        // The role at work from now: the Operator's messages to the
+        // implementer go to its session.
+        self.controls.set_working(Some(role.name()));
         // The session's start is the step its activity folds under.
         let step = self.post(
             ThreadEntry::new(
@@ -1354,7 +1378,6 @@ impl Driver {
             TurnEvent::Entry(Entry::Notice { text }) => activity(text, None),
             _ => {}
         };
-        controls.set_working(Some(role.name()));
         agent.run(
             &mut conversation,
             &toolset,

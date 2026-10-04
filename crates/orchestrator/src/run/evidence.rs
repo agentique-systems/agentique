@@ -543,17 +543,14 @@ impl Driver {
         let mut watch = super::Watch {
             controls: self.controls.clone(),
         };
-        // The rules ask no model: whatever answers are given are never used.
         let answers = crate::decide::Decider::default();
-        let any = agq_providers::ModelRef::new(agq_providers::Provider::DeepSeek, "unused");
-        let deciding = explore::Deciding {
-            answers: &answers,
-            explorer: any.clone(),
-            effort: None,
-            escalation: any,
-            escalation_effort: None,
-        };
-        let run = explore::explore(instance.as_mut(), &plan, &deciding, &knowledge, &mut watch);
+        let run = explore::explore(
+            instance.as_mut(),
+            &plan,
+            &super::by_rules(&answers),
+            &knowledge,
+            &mut watch,
+        );
         drop(instance);
         if run.actions == 0 {
             return Outcome::new(

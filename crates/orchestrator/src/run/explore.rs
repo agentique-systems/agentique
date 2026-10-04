@@ -223,9 +223,16 @@ impl Driver {
         let left_usd = (self.objective.budgets.usd - self.objective.spent.usd).max(0.0);
         let left_seconds =
             (self.objective.budgets.hours * 3600.0 - self.objective.spent.seconds).max(60.0);
+        // Without models for exploring (an objective recorded without them),
+        // the rules decide: they ask no model.
+        let modelled = crate::models::with_deciding(&self.objective.models, |_| ()).is_ok();
         let plan = Plan {
             goal: goal.clone(),
-            way: WAYS[made as usize % WAYS.len()],
+            way: if modelled {
+                WAYS[made as usize % WAYS.len()]
+            } else {
+                Way::Rules
+            },
             seed: seed(&self.objective.id, self.cycle().n, n),
             steps: self.objective.budgets.steps,
             seconds: (left_seconds as u64).min(EXPLORE_SECONDS),
@@ -271,15 +278,31 @@ impl Driver {
         let mut watch = Watch {
             controls: self.controls.clone(),
         };
-        let run = crate::models::with_deciding(&self.objective.models, |deciding| {
-            explore::explore(instance.as_mut(), &plan, deciding, &knowledge, &mut watch)
-        })?;
+        let run = if modelled {
+            crate::models::with_deciding(&self.objective.models, |deciding| {
+                explore::explore(instance.as_mut(), &plan, deciding, &knowledge, &mut watch)
+            })?
+        } else {
+            let answers = crate::decide::Decider::default();
+            explore::explore(
+                instance.as_mut(),
+                &plan,
+                &super::by_rules(&answers),
+                &knowledge,
+                &mut watch,
+            )
+        };
         drop(instance);
         self.count_exploration(&run);
         if run.ended == "stopped" || self.controls.stopped() {
             self.save();
             return Err("stopped".into());
         }
+        // The build and commit explored, as the Orchestrator chose them (a
+        // debug build may not know its own commit).
+        let mut run = run;
+        run.build = built.build.clone();
+        run.commit = built.commit.clone();
         Knowledge::change(&file, &project, |k| k.add_run(&run))?;
         let new: Vec<Finding> = run
             .findings

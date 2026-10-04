@@ -356,7 +356,12 @@ impl Driver {
             State::Stopped => DirectiveStatus::Stopped,
             _ => DirectiveStatus::Failed,
         };
-        let result = child_result(&ended);
+        let result = match status {
+            DirectiveStatus::Stopped => {
+                format!("stopped by the Operator. {}", child_result(&ended))
+            }
+            _ => child_result(&ended),
+        };
         let directive = self
             .objective
             .directives

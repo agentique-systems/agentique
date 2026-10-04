@@ -590,6 +590,43 @@ pub fn holds(observation: &Value, expect: &Value) -> Result<(), String> {
 mod tests {
     use super::*;
 
+    /// Test instances in a stated condition (C-54): `recovered` has a
+    /// builds registry with a build that did not start and starts after
+    /// it; `with an objective` has a recorded objective and its thread in
+    /// its app data, beside its session. Anything else is refused.
+    #[test]
+    fn a_test_instance_is_prepared_in_a_stated_condition() {
+        let dir = tempfile::tempdir().unwrap();
+        let recovered = dir.path().join("recovered");
+        let arguments = prepare(&recovered, "recovered").unwrap();
+        assert_eq!(arguments, vec!["--recovered-from", FAILED_BUILD]);
+        let registry = agq_launcher::Registry::load(&recovered.join("builds")).unwrap();
+        assert!(matches!(
+            registry
+                .builds
+                .iter()
+                .find(|b| b.id == FAILED_BUILD)
+                .map(|b| &b.state),
+            Some(agq_launcher::State::Failed { .. })
+        ));
+        let seeded = dir.path().join("objective");
+        assert!(prepare(&seeded, "with an objective").unwrap().is_empty());
+        let store = crate::record::Store::new(seeded.join("session").join("objectives"));
+        let objective = store.list().pop().expect("a recorded objective");
+        assert!(!objective.active(), "finished: nothing goes on by itself");
+        assert_eq!(objective.directives.len(), 1);
+        let thread = store.thread(&objective.id, 0);
+        assert!(thread.len() >= 6);
+        assert!(
+            thread
+                .iter()
+                .any(|e| e.under.is_some() && e.details.is_some())
+        );
+        assert!(prepare(&dir.path().join("x"), "on fire").is_err());
+        // A build that knows none of the flags (or is not there) gets none.
+        assert_eq!(Flags::of(&dir.path().join("missing.exe")), Flags::default());
+    }
+
     #[test]
     fn an_observation_criterion_checks_every_field_it_names() {
         let observation = json!({
