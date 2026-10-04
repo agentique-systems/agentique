@@ -1530,7 +1530,7 @@ the flag tier blanked them. The general-purpose and Explore subagents of a
 | Item | Pull request | State |
 |---|---|---|
 | W12.1 Direction and self-model | #108 | C-54, Scenario K, §4.16, Stage 12, the decision log naming the locked parts before they change; the self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`, `Assistant`, `Providers`, the objective and control items) and four requirements (`FindingsReproduce`, `DefectShownBefore`, `ChildWorkBounded`, `OnlyGivenCredentials`); identities reconciled by `Project::open` (only new elements got ids) |
-| W12.2 Control interface, complete and observable | — | Not started |
+| W12.2 Control interface, complete and observable | — | Built: on `stage12/control` (below): tool inputs checked as declared, every interactive control observed with a readable label and an `operatorOnly` mark, title-bar buttons that answer the operating system's clicks, one agent per window, observer mode with Stop, the trace's why, goal and holder, the model's digest; with the coordinator's additions, test instances where agents also use the Conversation and undo, keys only from the environment there, and refusal kinds. Tested: unit tests, three control journeys on real windows, a real-input title-bar check |
 | W12.3 Models per role and credentials | — | Built on `stage12/models` (not merged): Settings › Agents, each role resolved and recorded before an objective starts, its sessions on its own model, effort and credential, spend by role and model, typed decisions from the `escalation` and `decisions` roles; the Claude subscription token as Anthropic's second credential; the companion's credential check and `claude auth status` probe; Claude 5.5 prices |
 | W12.4 Exploration and testing knowledge | #112 | Built, not yet in cycles (W12.5): `explore` (the explorer's run behind an `Instance` boundary: a test instance started fresh from a copy of the start project inside its own folder, or a stand-in; the actions valid there that the observation offers to agents, fields with fixed input classes and the Conversation's composer with fixed request classes; the rules, Jev among the rules' best eight, the explorer's model with its answer checked, or Jev escalating; recovery from stale refusals, dialogs in the way, dead ends, exits and hangs), `findings` (the checks `answers`, `offered-acts`, `readable-labels`, `undo-restores`, `dialogs-close`, `action-time`, `no-internal-error`, `turn-ends`, `turn-stops` and the explorer's `expectation`; identities normalised; `replay`, `reproduce` by two replays, `reduce` within a bound) and `knowledge` (`testing/<project>/knowledge.json`, format 1, atomic, bounded); `decide` asks one typed question for dialogs and exploration, the dialog decisions unchanged; fixed exploration tasks, tuning and held-out (`tests/fixtures/exploration.json`); measured live, preliminary (below) |
 | W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | — | Not started |
@@ -1553,3 +1553,109 @@ Three fixed tasks (`crates/orchestrator/tests/fixtures/exploration.json`: t1 for
 | Jev, escalating | held-out | 40 | 4 of 4 | 0 | 1 expectation (1) | 5.6 / 34.6 s | $0.117 |
 
 Twelve runs, 23 minutes, $0.30. Jev was confident in 1 to 4 of each run's 20 decisions, so the Jev way mostly fell back to the rules and the escalating way escalated 15 to 19 times a run, at about the model's cost and latency. Only the model ways reached h1's Requirements panel. The two findings are expectations the model stated and the Studio did not meet (the command palette was to open as a dialog, but an observation shows it as `palette`; clicking the row “Scenario ScreeningTimesOut” was to put that text in the selection, which lists elements by name): both reproduced, both more likely wrong guesses than defects, which is a later judgment. No invariant failed in these runs; an earlier run of the rules (other coverage keys, another seed) found that the Objectives panel's three fields are labelled with their machine ids (`objective-intent`, `objective-usd`, `objective-cycles`), each reproduced and reduced to one step (opening the Objectives tab). What the runs could not do on today's Studio: the undo check (undo is the Operator's; the run says so), and the Conversation (nothing is marked, so it stays the Operator's by place; with W12.2's marks a test instance offers its composer). Tuned on this Studio, in the checks only: coverage keys name the region, not the panel shown; a dialog's confirm names the inputs it confirms; a fill's budget adds 100 ms a typed character (a 300-character fill takes 9 s in a debug build); an empty `input` for a button is no input. Preliminary: three tasks, one seed, one run each; the escalation role's own model is not tried. The code changed after this measurement (the Conversation where a test instance offers it, `a5588318`; the undo check waiting for a dialog, `00ddf6d7`; the answer to the independent review, `0c5c0502`); on that last code, t1 run again by the rules and the model (20 steps each) gave the same coverage (20 and 20 keys) and progress (2 of 2), no unwanted action and no finding, the model at $0.054 (p50 5.7 s, p95 34 s), and the Conversation left alone (the run is not allowed to send requests by default). The rest of the table is not measured on the final code.
+
+**W12.2 built** (branch `stage12/control`, 2026-10-04; not merged; nothing
+here says the Operator accepted anything).
+
+- **Tool inputs checked as declared** (`assistant/src/tools.rs`): the checker
+  knows every JSON Schema type (`integer` is a whole number within 64 bits,
+  `7` or `7.0`), checks `additionalProperties` given as a schema (`features`,
+  `values`), and says what was expected and what was given ("`input.observed`
+  must be an integer (screenRevision from the observation this action is
+  based on); got the string "7""). `check_definitions` runs every tool's own
+  minimal and full example through the checker and refuses a keyword the
+  checker does not check; the Assistant's, the worker's and the worker
+  toolset's tools pass it. `minimum`, `maximum`, `anyOf` and `oneOf` are not
+  used. `act_in_app` takes an optional `goal`.
+- **Every interactive control observed with a readable label:** the palette's
+  rows (`palette-<command>`, `palette-element-<id>`, `palette-block-<ref>`,
+  role `option`, the highlighted one `selected`) and its search field
+  (`palette-search`, which now takes an agent's typing: the palette's text is
+  not remembered as an agent's commit, since what runs is chosen by the Enter
+  or click that follows), every switch (role `switch`, value `on`/`off`), the
+  Inspector's Name, Multiplicity and Docs (their commits are the agent's when
+  it typed there), the outline filter, Settings' text and key fields (a key's
+  value is never observed), the title bar's search and window buttons, menu
+  items (as controls of the region that opened the menu), `status-problems`,
+  the Inspector's type matches; the Objectives panel's fields keep their ids
+  and read "What should Agentique improve in itself?", "Spend budget (USD)",
+  "Improvements" and "Message to the agents", and its switches show their
+  text. The label rule (`tests/control_journey.rs`) found nothing on the
+  welcome screen, the New project and Checkpoint dialogs, the Surface, the
+  Inspector, the palette, Settings, the Objectives panel and a test
+  instance's Conversation.
+- **`operatorOnly`** on controls and commands, from the rules that refuse an
+  agent's action (the key appears only when true; the window's buttons carry
+  it on every screen); the palette's and menus' Operator-only commands, the
+  Inspector's Lock and the Run panel's trust button are now refused up
+  front too.
+- **Title-bar buttons answer operating-system clicks.** The cause was as
+  recorded in the baseline: GPUI answers `WM_NCHITTEST` with the first
+  window-control area under the pointer, the bar's drag area. The window now
+  moves by the bar's empty stretches only. Checked with real operating-system
+  input (`SendInput` at the bounds an observation gave; display scale 1.0,
+  Windows 10), on the same build with and without the fix: before, the
+  Settings gear, Maximize, Minimize and Close did nothing (7 of 11 checks);
+  after, all 11: the gear opens and closes Settings, a drag on the empty bar
+  moves the window by exactly the drag (140, 90 px), a double-click maximises
+  and restores, and the three window buttons work. Injected and physical
+  mouse input take the same path through `WM_NCHITTEST`, differing only in a
+  flag GPUI does not read; other display scales, a second monitor,
+  Windows 11's snap flyout, touch and pen were not tried.
+- **One agent per window:** the first agent to act holds it until it sends
+  `release` or has been idle for 30 s; another agent's action is refused with
+  "the window is in use by <agent>; act in your own test instance, or wait"
+  (kind `held`). Observing and waiting never are, nor the Operator's input;
+  the Orchestrator's own steps by rule through the endpoint (agent
+  `orchestrator`) are the supervisor's and pass a hold, so its cancelling of
+  a dialog between an explorer's actions, and its setup actions before an
+  evaluator's, keep working.
+- **Observer mode:** `control.speed` (Settings › Appearance; `observe` by
+  default) or `--control-speed`: at `observe` typing goes in about 12
+  characters a second and the target is ringed and labelled for 300 ms before
+  a click; at `observe` and `fast` clicks ripple and scrolls show their
+  direction; the agents chip shows the action in progress, then its outcome
+  (agent, goal, decision, done or refused with the reason) for six seconds,
+  and gains Stop (the Operator's, like Pause): the action in progress ends at
+  once, those waiting are refused and agents stay refused ("stopped by the
+  Operator") until Resume. Pause and Step take effect between typed
+  characters. Nothing is drawn, and no frame asked for, while no agent acts.
+- **Trace:** every event has the agent's `why`, its `goal` and who held the
+  window.
+- **`project.digest`:** 16 hex digits of the SHA-256 of the model's printed
+  text, independent of revisions, ids and saving, worked out once per model
+  revision: 143 ms at 10,204 elements in a debug build after a change, 1 µs
+  otherwise (not measured in release; the printing is the one every save
+  already does).
+- **Test instances** (the coordinator's addition, the Operator's direction of
+  2026-10-04): with `--test-instance`, agents may also use the Conversation
+  through the real input handlers (focus the composer, type, send or answer,
+  stop the turn, open cards, scroll) and undo and redo; steering the turn,
+  retrying, editing, a new conversation, the model, Settings, locking,
+  appearance, approvals and the agents chip stay the Operator's. Keys come
+  only from the environment there (`agq_providers::keys::without_store`;
+  Settings › Providers says so): on this machine, whose credential store
+  holds a DeepSeek key, a test instance reports a missing key. The
+  observation's `conversation` gains `lastMessage`, `toolCalls`, `notices`
+  and `error`; a wait can take `conversationIdle`; every refused action has
+  a `kind` (`operator-own`, `stale`, `gone`, `disabled`, `unavailable`,
+  `held`, `stopped`, `expired`, `invalid`, `timeout`, `failed`). The
+  Orchestrator does not pass `--test-instance` or `--control-speed` yet.
+
+Measured for W12.2 (2026-10-04, the reference machine, while two other
+agents built in parallel):
+
+- **Checks:** `cargo fmt --check`; `cargo clippy --workspace --all-targets
+  -D warnings`, and for `agq-studio-native` with `--features automation`;
+  the tests of `agq-studio-native` (149 and 1, 5 and 3 ignored),
+  `agq-assistant`, `agq-orchestrator` and `agq-providers`;
+  `python tools/check_architecture.py`; `control_journey` on real windows
+  (3 of 3: the agent journey, observer mode, a test instance).
+- **Reference run** (release with `automation`; the baseline `96774964` built
+  the same way and run interleaved, alternating which went first): warm start
+  278–379 ms (baseline 273–365; budget 400); 1k pan p95 6.3–7.2 ms (baseline
+  6.3–6.6; budget 8.3); 10k pan p95 17.7–24.0 ms (baseline 19.1–22.2; budget
+  16.7) and zoom 14.8–22.1 ms. The 10k budget was missed by both builds
+  alike, with frame intervals as long in the steady phase, which has no
+  input at all; W11.7's 16.3 ms was measured on a quieter machine. It is not
+  met here and is to be measured again on a quiet machine.

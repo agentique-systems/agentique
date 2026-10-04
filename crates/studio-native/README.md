@@ -292,10 +292,33 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   and the Objectives panel.
 - **Actions** (`op: act`, with `agent`, `why`, an optional `goal`,
   `expect.instance` and `observed`): commands, click, fill, key, type,
-  scroll, select, open a project, wait. Stale ones (another instance, a
-  screen that changed, a control gone or disabled) and the Operator's own
-  are refused before anything happens, and the Operator's own effects are
-  refused where they happen too.
+  scroll, select, open a project, wait (`until`: `dialog`, `screen`,
+  `control` with `enabled`, `statusContains`, `idle` for every job, or
+  `conversationIdle` for the Conversation's turn alone). Stale ones
+  (another instance, a screen that changed, a control gone or disabled) and
+  the Operator's own are refused before anything happens, and the
+  Operator's own effects are refused where they happen too. A refused
+  action's answer carries `kind` beside `error`, so clients need not read
+  the words: `operator-own`, `stale`, `gone`, `disabled`, `unavailable`,
+  `held`, `stopped`, `expired`, `invalid`, `timeout` or `failed`
+  (`control::Refusal`).
+- **A test instance** (`--test-instance`, which the Orchestrator passes to a
+  Studio it starts with its own app data): agents may also use the
+  Conversation as a person would (focus the composer, type, send or answer
+  with Enter or Send, stop the turn, open cards, scroll) and undo and redo,
+  so exploration tests them through the real input handlers. Steering the
+  turn, retrying, editing, a new conversation, the model, Settings,
+  locking, appearance, approvals and the agents chip stay the Operator's,
+  and the `operatorOnly` marks follow. Keys come only from the environment
+  there (`agq_providers::keys::without_store`): the instance never spends a
+  key of the Operator's that it was not given, and Settings › Providers
+  says so. The observation's `conversation` says whether a turn is
+  `running`, the `lastMessage` and `lastReply`, the current or last turn's
+  `toolCalls` (tool and state: running, done, failed with its `error`, not
+  run), its `notices` since the last message, the `error` a failed turn
+  ended with, and `keyMissing`, all bounded; its messages, tool cards and
+  thinking rows are controls (items), the composer is the field `Message`,
+  Send and Stop are `send` and `stop`.
 - **One agent at a time.** The first agent to act holds the window until it
   sends `op: release` or has been idle for 30 s (`control::IDLE`); another
   agent's action is refused with "the window is in use by <agent>; act in
