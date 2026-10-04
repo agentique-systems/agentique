@@ -42,6 +42,17 @@ what to change.
 - **Forge** (`forge`): `git` and `gh` as exact commands through Execution;
   never a force-push, never a push to the default branch.
 - **Builds** (`builds`) and **test instances** (`control`).
+- **Exploration** (`explore`, `findings`, `knowledge`; C-54): an explorer
+  operates a test instance toward a goal (behind the `Instance` boundary:
+  a Studio started fresh from a copy of the start project, inside its own
+  folder, or a stand-in in tests). Each step lists the actions valid there
+  that the observation offers to agents (fields with fixed input classes),
+  chooses one by the rules, Jev, the explorer's model or Jev escalating,
+  acts, and checks the invariants. A finding is a check that failed; it is
+  reproduced by two replays from a fresh start (no model asked) and
+  reduced; `replay` is what a cycle's criterion runs. The testing
+  knowledge (`testing/<project>/knowledge.json`, format 1, beside the
+  objectives' records) keeps coverage, findings and runs across runs.
 
 Budgets (spend in USD at the models' prices, usage without a price at a
 high one; improvements, attempts per cycle, hours worked) and the Operator's
