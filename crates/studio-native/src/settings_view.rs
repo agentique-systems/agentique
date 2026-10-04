@@ -139,6 +139,58 @@ fn choice_label(choice: &str) -> String {
     }
 }
 
+/// A line that wraps, marked by its tone (as the runtime card's lines).
+fn status_line(text: String, tone: Option<Tone>, theme: &ui::Theme) -> AnyElement {
+    let mark = match tone {
+        Some(Tone::Success) => Some((IconName::Check, theme.success.text)),
+        Some(Tone::Danger) => Some((IconName::Warning, theme.danger.text)),
+        Some(_) => Some((IconName::Warning, theme.warning.text)),
+        None => None,
+    };
+    div()
+        .px(r(16.0))
+        .py(r(10.0))
+        .flex()
+        .items_start()
+        .gap(r(8.0))
+        .when_some(mark, |this, (glyph, color)| {
+            this.child(icon(glyph).size(14.0).color(color))
+        })
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .text_size(r(theme::text::SM))
+                .line_height(r(17.0))
+                .text_color(theme.text_secondary)
+                .child(text),
+        )
+        .into_any_element()
+}
+
+/// The Assistant's model now, and why when it is not the configured one
+/// (C-54): `route` is the Claude Agent runtime's, `None` on the loop.
+fn assistant_now(
+    route: Option<(String, Option<String>)>,
+    choice: &agq_assistant::ModelChoice,
+    theme: &ui::Theme,
+) -> AnyElement {
+    match route {
+        Some((label, None)) => status_line(format!("Now: {label}"), Some(Tone::Success), theme),
+        Some((label, Some(why))) => {
+            status_line(format!("Now: {label}. {why}"), Some(Tone::Warning), theme)
+        }
+        None => status_line(
+            format!(
+                "Now: {} on Agentique's own loop, which calls its model directly (an API key; a Claude subscription token works only in the Claude Agent runtime).",
+                choice.label()
+            ),
+            None,
+            theme,
+        ),
+    }
+}
+
 /// A role's model in a menu: `claude-opus-5-5 · Anthropic`; none for empty.
 fn model_label(value: &str) -> String {
     match agq_providers::ModelRef::parse(value) {
@@ -1525,49 +1577,14 @@ impl SettingsView {
         let assistant = studio.assistant_route();
         let choice = studio.settings.model_choice();
         let mut blocks: Vec<AnyElement> = Vec::new();
-        // A line that wraps, marked by its tone (as the runtime card's).
-        let line = |text: String, tone: Option<Tone>, _: &App| -> AnyElement {
-            let mark = match tone {
-                Some(Tone::Success) => Some((IconName::Check, theme.success.text)),
-                Some(Tone::Danger) => Some((IconName::Warning, theme.danger.text)),
-                Some(_) => Some((IconName::Warning, theme.warning.text)),
-                None => None,
-            };
-            div()
-                .px(r(16.0))
-                .py(r(10.0))
-                .flex()
-                .items_start()
-                .gap(r(8.0))
-                .when_some(mark, |this, (glyph, color)| {
-                    this.child(icon(glyph).size(14.0).color(color))
-                })
-                .child(
-                    div()
-                        .flex_1()
-                        .min_w_0()
-                        .text_size(r(theme::text::SM))
-                        .line_height(r(17.0))
-                        .text_color(theme.text_secondary)
-                        .child(text),
-                )
-                .into_any_element()
-        };
+        let line = |text: String, tone: Option<Tone>, _: &App| status_line(text, tone, &theme);
         if query.is_none_or(|q| matches(q, &["assistant", "conversation", "model"])) {
             let mut rows = vec![line(
                 "The Assistant's provider, model and effort are in Settings › Assistant; on the Claude Agent runtime its Anthropic default is claude-sonnet-5-5.".into(),
                 None,
                 cx,
             )];
-            rows.push(match assistant {
-                Some((label, None)) => line(format!("Now: {label}"), Some(Tone::Success), cx),
-                Some((label, Some(why))) => line(format!("Now: {label}. {why}"), Some(Tone::Warning), cx),
-                None => line(
-                    format!("Now: {} on Agentique's own loop, which calls its model directly (an API key; a Claude subscription token works only in the Claude Agent runtime).", choice.label()),
-                    None,
-                    cx,
-                ),
-            });
+            rows.push(assistant_now(assistant, &choice, &theme));
             blocks.push(group(Some("Assistant"), rows, cx).into_any_element());
         }
         for (role, outcome) in resolved {
@@ -2070,10 +2087,14 @@ impl Render for SettingsView {
                     (!cards.is_empty()).then(|| div().flex().flex_col().gap(r(12.0)).children(cards).into_any_element())
                 }
                 Section::Assistant => {
-                    let rows: Vec<AnyElement> = ["assistant.runtime", "assistant.provider", "assistant.model", "assistant.effort", "assistant.showCost"]
+                    let mut rows: Vec<AnyElement> = ["assistant.runtime", "assistant.provider", "assistant.model", "assistant.effort", "assistant.showCost"]
                         .into_iter()
                         .filter_map(|id| self.setting_row(id, query, window, cx))
                         .collect();
+                    if !rows.is_empty() {
+                        let studio = self.studio.read(cx);
+                        rows.push(assistant_now(studio.assistant_route(), &studio.settings.model_choice(), &theme));
+                    }
                     let card = self.runtime_card(query, cx);
                     (!rows.is_empty() || card.is_some()).then(|| {
                         div()
