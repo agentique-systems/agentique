@@ -20,6 +20,8 @@
 //! - [`findings`]: the checks exploration makes, and findings reproduced
 //!   and reduced by replaying them.
 //! - [`knowledge`]: the testing knowledge kept across runs.
+//! - [`observed`]: what exploration reads from a test instance, in one
+//!   place.
 //! - [`run`]: the driver.
 #![forbid(unsafe_code)]
 
@@ -31,6 +33,7 @@ pub mod findings;
 pub mod forge;
 pub mod gates;
 pub mod knowledge;
+pub mod observed;
 pub mod record;
 pub mod roles;
 pub mod run;

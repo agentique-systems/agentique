@@ -10,11 +10,14 @@
 //! problem found again is the same finding. A refusal by rule (the
 //! Operator's own, a stale action) is never a finding, and neither is a
 //! model's opinion. [`replay`] is what a cycle's criterion runs later: it
-//! fails on the build that has the problem and passes on one that fixed it.
+//! fails on the build that has the problem and passes on one that fixed it;
+//! an instance that ends or hangs in a replay is never a pass.
 
 use crate::explore::{Act, Instance, Step};
+use crate::observed::{self, Refusal};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::time::{Duration, Instant};
 
 /// How long an action may take, from the instance's own `tookMs`. An action
 /// is a few frames of input and settling (0.3–0.5 s in a debug build), so
@@ -26,7 +29,8 @@ pub const ACTION_BUDGET_MS: u64 = 2000;
 /// What each character an action types adds to its budget: an agent's fill
 /// types its whole text in one step, while each character is a keystroke
 /// that must answer within the 100 ms feedback budget (ROADMAP §3.3). (A
-/// 300-character fill takes about 9 s in a debug build, 30 ms a keystroke.)
+/// 300-character fill takes about 9 s in a debug build, 30 ms a keystroke;
+/// observer mode types about 12 characters a second.)
 pub const TYPED_CHARACTER_MS: u64 = 100;
 
 /// How long a turn of the Assistant may take after a request: a request of
@@ -38,24 +42,32 @@ pub const TURN_BUDGET_MS: u64 = 180_000;
 /// stream and the turn's tool call, which takes a moment, not ten seconds.
 pub const STOP_BUDGET_MS: u64 = 10_000;
 
+/// How often a turn is observed while it runs.
+const TURN_POLL: Duration = Duration::from_millis(250);
+
 /// The part of an explorer's expectation about the Assistant's reply. A
 /// model writes its reply differently from run to run, so this part is
 /// checked and recorded, never a finding (and not part of the criteria's
 /// grammar, `control::expectation`).
 pub const REPLY: &str = "replyContains";
 
-/// What a status line says when a program fault reaches it, rather than a
-/// message written for the Operator (lowercase).
-const INTERNAL_ERRORS: [&str; 7] = [
-    "internal error",
-    "panicked",
-    "unwrap()",
-    "unreachable",
-    "should not happen",
-    "index out of bounds",
-    // An error's debug form, such as `Os { code: 5, kind: … }`.
-    "os { code",
+/// What a status line or notice says when a program fault reaches it: the
+/// Rust runtime's own wording (the Studio has no wording of its own for an
+/// internal error), and an error's debug form (`Os { code: 5, … }`).
+/// Lowercase. A provider's "internal error (500)" is not one of these.
+const INTERNAL_ERRORS: [&str; 6] = [
+    "panicked at",
+    "called `option::unwrap()`",
+    "called `result::unwrap()`",
+    "entered unreachable code",
+    "index out of bounds: the len is",
+    "os { code:",
 ];
+
+/// The message of a finding that the instance exited or stopped answering:
+/// one for both, so a replay that ends the other way is still the same
+/// failure (which one it was is in the evidence).
+pub const ENDED: &str = "the instance exited or stopped answering";
 
 /// The roles an agent acts on, whose labels must be readable.
 pub const INTERACTIVE: [&str; 7] = ["button", "tab", "option", "item", "switch", "link", "field"];
@@ -81,13 +93,14 @@ pub enum Check {
     /// An action finishes within [`ACTION_BUDGET_MS`] (and
     /// [`TYPED_CHARACTER_MS`] for each character it types).
     ActionTime,
-    /// The status line reports no internal error.
+    /// The status line and the Conversation's notices report no internal
+    /// error.
     NoInternalError,
     /// What the explorer expected before acting holds after it.
     Expectation,
-    /// A turn of the Assistant ends within [`TURN_BUDGET_MS`].
+    /// A turn of the Assistant ends within its budget ([`TURN_BUDGET_MS`]).
     TurnEnds,
-    /// Stop ends a running turn within [`STOP_BUDGET_MS`].
+    /// Stop ends a running turn within its budget ([`STOP_BUDGET_MS`]).
     TurnStops,
 }
 
@@ -124,6 +137,16 @@ pub enum State {
     FailingAgain,
 }
 
+/// A change of a finding's state.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Change {
+    pub state: State,
+    pub at: String,
+    #[serde(default)]
+    pub note: String,
+}
+
 /// A check that failed.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Failed {
@@ -137,6 +160,17 @@ pub struct Failed {
 impl Failed {
     pub fn identity(&self) -> String {
         identity(self.check, &self.control, &self.message)
+    }
+}
+
+/// That the instance exited or stopped answering, after an action on
+/// `control` (or at the start).
+pub fn ended(instance: &mut dyn Instance, control: &str, error: &str) -> Failed {
+    Failed {
+        check: Check::Answers,
+        control: control.to_string(),
+        message: ENDED.into(),
+        evidence: json!({ "exited": !instance.alive(), "error": error }),
     }
 }
 
@@ -165,6 +199,9 @@ pub struct Finding {
     /// Why it did not reproduce, or what became of it.
     #[serde(default)]
     pub note: String,
+    /// Its states, in order.
+    #[serde(default)]
+    pub history: Vec<Change>,
     /// The fewest steps found that still reproduce it.
     #[serde(default)]
     pub reduced: Option<Vec<Step>>,
@@ -189,6 +226,7 @@ impl Finding {
         commit: &str,
         start: &str,
     ) -> Finding {
+        let found = agq_launcher::now();
         Finding {
             identity: failed.identity(),
             check: failed.check,
@@ -199,7 +237,12 @@ impl Finding {
             start: start.to_string(),
             steps,
             evidence: failed.evidence,
-            found: agq_launcher::now(),
+            history: vec![Change {
+                state: State::Open,
+                at: found.clone(),
+                note: String::new(),
+            }],
+            found,
             state: State::Open,
             note: String::new(),
             reduced: None,
@@ -213,6 +256,17 @@ impl Finding {
     /// The steps a replay takes: the reduced ones when there are.
     pub fn replay_steps(&self) -> &[Step] {
         self.reduced.as_deref().unwrap_or(&self.steps)
+    }
+
+    /// Moves it to `state`, with why, keeping the change in its history.
+    pub fn set_state(&mut self, state: State, note: &str) {
+        self.state = state;
+        self.note = note.to_string();
+        self.history.push(Change {
+            state,
+            at: agq_launcher::now(),
+            note: note.to_string(),
+        });
     }
 }
 
@@ -295,42 +349,6 @@ fn unreadable(control: &Value) -> bool {
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_'))
 }
 
-/// The Conversation's notices (the observation's `conversation.notices`,
-/// as text or `{ text }`, and its `error`).
-pub fn notices(observation: &Value) -> Vec<String> {
-    let conversation = &observation["conversation"];
-    conversation["notices"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|n| n.as_str().or_else(|| n["text"].as_str()))
-        .chain(conversation["error"].as_str())
-        .map(str::to_string)
-        .collect()
-}
-
-/// Whether a turn of the Assistant is running.
-pub fn turn_running(observation: &Value) -> bool {
-    let conversation = &observation["conversation"];
-    conversation["running"] == true || conversation["turn"]["running"] == true
-}
-
-/// An environment condition the observation shows: the Assistant needs a
-/// key. A condition of the run, never a finding.
-pub fn needs_key(observation: &Value) -> Option<String> {
-    let missing = &observation["conversation"]["keyMissing"];
-    if let Some(text) = missing.as_str() {
-        return Some(format!("the Assistant needs a key: {text}"));
-    }
-    if !missing.is_null() {
-        return Some("the Assistant needs a key".into());
-    }
-    notices(observation).into_iter().find(|n| {
-        let n = n.to_lowercase();
-        n.contains("key") && (n.contains("need") || n.contains("missing") || n.contains("no "))
-    })
-}
-
 /// An expectation without its part about the reply: what can be checked
 /// deterministically, if anything is left.
 pub fn deterministic(expect: &Value) -> Option<Value> {
@@ -343,10 +361,7 @@ pub fn deterministic(expect: &Value) -> Option<Value> {
 /// has one.
 pub fn reply_holds(observation: &Value, expect: &Value) -> Option<Result<(), String>> {
     let text = expect[REPLY].as_str()?;
-    let reply = observation["conversation"]["lastReply"]
-        .as_str()
-        .unwrap_or_default();
-    Some(if reply.contains(text) {
+    Some(if observed::last_reply(observation).contains(text) {
         Ok(())
     } else {
         Err(format!("the reply does not say “{text}”"))
@@ -363,15 +378,6 @@ pub struct Outcome<'a> {
     pub answer: Option<&'a Value>,
     /// The observation after it.
     pub after: &'a Value,
-}
-
-/// Whether an action's refusal says its control or command was gone,
-/// disabled or unavailable (and not that the screen changed, or that it is
-/// the Operator's: those are refusals by rule).
-pub fn refused_as_gone(error: &str) -> bool {
-    error.starts_with("stale: no control")
-        || error.contains("is disabled now")
-        || error.contains("is not available:")
 }
 
 /// Whether an observation offers `action`'s target to an agent: its control
@@ -405,6 +411,24 @@ pub fn offered(observation: &Value, action: &Value) -> Result<(), String> {
     Ok(())
 }
 
+/// What the status line and the Conversation's notices say, each with
+/// where.
+fn said(observation: &Value) -> Vec<(&'static str, String)> {
+    std::iter::once((
+        "the status line",
+        observation["status"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+    ))
+    .chain(
+        observed::notices(observation)
+            .into_iter()
+            .map(|n| ("a notice", n)),
+    )
+    .collect()
+}
+
 /// The invariants an action (or the start) shows to fail, and the
 /// expectation stated before it. `answers` and `undo-restores` need the
 /// instance, so they are checked where it is used.
@@ -432,21 +456,25 @@ pub fn failures(outcome: &Outcome) -> Vec<Failed> {
             });
         }
     }
-    // Neither the status line nor a notice of the Conversation reports an
-    // internal error.
-    let status = after["status"].as_str().unwrap_or_default().to_string();
-    for (place, text) in std::iter::once(("the status line", status))
-        .chain(notices(after).into_iter().map(|n| ("a notice", n)))
-    {
+    // An internal error in the status line or a notice, when it appears or
+    // changes: one that stays is the same finding, blaming no later action
+    // (the control is left out of its identity).
+    let earlier = if outcome.step.is_some() {
+        said(outcome.before)
+    } else {
+        Vec::new()
+    };
+    for (place, text) in said(after) {
         if INTERNAL_ERRORS
             .iter()
             .any(|e| text.to_lowercase().contains(e))
+            && !earlier.iter().any(|(_, t)| *t == text)
         {
             failed.push(Failed {
                 check: Check::NoInternalError,
-                control: target.clone(),
+                control: String::new(),
                 message: format!("{place} reports an internal error: {text}"),
-                evidence: json!({ "text": text }),
+                evidence: json!({ "text": text, "after": target }),
             });
         }
     }
@@ -455,88 +483,88 @@ pub fn failures(outcome: &Outcome) -> Vec<Failed> {
     };
     let before = outcome.before;
     // A turn that did not end in its budget, or a Stop that did not end it.
-    if step.action["kind"] == "wait"
-        && answer["ok"] == false
-        && answer["error"]
-            .as_str()
-            .is_some_and(|e| e.contains("timed out"))
-    {
-        let stop = step.label == "the stop";
-        failed.push(Failed {
-            check: if stop {
-                Check::TurnStops
-            } else {
-                Check::TurnEnds
-            },
-            control: "conversation".into(),
-            message: if stop {
-                format!("Stop did not end the turn within {STOP_BUDGET_MS} ms")
-            } else {
-                format!("the turn did not end within {TURN_BUDGET_MS} ms")
-            },
-            evidence: json!({ "answer": answer, "conversation": after["conversation"] }),
-        });
-        return failed;
-    }
-    if answer["ok"] == false {
+    if step.action["kind"] == "await-turn" {
+        if answer["ok"] == false {
+            let stop = step.label == "the stop";
+            let budget = step.action["timeoutMs"].as_u64().unwrap_or_default();
+            failed.push(Failed {
+                check: if stop {
+                    Check::TurnStops
+                } else {
+                    Check::TurnEnds
+                },
+                control: "conversation".into(),
+                message: if stop {
+                    format!("Stop did not end the turn within {budget} ms")
+                } else {
+                    format!("the turn did not end within {budget} ms")
+                },
+                evidence: json!({ "answer": answer, "conversation": after["conversation"] }),
+            });
+        }
+    } else if answer["ok"] == false {
         // Offered, enabled, and refused as gone or disabled while the screen
         // stayed the same and still offers it.
-        let error = answer["error"].as_str().unwrap_or_default();
-        if refused_as_gone(error)
+        if observed::refusal(answer) == Refusal::Gone
             && after["screenRevision"] == before["screenRevision"]
             && offered(after, &step.action).is_ok()
         {
             failed.push(Failed {
                 check: Check::OfferedActs,
                 control: target.clone(),
-                message: format!("offered and enabled, but refused: {error}"),
+                message: format!(
+                    "offered and enabled, but refused: {}",
+                    answer["error"].as_str().unwrap_or_default()
+                ),
                 evidence: json!({ "answer": answer, "screenRevision": after["screenRevision"] }),
             });
         }
         return failed;
-    }
-    // Within its budget.
-    let typed = step.action["text"]
-        .as_str()
-        .map_or(0, |t| t.chars().count() as u64);
-    let budget = ACTION_BUDGET_MS + TYPED_CHARACTER_MS * typed;
-    if let Some(took) = answer["tookMs"].as_u64()
-        && took > budget
-        && step.action["kind"] != "wait"
-    {
-        failed.push(Failed {
-            check: Check::ActionTime,
-            control: target.clone(),
-            message: format!(
-                "{} took {took} ms (budget {budget} ms)",
-                step.action["kind"].as_str().unwrap_or_default()
-            ),
-            evidence: json!({ "tookMs": took }),
-        });
-    }
-    // A dialog closes by its Cancel or Escape.
-    let closing = (step.action["kind"] == "click" && step.action["control"] == "dialog-cancel")
-        || (step.action["kind"] == "key" && step.action["keys"] == "escape");
-    if closing
-        && before["dialog"].is_string()
-        && before["approval"].is_null()
-        && before["palette"].is_null()
-        && after["dialog"] == before["dialog"]
-    {
-        failed.push(Failed {
-            check: Check::DialogsClose,
-            control: target.clone(),
-            message: format!(
-                "the {} dialog stayed open after {}",
-                before["dialog"].as_str().unwrap_or_default(),
-                if step.action["kind"] == "key" {
-                    "Escape"
-                } else {
-                    "its Cancel"
-                }
-            ),
-            evidence: json!({ "dialog": after["dialog"], "status": after["status"] }),
-        });
+    } else {
+        // Within its budget.
+        let typed = step.action["text"]
+            .as_str()
+            .map_or(0, |t| t.chars().count() as u64);
+        let budget = ACTION_BUDGET_MS + TYPED_CHARACTER_MS * typed;
+        if let Some(took) = answer["tookMs"].as_u64()
+            && took > budget
+            && step.action["kind"] != "wait"
+        {
+            failed.push(Failed {
+                check: Check::ActionTime,
+                control: target.clone(),
+                message: format!(
+                    "{} took {took} ms (budget {budget} ms)",
+                    step.action["kind"].as_str().unwrap_or_default()
+                ),
+                evidence: json!({ "tookMs": took }),
+            });
+        }
+        // A dialog closes by its Cancel or Escape.
+        let closing = (step.action["kind"] == "click"
+            && step.action["control"] == observed::CANCEL)
+            || (step.action["kind"] == "key" && step.action["keys"] == "escape");
+        if closing
+            && before["dialog"].is_string()
+            && before["approval"].is_null()
+            && before["palette"].is_null()
+            && after["dialog"] == before["dialog"]
+        {
+            failed.push(Failed {
+                check: Check::DialogsClose,
+                control: target.clone(),
+                message: format!(
+                    "the {} dialog stayed open after {}",
+                    before["dialog"].as_str().unwrap_or_default(),
+                    if step.action["kind"] == "key" {
+                        "Escape"
+                    } else {
+                        "its Cancel"
+                    }
+                ),
+                evidence: json!({ "dialog": after["dialog"], "status": after["status"] }),
+            });
+        }
     }
     // What the explorer expected (its part about the reply aside).
     if let Some(expect) = step.expect.as_ref().and_then(deterministic)
@@ -558,11 +586,50 @@ pub fn changed_model(before: &Value, after: &Value) -> bool {
     !b.is_null() && b["folder"] == a["folder"] && a["revision"].as_u64() > b["revision"].as_u64()
 }
 
-/// The model's digest, where the observation publishes one.
-fn digest(observation: &Value) -> Option<&Value> {
-    observation["project"]
-        .get("digest")
-        .filter(|d| !d.is_null())
+/// What waiting for a turn of the Assistant came to.
+pub enum Waited {
+    /// It ended (`ok`), or ran past its budget (`ok: false`, timed out): the
+    /// answer the checks read, and the observation then.
+    Done { answer: Value, after: Value },
+    /// The run was stopped while it waited.
+    Stopped,
+    /// The instance ended or stopped answering.
+    Gone(String),
+}
+
+/// Waits for the running turn of the Assistant to end, observing it every
+/// quarter second for at most `budget_ms`. Only the Conversation's state is
+/// waited for, not the runs, tasks, checks or builds the Studio's own
+/// `idle` condition includes.
+pub fn await_turn(
+    instance: &mut dyn Instance,
+    budget_ms: u64,
+    stop: &mut dyn FnMut() -> bool,
+) -> Waited {
+    let started = Instant::now();
+    loop {
+        let now = match instance.observe() {
+            Ok(now) => now,
+            Err(error) => return Waited::Gone(error),
+        };
+        let took = started.elapsed().as_millis() as u64;
+        if !observed::turn_running(&now) {
+            return Waited::Done {
+                answer: json!({ "ok": true, "tookMs": took }),
+                after: now,
+            };
+        }
+        if took >= budget_ms {
+            return Waited::Done {
+                answer: json!({ "ok": false, "error": format!("timed out after {took} ms"), "tookMs": took }),
+                after: now,
+            };
+        }
+        if stop() {
+            return Waited::Stopped;
+        }
+        std::thread::sleep(TURN_POLL);
+    }
 }
 
 /// What the undo check did.
@@ -575,31 +642,43 @@ pub struct Undone {
     pub now: Value,
 }
 
+/// Why the undo check was not made.
+pub enum Unchecked {
+    /// Undo refused (`by_rule`: as the Operator's own, so not tried again in
+    /// the run) or not available: never a finding.
+    Refused { reason: String, by_rule: bool },
+    /// The instance ended or stopped answering on undo or redo, whose step
+    /// is the last of `steps`.
+    Ended { error: String, steps: Vec<Step> },
+}
+
 /// After an action (`step`, between `before` and `after`) changed the model,
 /// undo must restore it and redo re-apply the change: a metamorphic check
 /// the explorer makes itself in its test instance. With the observation's
 /// `project.digest` the model's content is compared; without it, only that
 /// undo and redo changed the model at all (`project.revision`, which rises
 /// with every change, undo and redo, cannot show that a state came back).
-/// `Err` when the check cannot be made here: undo refused by rule or not
-/// available, which is never a finding.
 pub fn undo_restores(
     instance: &mut dyn Instance,
     step: &Step,
     before: &Value,
     after: &Value,
     goal: &str,
-) -> Result<Undone, String> {
+) -> Result<Undone, Unchecked> {
     let mut steps = Vec::new();
     let control = step.target().to_string();
-    let undone = act_by_check(instance, "undo", after, goal, &mut steps)?;
+    let undone = match act_by_check(instance, "undo", after, goal, &mut steps) {
+        Ok(undone) => undone,
+        Err(Halt::Refused(reason, by_rule)) => return Err(Unchecked::Refused { reason, by_rule }),
+        Err(Halt::Ended(error)) => return Err(Unchecked::Ended { error, steps }),
+    };
     let failed = |message: String, evidence: Value| Failed {
         check: Check::UndoRestores,
         control: control.clone(),
         message,
         evidence,
     };
-    let undid = match (digest(before), digest(&undone)) {
+    let undid = match (observed::digest(before), observed::digest(&undone)) {
         (Some(was), Some(now)) if was != now => Some(failed(
             "undo did not restore the model".into(),
             json!({ "digestBefore": was, "digestAfterUndo": now }),
@@ -620,7 +699,8 @@ pub fn undo_restores(
     }
     let redone = match act_by_check(instance, "redo", &undone, goal, &mut steps) {
         Ok(redone) => redone,
-        Err(problem) => {
+        Err(Halt::Ended(error)) => return Err(Unchecked::Ended { error, steps }),
+        Err(Halt::Refused(problem, _)) => {
             return Ok(Undone {
                 failed: Some(failed(
                     format!("redo did not re-apply the change: {problem}"),
@@ -631,7 +711,7 @@ pub fn undo_restores(
             });
         }
     };
-    let redid = match (digest(after), digest(&redone)) {
+    let redid = match (observed::digest(after), observed::digest(&redone)) {
         (Some(was), Some(now)) if was != now => Some(failed(
             "redo did not re-apply the change".into(),
             json!({ "digestAfterAction": was, "digestAfterRedo": now }),
@@ -650,15 +730,24 @@ pub fn undo_restores(
     })
 }
 
-/// Runs the command `id` for the undo check; the observation after it.
-/// `Err` when it is refused, unavailable or fails.
+/// Why a command of the undo check did not go through.
+enum Halt {
+    /// Refused or unavailable, and whether by rule.
+    Refused(String, bool),
+    /// The instance ended or stopped answering.
+    Ended(String),
+}
+
+/// Runs the command `id` for the undo check; the observation after it. Its
+/// step is kept in `steps` from the moment it is sent, so an instance that
+/// ends on it is found with it.
 fn act_by_check(
     instance: &mut dyn Instance,
     id: &str,
     now: &Value,
     goal: &str,
     steps: &mut Vec<Step>,
-) -> Result<Value, String> {
+) -> Result<Value, Halt> {
     let action = json!({ "kind": "command", "id": id });
     let offered_to_agents = now["commands"]
         .as_array()
@@ -666,38 +755,52 @@ fn act_by_check(
         .flatten()
         .find(|c| c["id"] == id);
     match offered_to_agents {
-        Some(c) if c["available"] != false && c["operatorOnly"] != true => {}
-        Some(c) if c["operatorOnly"] == true => {
-            return Err(format!("`{id}` is the Operator's here"));
-        }
-        Some(c) => {
-            return Err(format!(
-                "`{id}` is not available: {}",
-                c["why"].as_str().unwrap_or_default()
+        Some(c) if observed::operator_only(c) => {
+            return Err(Halt::Refused(
+                format!("`{id}` is the Operator's here"),
+                true,
             ));
         }
-        None => return Err(format!("`{id}` is not offered")),
-    }
-    let why = format!("check that {id} works after the change");
-    let answer = instance.act(&Act {
-        agent: crate::explore::AGENT,
-        goal,
-        why: &why,
-        observed: now["screenRevision"].as_u64().unwrap_or_default(),
-        action: &action,
-    })?;
-    if answer["ok"] == false {
-        return Err(answer["error"].as_str().unwrap_or_default().to_string());
+        Some(c) if c["available"] != false => {}
+        Some(c) => {
+            return Err(Halt::Refused(
+                format!(
+                    "`{id}` is not available: {}",
+                    c["why"].as_str().unwrap_or_default()
+                ),
+                false,
+            ));
+        }
+        None => return Err(Halt::Refused(format!("`{id}` is not offered"), false)),
     }
     steps.push(Step {
-        action,
         key: format!("{}|command|{id}|command", crate::explore::screen_of(now)),
         screen: crate::explore::screen_of(now),
         label: id.to_string(),
         expect: None,
         by: "check".into(),
+        action: action.clone(),
     });
-    instance.observe()
+    let why = format!("check that {id} works after the change");
+    let answer = instance
+        .act(&Act {
+            agent: crate::explore::AGENT,
+            goal,
+            why: &why,
+            observed: now["screenRevision"].as_u64().unwrap_or_default(),
+            action: &action,
+        })
+        .map_err(Halt::Ended)?;
+    if answer["ok"] == false {
+        // Refused: it did nothing, so it is not a step.
+        steps.pop();
+        let by_rule = observed::refusal(&answer) == Refusal::Rule;
+        return Err(Halt::Refused(
+            answer["error"].as_str().unwrap_or_default().to_string(),
+            by_rule,
+        ));
+    }
+    instance.observe().map_err(Halt::Ended)
 }
 
 /// How a replay ended.
@@ -710,7 +813,8 @@ pub enum Replay {
     /// Every step was replayed and the check held after the last.
     Passed,
     /// The replay could not follow the steps (a control gone, the instance
-    /// ended earlier, a refusal): neither a pass nor a failure.
+    /// ended before the last step, a refusal, the run stopped): never a
+    /// pass.
     Diverged { at: usize, reason: String },
 }
 
@@ -718,33 +822,56 @@ impl Replay {
     pub fn failed(&self) -> bool {
         matches!(self, Replay::Failed { .. })
     }
+
+    pub fn passed(&self) -> bool {
+        matches!(self, Replay::Passed)
+    }
 }
 
 /// Replays a finding's steps (the reduced ones, when there are) from a fresh
 /// start of the instance's build and checks it after the last: whether the
 /// problem shows there. A cycle uses it as a criterion: it fails on the
-/// build that has the problem and passes on one that fixed it.
-pub fn replay(instance: &mut dyn Instance, finding: &Finding) -> Replay {
-    replay_steps(instance, finding, finding.replay_steps())
+/// build that has the problem and passes on one that fixed it. `stop` is
+/// asked during the replay's waits; a stopped replay diverges.
+pub fn replay(
+    instance: &mut dyn Instance,
+    finding: &Finding,
+    stop: &mut dyn FnMut() -> bool,
+) -> Replay {
+    replay_steps(instance, finding, finding.replay_steps(), stop)
 }
 
-fn replay_steps(instance: &mut dyn Instance, finding: &Finding, steps: &[Step]) -> Replay {
+fn replay_steps(
+    instance: &mut dyn Instance,
+    finding: &Finding,
+    steps: &[Step],
+    stop: &mut dyn FnMut() -> bool,
+) -> Replay {
     let diverged = |at: usize, reason: String| Replay::Diverged { at, reason };
-    // The instance ended or stopped answering on the step at `at`.
-    let gone = |instance: &mut dyn Instance, at: usize, error: String| {
-        let message = ended(instance);
+    // The instance ended or stopped answering on the step at `at`: the
+    // finding itself when it is that, at its place; otherwise the replay
+    // could not get there.
+    let gone = |at: usize, error: String| {
         if at == steps.len() && finding.check == Check::Answers {
-            judge_message(finding, Check::Answers, &message)
+            Replay::Failed {
+                message: ENDED.into(),
+            }
         } else {
-            diverged(at, format!("the instance ended at step {at}: {error}"))
+            Replay::Diverged {
+                at,
+                reason: format!("the instance ended at step {at}: {error}"),
+            }
         }
     };
-    if let Err(error) = instance.restart() {
+    if stop() {
+        return diverged(0, "stopped".into());
+    }
+    if let Err(error) = instance.restart(stop) {
         return diverged(0, format!("the instance did not start: {error}"));
     }
     let mut now = match instance.observe() {
         Ok(now) => now,
-        Err(error) => return gone(instance, 0, error),
+        Err(error) => return gone(0, error),
     };
     if steps.is_empty() {
         let outcome = Outcome {
@@ -758,6 +885,30 @@ fn replay_steps(instance: &mut dyn Instance, finding: &Finding, steps: &[Step]) 
     let why = format!("replaying {}", finding.identity);
     for (i, step) in steps.iter().enumerate() {
         let at = i + 1;
+        let last = at == steps.len();
+        if stop() {
+            return diverged(at, "stopped".into());
+        }
+        if step.action["kind"] == "await-turn" {
+            let budget = step.action["timeoutMs"].as_u64().unwrap_or(TURN_BUDGET_MS);
+            match await_turn(instance, budget, stop) {
+                Waited::Stopped => return diverged(at, "stopped".into()),
+                Waited::Gone(error) => return gone(at, error),
+                Waited::Done { answer, after } => {
+                    if last {
+                        let outcome = Outcome {
+                            before: &now,
+                            step: Some(step),
+                            answer: Some(&answer),
+                            after: &after,
+                        };
+                        return judge(finding, &failures(&outcome));
+                    }
+                    now = after;
+                    continue;
+                }
+            }
+        }
         let mut answer = None;
         // Re-based on a fresh observation; a stale refusal is observed
         // again once.
@@ -773,16 +924,11 @@ fn replay_steps(instance: &mut dyn Instance, finding: &Finding, steps: &[Step]) 
                 action: &step.action,
             };
             match instance.act(&act) {
-                Err(error) => return gone(instance, at, error),
-                Ok(said)
-                    if said["ok"] == false
-                        && said["error"]
-                            .as_str()
-                            .is_some_and(|e| e.starts_with("stale: the screen changed")) =>
-                {
+                Err(error) => return gone(at, error),
+                Ok(said) if observed::refusal(&said) == Refusal::Stale => {
                     now = match instance.observe() {
                         Ok(now) => now,
-                        Err(error) => return gone(instance, at, error),
+                        Err(error) => return gone(at, error),
                     };
                 }
                 Ok(said) => {
@@ -794,26 +940,26 @@ fn replay_steps(instance: &mut dyn Instance, finding: &Finding, steps: &[Step]) 
         let Some(answer) = answer else {
             return diverged(at, "the screen kept changing".into());
         };
-        let error = answer["error"].as_str().unwrap_or_default();
-        let last = at == steps.len();
         let expected_refusal = last && finding.check == Check::OfferedActs;
-        if answer["ok"] == false
-            && !expected_refusal
-            && (error.starts_with("stale")
-                || error.starts_with("refused")
-                || refused_as_gone(error))
+        if matches!(
+            observed::refusal(&answer),
+            Refusal::Stale | Refusal::Gone | Refusal::Rule
+        ) && !expected_refusal
         {
-            return diverged(at, error.to_string());
+            return diverged(at, answer["error"].as_str().unwrap_or_default().to_string());
         }
         let after = match instance.observe() {
             Ok(after) => after,
-            Err(error) => return gone(instance, at, error),
+            Err(error) => return gone(at, error),
         };
         if last {
             if finding.check == Check::UndoRestores {
                 return match undo_restores(instance, step, &now, &after, "replay a finding") {
                     Ok(undone) => judge(finding, &undone.failed.into_iter().collect::<Vec<_>>()),
-                    Err(reason) => {
+                    Err(Unchecked::Ended { error, .. }) => {
+                        diverged(at, format!("the instance ended on the undo check: {error}"))
+                    }
+                    Err(Unchecked::Refused { reason, .. }) => {
                         diverged(at, format!("the undo check could not be made: {reason}"))
                     }
                 };
@@ -831,25 +977,6 @@ fn replay_steps(instance: &mut dyn Instance, finding: &Finding, steps: &[Step]) 
     Replay::Passed
 }
 
-/// The message for an instance that ended or stopped answering.
-pub fn ended(instance: &mut dyn Instance) -> String {
-    if instance.alive() {
-        "the instance stopped answering".into()
-    } else {
-        "the instance exited".into()
-    }
-}
-
-fn judge_message(finding: &Finding, check: Check, message: &str) -> Replay {
-    if identity(check, &finding.control, message) == finding.identity {
-        Replay::Failed {
-            message: message.to_string(),
-        }
-    } else {
-        Replay::Passed
-    }
-}
-
 fn judge(finding: &Finding, failed: &[Failed]) -> Replay {
     match failed.iter().find(|f| f.identity() == finding.identity) {
         Some(f) => Replay::Failed {
@@ -859,47 +986,58 @@ fn judge(finding: &Finding, failed: &[Failed]) -> Replay {
     }
 }
 
+fn stopped(replay: &Replay) -> bool {
+    matches!(replay, Replay::Diverged { reason, .. } if reason == "stopped")
+}
+
 /// Replays a finding twice from a fresh start; it is reproduced only when
 /// both fail the same way, and then reduced within what is left of
-/// `replays` (at least two are needed).
-pub fn reproduce(instance: &mut dyn Instance, finding: &mut Finding, replays: usize) {
-    let first = replay_steps(instance, finding, &finding.steps);
-    let second = replay_steps(instance, finding, &finding.steps);
-    let reproduced = first.failed() && second.failed();
-    finding.replays.extend([first, second]);
+/// `replays` (at least two are needed). `stop` is asked between and during
+/// replays: a stopped reproduction leaves the finding as it was, saying so.
+pub fn reproduce(
+    instance: &mut dyn Instance,
+    finding: &mut Finding,
+    replays: usize,
+    stop: &mut dyn FnMut() -> bool,
+) {
+    let mut outcomes = Vec::new();
+    for _ in 0..2 {
+        let outcome = replay_steps(instance, finding, &finding.steps, stop);
+        if stopped(&outcome) {
+            finding.note = "its reproduction was stopped".into();
+            return;
+        }
+        outcomes.push(outcome);
+    }
+    let reproduced = outcomes.iter().all(Replay::failed);
+    let summary: String = outcomes
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            format!(
+                "replay {}: {}",
+                i + 1,
+                match r {
+                    Replay::Failed { .. } => "failed the same way".to_string(),
+                    Replay::Passed => "the check held".to_string(),
+                    Replay::Diverged { at, reason } => format!("diverged at step {at}: {reason}"),
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+    finding.replays.extend(outcomes);
+    let model = asks_the_assistant(finding);
     if reproduced {
-        finding.state = State::Reproduced;
-        finding.note = asks_the_assistant(finding);
-        reduce(instance, finding, replays.saturating_sub(2));
+        finding.set_state(State::Reproduced, &model);
+        reduce(instance, finding, replays.saturating_sub(2), stop);
     } else {
-        finding.state = State::NotReproduced;
-        let replays: String = finding
-            .replays
-            .iter()
-            .rev()
-            .take(2)
-            .rev()
-            .enumerate()
-            .map(|(i, r)| {
-                format!(
-                    "replay {}: {}",
-                    i + 1,
-                    match r {
-                        Replay::Failed { .. } => "failed the same way".to_string(),
-                        Replay::Passed => "the check held".to_string(),
-                        Replay::Diverged { at, reason } =>
-                            format!("diverged at step {at}: {reason}"),
-                    }
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("; ");
-        let model = asks_the_assistant(finding);
-        finding.note = if model.is_empty() {
-            replays
+        let note = if model.is_empty() {
+            summary
         } else {
-            format!("{replays}. {model}")
+            format!("{summary}. {model}")
         };
+        finding.set_state(State::NotReproduced, &note);
     }
 }
 
@@ -908,7 +1046,7 @@ pub fn reproduce(instance: &mut dyn Instance, finding: &mut Finding, replays: us
 fn asks_the_assistant(finding: &Finding) -> String {
     let asks = finding.steps.iter().any(|s| {
         s.key.contains("|conversation|")
-            && (s.action["keys"] == "enter" || s.action["control"] == "send")
+            && (s.action["keys"] == "enter" || s.action["control"] == observed::SEND)
     });
     if asks {
         format!(
@@ -925,17 +1063,26 @@ fn asks_the_assistant(finding: &Finding) -> String {
 /// longest prefix (the shortest suffix of steps that still fails, trying 0,
 /// 1, 2, 4, … steps), then runs of steps of halving length (4, 2, 1 for
 /// eight steps), so a dialog opened and cancelled goes as a pair. Reduced
-/// steps are kept only when one more replay confirms them.
-pub fn reduce(instance: &mut dyn Instance, finding: &mut Finding, replays: usize) {
+/// steps are kept only when one more replay confirms them; `stop` ends it
+/// early.
+pub fn reduce(
+    instance: &mut dyn Instance,
+    finding: &mut Finding,
+    replays: usize,
+    stop: &mut dyn FnMut() -> bool,
+) {
     if replays < 2 {
         return;
     }
     let trials = replays - 1;
     let mut used = 0;
+    let mut halted = false;
     let mut steps = finding.steps.clone();
-    let fails = |instance: &mut dyn Instance, steps: &[Step], used: &mut usize| {
+    let mut fails = |instance: &mut dyn Instance, steps: &[Step], used: &mut usize| {
         *used += 1;
-        replay_steps(instance, finding, steps).failed()
+        let outcome = replay_steps(instance, finding, steps, stop);
+        halted |= stopped(&outcome);
+        outcome.failed()
     };
     let n = steps.len();
     let mut keep = 0;
@@ -963,13 +1110,14 @@ pub fn reduce(instance: &mut dyn Instance, finding: &mut Finding, replays: usize
         }
         run /= 2;
     }
-    if steps.len() < n {
-        // Confirmed by one more replay, so the reduced steps failed twice.
-        if fails(instance, &steps, &mut used) {
-            finding.reduced = Some(steps);
-        } else {
-            finding.note = "the reduced steps did not fail again; the full steps are kept".into();
-        }
+    let confirmed = steps.len() < n && fails(instance, &steps, &mut used);
+    if halted {
+        finding.note = "its reduction was stopped; the full steps are kept".into();
+    } else if confirmed {
+        // The reduced steps failed twice: on their trial and here.
+        finding.reduced = Some(steps);
+    } else if steps.len() < n {
+        finding.note = "the reduced steps did not fail again; the full steps are kept".into();
     }
 }
 
@@ -1018,6 +1166,17 @@ mod tests {
         assert!(!label("agq-orchestrator", "agq-orchestrator", "item"));
     }
 
+    fn step(action: Value) -> Step {
+        Step {
+            action,
+            key: String::new(),
+            screen: "surface:Create".into(),
+            label: String::new(),
+            expect: None,
+            by: "explorer".into(),
+        }
+    }
+
     #[test]
     fn checks_read_the_answer_and_the_observations_around_an_action() {
         let before = json!({
@@ -1028,14 +1187,6 @@ mod tests {
             ],
             "commands": []
         });
-        let step = |action: Value| Step {
-            action,
-            key: String::new(),
-            screen: "surface:Create".into(),
-            label: String::new(),
-            expect: None,
-            by: "explorer".into(),
-        };
         // Cancel that leaves the dialog open, slowly.
         let cancel = step(json!({ "kind": "click", "control": "dialog-cancel" }));
         let answer = json!({ "ok": true, "tookMs": 2500 });
@@ -1073,6 +1224,7 @@ mod tests {
             answer: Some(&refused),
             after: &before,
         });
+        assert_eq!(found.len(), 1);
         assert_eq!(found[0].check, Check::OfferedActs);
         // A refusal by rule, or after the screen changed, is not a finding.
         let rule = json!({ "ok": false, "error": "refused: `undo` is the Operator's to use" });
@@ -1090,8 +1242,6 @@ mod tests {
         // An expectation the observation does not show.
         let mut expecting = step(json!({ "kind": "click", "control": "dialog-cancel" }));
         expecting.expect = Some(json!({ "dialog": null }));
-        let mut closed = before.clone();
-        closed["dialog"] = Value::Null;
         let ok = json!({ "ok": true, "tookMs": 300 });
         assert!(
             failures(&Outcome {
@@ -1109,5 +1259,38 @@ mod tests {
             after: &before,
         });
         assert!(found.iter().any(|f| f.check == Check::Expectation));
+    }
+
+    #[test]
+    fn an_internal_error_is_found_when_it_appears_not_for_every_action_after() {
+        let quiet = json!({ "status": "Ready", "conversation": {} });
+        let fault = json!({
+            "status": "Validation failed: index out of bounds: the len is 2 but the index is 7",
+            "conversation": {}
+        });
+        let click = |id: &str| step(json!({ "kind": "click", "control": id }));
+        let ok = json!({ "ok": true, "tookMs": 100 });
+        let errors = |before: &Value, step: &Step, after: &Value| {
+            failures(&Outcome {
+                before,
+                step: Some(step),
+                answer: Some(&ok),
+                after,
+            })
+            .into_iter()
+            .filter(|f| f.check == Check::NoInternalError)
+            .collect::<Vec<_>>()
+        };
+        let first = errors(&quiet, &click("validate"), &fault);
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].control, "", "no action is blamed in its identity");
+        // It stays on screen while others act: not found again.
+        assert!(errors(&fault, &click("graph"), &fault).is_empty());
+        // A provider's wording is not a program fault.
+        let provider = json!({
+            "status": "Ready",
+            "conversation": { "notices": ["The provider had an internal error (500); try again"] }
+        });
+        assert!(errors(&quiet, &click("send"), &provider).is_empty());
     }
 }

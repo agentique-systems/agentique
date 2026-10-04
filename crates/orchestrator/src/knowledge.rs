@@ -102,35 +102,77 @@ impl Knowledge {
         }
     }
 
-    /// A project's name as a folder name: lowercase letters, digits and
-    /// hyphens.
-    pub fn key(project: &str) -> String {
+    /// A project's folder as a folder name: its own name in lowercase
+    /// letters, digits and hyphens, and eight hexadecimal digits of its
+    /// full path (as the system resolves it), so two projects with one name
+    /// keep apart.
+    pub fn key(repository: &Path) -> String {
+        let full = repository
+            .canonicalize()
+            .unwrap_or_else(|_| repository.to_path_buf());
+        let full = full.display().to_string();
+        let full = if cfg!(windows) {
+            full.to_lowercase()
+        } else {
+            full
+        };
+        let mut hash = 0xcbf2_9ce4_8422_2325_u64;
+        for byte in full.bytes() {
+            hash ^= u64::from(byte);
+            hash = hash.wrapping_mul(0x0100_0000_01b3);
+        }
+        let name = repository
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
         let mut key = String::new();
-        for c in project.trim().chars().flat_map(char::to_lowercase) {
+        for c in name.trim().chars().flat_map(char::to_lowercase) {
             if c.is_ascii_alphanumeric() {
                 key.push(c);
             } else if !key.ends_with('-') {
                 key.push('-');
             }
         }
-        let key = key.trim_matches('-').to_string();
-        if key.is_empty() {
-            "project".into()
-        } else {
-            key
-        }
+        let key = key.trim_matches('-');
+        let key = if key.is_empty() { "project" } else { key };
+        format!("{key}-{:08x}", hash as u32)
     }
 
-    /// Where a project's knowledge is kept: `testing/<project>/knowledge.json`
+    /// Where a project's knowledge is kept: `testing/<key>/knowledge.json`
     /// in the app data folder that holds the objectives' records.
-    pub fn file(store: &Store, project: &str) -> PathBuf {
+    pub fn file(store: &Store, repository: &Path) -> PathBuf {
         store
             .folder
             .parent()
             .unwrap_or(&store.folder)
             .join("testing")
-            .join(Knowledge::key(project))
+            .join(Knowledge::key(repository))
             .join("knowledge.json")
+    }
+
+    /// Changes the knowledge in `path` under its lock file: read, changed
+    /// by `change`, written atomically. Another writer waits for the lock,
+    /// so no change is lost.
+    pub fn change<T>(
+        path: &Path,
+        project: &str,
+        change: impl FnOnce(&mut Knowledge) -> T,
+    ) -> Result<T, String> {
+        let folder = path.parent().unwrap_or(Path::new("."));
+        std::fs::create_dir_all(folder).map_err(|e| format!("{}: {e}", folder.display()))?;
+        let lock = folder.join("knowledge.lock");
+        let lock = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(&lock)
+            .map_err(|e| format!("{}: {e}", lock.display()))?;
+        lock.lock()
+            .map_err(|e| format!("the knowledge's lock: {e}"))?;
+        let mut knowledge = Knowledge::load(path, project)?;
+        let out = change(&mut knowledge);
+        knowledge.save(path)?;
+        Ok(out)
     }
 
     /// The knowledge in `path`, or a new one when there is none yet; a file
@@ -219,12 +261,12 @@ impl Knowledge {
                 .find(|f| f.identity == finding.identity)
             {
                 Some(known) if known.state == State::Fixed => {
-                    known.state = State::FailingAgain;
-                    known.note = format!(
+                    let note = format!(
                         "fixed in {}, found again in build {}",
                         known.fixed_in.as_deref().unwrap_or("an earlier change"),
                         run.build
                     );
+                    known.set_state(State::FailingAgain, &note);
                 }
                 Some(_) => {}
                 None => self.findings.push(finding.clone()),
@@ -237,7 +279,7 @@ impl Knowledge {
             goal: run.plan.goal.clone(),
             build: run.build.clone(),
             seed: run.plan.seed,
-            steps: run.chosen,
+            steps: run.actions,
             new_coverage: run.new_coverage.len() as u32,
             findings: run.findings.iter().map(|f| f.identity.clone()).collect(),
             usd: run.usd,
@@ -251,15 +293,47 @@ impl Knowledge {
         self.bound();
     }
 
-    /// Keeps a finding as it now is (after reproducing it), by identity.
+    /// Keeps what became of a finding (after reproducing it), by
+    /// identity, merged into what is known: its fix (commit, pull request,
+    /// the build it was checked in) and its history stay, its replays are
+    /// added, and a fixed finding that reproduces again is failing again,
+    /// while one that did not reproduce stays as it was.
     pub fn update(&mut self, finding: &Finding) {
-        match self
+        let Some(known) = self
             .findings
             .iter_mut()
             .find(|f| f.identity == finding.identity)
-        {
-            Some(known) => *known = finding.clone(),
-            None => self.findings.push(finding.clone()),
+        else {
+            self.findings.push(finding.clone());
+            self.bound();
+            return;
+        };
+        if finding.replays.starts_with(&known.replays) {
+            known.replays = finding.replays.clone();
+        } else {
+            known.replays.extend(finding.replays.iter().cloned());
+        }
+        if finding.reduced.is_some() {
+            known.reduced = finding.reduced.clone();
+        }
+        known.fixed_in = known.fixed_in.take().or(finding.fixed_in.clone());
+        known.pull_request = known.pull_request.or(finding.pull_request);
+        known.checked_in = known.checked_in.take().or(finding.checked_in.clone());
+        let state = match (known.state, finding.state) {
+            (State::Fixed | State::FailingAgain, State::Reproduced) => State::FailingAgain,
+            (State::Fixed | State::FailingAgain, State::Open | State::NotReproduced) => known.state,
+            (_, new) => new,
+        };
+        if state != known.state || finding.note != known.note {
+            let note = if state == State::FailingAgain && known.state == State::Fixed {
+                format!(
+                    "fixed in {}, reproduced again",
+                    known.fixed_in.as_deref().unwrap_or("an earlier change")
+                )
+            } else {
+                finding.note.clone()
+            };
+            known.set_state(state, &note);
         }
         self.bound();
     }
@@ -269,10 +343,10 @@ impl Knowledge {
         let Some(finding) = self.findings.iter_mut().find(|f| f.identity == identity) else {
             return false;
         };
-        finding.state = State::Fixed;
         finding.fixed_in = Some(commit.to_string());
         finding.pull_request = pull_request;
         finding.checked_in = None;
+        finding.set_state(State::Fixed, &format!("fixed in {commit}"));
         true
     }
 
@@ -286,11 +360,11 @@ impl Knowledge {
         match replay {
             Replay::Passed => finding.checked_in = Some(build.to_string()),
             Replay::Failed { .. } => {
-                finding.state = State::FailingAgain;
-                finding.note = format!(
+                let note = format!(
                     "fixed in {}, fails again in build {build}",
                     finding.fixed_in.as_deref().unwrap_or("an earlier change")
                 );
+                finding.set_state(State::FailingAgain, &note);
             }
             Replay::Diverged { .. } => {}
         }
@@ -367,11 +441,14 @@ mod tests {
                 usd: 0.1,
                 changes: Default::default(),
                 start: "url-shortener".into(),
+                conversation: false,
+                turn_ms: 1000,
+                stop_ms: 1000,
             },
             build: "b1".into(),
             commit: "abc".into(),
             started: "2026-10-04T10:00:00Z".into(),
-            chosen: 10,
+            actions: 10,
             steps: Vec::new(),
             covered: covered.iter().map(|(k, n)| (k.to_string(), *n)).collect(),
             new_coverage: covered.iter().map(|(k, _)| k.to_string()).collect(),
@@ -382,6 +459,7 @@ mod tests {
             latencies: vec![0, 1, 2],
             usd: 0.0,
             unpriced: 0,
+            assistant_usd: 0.0,
             notes: Vec::new(),
             conditions: Vec::new(),
             ended: String::new(),
@@ -393,8 +471,26 @@ mod tests {
     fn knowledge_is_saved_read_and_a_later_format_is_refused() {
         let dir = tempfile::tempdir().unwrap();
         let store = Store::new(dir.path().join("objectives"));
-        let path = Knowledge::file(&store, "Agentique (main)");
-        assert!(path.ends_with("testing/agentique-main/knowledge.json"));
+        let project = dir.path().join("Agentique (main)");
+        let path = Knowledge::file(&store, &project);
+        let key = path
+            .parent()
+            .unwrap()
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+        assert!(
+            key.starts_with("agentique-main-") && key.len() == "agentique-main-".len() + 8,
+            "{key}"
+        );
+        assert!(path.ends_with(format!("testing/{key}/knowledge.json")));
+        // Another project of the same name keeps apart.
+        let other = Knowledge::file(
+            &store,
+            &dir.path().join("elsewhere").join("Agentique (main)"),
+        );
+        assert_ne!(other, path);
         let mut k = Knowledge::load(&path, "agentique").unwrap();
         assert_eq!(k, Knowledge::new("agentique"));
         k.add_run(&run(
@@ -474,5 +570,61 @@ mod tests {
             !k.findings.iter().any(|f| f.state == State::NotReproduced),
             "what proposes nothing goes first"
         );
+    }
+
+    #[test]
+    fn what_became_of_a_finding_is_merged_with_its_fix_and_history() {
+        let mut k = Knowledge::new("agentique");
+        k.add_run(&run(&[], vec![finding(1, State::Open)]));
+        let identity = k.findings[0].identity.clone();
+        k.fixed(&identity, "f1x", Some(12));
+        // A later run finds it again and reproduces it: failing again, and
+        // the fix it failed after stays known.
+        let mut again = finding(1, State::Open);
+        again.set_state(State::Reproduced, "");
+        again.replays.push(Replay::Failed {
+            message: "x".into(),
+        });
+        k.update(&again);
+        let known = &k.findings[0];
+        assert_eq!(known.state, State::FailingAgain);
+        assert_eq!(known.fixed_in.as_deref(), Some("f1x"));
+        assert_eq!(known.pull_request, Some(12));
+        let states: Vec<State> = known.history.iter().map(|c| c.state).collect();
+        assert_eq!(states, vec![State::Open, State::Fixed, State::FailingAgain]);
+        assert_eq!(known.replays.len(), 1);
+        // A replay that does not reproduce leaves a fix as it was.
+        k.fixed(&identity, "f2x", None);
+        let mut flaky = finding(1, State::Open);
+        flaky.set_state(State::NotReproduced, "replay 1: the check held");
+        k.update(&flaky);
+        assert_eq!(k.findings[0].state, State::Fixed);
+        assert_eq!(k.findings[0].fixed_in.as_deref(), Some("f2x"));
+    }
+
+    #[test]
+    fn writers_of_the_knowledge_take_turns_and_lose_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("testing").join("p").join("knowledge.json");
+        let writers: Vec<_> = (0..4)
+            .map(|n| {
+                let path = path.clone();
+                std::thread::spawn(move || {
+                    for i in 0..5 {
+                        let key = format!("k{n}-{i}");
+                        Knowledge::change(&path, "p", |k| {
+                            k.add_run(&run(&[(key.as_str(), 1)], vec![]))
+                        })
+                        .unwrap();
+                    }
+                })
+            })
+            .collect();
+        for writer in writers {
+            writer.join().unwrap();
+        }
+        let k = Knowledge::load(&path, "p").unwrap();
+        assert_eq!(k.runs_made, 20);
+        assert_eq!(k.coverage.len(), 20);
     }
 }

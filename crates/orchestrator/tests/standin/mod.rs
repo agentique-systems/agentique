@@ -29,6 +29,10 @@ pub struct Defects {
     pub internal_error: bool,
     /// “Sync” is listed enabled but refused as disabled.
     pub refuses_offered: bool,
+    /// History's “Freeze” leaves the instance running but silent.
+    pub hang: bool,
+    /// Undo ends the instance.
+    pub undo_crash: bool,
 }
 
 /// The Conversation, where a test instance offers it to agents.
@@ -58,9 +62,14 @@ struct Talk {
     composer: String,
     focused: bool,
     running: bool,
+    /// Observed since the request was sent: a turn that ends, ends at the
+    /// next observation.
+    seen: bool,
     request: String,
     reply: Option<String>,
     key_missing: Option<String>,
+    /// What its turns have spent.
+    usd: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -113,11 +122,15 @@ pub struct StandIn {
     pub drift: u32,
     /// The Conversation; without it, its composer is the Operator's.
     pub chat: Option<Chat>,
+    /// Typing takes 30 ms a character, as in a debug build.
+    pub slow_typing: bool,
     pub starts: u32,
     /// Every action asked for, with its agent.
     pub log: Vec<String>,
     flaky_fired: bool,
     alive: bool,
+    /// Running, but answering nothing.
+    silent: bool,
     s: Screen,
 }
 
@@ -130,10 +143,12 @@ impl StandIn {
             dialog_at_start: false,
             drift: 0,
             chat: None,
+            slow_typing: false,
             starts: 0,
             log: Vec::new(),
             flaky_fired: false,
             alive: false,
+            silent: false,
             s: Screen::fresh(false),
         }
     }
@@ -152,6 +167,7 @@ impl StandIn {
         if s.panel == "history" {
             list.push(button("checkpoint", "Checkpoint…", "inspector"));
             list.push(button("export", "Export", "inspector"));
+            list.push(button("freeze", "Freeze", "inspector"));
             list.push(button(
                 "archive-x",
                 if self.defects.unlabelled {
@@ -261,21 +277,15 @@ impl StandIn {
             return;
         }
         self.s.talk.running = true;
+        self.s.talk.seen = false;
         self.s.talk.request = text;
     }
 
-    /// Waits until the Assistant is idle: a turn that ends ends now (and
-    /// adds the part its request names); one that never ends times out.
-    fn wait(&mut self) -> Value {
-        if !self.s.talk.running {
-            return self.ok("wait", 0);
-        }
-        if self.chat.is_some_and(|c| c.turn != Turn::Ends) {
-            return Self::refuse(
-                "the wait timed out (screen surface, dialog none, status “Working”)",
-            );
-        }
+    /// A turn that ends: the part its request names is added, and it costs
+    /// a cent.
+    fn end_turn(&mut self) {
         self.s.talk.running = false;
+        self.s.talk.usd += 0.01;
         let request = self.s.talk.request.clone();
         if let Some(name) = request
             .strip_prefix("Add a part named ")
@@ -288,13 +298,25 @@ impl StandIn {
             self.s.revision += 1;
         }
         self.s.talk.reply = Some(format!("Done: {request}"));
-        self.ok("wait", 0)
+    }
+
+    /// How long typing `text` takes.
+    fn typing(&self, text: &str) -> u64 {
+        if self.slow_typing {
+            150 + 30 * text.chars().count() as u64
+        } else {
+            150
+        }
     }
 
     fn command(&mut self, id: &str) -> Value {
         match id {
             "undo" | "redo" if self.undo_refused => {
                 Self::refuse(&format!("refused: `{id}` is the Operator's to use"))
+            }
+            "undo" if self.defects.undo_crash => {
+                self.alive = false;
+                Self::refuse("ended")
             }
             "undo" => {
                 let Some(previous) = self.s.undo.pop() else {
@@ -370,6 +392,11 @@ impl StandIn {
                 return Err("the Studio closed the connection".into());
             }
             "export" => self.s.status = "Exported".into(),
+            "freeze" if self.defects.hang => {
+                self.silent = true;
+                return Err("no answer from the Studio: timed out".into());
+            }
+            "freeze" => self.s.status = "Frozen in time".into(),
             "refresh" if self.defects.flaky && !self.flaky_fired => {
                 self.flaky_fired = true;
                 self.alive = false;
@@ -413,6 +440,15 @@ impl Instance for StandIn {
         if !self.alive {
             return Err("the Studio closed the connection".into());
         }
+        if self.silent {
+            return Err("no answer from the Studio: timed out".into());
+        }
+        if self.s.talk.running {
+            if self.s.talk.seen && self.chat.is_some_and(|c| c.turn == Turn::Ends) {
+                self.end_turn();
+            }
+            self.s.talk.seen = true;
+        }
         let s = &self.s;
         let mut project =
             json!({ "folder": "/stand-in/project", "revision": s.revision, "saved": true });
@@ -437,6 +473,7 @@ impl Instance for StandIn {
                 "lastReply": s.talk.reply,
                 "keyMissing": s.talk.key_missing,
                 "notices": s.talk.key_missing.iter().collect::<Vec<_>>(),
+                "usd": s.talk.usd,
             },
             "controls": self.controls(),
             "commands": [
@@ -453,6 +490,9 @@ impl Instance for StandIn {
     fn act(&mut self, act: &Act) -> Result<Value, String> {
         if !self.alive {
             return Err("the Studio closed the connection".into());
+        }
+        if self.silent {
+            return Err("no answer from the Studio: timed out".into());
         }
         self.log.push(format!("{}: {}", act.agent, act.action));
         if self.drift > 0 {
@@ -471,9 +511,11 @@ impl Instance for StandIn {
                 if !self.chat.is_some_and(|c| c.offered) {
                     return Ok(Self::refuse("refused: the Conversation is the Operator's"));
                 }
-                self.s.talk.composer = action["text"].as_str().unwrap_or_default().to_string();
+                let text = action["text"].as_str().unwrap_or_default().to_string();
+                let took = self.typing(&text);
+                self.s.talk.composer = text;
                 self.s.talk.focused = true;
-                Ok(self.ok("fill", 150))
+                Ok(self.ok("fill", took))
             }
             "fill" => {
                 let id = action["control"].as_str().unwrap_or_default();
@@ -482,9 +524,11 @@ impl Instance for StandIn {
                         "stale: no control `{id}` is on screen now; observe again"
                     )));
                 }
-                self.s.name = action["text"].as_str().unwrap_or_default().to_string();
+                let text = action["text"].as_str().unwrap_or_default().to_string();
+                let took = self.typing(&text);
+                self.s.name = text;
                 self.s.focused = true;
-                Ok(self.ok("fill", 150))
+                Ok(self.ok("fill", took))
             }
             "key" => {
                 match action["keys"].as_str().unwrap_or_default() {
@@ -499,15 +543,21 @@ impl Instance for StandIn {
                 }
                 Ok(self.ok("key", 60))
             }
-            "wait" => Ok(self.wait()),
-            "command" => Ok(self.command(action["id"].as_str().unwrap_or_default())),
+            "command" => {
+                let answer = self.command(action["id"].as_str().unwrap_or_default());
+                if !self.alive {
+                    return Err("the Studio closed the connection".into());
+                }
+                Ok(answer)
+            }
             other => Ok(Self::refuse(&format!("there is no action `{other}`"))),
         }
     }
 
-    fn restart(&mut self) -> Result<(), String> {
+    fn restart(&mut self, _stop: &mut dyn FnMut() -> bool) -> Result<(), String> {
         self.starts += 1;
         self.alive = true;
+        self.silent = false;
         self.s = Screen::fresh(self.dialog_at_start);
         self.log.push(format!("start {}", self.starts));
         Ok(())

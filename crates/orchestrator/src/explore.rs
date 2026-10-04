@@ -11,12 +11,14 @@
 //! or a hang is a finding, after which the instance starts again from the
 //! same start. The run returns its steps, coverage, findings, decisions,
 //! cost, latency and recoveries; the testing knowledge (`knowledge`) keeps
-//! them across runs. [`Instance`] is the one place tests replace the GUI.
+//! them across runs. [`Instance`] is the one place tests replace the GUI;
+//! what the explorer reads from it is in `observed`.
 
 use crate::control::{Client, TestInstance};
-use crate::decide::{self, Answers, Decision, Failure, Question, Source, Way};
+use crate::decide::{self, Answers, Decision, Question, Source, Way};
 use crate::findings::{self, Check, Failed, Finding, Outcome};
 use crate::knowledge::Knowledge;
+use crate::observed::{self, Refusal};
 use agq_providers::ModelRef;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -35,12 +37,13 @@ pub trait Instance {
     /// Asks it to carry out an action; its answer (`ok`, or the refusal).
     /// `Err` when it did not answer.
     fn act(&mut self, act: &Act) -> Result<Value, String>;
-    /// A fresh start of the same build in the same start state.
-    fn restart(&mut self) -> Result<(), String>;
+    /// A fresh start of the same build in the same start state; `stop` is
+    /// asked while it starts.
+    fn restart(&mut self, stop: &mut dyn FnMut() -> bool) -> Result<(), String>;
     /// Whether it still runs.
     fn alive(&mut self) -> bool;
-    /// The folder its files belong in, if it has one: a dialog holding an
-    /// absolute path outside it is never confirmed.
+    /// The folder its files belong in, if it has one: a dialog holding a
+    /// path that leads outside it is never confirmed.
     fn folder(&self) -> Option<PathBuf>;
 }
 
@@ -55,10 +58,44 @@ pub struct Act<'a> {
     pub action: &'a Value,
 }
 
-/// How long the explorer waits for an answer: an observation or an action
-/// takes well under a second, so a Studio silent this long has stopped
-/// answering.
+/// What supervises a run: before each step, whether to go on (it may wait
+/// while the run is paused); during a long wait (a turn of the Assistant, a
+/// model's answer, a fresh start, a replay), whether it was stopped, which
+/// never waits. A closure goes on while it returns true and stops only
+/// between steps.
+pub trait Supervisor {
+    fn go_on(&mut self) -> bool;
+    fn stopped(&mut self) -> bool {
+        false
+    }
+}
+
+impl<F: FnMut() -> bool> Supervisor for F {
+    fn go_on(&mut self) -> bool {
+        self()
+    }
+}
+
+/// How long the explorer waits for an answer beyond what the action itself
+/// may take: an observation or a click takes well under a second, so a
+/// Studio silent this long has stopped answering.
 const ANSWER: Duration = Duration::from_secs(30);
+
+/// How long a test instance may take to start.
+const START: Duration = Duration::from_secs(120);
+
+/// How long an answer to `action` may take before the instance counts as
+/// not answering: what the action may take by the checks' budgets (a wait
+/// its own time; typing a keystroke's budget for each character, so a long
+/// request is not taken for a hang), and [`ANSWER`] more.
+pub fn answer_time(action: &Value) -> Duration {
+    let wait = action["timeoutMs"].as_u64().unwrap_or(0);
+    let typed = action["text"]
+        .as_str()
+        .map_or(0, |t| t.chars().count() as u64);
+    Duration::from_millis(wait + findings::ACTION_BUDGET_MS + findings::TYPED_CHARACTER_MS * typed)
+        + ANSWER
+}
 
 /// A test instance of a Studio executable, started fresh each time from a
 /// copy of the start project, in its own folder (its data, its working
@@ -134,11 +171,7 @@ impl Instance for LiveInstance {
     fn act(&mut self, act: &Act) -> Result<Value, String> {
         let client = self.client()?;
         let instance = client.instance.clone();
-        // A wait answers when its condition holds or its time is up.
-        let waits = act.action["timeoutMs"].as_u64().map(Duration::from_millis);
-        if let Some(wait) = waits {
-            client.answer_within(wait + ANSWER)?;
-        }
+        client.answer_within(answer_time(act.action))?;
         let answer = client.call(json!({
             "op": "act",
             "agent": act.agent,
@@ -148,13 +181,11 @@ impl Instance for LiveInstance {
             "observed": act.observed,
             "action": act.action,
         }));
-        if waits.is_some() {
-            client.answer_within(ANSWER)?;
-        }
+        client.answer_within(ANSWER)?;
         answer
     }
 
-    fn restart(&mut self) -> Result<(), String> {
+    fn restart(&mut self, stop: &mut dyn FnMut() -> bool) -> Result<(), String> {
         self.client = None;
         self.instance = None;
         let _ = std::fs::remove_dir_all(self.folder.join(format!("start-{}", self.starts)));
@@ -166,7 +197,16 @@ impl Instance for LiveInstance {
         // writes lies outside its folder.
         let mut instance =
             TestInstance::start(&self.exe, &base.join("instance"), &project, &project)?;
-        let mut client = instance.connect(Duration::from_secs(120))?;
+        // Connected in short slices, so a stop is heard while it starts.
+        let started = Instant::now();
+        let mut client = loop {
+            match instance.connect(Duration::from_millis(500)) {
+                Ok(client) => break client,
+                Err(error) if !instance.alive() || started.elapsed() >= START => return Err(error),
+                Err(_) if stop() => return Err("stopped".into()),
+                Err(_) => {}
+            }
+        };
         client.answer_within(ANSWER)?;
         self.instance = Some(instance);
         self.client = Some(client);
@@ -460,45 +500,58 @@ const OPERATORS_COMMANDS: [&str; 10] = [
 /// instance, which is the operating system's business, not the Studio's.
 const WINDOW_CONTROLS: &str = "window-";
 
-/// Whether `value` is an absolute path outside `folder`.
-fn outside(value: &str, folder: &Path) -> bool {
-    let absolute = Path::new(value).is_absolute()
-        || value.starts_with(['/', '\\'])
-        || value.get(1..3).is_some_and(|s| s == ":\\" || s == ":/");
-    let comparable = |s: &str| s.to_lowercase().replace('/', "\\");
-    absolute && !comparable(value).starts_with(&comparable(&folder.display().to_string()))
-}
-
-/// Whether the observation marks what is the Operator's own
-/// (`operatorOnly` on controls or commands): then its marks decide.
-fn marks_operators_own(observation: &Value) -> bool {
-    ["controls", "commands"].iter().any(|list| {
-        observation[*list]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .any(|c| c.get("operatorOnly").is_some())
-    })
-}
-
-/// The names of the elements in view (without their package), for requests
-/// that name two.
-fn existing_names(observation: &Value) -> Vec<String> {
-    observation["cards"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|c| c["element"].as_str())
-        .filter_map(|q| q.rsplit("::").next())
-        .map(|n| n.trim_matches('\'').to_string())
-        .filter(|n| !n.is_empty())
-        .take(2)
+/// A path's parts, split at either separator, without empty and `.` parts
+/// (case-folded on Windows, whose paths ignore case).
+fn parts(path: &str) -> Vec<String> {
+    path.split(['/', '\\'])
+        .filter(|p| !p.is_empty() && *p != ".")
+        .map(|p| {
+            if cfg!(windows) {
+                p.to_lowercase()
+            } else {
+                p.to_string()
+            }
+        })
         .collect()
 }
 
-/// The name of an element the model has, for the duplicate input: the
-/// first card in view or the selection's first (without its package).
-fn existing_name(observation: &Value) -> Option<String> {
+/// Whether `value` starts with a drive (`C:`).
+fn drive(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
+
+/// Whether a text, taken as a path, could lead anywhere a plain relative
+/// path cannot: it climbs (`..`), or is rooted, on a drive or a UNC path.
+pub fn climbs(value: &str) -> bool {
+    let value = value.trim();
+    value.starts_with(['/', '\\']) || drive(value) || parts(value).iter().any(|p| p == "..")
+}
+
+/// Whether a path in a dialog's field could make it write or open outside
+/// `folder`: one that climbs (`..`), one that is root-relative,
+/// drive-relative or UNC, and an absolute one not inside `folder`
+/// (compared part by part, so `run2` is not inside `run`). A plain relative
+/// path resolves in the instance's working folder, which is inside
+/// `folder`.
+pub fn escapes(value: &str, folder: &Path) -> bool {
+    let value = value.trim();
+    if !climbs(value) {
+        return false;
+    }
+    if parts(value).iter().any(|p| p == "..") {
+        return true;
+    }
+    let absolute = (drive(value) && value[2..].starts_with(['/', '\\']))
+        || (!cfg!(windows) && value.starts_with('/') && !value.starts_with("//"));
+    !absolute || !parts(value).starts_with(&parts(&folder.display().to_string()))
+}
+
+/// The names of elements the model has (without their packages): the cards
+/// in view, then the selection. The first is the duplicate input; requests
+/// that name two take the first two.
+fn existing_names(observation: &Value) -> Vec<String> {
+    let mut names: Vec<String> = Vec::new();
     let qualified = observation["cards"]
         .as_array()
         .into_iter()
@@ -510,10 +563,14 @@ fn existing_name(observation: &Value) -> Option<String> {
                 .into_iter()
                 .flatten()
                 .filter_map(Value::as_str),
-        )
-        .find(|name| !name.is_empty())?;
-    let last = qualified.rsplit("::").next().unwrap_or(qualified);
-    Some(last.trim_matches('\'').to_string())
+        );
+    for q in qualified {
+        let name = q.rsplit("::").next().unwrap_or(q).trim_matches('\'');
+        if !name.is_empty() && !names.iter().any(|n| n == name) {
+            names.push(name.to_string());
+        }
+    }
+    names
 }
 
 /// The actions that are valid on the screen observed and that it offers to
@@ -554,11 +611,11 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                 .into_iter()
                 .flatten()
                 .filter(|c| c["region"] == "dialog" && c["role"] == "field")
-                .any(|c| outside(c["value"].as_str().unwrap_or_default(), folder))
+                .any(|c| escapes(c["value"].as_str().unwrap_or_default(), folder))
         });
-    let existing = existing_name(observation);
     let names = existing_names(observation);
-    let marked = marks_operators_own(observation);
+    let existing = names.first().cloned();
+    let marked = observed::marks(observation);
     // What submitting would submit, by region: the input class of each of a
     // dialog's fields, the request class of the Conversation's composer. So
     // confirming or sending other inputs is other coverage.
@@ -598,12 +655,12 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
             || !findings::INTERACTIVE.contains(&role)
             || control["enabled"] == false
             || control["hidden"] == true
-            || control["operatorOnly"] == true
+            || observed::operator_only(control)
             || (!marked && OPERATORS_REGIONS.contains(&region))
             || NEVER_PREFIXES.iter().any(|p| id.starts_with(p))
             || id.starts_with(WINDOW_CONTROLS)
             || id.is_empty()
-            || (guarded && id == "dialog-confirm")
+            || (guarded && id == observed::CONFIRM)
         {
             continue;
         }
@@ -650,7 +707,8 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
         } else {
             let key = format!("{screen}|{region}|{id}|click");
             let about = format!("click the {role} “{label}” ({area})");
-            let submits = id == "dialog-confirm" || (region == "conversation" && id == "send");
+            let submits =
+                id == observed::CONFIRM || (region == "conversation" && id == observed::SEND);
             let (key, about) = if submits {
                 with_inputs(region, key, about)
             } else {
@@ -670,7 +728,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
         for command in observation["commands"].as_array().into_iter().flatten() {
             let id = command["id"].as_str().unwrap_or_default();
             if command["available"] == false
-                || command["operatorOnly"] == true
+                || observed::operator_only(command)
                 || (!marked && OPERATORS_COMMANDS.contains(&id))
                 || CHECKS_COMMANDS.contains(&id)
                 || id.is_empty()
@@ -856,8 +914,8 @@ fn rank(
 /// The models a run may ask, as the caller resolved them (the Orchestrator
 /// passes its `explorer`, `decisions` and `escalation` roles).
 pub struct Deciding<'a> {
-    /// Jev (its model and deadline are its own) and the models: a
-    /// [`decide::Decider`], or a stand-in in tests.
+    /// Jev (its model, threshold and deadline are its own) and the models:
+    /// a [`decide::Decider`], or a stand-in in tests.
     pub answers: &'a dyn Answers,
     /// The explorer's model and effort: the Model way.
     pub explorer: ModelRef,
@@ -865,13 +923,16 @@ pub struct Deciding<'a> {
     /// The model Jev escalates to, and its effort.
     pub escalation: ModelRef,
     pub escalation_effort: Option<String>,
-    /// Jev's confidence at or above which its answer is used.
-    pub threshold: f64,
 }
 
 /// How many of the rules' best actions Jev chooses among, and the model.
 const JEV_OPTIONS: usize = 8;
 const MODEL_OPTIONS: usize = 24;
+
+/// The output a Jev call may write (a choice and its distribution), and the
+/// requests one Jev decision may send (it retries twice).
+const JEV_OUTPUT_TOKENS: u64 = 200;
+const JEV_REQUESTS: f64 = 3.0;
 
 /// What the explorer chose, and how.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -887,16 +948,21 @@ pub struct Chosen {
     #[serde(default)]
     pub why: String,
     /// Who decided, with the confidence, time and cost (a failed Jev or
-    /// model call's too).
+    /// model call's too; `None` when a call's cost is unknown).
     pub decision: Decision,
+    /// What it counts toward the spend budget: its known cost, and for
+    /// each call of unknown cost the most that call could have cost.
+    #[serde(default)]
+    pub counted: f64,
 }
 
 const INSTRUCTIONS: &str = "An explorer tests the Agentique application by operating it toward a goal, to find problems. Choose its next action among the options; each is valid on this screen and safe in this test instance. Prefer behaviour not covered before, toward the areas the goal names; do not repeat the last actions; leave a dialog or panel once its behaviour is covered.";
 
-const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text; for the Conversation, the request to send), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains, and replyContains (text the Assistant's reply will hold)";
+const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text; for the Conversation, the request to send; never a path that leads elsewhere), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains, and replyContains (text the Assistant's reply will hold)";
 
 /// The typed question for the next action: the best `n` of the rules'
-/// order as options `a1`, `a2`, …
+/// order as options `a01`, `a02`, … (zero-padded, so they read in order),
+/// with the ids and the candidates they stand for.
 fn question(
     candidates: &[Candidate],
     ranked: &[usize],
@@ -904,13 +970,18 @@ fn question(
     state: &Value,
     knowledge: &Knowledge,
     covered: &BTreeMap<String, u32>,
-) -> (Question, Vec<usize>) {
-    let shown: Vec<usize> = ranked.iter().copied().take(n).collect();
+) -> (Question, Vec<(String, usize)>) {
+    let shown: Vec<(String, usize)> = ranked
+        .iter()
+        .copied()
+        .take(n)
+        .enumerate()
+        .map(|(i, index)| (format!("a{:02}", i + 1), index))
+        .collect();
     let mut options = BTreeMap::new();
     let mut coverage = serde_json::Map::new();
-    for (i, &index) in shown.iter().enumerate() {
-        let c = &candidates[index];
-        let id = format!("a{}", i + 1);
+    for (id, index) in &shown {
+        let c = &candidates[*index];
         let before = knowledge.count(&c.key);
         let here = covered.get(&c.key).copied().unwrap_or(0);
         let note = match (before, here) {
@@ -919,7 +990,7 @@ fn question(
             (_, n) => format!("covered {n} time(s) in this run"),
         };
         options.insert(id.clone(), Some(format!("{} — {note}", c.about)));
-        coverage.insert(id, json!({ "before": before, "thisRun": here }));
+        coverage.insert(id.clone(), json!({ "before": before, "thisRun": here }));
     }
     let mut state = state.clone();
     state["coverage"] = Value::Object(coverage);
@@ -933,25 +1004,34 @@ fn question(
     )
 }
 
+/// The candidate an option id stands for.
+fn shown_as(shown: &[(String, usize)], choice: &str) -> Option<usize> {
+    shown.iter().find(|(id, _)| id == choice).map(|(_, i)| *i)
+}
+
 /// Reads the model's answer: an option, text only for a field, an
 /// expectation in the grammar of observation criteria, and a reason.
 type Said = (Option<String>, Option<Value>, String);
 
 fn read_answer(
     said: &str,
-    shown: &[usize],
+    shown: &[(String, usize)],
     candidates: &[Candidate],
 ) -> Result<(String, Said), String> {
     let answer = decide::answer_object(said)?;
     let choice = answer["choice"].as_str().unwrap_or_default().to_string();
-    let index = choice
-        .strip_prefix('a')
-        .and_then(|n| n.parse::<usize>().ok())
-        .filter(|n| (1..=shown.len()).contains(n))
-        .ok_or_else(|| format!("the model chose `{choice}`, which is not an option"))?;
-    let candidate = &candidates[shown[index - 1]];
+    let candidate = &candidates[shown_as(shown, &choice)
+        .ok_or_else(|| format!("the model chose `{choice}`, which is not an option"))?];
     let input = match &answer["input"] {
         Value::Null => None,
+        // A dialog's field never gets a path that leads elsewhere.
+        Value::String(text)
+            if candidate.field && candidate.area.starts_with("dialog:") && climbs(text) =>
+        {
+            return Err(format!(
+                "`input` for {choice} is a path that could lead outside the test instance"
+            ));
+        }
         Value::String(text) if candidate.field => Some(text.chars().take(1000).collect()),
         // Nothing to type is no input, whatever the option.
         Value::String(text) if text.is_empty() => None,
@@ -989,9 +1069,51 @@ fn read_answer(
     Ok((choice, (input, expect, why)))
 }
 
+/// What a decision took: its time, its cost (`None` once a call's cost is
+/// unknown) and what it counts toward the spend budget.
+#[derive(Clone, Copy, Debug)]
+struct Spent {
+    millis: u64,
+    usd: Option<f64>,
+    counted: f64,
+}
+
+impl Spent {
+    const NOTHING: Spent = Spent {
+        millis: 0,
+        usd: Some(0.0),
+        counted: 0.0,
+    };
+
+    /// With a part that took `millis` and cost `usd`, or at most `bound`
+    /// when its cost is unknown.
+    fn and(self, millis: u64, usd: Option<f64>, bound: f64) -> Spent {
+        Spent {
+            millis: self.millis + millis,
+            usd: usd.and_then(|usd| Some(self.usd? + usd)),
+            counted: self.counted + usd.unwrap_or(bound),
+        }
+    }
+}
+
+/// The most a call of unknown cost could have cost (a request that was sent
+/// may be billed): its prompt, at two characters a token, and all the
+/// output it may write, at the model's price, or without one at the high
+/// price the Orchestrator charges unpriced usage ($15 and $75 a million
+/// tokens).
+fn at_most(model: &ModelRef, prompt: usize, output: u64) -> f64 {
+    let usage = agq_providers::Usage {
+        input_tokens: (prompt / 2) as u64,
+        output_tokens: output,
+        ..Default::default()
+    };
+    usage
+        .cost_usd(model)
+        .unwrap_or((usage.input_tokens as f64 * 15.0 + usage.output_tokens as f64 * 75.0) / 1e6)
+}
+
 /// The rules' choice, carrying the time and cost of what was tried first.
-fn by_rule(ranked: &[usize], spent: Option<(u64, Option<f64>)>, note: String) -> (usize, Chosen) {
-    let (millis, usd) = spent.unwrap_or((0, Some(0.0)));
+fn by_rule(ranked: &[usize], spent: Spent, note: String) -> (usize, Chosen) {
     (
         ranked[0],
         Chosen {
@@ -1002,109 +1124,142 @@ fn by_rule(ranked: &[usize], spent: Option<(u64, Option<f64>)>, note: String) ->
                 choice: String::new(),
                 source: Source::Rules,
                 confidence: None,
-                millis,
-                usd,
+                millis: spent.millis,
+                usd: spent.usd,
                 note,
             },
+            counted: spent.counted,
         },
     )
 }
 
-fn add(a: Option<f64>, b: Option<f64>) -> Option<f64> {
-    Some(a? + b?)
+fn joined(notes: [String; 2]) -> String {
+    notes
+        .into_iter()
+        .filter(|n| !n.is_empty())
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
-/// Chooses the next action by `way`: the rules' first; Jev among the
-/// rules' best, used when confident; the model among more of them, its
-/// answer checked; Jev escalating to the model. Whatever fails falls back
-/// to the rules, with its time and cost kept.
-#[allow(clippy::too_many_arguments)]
-fn choose(
-    way: Way,
-    deciding: &Deciding,
-    candidates: &[Candidate],
-    ranked: &[usize],
-    state: &Value,
-    knowledge: &Knowledge,
-    covered: &BTreeMap<String, u32>,
-) -> (usize, Chosen) {
-    if way == Way::Rules || way == Way::Cancel || candidates.len() == 1 {
-        return by_rule(ranked, None, String::new());
-    }
-    let model = |model: &ModelRef,
-                 effort: Option<&str>,
-                 spent: (u64, Option<f64>),
-                 note: String,
-                 source: Source| {
-        let (q, shown) = question(candidates, ranked, MODEL_OPTIONS, state, knowledge, covered);
-        let read = |said: &str| read_answer(said, &shown, candidates);
-        match decide::ask_model(deciding.answers, model, effort, &q, FORMAT, &read) {
+/// What `choose` decides with.
+struct Choosing<'a> {
+    deciding: &'a Deciding<'a>,
+    candidates: &'a [Candidate],
+    ranked: &'a [usize],
+    state: &'a Value,
+    knowledge: &'a Knowledge,
+    covered: &'a BTreeMap<String, u32>,
+}
+
+impl Choosing<'_> {
+    /// The model's choice among the rules' best, its answer checked; the
+    /// rules' when it fails.
+    fn model(
+        &self,
+        model: &ModelRef,
+        effort: Option<&str>,
+        spent: Spent,
+        note: String,
+        source: Source,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> (usize, Chosen) {
+        let (q, shown) = question(
+            self.candidates,
+            self.ranked,
+            MODEL_OPTIONS,
+            self.state,
+            self.knowledge,
+            self.covered,
+        );
+        // One call, and one more when the answer cannot be read.
+        let bound = at_most(model, q.prompt(FORMAT).len(), decide::MODEL_OUTPUT_TOKENS) * 2.0;
+        let read = |said: &str| read_answer(said, &shown, self.candidates);
+        match decide::ask_model(
+            self.deciding.answers,
+            model,
+            effort,
+            &q,
+            FORMAT,
+            &read,
+            stop,
+        ) {
             Ok((decision, (input, expect, why))) => {
-                let index = decision.choice[1..].parse::<usize>().unwrap_or(1);
+                let spent = spent.and(decision.millis, decision.usd, bound);
+                let index = shown_as(&shown, &decision.choice).unwrap_or(self.ranked[0]);
                 (
-                    shown[index - 1],
+                    index,
                     Chosen {
                         input,
                         expect,
                         why,
                         decision: Decision {
                             source,
-                            millis: spent.0 + decision.millis,
-                            usd: add(spent.1, decision.usd),
-                            note: [note, decision.note]
-                                .into_iter()
-                                .filter(|n| !n.is_empty())
-                                .collect::<Vec<_>>()
-                                .join("; "),
+                            millis: spent.millis,
+                            usd: spent.usd,
+                            note: joined([note, decision.note.clone()]),
                             ..decision
                         },
+                        counted: spent.counted,
                     },
                 )
             }
-            Err(Failure {
-                error, millis, usd, ..
-            }) => by_rule(
-                ranked,
-                Some((spent.0 + millis, add(spent.1, usd))),
-                [note, format!("the model failed: {error}")]
-                    .into_iter()
-                    .filter(|n| !n.is_empty())
-                    .collect::<Vec<_>>()
-                    .join("; "),
+            Err(failure) => by_rule(
+                self.ranked,
+                spent.and(failure.millis, failure.usd, bound),
+                joined([note, format!("the model failed: {}", failure.error)]),
             ),
         }
-    };
+    }
+}
+
+/// Chooses the next action by `way`: the rules' first; Jev among the
+/// rules' best, used when confident; the model among more of them, its
+/// answer checked; Jev escalating to the model. Whatever fails falls back
+/// to the rules, with its time and cost kept; `stop` is asked while a model
+/// is waited for.
+fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usize, Chosen) {
+    let deciding = choosing.deciding;
+    if matches!(way, Way::Rules | Way::Cancel) || choosing.candidates.len() == 1 {
+        return by_rule(choosing.ranked, Spent::NOTHING, String::new());
+    }
     if way == Way::Model {
-        return model(
+        return choosing.model(
             &deciding.explorer,
             deciding.effort.as_deref(),
-            (0, Some(0.0)),
+            Spent::NOTHING,
             String::new(),
             Source::Model,
+            stop,
         );
     }
-    let (q, shown) = question(candidates, ranked, JEV_OPTIONS, state, knowledge, covered);
-    let (spent, note) = match deciding.answers.ask_jev(&q) {
+    let (q, shown) = question(
+        choosing.candidates,
+        choosing.ranked,
+        JEV_OPTIONS,
+        choosing.state,
+        choosing.knowledge,
+        choosing.covered,
+    );
+    let answers = deciding.answers;
+    let bound = at_most(&answers.jev_model(), q.prompt("").len(), JEV_OUTPUT_TOKENS) * JEV_REQUESTS;
+    let (spent, note) = match answers.ask_jev(&q) {
         Ok(decision) => {
-            let index = decision
-                .choice
-                .strip_prefix('a')
-                .and_then(|n| n.parse::<usize>().ok())
-                .filter(|n| (1..=shown.len()).contains(n));
-            match index {
-                Some(index) if decision.confidence.unwrap_or(0.0) >= deciding.threshold => {
+            let spent = Spent::NOTHING.and(decision.millis, decision.usd, bound);
+            match shown_as(&shown, &decision.choice) {
+                Some(index) if decision.confidence.unwrap_or(0.0) >= answers.threshold() => {
                     return (
-                        shown[index - 1],
+                        index,
                         Chosen {
                             input: None,
                             expect: None,
                             why: String::new(),
                             decision,
+                            counted: spent.counted,
                         },
                     );
                 }
                 _ => (
-                    (decision.millis, decision.usd),
+                    spent,
                     format!(
                         "Jev chose {} with confidence {:.2}",
                         decision.choice,
@@ -1113,18 +1268,22 @@ fn choose(
                 ),
             }
         }
-        Err(failure) => ((failure.millis, failure.usd), failure.error),
+        Err(failure) => (
+            Spent::NOTHING.and(failure.millis, failure.usd, bound),
+            failure.error,
+        ),
     };
     if way == Way::Escalating {
-        model(
+        choosing.model(
             &deciding.escalation,
             deciding.escalation_effort.as_deref(),
             spent,
             note,
             Source::Escalated,
+            stop,
         )
     } else {
-        by_rule(ranked, Some(spent), note)
+        by_rule(choosing.ranked, spent, note)
     }
 }
 
@@ -1137,7 +1296,8 @@ pub struct Plan {
     pub way: Way,
     /// Successive runs take different paths among equally good actions.
     pub seed: u64,
-    /// Budgets: the explorer's actions, seconds and US dollars.
+    /// Budgets: actions (the explorer's and its recoveries'), seconds and
+    /// US dollars.
     pub steps: u32,
     pub seconds: u64,
     pub usd: f64,
@@ -1145,6 +1305,25 @@ pub struct Plan {
     pub changes: Changes,
     /// The start state, as findings name it (the start project).
     pub start: String,
+    /// Whether the explorer may send requests to the instance's Assistant.
+    /// Off by default: until exploration instances are given their own
+    /// credentials (W12.5), a request would spend on whatever key the
+    /// instance has.
+    #[serde(default)]
+    pub conversation: bool,
+    /// How long a turn of the Assistant may take, and Stop to end one.
+    #[serde(default = "turn_budget")]
+    pub turn_ms: u64,
+    #[serde(default = "stop_budget")]
+    pub stop_ms: u64,
+}
+
+fn turn_budget() -> u64 {
+    findings::TURN_BUDGET_MS
+}
+
+fn stop_budget() -> u64 {
+    findings::STOP_BUDGET_MS
 }
 
 /// A step the run took: the action, how it was chosen and what came of it.
@@ -1167,7 +1346,7 @@ pub struct Taken {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Recovery {
-    /// The explorer's step it happened at.
+    /// The run's action count it happened at.
     pub at: u32,
     /// `observed again`, `cancelled`, `escape` or `restarted`.
     pub kind: String,
@@ -1200,8 +1379,9 @@ pub struct Run {
     pub build: String,
     pub commit: String,
     pub started: String,
-    /// The explorer's actions (its budget counts these).
-    pub chosen: u32,
+    /// The actions its step budget counts: the explorer's, and those it
+    /// took to recover (Escape, a dialog cancelled).
+    pub actions: u32,
     pub steps: Vec<Taken>,
     /// Each coverage key covered, with how often.
     pub covered: BTreeMap<String, u32>,
@@ -1214,9 +1394,16 @@ pub struct Run {
     pub unwanted: Unwanted,
     /// Each decision's time.
     pub latencies: Vec<u64>,
-    /// Spent on decisions (known prices), and decisions with unknown cost.
+    /// What the run counts as spent: its decisions' known costs, the most
+    /// each call of unknown cost could have cost, and what the instance's
+    /// Assistant spent where the observation says. The spend budget is
+    /// held against this.
     pub usd: f64,
+    /// Decisions whose cost is unknown (counted at most).
     pub unpriced: u32,
+    /// What the instance's Assistant spent, where the observation says.
+    #[serde(default)]
+    pub assistant_usd: f64,
     pub notes: Vec<String>,
     /// Conditions of the environment the run met, such as the Assistant
     /// needing a key: never findings.
@@ -1227,15 +1414,20 @@ pub struct Run {
     pub seconds: f64,
 }
 
+/// The value at percentile `p` (0 to 1) of `values`; 0 when there are none.
+pub fn percentile(values: &[u64], p: f64) -> u64 {
+    let mut sorted = values.to_vec();
+    sorted.sort_unstable();
+    if sorted.is_empty() {
+        return 0;
+    }
+    sorted[((sorted.len() - 1) as f64 * p).round() as usize]
+}
+
 impl Run {
     /// A latency percentile of the decisions.
     pub fn latency(&self, p: f64) -> u64 {
-        let mut sorted = self.latencies.clone();
-        sorted.sort_unstable();
-        if sorted.is_empty() {
-            return 0;
-        }
-        sorted[((sorted.len() - 1) as f64 * p).round() as usize]
+        percentile(&self.latencies, p)
     }
 }
 
@@ -1243,9 +1435,20 @@ impl Run {
 /// gives up on it.
 const RESTARTS: usize = 4;
 
+/// Escapes in a row, with nothing carried out between them, before the run
+/// starts the instance again.
+const ESCAPES: u32 = 2;
+
+/// Whether a run must stop now: its supervisor stopped it, or its time is
+/// up. Asked during long waits.
+fn halted(supervisor: &mut dyn Supervisor, started: Instant, seconds: u64) -> bool {
+    supervisor.stopped() || started.elapsed().as_secs() >= seconds
+}
+
 /// The explorer's state during a run.
 struct Explorer<'a> {
     instance: &'a mut dyn Instance,
+    supervisor: &'a mut dyn Supervisor,
     plan: &'a Plan,
     deciding: &'a Deciding<'a>,
     knowledge: &'a Knowledge,
@@ -1260,33 +1463,38 @@ struct Explorer<'a> {
     expected_dialog: Value,
     /// Keys refused by rule in this run: not chosen again.
     avoid: BTreeSet<String>,
-    /// Keys whose change was checked with undo, and whether undo can be
-    /// checked here at all.
+    /// Keys whose change was checked with undo, and whether undo is the
+    /// Operator's here (then it is not checked again).
     undo_checked: BTreeSet<String>,
-    undo_unavailable: bool,
+    undo_refused: bool,
     /// What the explorer expected of a request it sent: checked when its
     /// turn has ended (on the wait for it), not while it runs.
     pending_expect: Option<Value>,
+    /// What the instance's Assistant had spent at the last observation.
+    assistant_seen: Option<f64>,
+    /// Escapes out of dead ends since an action was last carried out.
+    escapes: u32,
     reported: BTreeSet<String>,
     restarts: usize,
     started: Instant,
 }
 
 /// Explores `instance` as `plan` says, deciding by `plan.way` with
-/// `deciding`, preferring what `knowledge` has not covered. `hold` is asked
-/// before each step whether to go on (it may wait while the run is
-/// paused). Starts the instance fresh, so every finding's steps begin at
-/// the start.
+/// `deciding`, preferring what `knowledge` has not covered. `supervisor` is
+/// asked before each step whether to go on (it may wait while the run is
+/// paused) and during long waits whether it was stopped. Starts the
+/// instance fresh, so every finding's steps begin at the start.
 pub fn explore(
     instance: &mut dyn Instance,
     plan: &Plan,
     deciding: &Deciding,
     knowledge: &Knowledge,
-    hold: &mut dyn FnMut() -> bool,
+    supervisor: &mut dyn Supervisor,
 ) -> Run {
     let folder = instance.folder();
     let mut explorer = Explorer {
         instance,
+        supervisor,
         plan,
         deciding,
         knowledge,
@@ -1297,7 +1505,7 @@ pub fn explore(
             build: String::new(),
             commit: String::new(),
             started: agq_launcher::now(),
-            chosen: 0,
+            actions: 0,
             steps: Vec::new(),
             covered: BTreeMap::new(),
             new_coverage: Vec::new(),
@@ -1308,6 +1516,7 @@ pub fn explore(
             latencies: Vec::new(),
             usd: 0.0,
             unpriced: 0,
+            assistant_usd: 0.0,
             notes: Vec::new(),
             conditions: Vec::new(),
             ended: String::new(),
@@ -1318,13 +1527,15 @@ pub fn explore(
         expected_dialog: Value::Null,
         avoid: BTreeSet::new(),
         undo_checked: BTreeSet::new(),
-        undo_unavailable: false,
+        undo_refused: false,
         pending_expect: None,
+        assistant_seen: None,
+        escapes: 0,
         reported: BTreeSet::new(),
         restarts: 0,
         started: Instant::now(),
     };
-    explorer.run.ended = match explorer.go(hold) {
+    explorer.run.ended = match explorer.go() {
         Ok(()) => "the step budget was used".into(),
         Err(why) => why,
     };
@@ -1340,28 +1551,43 @@ pub fn explore(
 }
 
 impl Explorer<'_> {
-    fn go(&mut self, hold: &mut dyn FnMut() -> bool) -> Result<(), String> {
-        if way_is_for_dialogs(self.plan.way) {
+    fn go(&mut self) -> Result<(), String> {
+        if self.plan.way == Way::Cancel {
             return Err("the cancelling rule decides dialogs in the way, not exploration".into());
         }
         self.start(false)?;
-        while self.run.chosen < self.plan.steps {
-            if !hold() {
+        while self.run.actions < self.plan.steps {
+            if !self.supervisor.go_on() {
                 return Err("stopped".into());
             }
-            if self.started.elapsed().as_secs() >= self.plan.seconds {
-                return Err("the time budget was used".into());
-            }
-            if self.run.usd >= self.plan.usd {
-                return Err("the spend budget was used".into());
-            }
+            self.within_budgets()?;
             self.step()?;
         }
         // A request sent last: its turn ends (and is checked) within the run.
-        if findings::turn_running(&self.now) {
+        if observed::turn_running(&self.now) {
             self.await_turn()?;
         }
         Ok(())
+    }
+
+    /// Whether time and money are left.
+    fn within_budgets(&self) -> Result<(), String> {
+        if self.started.elapsed().as_secs() >= self.plan.seconds {
+            return Err("the time budget was used".into());
+        }
+        if self.run.usd >= self.plan.usd {
+            return Err("the spend budget was used".into());
+        }
+        Ok(())
+    }
+
+    /// Why a long wait ended early: stopped, or out of time.
+    fn why_halted(&mut self) -> String {
+        if self.supervisor.stopped() {
+            "stopped".into()
+        } else {
+            "the time budget was used".into()
+        }
     }
 
     /// Starts the instance (again), from the same start.
@@ -1376,9 +1602,19 @@ impl Explorer<'_> {
         }
         self.since.clear();
         self.expected_dialog = Value::Null;
-        self.instance
-            .restart()
-            .map_err(|e| format!("the test instance did not start: {e}"))?;
+        self.assistant_seen = None;
+        self.escapes = 0;
+        let (supervisor, started, seconds) =
+            (&mut *self.supervisor, self.started, self.plan.seconds);
+        let restarted = self
+            .instance
+            .restart(&mut || halted(supervisor, started, seconds));
+        if let Err(error) = restarted {
+            if halted(self.supervisor, started, seconds) {
+                return Err(self.why_halted());
+            }
+            return Err(format!("the test instance did not start: {error}"));
+        }
         let now = self
             .instance
             .observe()
@@ -1405,17 +1641,24 @@ impl Explorer<'_> {
         Ok(())
     }
 
-    /// The areas an observation shows, and the conditions it reports.
+    /// The areas an observation shows, the conditions it reports, and what
+    /// the instance's Assistant spent since the last one.
     fn seen(&mut self, observation: &Value) {
         for control in observation["controls"].as_array().into_iter().flatten() {
             if control["hidden"] != true {
                 self.run.areas.insert(area(observation, control));
             }
         }
-        if let Some(condition) = findings::needs_key(observation)
+        if let Some(condition) = observed::needs_key(observation)
             && !self.run.conditions.contains(&condition)
         {
             self.run.conditions.push(condition);
+        }
+        if let Some(spent) = observed::assistant_spend(observation) {
+            let since = (spent - self.assistant_seen.unwrap_or(0.0)).max(0.0);
+            self.run.usd += since;
+            self.run.assistant_usd += since;
+            self.assistant_seen = Some(spent);
         }
     }
 
@@ -1435,32 +1678,24 @@ impl Explorer<'_> {
         }
     }
 
-    /// The instance ended or stopped answering after `steps`: a finding,
-    /// and a fresh start.
+    /// The instance ended or stopped answering after the steps since the
+    /// start: a finding, and a fresh start.
     fn ended(&mut self, error: &str) -> Result<(), String> {
-        let message = findings::ended(self.instance);
         let control = self
             .since
             .last()
             .map(|s| s.target().to_string())
             .unwrap_or_default();
+        let failed = findings::ended(self.instance, &control, error);
         let steps = self.since.clone();
-        self.report(
-            vec![Failed {
-                check: Check::Answers,
-                control,
-                message,
-                evidence: json!({ "error": error }),
-            }],
-            &steps,
-        );
+        self.report(vec![failed], &steps);
         self.recover("restarted", format!("the instance ended: {error}"));
         self.start(true)
     }
 
     fn recover(&mut self, kind: &str, detail: String) {
         self.run.recoveries.push(Recovery {
-            at: self.run.chosen,
+            at: self.run.actions,
             kind: kind.into(),
             detail,
         });
@@ -1488,11 +1723,14 @@ impl Explorer<'_> {
         }
         // A turn of the Assistant runs (a request was sent): its end is
         // waited for before anything else.
-        if findings::turn_running(&self.now) {
+        if observed::turn_running(&self.now) {
             return self.await_turn();
         }
         let mut candidates = candidates(&self.now, self.folder.as_deref());
         candidates.retain(|c| !self.avoid.contains(&c.key));
+        if !self.plan.conversation {
+            candidates.retain(|c| c.area != "conversation");
+        }
         if candidates.is_empty() {
             return self.dead_end();
         }
@@ -1504,20 +1742,24 @@ impl Explorer<'_> {
             self.plan.seed,
         );
         let state = self.state();
-        let (index, chosen) = choose(
-            self.plan.way,
-            self.deciding,
-            &candidates,
-            &ranked,
-            &state,
-            self.knowledge,
-            &self.run.covered,
-        );
-        self.run.chosen += 1;
+        let choosing = Choosing {
+            deciding: self.deciding,
+            candidates: &candidates,
+            ranked: &ranked,
+            state: &state,
+            knowledge: self.knowledge,
+            covered: &self.run.covered,
+        };
+        let (supervisor, started, seconds) =
+            (&mut *self.supervisor, self.started, self.plan.seconds);
+        let (index, chosen) = choose(self.plan.way, &choosing, &mut || {
+            halted(supervisor, started, seconds)
+        });
+        self.run.actions += 1;
         self.run.latencies.push(chosen.decision.millis);
-        match chosen.decision.usd {
-            Some(usd) => self.run.usd += usd,
-            None => self.run.unpriced += 1,
+        self.run.usd += chosen.counted;
+        if chosen.decision.usd.is_none() {
+            self.run.unpriced += 1;
         }
         let candidate = candidates[index].clone();
         let mut action = candidate.action.clone();
@@ -1526,10 +1768,11 @@ impl Explorer<'_> {
             action["text"] = json!(text);
             // A request for the Conversation's composer, an input for any
             // other field.
+            let names = existing_names(&self.now);
             let class = if candidate.area == "conversation" {
-                Request::of(text, &existing_names(&self.now))
+                Request::of(text, &names)
             } else {
-                Input::of(text, existing_name(&self.now).as_deref()).name()
+                Input::of(text, names.first().map(String::as_str)).name()
             };
             key = format!(
                 "{}|{class}",
@@ -1571,16 +1814,15 @@ impl Explorer<'_> {
                 }
             };
             let error = answer["error"].as_str().unwrap_or_default().to_string();
-            if answer["ok"] == false && error.starts_with("refused") {
+            let refusal = observed::refusal(&answer);
+            if refusal == Refusal::Rule {
                 // The Operator's own, by rule: never a finding, never again.
                 self.run.unwanted.refused += 1;
                 self.avoid.insert(step.key.clone());
                 self.record(&step, chosen, "refused", error, None);
                 return Ok(());
             }
-            if answer["ok"] == false
-                && (error.starts_with("stale") || findings::refused_as_gone(&error))
-            {
+            if matches!(refusal, Refusal::Stale | Refusal::Gone) {
                 let Some(after) = self.observe()? else {
                     return Ok(());
                 };
@@ -1623,6 +1865,9 @@ impl Explorer<'_> {
             } else {
                 "ok"
             };
+            if outcome == "ok" {
+                self.escapes = 0;
+            }
             let took = answer["tookMs"].as_u64();
             *self.run.covered.entry(step.key.clone()).or_default() += 1;
             self.since.push(step.clone());
@@ -1633,7 +1878,7 @@ impl Explorer<'_> {
             // A request sent: what the explorer expected of it is checked
             // when its turn has ended, on the wait for it.
             let mut step = step;
-            if findings::turn_running(&after) && step.expect.is_some() {
+            if observed::turn_running(&after) && step.expect.is_some() {
                 self.pending_expect = step.expect.take();
                 if let Some(last) = self.since.last_mut() {
                     last.expect = None;
@@ -1652,8 +1897,8 @@ impl Explorer<'_> {
             let before = std::mem::replace(&mut self.now, after);
             self.expected_dialog = self.now["dialog"].clone();
             if answer["ok"] != false
-                && !self.undo_unavailable
-                && !findings::turn_running(&self.now)
+                && !self.undo_refused
+                && !observed::turn_running(&self.now)
                 // Undo waits for an open dialog (a rename after an insert).
                 && self.now["dialog"].is_null()
                 && findings::changed_model(&before, &self.now)
@@ -1670,6 +1915,8 @@ impl Explorer<'_> {
         let after = self.now.clone();
         match findings::undo_restores(self.instance, step, before, &after, &self.plan.goal) {
             Ok(undone) => {
+                // Found after the action that changed the model: a replay
+                // takes the steps to it and makes the check again.
                 let steps = self.since.clone();
                 self.report(undone.failed.into_iter().collect(), &steps);
                 for taken in undone.steps {
@@ -1681,13 +1928,20 @@ impl Explorer<'_> {
                 self.now = undone.now;
                 Ok(())
             }
-            Err(reason) => {
-                // Refused by rule or unavailable: no finding. Refused as the
-                // Operator's, it is not tried again in this run. Whether it
-                // did anything is unknown, so the state is observed again.
-                if reason.contains("Operator's") {
-                    self.undo_unavailable = true;
+            Err(findings::Unchecked::Ended { error, steps }) => {
+                // The instance ended on undo or redo: found with that step.
+                self.run.unwanted.ended += 1;
+                for taken in steps {
+                    self.record(&taken, None, "ended", error.clone(), None);
+                    self.since.push(taken);
                 }
+                self.ended(&error)
+            }
+            Err(findings::Unchecked::Refused { reason, by_rule }) => {
+                // No finding. Refused as the Operator's, it is not tried
+                // again in this run. Whether it did anything is unknown, so
+                // the state is observed again.
+                self.undo_refused |= by_rule;
                 let note = format!("undo could not be checked: {reason}");
                 if !self.run.notes.contains(&note) {
                     self.run.notes.push(note);
@@ -1701,24 +1955,12 @@ impl Explorer<'_> {
         }
     }
 
-    /// Waits for the running turn to end, through the control interface's
-    /// `wait` (until the Assistant and every job are idle), within
-    /// [`findings::TURN_BUDGET_MS`]. A turn past its budget is a finding,
-    /// and Stop must then end it within [`findings::STOP_BUDGET_MS`]; one
-    /// that will not stop leaves a fresh start.
+    /// Waits for the running turn to end, observing only the
+    /// Conversation's state, within the plan's turn budget. A turn past its
+    /// budget is a finding, and Stop must then end it within the stop
+    /// budget; one that will not stop leaves a fresh start.
     fn await_turn(&mut self) -> Result<(), String> {
-        let screen = screen_of(&self.now);
-        let wait = |label: &str, ms: u64| Step {
-            action: json!({ "kind": "wait", "until": { "idle": true }, "timeoutMs": ms }),
-            key: format!("{screen}|conversation|turn|wait"),
-            screen: screen.clone(),
-            label: label.into(),
-            expect: None,
-            by: "wait".into(),
-        };
-        let mut turn = wait("the turn", findings::TURN_BUDGET_MS);
-        turn.expect = self.pending_expect.take();
-        let ended = self.act_and_check(turn, "wait for the turn to end")?;
+        let ended = self.await_and_check("the turn", self.plan.turn_ms)?;
         if ended != Some(false) {
             return Ok(());
         }
@@ -1726,33 +1968,86 @@ impl Explorer<'_> {
             .as_array()
             .into_iter()
             .flatten()
-            .any(|c| c["region"] == "conversation" && c["id"] == "stop" && c["enabled"] != false);
+            .any(|c| {
+                c["region"] == "conversation" && c["id"] == observed::STOP && c["enabled"] != false
+            });
         if stop {
+            let screen = screen_of(&self.now);
             let step = Step {
-                action: json!({ "kind": "click", "control": "stop" }),
-                key: format!("{screen}|conversation|stop|click"),
-                screen: screen.clone(),
+                action: json!({ "kind": "click", "control": observed::STOP }),
+                key: format!("{screen}|conversation|{}|click", observed::STOP),
+                screen,
                 label: "Stop".into(),
                 expect: None,
                 by: "check".into(),
             };
-            if self.act_and_check(step, "stop a turn past its budget")? == Some(true) {
-                let stopped = self.act_and_check(
-                    wait("the stop", findings::STOP_BUDGET_MS),
-                    "wait for Stop to end the turn",
-                )?;
-                if stopped != Some(false) {
-                    return Ok(());
-                }
+            if self.act_and_check(step, "stop a turn past its budget")? == Some(true)
+                && self.await_and_check("the stop", self.plan.stop_ms)? != Some(false)
+            {
+                return Ok(());
             }
         }
         self.recover("restarted", "a turn of the Assistant would not end".into());
         self.start(true)
     }
 
-    /// Takes a step the explorer did not choose (a wait, Stop) and checks
-    /// what it did: whether it was carried out, `None` when the instance
-    /// ended (and was started again).
+    /// Waits for a turn to end (`label`: `the turn`, or `the stop` after
+    /// Stop) as a step a replay waits for too, and checks it: whether it
+    /// ended in time, `None` when the instance ended (and was started
+    /// again).
+    fn await_and_check(&mut self, label: &str, budget_ms: u64) -> Result<Option<bool>, String> {
+        let screen = screen_of(&self.now);
+        let step = Step {
+            action: json!({ "kind": "await-turn", "timeoutMs": budget_ms }),
+            key: format!("{screen}|conversation|turn|await"),
+            screen,
+            label: label.into(),
+            expect: if label == "the turn" {
+                self.pending_expect.take()
+            } else {
+                None
+            },
+            by: "wait".into(),
+        };
+        let (supervisor, started, seconds) =
+            (&mut *self.supervisor, self.started, self.plan.seconds);
+        let waited = findings::await_turn(self.instance, budget_ms, &mut || {
+            halted(supervisor, started, seconds)
+        });
+        match waited {
+            findings::Waited::Stopped => Err(self.why_halted()),
+            findings::Waited::Gone(error) => {
+                self.record(&step, None, "ended", error.clone(), None);
+                self.since.push(step);
+                self.ended(&error)?;
+                Ok(None)
+            }
+            findings::Waited::Done { answer, after } => {
+                let ok = answer["ok"] != false;
+                let error = answer["error"].as_str().unwrap_or_default().to_string();
+                let took = answer["tookMs"].as_u64();
+                self.record(&step, None, if ok { "ok" } else { "failed" }, error, took);
+                self.since.push(step.clone());
+                self.seen(&after);
+                let failed = findings::failures(&Outcome {
+                    before: &self.now,
+                    step: Some(&step),
+                    answer: Some(&answer),
+                    after: &after,
+                });
+                let steps = self.since.clone();
+                self.report(failed, &steps);
+                self.note_reply(&step, &after);
+                self.expected_dialog = after["dialog"].clone();
+                self.now = after;
+                Ok(Some(ok))
+            }
+        }
+    }
+
+    /// Takes a step the explorer did not choose (Stop) and checks what it
+    /// did: whether it was carried out, `None` when the instance ended (and
+    /// was started again).
     fn act_and_check(&mut self, step: Step, why: &str) -> Result<Option<bool>, String> {
         let act = Act {
             agent: AGENT,
@@ -1785,7 +2080,6 @@ impl Explorer<'_> {
         });
         let steps = self.since.clone();
         self.report(failed, &steps);
-        self.note_reply(&step, &after);
         self.expected_dialog = after["dialog"].clone();
         self.now = after;
         Ok(Some(ok))
@@ -1824,8 +2118,8 @@ impl Explorer<'_> {
         });
     }
 
-    /// A dialog in the way: cancelled by rule, or a fresh start when it
-    /// cannot be (an approval, or no Cancel).
+    /// A dialog in the way: cancelled by rule (an action of the run's), or
+    /// a fresh start when it cannot be (an approval, or no Cancel).
     fn cancel_dialog(&mut self) -> Result<(), String> {
         let dialog = self.now["dialog"].as_str().unwrap_or_default().to_string();
         let decision = decide::Situation::from_observation(&self.plan.goal, &self.now)
@@ -1833,6 +2127,7 @@ impl Explorer<'_> {
         match decision {
             Some(decision) if decision.choice != decide::WAIT => {
                 self.recover("cancelled", format!("the {dialog} dialog was in the way"));
+                self.run.actions += 1;
                 let step = Step {
                     action: json!({ "kind": "click", "control": decision.choice }),
                     key: format!("{}|dialog|{}|click", screen_of(&self.now), decision.choice),
@@ -1862,17 +2157,15 @@ impl Explorer<'_> {
         }
     }
 
-    /// Nothing valid to do: Escape, then a fresh start.
+    /// Nothing valid to do: Escape (an action of the run's), and after
+    /// [`ESCAPES`] of them with nothing carried out between, a fresh start.
     fn dead_end(&mut self) -> Result<(), String> {
-        let escaped = self
-            .run
-            .recoveries
-            .last()
-            .is_some_and(|r| r.kind == "escape" && r.at == self.run.chosen);
-        if escaped || !self.now["approval"].is_null() {
+        if self.escapes >= ESCAPES || !self.now["approval"].is_null() {
             self.recover("restarted", "no valid action".into());
             return self.start(true);
         }
+        self.escapes += 1;
+        self.run.actions += 1;
         self.recover("escape", "no valid action".into());
         let step = Step {
             action: json!({ "kind": "key", "keys": "escape" }),
@@ -1882,7 +2175,11 @@ impl Explorer<'_> {
             expect: None,
             by: "recovery".into(),
         };
-        self.take(step, None, "no valid action: Escape")
+        let escapes = self.escapes;
+        self.take(step, None, "no valid action: Escape")?;
+        // Escape "carried out" is no progress out of a dead end.
+        self.escapes = escapes;
+        Ok(())
     }
 
     /// The state a typed decision reads.
@@ -1912,16 +2209,12 @@ impl Explorer<'_> {
             "selection": now["selection"],
             "status": now["status"].as_str().unwrap_or_default().chars().take(200).collect::<String>(),
             "conversation": {
-                "running": findings::turn_running(now),
-                "lastReply": now["conversation"]["lastReply"].as_str().unwrap_or_default().chars().take(300).collect::<String>(),
+                "running": observed::turn_running(now),
+                "lastReply": observed::last_reply(now).chars().take(300).collect::<String>(),
             },
             "lastActions": last,
         })
     }
-}
-
-fn way_is_for_dialogs(way: Way) -> bool {
-    way == Way::Cancel
 }
 
 /// An action in words.
@@ -2150,30 +2443,91 @@ mod tests {
         let list = candidates(&observation(), None);
         let field = list.iter().position(|c| c.field).unwrap();
         let button = list.iter().position(|c| !c.field).unwrap();
-        let shown = vec![button, field];
+        let shown = vec![("a01".to_string(), button), ("a02".to_string(), field)];
         let read = |said: &str| read_answer(said, &shown, &list);
         let (choice, (input, expect, why)) = read(
-            r#"{"choice": "a2", "input": "Shop", "expect": {"dialog": null}, "why": "try a name"}"#,
+            r#"{"choice": "a02", "input": "Shop", "expect": {"dialog": null}, "why": "try a name"}"#,
         )
         .unwrap();
         assert_eq!(
             (choice.as_str(), input.as_deref(), why.as_str()),
-            ("a2", Some("Shop"), "try a name")
+            ("a02", Some("Shop"), "try a name")
+        );
+        assert!(
+            read(r#"{"choice": "a2"}"#).is_err(),
+            "only the ids as given"
         );
         assert_eq!(expect, Some(json!({ "dialog": null })));
-        assert!(read(r#"{"choice": "a3"}"#).is_err(), "not an option");
+        assert!(read(r#"{"choice": "a03"}"#).is_err(), "not an option");
         assert!(
-            read(r#"{"choice": "a1", "input": "x"}"#).is_err(),
+            read(r#"{"choice": "a01", "input": "x"}"#).is_err(),
             "text for a button"
         );
         // An empty text for a button is no input.
-        let (_, (input, _, _)) = read(r#"{"choice": "a1", "input": ""}"#).unwrap();
+        let (_, (input, _, _)) = read(r#"{"choice": "a01", "input": ""}"#).unwrap();
         assert_eq!(input, None);
         assert!(
-            read(r#"{"choice": "a1", "expect": {"pixels": 3}}"#).is_err(),
+            read(r#"{"choice": "a01", "expect": {"pixels": 3}}"#).is_err(),
             "not checkable"
         );
         assert!(read("no answer").is_err());
+    }
+
+    #[test]
+    fn a_path_that_leads_outside_the_instance_is_never_confirmed_or_typed() {
+        let folder = Path::new("C:\\explore\\run");
+        // Plain relative paths stay in the instance's working folder.
+        for inside in [
+            "Shop",
+            "a/b\\c",
+            "Probe/x",
+            "",
+            "C:\\explore\\run\\start-1\\Shop",
+        ] {
+            assert!(!escapes(inside, folder), "{inside}");
+        }
+        for outside in [
+            "..\\..\\..\\..\\..\\Desktop\\X",
+            "Shop/../../x",
+            "C:\\explore\\run2\\Shop",
+            "C:\\explore",
+            "\\\\server\\share\\x",
+            "//server/share/x",
+            "\\Users\\x",
+            "C:x",
+            "D:\\explore\\run\\x",
+        ] {
+            assert!(escapes(outside, folder), "{outside}");
+        }
+        // The guard on a dialog's confirm and Enter.
+        let mut o = observation();
+        o["dialog"] = json!("OpenProject");
+        o["controls"] = json!([
+            { "id": "Project folder", "label": "Project folder", "role": "field", "region": "dialog", "value": "..\\..\\Desktop\\X", "focused": true },
+            { "id": "dialog-confirm", "label": "Open", "role": "button", "region": "dialog" }
+        ]);
+        let list = candidates(&o, Some(folder));
+        assert!(!list.iter().any(|c| c.action["control"] == "dialog-confirm"));
+        assert!(!list.iter().any(|c| c.action["keys"] == "enter"));
+        // A model may not type one into a dialog's field.
+        let field = list.iter().position(|c| c.field).unwrap();
+        let shown = vec![("a01".to_string(), field)];
+        for text in ["..\\..\\Desktop\\X", "\\\\server\\share", "C:\\x", "/etc"] {
+            let said = json!({ "choice": "a01", "input": text }).to_string();
+            assert!(read_answer(&said, &shown, &list).is_err(), "{text}");
+        }
+    }
+
+    #[test]
+    fn an_answer_may_take_as_long_as_its_typing_and_its_wait() {
+        let click = json!({ "kind": "click", "control": "x" });
+        assert_eq!(answer_time(&click), Duration::from_millis(2000) + ANSWER);
+        // A long request typed at a keystroke's budget a character is not a
+        // hang.
+        let long = json!({ "kind": "fill", "control": "Message", "text": "x".repeat(2500) });
+        assert!(answer_time(&long) >= Duration::from_secs(250));
+        let wait = json!({ "kind": "wait", "timeoutMs": 60000 });
+        assert!(answer_time(&wait) >= Duration::from_secs(90));
     }
 
     #[test]

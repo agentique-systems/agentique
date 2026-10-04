@@ -163,20 +163,30 @@ impl Question {
     }
 }
 
+/// The most a model may write in answer to one typed question (its
+/// reasoning and its one-line answer).
+pub const MODEL_OUTPUT_TOKENS: u64 = 8000;
+
 /// Where typed questions are answered: Jev and the models through the
 /// providers ([`Decider`]), or a stand-in in tests.
 pub trait Answers {
+    /// Jev's model, and the confidence at or above which its answer is
+    /// used.
+    fn jev_model(&self) -> ModelRef;
+    fn threshold(&self) -> f64;
     /// Jev's choice among the question's options, with its confidence,
     /// within its deadline.
     fn ask_jev(&self, question: &Question) -> Result<Decision, Failure>;
     /// One call to `model`: what it said and what it cost (`None` when
     /// unknown), or why it failed (a request that was sent may be billed,
-    /// so a failed call's cost is unknown).
+    /// so a failed call's cost is unknown). `stop` is asked while it is
+    /// waited for; a stopped call is cancelled and fails.
     fn chat(
         &self,
         model: &ModelRef,
         effort: Option<&str>,
         prompt: &str,
+        stop: &mut dyn FnMut() -> bool,
     ) -> Result<(String, Option<f64>), String>;
 }
 
@@ -195,6 +205,7 @@ pub fn ask_model<T>(
     question: &Question,
     format: &str,
     read: Read<T>,
+    stop: &mut dyn FnMut() -> bool,
 ) -> Result<(Decision, T), Failure> {
     let started = Instant::now();
     let prompt = question.prompt(format);
@@ -202,7 +213,7 @@ pub fn ask_model<T>(
     let mut problem = String::new();
     for _ in 0..2 {
         let (said, cost) = answers
-            .chat(model, effort, &prompt)
+            .chat(model, effort, &prompt, stop)
             .map_err(|error| Failure {
                 source: Source::Model,
                 error,
@@ -373,6 +384,14 @@ impl Default for Decider {
 }
 
 impl Answers for Decider {
+    fn jev_model(&self) -> ModelRef {
+        ModelRef::new(Provider::TypeSafe, &self.jev_model)
+    }
+
+    fn threshold(&self) -> f64 {
+        self.threshold
+    }
+
     fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
         let started = Instant::now();
         let request = DecisionRequest {
@@ -438,12 +457,13 @@ impl Answers for Decider {
         model: &ModelRef,
         effort: Option<&str>,
         prompt: &str,
+        stop: &mut dyn FnMut() -> bool,
     ) -> Result<(String, Option<f64>), String> {
         let request = ChatRequest {
             model: model.clone(),
             effort: effort.map(str::to_string),
             // Room for the model's reasoning before its one-line answer.
-            max_output_tokens: 8000,
+            max_output_tokens: MODEL_OUTPUT_TOKENS,
             system: "You choose one action for an agent operating an application. You answer with JSON only.".into(),
             tools: Vec::new(),
             messages: vec![Message::User(vec![UserPart::Text {
@@ -460,6 +480,10 @@ impl Answers for Decider {
                 None if Instant::now() >= deadline => {
                     handle.cancel();
                     return Err("the model did not answer in time".into());
+                }
+                None if stop() => {
+                    handle.cancel();
+                    return Err("stopped".into());
                 }
                 None => {}
             }
@@ -501,6 +525,7 @@ impl Decider {
             &situation.question(),
             CHOICE,
             &read,
+            &mut || false,
         )
         .map(|(decision, ())| decision)
     }
@@ -835,6 +860,12 @@ mod tests {
     );
 
     impl Answers for Said {
+        fn jev_model(&self) -> ModelRef {
+            ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+        }
+        fn threshold(&self) -> f64 {
+            0.6
+        }
         fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
             unreachable!("no Jev here")
         }
@@ -843,6 +874,7 @@ mod tests {
             _: &ModelRef,
             _: Option<&str>,
             prompt: &str,
+            _: &mut dyn FnMut() -> bool,
         ) -> Result<(String, Option<f64>), String> {
             self.1.borrow_mut().push(prompt.to_string());
             Ok((self.0.borrow_mut().remove(0), Some(0.01)))
@@ -885,7 +917,16 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
             .into(),
             Vec::new().into(),
         );
-        let (decision, ()) = ask_model(&said, &model, None, &s.question(), CHOICE, &read).unwrap();
+        let (decision, ()) = ask_model(
+            &said,
+            &model,
+            None,
+            &s.question(),
+            CHOICE,
+            &read,
+            &mut || false,
+        )
+        .unwrap();
         assert_eq!(decision.choice, "dialog-cancel");
         assert_eq!(decision.source, Source::Model);
         assert_eq!(decision.usd, Some(0.02));
@@ -897,7 +938,16 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
             vec!["?".to_string(), "{\"choice\": \"x\"}".into()].into(),
             Vec::new().into(),
         );
-        let failed = ask_model(&said, &model, None, &s.question(), CHOICE, &read).unwrap_err();
+        let failed = ask_model(
+            &said,
+            &model,
+            None,
+            &s.question(),
+            CHOICE,
+            &read,
+            &mut || false,
+        )
+        .unwrap_err();
         assert_eq!(failed.usd, Some(0.02));
         assert!(failed.error.contains("not an option"), "{}", failed.error);
     }

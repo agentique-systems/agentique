@@ -83,6 +83,14 @@ impl Scripted {
 }
 
 impl Answers for Scripted {
+    fn jev_model(&self) -> ModelRef {
+        ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+    }
+
+    fn threshold(&self) -> f64 {
+        0.6
+    }
+
     fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
         self.questions.borrow_mut().push(question.clone());
         match self.jev.borrow_mut().pop_front() {
@@ -110,6 +118,7 @@ impl Answers for Scripted {
         _model: &ModelRef,
         _effort: Option<&str>,
         prompt: &str,
+        _stop: &mut dyn FnMut() -> bool,
     ) -> Result<(String, Option<f64>), String> {
         self.prompts.borrow_mut().push(prompt.to_string());
         if let Some(reads) = &self.reads {
@@ -130,7 +139,6 @@ fn deciding(answers: &dyn Answers) -> Deciding<'_> {
         effort: None,
         escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         escalation_effort: None,
-        threshold: 0.6,
     }
 }
 
@@ -144,6 +152,10 @@ fn plan(way: Way, seed: u64, steps: u32) -> Plan {
         usd: 1.0,
         changes: Changes::default(),
         start: "stand-in".into(),
+        conversation: false,
+        // Short, so a turn that never ends takes no time in a test.
+        turn_ms: 300,
+        stop_ms: 300,
     }
 }
 
@@ -156,10 +168,14 @@ fn explore_with(
     explore::explore(instance, plan, &deciding(answers), knowledge, &mut || true)
 }
 
+/// A run by the rules; one that may use the Conversation where the
+/// stand-in has one.
 fn by_rules(instance: &mut StandIn, seed: u64, steps: u32) -> Run {
+    let mut plan = plan(Way::Rules, seed, steps);
+    plan.conversation = instance.chat.is_some();
     explore_with(
         instance,
-        &plan(Way::Rules, seed, steps),
+        &plan,
         &Scripted::default(),
         &Knowledge::new("stand-in"),
     )
@@ -189,7 +205,7 @@ fn a_correct_studio_gives_no_findings_and_undo_is_checked() {
         let mut studio = StandIn::new(Defects::default());
         let run = by_rules(&mut studio, seed, 60);
         assert!(run.findings.is_empty(), "seed {seed}: {:#?}", run.findings);
-        assert_eq!(run.chosen, 60);
+        assert_eq!(run.actions, 60);
         assert_eq!(run.ended, "the step budget was used");
         assert_eq!(run.unwanted.total(), 0, "{:?}", run.unwanted);
         assert!(run.notes.is_empty(), "{:?}", run.notes);
@@ -312,7 +328,7 @@ fn each_invariant_fires_on_its_planted_defect_and_on_nothing_else() {
     });
     let run = by_rules(&mut studio, 3, 80);
     assert!(run.recoveries.iter().any(|r| r.kind == "restarted"));
-    assert_eq!(run.chosen, 80);
+    assert_eq!(run.actions, 80);
     assert_eq!(
         run.unwanted.ended as usize,
         run.steps.iter().filter(|t| t.outcome == "ended").count()
@@ -366,7 +382,7 @@ fn planted_defects_reproduce_and_a_flaky_one_does_not() {
     ] {
         let (mut studio, run) = found(defects);
         let mut finding = run.findings[0].clone();
-        findings::reproduce(&mut studio, &mut finding, 12);
+        findings::reproduce(&mut studio, &mut finding, 12, &mut || false);
         assert_eq!(
             finding.state,
             State::Reproduced,
@@ -381,7 +397,7 @@ fn planted_defects_reproduce_and_a_flaky_one_does_not() {
     let run = by_rules(&mut studio, 5, 80);
     assert_eq!(checks(&run), BTreeSet::from([Check::Answers]));
     let mut finding = run.findings[0].clone();
-    findings::reproduce(&mut studio, &mut finding, 12);
+    findings::reproduce(&mut studio, &mut finding, 12, &mut || false);
     assert_eq!(finding.state, State::NotReproduced);
     assert!(finding.note.contains("the check held"), "{}", finding.note);
     assert_eq!(finding.reduced, None);
@@ -421,7 +437,7 @@ fn reduction_keeps_only_the_steps_that_still_fail() {
         crash: true,
         ..Defects::default()
     });
-    findings::reproduce(&mut studio, &mut finding, 16);
+    findings::reproduce(&mut studio, &mut finding, 16, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     let reduced: Vec<&str> = finding
         .reduced
@@ -439,7 +455,7 @@ fn reduction_keeps_only_the_steps_that_still_fail() {
     let starts = studio.starts;
     let mut again = finding.clone();
     again.reduced = None;
-    findings::reduce(&mut studio, &mut again, 3);
+    findings::reduce(&mut studio, &mut again, 3, &mut || false);
     assert!(studio.starts - starts <= 3);
 }
 
@@ -461,14 +477,14 @@ fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
     ] {
         let (mut broken, run) = found(defects);
         let mut finding = run.findings[0].clone();
-        findings::reproduce(&mut broken, &mut finding, 10);
+        findings::reproduce(&mut broken, &mut finding, 10, &mut || false);
         assert!(
-            findings::replay(&mut broken, &finding).failed(),
+            findings::replay(&mut broken, &finding, &mut || false).failed(),
             "{defects:?}"
         );
         let mut fixed = StandIn::new(Defects::default());
         assert_eq!(
-            findings::replay(&mut fixed, &finding),
+            findings::replay(&mut fixed, &finding, &mut || false),
             Replay::Passed,
             "{defects:?}"
         );
@@ -491,13 +507,13 @@ fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
         ..Defects::default()
     });
     assert!(matches!(
-        findings::replay(&mut studio, &finding),
+        findings::replay(&mut studio, &finding, &mut || false),
         Replay::Diverged { at: 1, .. }
     ));
     finding
         .steps
         .insert(0, step(json!({ "kind": "click", "control": "History" })));
-    assert!(findings::replay(&mut studio, &finding).failed());
+    assert!(findings::replay(&mut studio, &finding, &mut || false).failed());
 }
 
 #[test]
@@ -573,8 +589,8 @@ fn the_models_answer_must_be_an_option_with_checkable_expectations() {
     // Text for a button, or an expectation nobody can check, is no answer.
     let answers = Scripted::default().said(
         &[
-            r#"{"choice": "a1", "input": "x"}"#,
-            r#"{"choice": "a1", "expect": {"pixels": 3}}"#,
+            r#"{"choice": "a01", "input": "x"}"#,
+            r#"{"choice": "a01", "expect": {"pixels": 3}}"#,
         ]
         .map(Ok),
     );
@@ -591,7 +607,7 @@ fn the_models_answer_must_be_an_option_with_checkable_expectations() {
     // A valid answer is used; its expectation is checked after the action,
     // and one that does not hold is a finding of its own kind.
     let answers = Scripted::default().said(&[Ok(
-        r#"{"choice": "a1", "expect": {"dialog": "Nothing"}, "why": "see what opens"}"#,
+        r#"{"choice": "a01", "expect": {"dialog": "Nothing"}, "why": "see what opens"}"#,
     )]);
     let run = explore_with(
         &mut StandIn::new(Defects::default()),
@@ -634,9 +650,9 @@ fn the_models_answer_must_be_an_option_with_checkable_expectations() {
 #[test]
 fn jev_escalates_to_the_model_and_the_model_to_the_rules() {
     let answers = Scripted::default()
-        .jev(&[Ok(("a2", 0.9)), Ok(("a1", 0.3)), Err("Jev: timed out")])
+        .jev(&[Ok(("a02", 0.9)), Ok(("a01", 0.3)), Err("Jev: timed out")])
         .said(&[
-            Ok(r#"{"choice": "a3", "why": "less covered"}"#),
+            Ok(r#"{"choice": "a03", "why": "less covered"}"#),
             Ok("??"),
             Ok("!!"),
         ]);
@@ -682,7 +698,7 @@ fn jev_escalates_to_the_model_and_the_model_to_the_rules() {
         run.usd
     );
     // Jev alone: below its threshold the rules decide, and no model is asked.
-    let answers = Scripted::default().jev(&[Ok(("a1", 0.2))]);
+    let answers = Scripted::default().jev(&[Ok(("a01", 0.2))]);
     let run = explore_with(
         &mut StandIn::new(Defects::default()),
         &plan(Way::Jev, 1, 1),
@@ -741,30 +757,30 @@ fn a_run_recovers_and_keeps_to_its_budgets() {
             asked <= 3
         },
     );
-    assert_eq!((run.chosen, run.ended.as_str()), (3, "stopped"));
+    assert_eq!((run.actions, run.ended.as_str()), (3, "stopped"));
     let mut quick = plan(Way::Rules, 1, 50);
     quick.seconds = 0;
     let run = by_plan(&quick, &Scripted::default());
     assert_eq!(
-        (run.chosen, run.ended.as_str()),
+        (run.actions, run.ended.as_str()),
         (0, "the time budget was used")
     );
     let mut cheap = plan(Way::Jev, 1, 50);
     cheap.usd = 0.0025;
     let answers = Scripted::default().jev(&[
-        Ok(("a1", 0.9)),
-        Ok(("a1", 0.9)),
-        Ok(("a1", 0.9)),
-        Ok(("a1", 0.9)),
+        Ok(("a01", 0.9)),
+        Ok(("a01", 0.9)),
+        Ok(("a01", 0.9)),
+        Ok(("a01", 0.9)),
     ]);
     let run = by_plan(&cheap, &answers);
     assert_eq!(
-        (run.chosen, run.ended.as_str()),
+        (run.actions, run.ended.as_str()),
         (3, "the spend budget was used")
     );
     // The cancelling rule is not a way to explore.
     let run = by_plan(&plan(Way::Cancel, 1, 5), &Scripted::default());
-    assert_eq!(run.chosen, 0);
+    assert_eq!(run.actions, 0);
     assert!(run.ended.contains("not exploration"));
 }
 
@@ -789,7 +805,7 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
     assert_eq!(knowledge.coverage.len(), run.covered.len());
     assert_eq!(knowledge.findings.len(), 1);
     let mut finding = knowledge.findings[0].clone();
-    findings::reproduce(&mut studio, &mut finding, 8);
+    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
     knowledge.update(&finding);
     assert_eq!(knowledge.findings[0].state, State::Reproduced);
     // Fixed by a change: the next run's build replays it first and it passes.
@@ -801,7 +817,7 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
         .cloned()
         .collect::<Vec<_>>()
     {
-        let replay = findings::replay(&mut fixed, &finding);
+        let replay = findings::replay(&mut fixed, &finding, &mut || false);
         knowledge.replayed(&finding.identity, "b2", &replay);
     }
     assert_eq!(knowledge.findings[0].state, State::Fixed);
@@ -888,7 +904,12 @@ fn the_composer_is_used_only_where_the_conversation_is_offered() {
         waits >= 1 && waits <= sent,
         "{waits} waits for {sent} sends"
     );
-    assert!(studio.log.iter().any(|l| l.contains("\"wait\"")));
+    // The turn was observed, not waited for with the Studio's own `idle`
+    // (which also waits for runs, tasks and builds).
+    assert!(!studio.log.iter().any(|l| l.contains("\"wait\"")));
+    // What the instance's Assistant spent counts toward the run's budget.
+    assert!(run.assistant_usd >= 0.01, "{}", run.assistant_usd);
+    assert!(run.usd >= run.assistant_usd);
 }
 
 #[test]
@@ -907,8 +928,8 @@ fn a_turn_that_never_ends_is_a_finding_and_stop_must_end_it() {
             .any(|t| t.step.action["control"] == "stop" && t.step.by == "check")
     );
     let mut finding = run.findings[0].clone();
-    assert!(finding.message.contains("180000 ms"), "{}", finding.message);
-    findings::reproduce(&mut studio, &mut finding, 8);
+    assert!(finding.message.contains("300 ms"), "{}", finding.message);
+    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     assert!(finding.note.contains("Assistant"), "{}", finding.note);
     // A turn that Stop does not end either: both, and a fresh start.
@@ -955,12 +976,9 @@ fn an_expectation_about_the_reply_is_recorded_never_a_finding() {
         ..Scripted::default()
     };
     let mut studio = chatting(true, true, Turn::Ends);
-    let run = explore_with(
-        &mut studio,
-        &plan(Way::Model, 1, 3),
-        &answers,
-        &Knowledge::new("stand-in"),
-    );
+    let mut talking = plan(Way::Model, 1, 3);
+    talking.conversation = true;
+    let run = explore_with(&mut studio, &talking, &answers, &Knowledge::new("stand-in"));
     let typed = &run.steps[0].step;
     assert!(typed.key.ends_with("|fill|written"), "{}", typed.key);
     // Sending started the turn; its end was waited for, and what was
@@ -994,22 +1012,235 @@ fn an_expectation_about_the_reply_is_recorded_never_a_finding() {
         ..Scripted::default()
     };
     let mut studio = chatting(true, true, Turn::Ends);
-    let run = explore_with(
-        &mut studio,
-        &plan(Way::Model, 1, 2),
-        &answers,
-        &Knowledge::new("stand-in"),
-    );
+    let mut talking = plan(Way::Model, 1, 2);
+    talking.conversation = true;
+    let run = explore_with(&mut studio, &talking, &answers, &Knowledge::new("stand-in"));
     assert_eq!(checks(&run), BTreeSet::from([Check::Expectation]));
     let mut finding = run.findings[0].clone();
     assert_eq!(finding.steps.last().unwrap().by, "wait");
-    findings::reproduce(&mut studio, &mut finding, 4);
+    findings::reproduce(&mut studio, &mut finding, 4, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     assert!(
         finding.note.contains("never the reply's wording"),
         "{}",
         finding.note
     );
+}
+
+#[test]
+fn a_hang_and_an_exit_are_one_finding_and_never_pass_a_replay() {
+    // History's Freeze leaves the instance running and silent.
+    let (mut studio, run) = found(Defects {
+        hang: true,
+        ..Defects::default()
+    });
+    assert_eq!(checks(&run), BTreeSet::from([Check::Answers]));
+    let mut finding = run.findings[0].clone();
+    assert_eq!(finding.message, findings::ENDED);
+    assert_eq!(finding.evidence["exited"], false, "it hung");
+    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
+    // A build where the same step exits instead fails the replay too.
+    let mut exits = StandIn::new(Defects {
+        crash: true,
+        ..Defects::default()
+    });
+    let mut crashing = finding.clone();
+    crashing.reduced = None;
+    crashing.steps = vec![
+        step(json!({ "kind": "click", "control": "History" })),
+        step(json!({ "kind": "click", "control": "export" })),
+    ];
+    crashing.control = "export".into();
+    crashing.identity = findings::identity(Check::Answers, "export", findings::ENDED);
+    assert!(findings::replay(&mut exits, &crashing, &mut || false).failed());
+}
+
+#[test]
+fn an_instance_that_ends_on_undo_is_found_with_the_undo() {
+    let (mut studio, run) = found(Defects {
+        undo_crash: true,
+        ..Defects::default()
+    });
+    assert_eq!(checks(&run), BTreeSet::from([Check::Answers]));
+    let mut finding = run.findings[0].clone();
+    let last = finding.steps.last().unwrap();
+    assert_eq!((last.target(), last.by.as_str()), ("undo", "check"));
+    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
+}
+
+#[test]
+fn a_slow_long_fill_is_not_taken_for_a_hang_or_a_slow_action() {
+    let mut studio = chatting(true, true, Turn::Ends);
+    studio.slow_typing = true;
+    // Every request, the long one (about 2,500 characters, 75 s at 30 ms a
+    // character) among them, by the rules over a few seeds.
+    for seed in 1..=4 {
+        let run = by_rules(&mut studio, seed, 60);
+        assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    }
+    assert!(studio.log.iter().any(|l| l.contains("Describe every part")));
+}
+
+#[test]
+fn the_conversation_is_left_alone_unless_the_run_may_use_it() {
+    let mut studio = chatting(true, true, Turn::Ends);
+    let run = explore_with(
+        &mut studio,
+        &plan(Way::Rules, 1, 60),
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    );
+    assert!(run.findings.is_empty());
+    assert!(
+        !studio
+            .log
+            .iter()
+            .any(|l| l.contains("Message") || l.contains("\"send\"")),
+        "{:?}",
+        studio.log
+    );
+}
+
+#[test]
+fn findings_are_counted_once_each() {
+    // An internal error stays in the status line: one finding, not one for
+    // every action after it.
+    let (_, run) = found(Defects {
+        internal_error: true,
+        ..Defects::default()
+    });
+    assert_eq!(run.findings.len(), 1, "{:#?}", run.findings);
+    assert_eq!(run.findings[0].control, "");
+    // The unlabelled button: one finding, however often it is seen.
+    let (_, run) = found(Defects {
+        unlabelled: true,
+        ..Defects::default()
+    });
+    assert_eq!(run.findings.len(), 1, "{:#?}", run.findings);
+}
+
+#[test]
+fn escapes_out_of_a_dead_end_count_and_end_in_a_fresh_start() {
+    // A stand-in that offers only Escape and refuses it as the Operator's:
+    // a dead end, left by Escape (refused too), then by fresh starts.
+    struct Locked {
+        starts: u32,
+        acts: u32,
+    }
+    impl Instance for Locked {
+        fn observe(&mut self) -> Result<Value, String> {
+            Ok(json!({
+                "screen": "surface", "screenRevision": 1, "dialog": null, "approval": null,
+                "palette": null, "status": "", "controls": [], "commands": [],
+                "identity": { "build": "b1", "commit": "c" }
+            }))
+        }
+        fn act(&mut self, _: &explore::Act) -> Result<Value, String> {
+            self.acts += 1;
+            // Escape, refused every time, so nothing valid is left.
+            Ok(json!({ "ok": false, "error": "refused: nothing here is an agent's" }))
+        }
+        fn restart(&mut self, _: &mut dyn FnMut() -> bool) -> Result<(), String> {
+            self.starts += 1;
+            Ok(())
+        }
+        fn alive(&mut self) -> bool {
+            true
+        }
+        fn folder(&self) -> Option<PathBuf> {
+            None
+        }
+    }
+    let mut locked = Locked { starts: 0, acts: 0 };
+    let run = explore_with(
+        &mut locked,
+        &plan(Way::Rules, 1, 30),
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    );
+    // It ends: by its step budget, or by giving up on an instance that
+    // keeps leaving it nothing to do; never in a loop.
+    assert!(locked.acts <= 30, "{}", locked.acts);
+    assert!(
+        locked.starts > 1,
+        "Escapes without progress lead to a fresh start"
+    );
+    assert!(
+        run.ended == "the step budget was used" || run.ended.contains("keeps ending"),
+        "{}",
+        run.ended
+    );
+}
+
+#[test]
+fn a_run_stops_during_a_long_turn_and_out_of_time() {
+    struct Stopping(u32);
+    impl explore::Supervisor for Stopping {
+        fn go_on(&mut self) -> bool {
+            true
+        }
+        fn stopped(&mut self) -> bool {
+            self.0 += 1;
+            self.0 > 3
+        }
+    }
+    let mut studio = chatting(true, true, Turn::Never);
+    let mut long = plan(Way::Rules, 1, 80);
+    long.conversation = true;
+    long.turn_ms = 600_000;
+    let started = std::time::Instant::now();
+    let mut supervisor = Stopping(0);
+    let run = explore::explore(
+        &mut studio,
+        &long,
+        &deciding(&Scripted::default()),
+        &Knowledge::new("stand-in"),
+        &mut supervisor,
+    );
+    assert!(started.elapsed() < std::time::Duration::from_secs(30));
+    assert_eq!(run.ended, "stopped", "{}", run.ended);
+}
+
+#[test]
+fn a_decision_of_unknown_cost_counts_at_the_most_it_could_have_cost() {
+    struct Unpriced;
+    impl Answers for Unpriced {
+        fn jev_model(&self) -> ModelRef {
+            ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+        }
+        fn threshold(&self) -> f64 {
+            0.6
+        }
+        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+            unreachable!()
+        }
+        fn chat(
+            &self,
+            _: &ModelRef,
+            _: Option<&str>,
+            _: &str,
+            _: &mut dyn FnMut() -> bool,
+        ) -> Result<(String, Option<f64>), String> {
+            // Sent, and failed: its cost is unknown.
+            Err("the connection was reset".into())
+        }
+    }
+    let mut cheap = plan(Way::Model, 1, 50);
+    cheap.usd = 0.05;
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &cheap,
+        &Unpriced,
+        &Knowledge::new("stand-in"),
+    );
+    assert!(run.unpriced >= 1);
+    assert!(run.usd > 0.0, "unknown is not free");
+    // deepseek-flash: a prompt and 8,000 tokens of output, twice, is about
+    // two cents; the budget stops the run within a few decisions.
+    assert_eq!(run.ended, "the spend budget was used");
+    assert!(run.actions < 10, "{}", run.actions);
 }
 
 // The fixed exploration tasks and the live measurement.
@@ -1113,12 +1344,7 @@ struct Score {
 
 impl Score {
     fn percentile(&self, p: f64) -> u64 {
-        let mut sorted = self.latencies.clone();
-        sorted.sort_unstable();
-        if sorted.is_empty() {
-            return 0;
-        }
-        sorted[((sorted.len() - 1) as f64 * p).round() as usize]
+        explore::percentile(&self.latencies, p)
     }
 }
 
@@ -1142,7 +1368,6 @@ fn live_exploration_compared_by_way_of_deciding() {
         effort: Some("low".into()),
         escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         escalation_effort: Some("low".into()),
-        threshold: decider.threshold,
     };
     let base = std::env::temp_dir().join(format!("agq-explore-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
@@ -1179,6 +1404,11 @@ fn live_exploration_compared_by_way_of_deciding() {
                     .unwrap()
                     .to_string_lossy()
                     .into_owned(),
+                // Nothing to the instance's Assistant: it has no key of its
+                // own yet (W12.5).
+                conversation: false,
+                turn_ms: findings::TURN_BUDGET_MS,
+                stop_ms: findings::STOP_BUDGET_MS,
             };
             let knowledge = Knowledge::new("agentique");
             let mut run =
@@ -1186,7 +1416,7 @@ fn live_exploration_compared_by_way_of_deciding() {
             // Each finding reproduced (a few, within a bounded number of
             // replays each).
             for finding in run.findings.iter_mut().take(4) {
-                findings::reproduce(&mut instance, finding, 6);
+                findings::reproduce(&mut instance, finding, 6, &mut || false);
             }
             drop(instance);
             let reached: Vec<&String> = task
@@ -1218,7 +1448,7 @@ fn live_exploration_compared_by_way_of_deciding() {
             eprintln!(
                 "{} {way:?}: {} steps, {} new keys, reached {reached:?}, unwanted {:?}, findings {:?}, ${:.4}, ended: {}",
                 task.id,
-                run.chosen,
+                run.actions,
                 run.new_coverage.len(),
                 run.unwanted,
                 run.findings
