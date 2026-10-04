@@ -333,7 +333,8 @@ impl Studio {
             dirty: Dirty::ALL,
         };
         studio.apply_appearance();
-        studio.apply_runtime_choice();
+        // Reads the credentials once and applies the runtime choice.
+        studio.read_credentials();
         studio.note_recovery();
         #[cfg(feature = "automation")]
         if studio.args.scenario.as_deref() == Some("a-assistant") {
@@ -1376,7 +1377,9 @@ impl Studio {
         self.settings_open = true;
         self.settings_section = section;
         self.palette = None;
-        // Settings say whether this computer has a Claude login (C-54).
+        // Settings say where each credential comes from, read now, and
+        // whether this computer has a Claude login (C-54).
+        self.read_credentials();
         self.probe_login();
     }
 

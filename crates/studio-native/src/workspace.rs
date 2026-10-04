@@ -268,6 +268,7 @@ impl Workspace {
             || studio.implementation.checking()
             || studio.implementation.task.is_some()
             || studio.runtime.work.is_some()
+            || studio.runtime.login_probe.is_some()
             || studio.develop.work.is_some()
         {
             self.studio.act(cx, |studio| {

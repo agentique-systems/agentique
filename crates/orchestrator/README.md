@@ -47,8 +47,10 @@ what to change.
   token; a direct call needs a key), otherwise its fallback with the reason,
   otherwise the objective does not start. The record keeps each role's
   model, effort, credential kind and source, who pays and any fallback's
-  reason; every session of a role is built on it, and typed decisions take
-  their models from the `decisions` and `escalation` roles (`decider`).
+  reason; every session of a role is built on it. An objective that does
+  not explore needs only the lead, implementer, reviewer and evaluator; the
+  others are recorded as without a model. `decider` builds typed decisions
+  from the `decisions` and `escalation` roles (W12.5 uses it).
 - **Forge** (`forge`): `git` and `gh` as exact commands through Execution;
   never a force-push, never a push to the default branch.
 - **Builds** (`builds`) and **test instances** (`control`).

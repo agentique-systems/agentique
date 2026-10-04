@@ -4,9 +4,10 @@
 //! Agentique may use, and recorded with the reasons (which credential, who
 //! pays, why a fallback). The Studio, which owns Settings and the keys,
 //! calls [`resolve`]; the Orchestrator uses what was recorded for every
-//! session of a role ([`for_role`]) and for typed decisions ([`decider`]).
-//! No role takes another's model, and nothing moves to another credential
-//! while the objective runs.
+//! session of a role ([`for_role`]); [`decider`] builds typed decisions
+//! from it for an exploring objective (W12.5 uses it). No role takes
+//! another's model, and nothing moves to another credential while the
+//! objective runs.
 
 use crate::decide::Decider;
 use crate::record::{Access, RoleModel};
@@ -37,6 +38,23 @@ pub const ROLES: [(&str, Kind); 7] = [
     ("escalation", Kind::Direct),
     ("decisions", Kind::Decisions),
 ];
+
+/// Whether an objective needs `role` to start: the cycle's four sessions
+/// always (the evaluator too, since any change may need evaluating); the
+/// explorer, escalation and typed decisions only when it explores.
+pub fn needed(role: &str, explore: bool) -> bool {
+    explore || matches!(role, "lead" | "implementer" | "reviewer" | "evaluator")
+}
+
+/// What an objective's roles resolved to.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Resolved {
+    /// Each role with a model now.
+    pub models: Vec<RoleModel>,
+    /// Each role the objective does not need that has no model now, and
+    /// why: recorded, never a reason not to start.
+    pub unavailable: Vec<(String, String)>,
+}
 
 /// A model and its effort.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -76,22 +94,28 @@ struct Found {
 
 /// Resolves every configured role: its own model when its provider has a
 /// credential Agentique may use for that kind of role, else its fallback
-/// with the reason, else the role is named with what is missing and nothing
-/// starts. Every role of [`ROLES`] must be configured.
+/// with the reason, else none. A role the objective needs ([`needed`]) with
+/// none is named with what is missing and nothing starts; another is
+/// recorded as unavailable.
 pub fn resolve(
     configured: &[Configured],
     credentials: &Credentials,
-) -> Result<Vec<RoleModel>, Vec<String>> {
-    let mut models = Vec::new();
+    explore: bool,
+) -> Result<Resolved, Vec<String>> {
+    let mut resolved = Resolved {
+        models: Vec::new(),
+        unavailable: Vec::new(),
+    };
     let mut problems = Vec::new();
-    for (_, resolved) in resolve_each(configured, credentials) {
-        match resolved {
-            Ok(model) => models.push(model),
-            Err(problem) => problems.push(problem),
+    for (role, outcome) in resolve_each(configured, credentials) {
+        match outcome {
+            Ok(model) => resolved.models.push(model),
+            Err(problem) if needed(role, explore) => problems.push(problem),
+            Err(problem) => resolved.unavailable.push((role.to_string(), problem)),
         }
     }
     if problems.is_empty() {
-        Ok(models)
+        Ok(resolved)
     } else {
         Err(problems)
     }
@@ -172,6 +196,9 @@ fn find(
         }
         _ => {}
     }
+    // Where each credential comes from, or why it cannot be used: a store
+    // that cannot be read is one candidate's problem, never the others'
+    // (an environment variable still counts without it).
     let available = |credential: Credential| match (credentials.status)(credential) {
         KeyStatus::FromEnvironment { variable } => Ok(Some(variable.to_string())),
         KeyStatus::Stored => Ok(Some("the Windows Credential Manager".to_string())),
@@ -208,31 +235,47 @@ fn find(
         credential: format!("the Claude subscription token ({source})"),
         billed: "your Claude plan, within its usage limits (spend is shown at API prices)".into(),
     };
-    let api_key = available(key)?;
-    let token = available(Credential::ClaudeSubscription)?;
+    let api_key = available(key);
+    let token = available(Credential::ClaudeSubscription);
+    let usable = |found: &Result<Option<String>, String>| found.as_ref().ok().cloned().flatten();
+    // Neither can be used: an unreadable store is the reason when there is
+    // one, else what is missing.
+    let unreadable = [&api_key, &token]
+        .into_iter()
+        .find_map(|found| found.as_ref().err().cloned());
     if kind == Kind::Session {
         let (first, second) = if credentials.prefer_subscription {
-            (token.clone().map(with_token), api_key.map(with_key))
+            (
+                usable(&token).map(with_token),
+                usable(&api_key).map(with_key),
+            )
         } else {
-            (api_key.map(with_key), token.clone().map(with_token))
+            (
+                usable(&api_key).map(with_key),
+                usable(&token).map(with_token),
+            )
         };
         if let Some(found) = first.or(second) {
             return Ok(found);
         }
-        return Err(format!(
-            "needs an Anthropic API key or a Claude subscription token (Settings › Providers › Anthropic){}",
-            login_note(credentials.login)
-        ));
+        return Err(unreadable.unwrap_or_else(|| {
+            format!(
+                "needs an Anthropic API key or a Claude subscription token (Settings › Providers › Anthropic){}",
+                login_note(credentials.login)
+            )
+        }));
     }
-    match (api_key, token) {
+    match (usable(&api_key), usable(&token)) {
         (Some(source), _) => Ok(with_key(source)),
         (None, Some(_)) => Err(format!(
             "needs an Anthropic API key: the {role} role calls its model directly, and a Claude subscription token works only in the Claude Agent runtime"
         )),
-        (None, None) => Err(format!(
-            "needs an Anthropic API key (Settings › Providers › Anthropic, or ANTHROPIC_API_KEY){}",
-            login_note(credentials.login)
-        )),
+        (None, None) => Err(api_key.err().unwrap_or_else(|| {
+            format!(
+                "needs an Anthropic API key (Settings › Providers › Anthropic, or ANTHROPIC_API_KEY){}",
+                login_note(credentials.login)
+            )
+        })),
     }
 }
 
@@ -354,7 +397,7 @@ mod tests {
             prefer_subscription: true,
             login: None,
         };
-        let models = resolve(&defaults(), &credentials).unwrap();
+        let models = resolve(&defaults(), &credentials, true).unwrap().models;
         assert_eq!(models.len(), 7);
         let lead = model(&models, "lead");
         assert_eq!(lead.model.to_string(), "anthropic/claude-opus-5-5");
@@ -396,7 +439,7 @@ mod tests {
             prefer_subscription: true,
             login: None,
         };
-        let models = resolve(&defaults(), &credentials).unwrap();
+        let models = resolve(&defaults(), &credentials, true).unwrap().models;
         for role in ["lead", "implementer", "reviewer", "evaluator"] {
             let m = model(&models, role);
             assert_eq!(m.model.provider, Provider::Anthropic, "{role}");
@@ -433,14 +476,14 @@ mod tests {
             prefer_subscription: false,
             login: None,
         };
-        let models = resolve(&defaults(), &credentials).unwrap();
+        let models = resolve(&defaults(), &credentials, true).unwrap().models;
         assert_eq!(model(&models, "lead").access, Access::Key);
         let credentials = Credentials {
             status: &both,
             prefer_subscription: true,
             login: None,
         };
-        let models = resolve(&defaults(), &credentials).unwrap();
+        let models = resolve(&defaults(), &credentials, true).unwrap().models;
         assert_eq!(model(&models, "lead").access, Access::Subscription);
         assert_eq!(model(&models, "escalation").access, Access::Key);
     }
@@ -461,7 +504,7 @@ mod tests {
             prefer_subscription: true,
             login: Some(&login),
         };
-        let models = resolve(&defaults(), &credentials).unwrap();
+        let models = resolve(&defaults(), &credentials, true).unwrap().models;
         let lead = model(&models, "lead");
         assert_eq!(lead.model.to_string(), "deepseek/deepseek-v4-pro");
         assert_eq!(lead.effort.as_deref(), Some("max"));
@@ -482,6 +525,75 @@ mod tests {
         assert_eq!(model(&models, "explorer").fallback, None);
     }
 
+    /// The review of W12.3: an objective that does not explore needs only
+    /// the cycle's four sessions; an Operator with only an Anthropic key
+    /// starts one, and the roles without a model are recorded as such.
+    #[test]
+    fn an_objective_that_does_not_explore_needs_only_its_sessions() {
+        let status = with(&[ANTHROPIC]);
+        let credentials = Credentials {
+            status: &status,
+            prefer_subscription: true,
+            login: None,
+        };
+        let resolved = resolve(&defaults(), &credentials, false).unwrap();
+        let roles: Vec<&str> = resolved.models.iter().map(|m| m.role.as_str()).collect();
+        // Escalation runs on Opus 5.5 with the key; the explorer and typed
+        // decisions have no credential, which this objective does not need.
+        assert_eq!(
+            roles,
+            ["lead", "implementer", "reviewer", "evaluator", "escalation"]
+        );
+        let unavailable: Vec<&str> = resolved
+            .unavailable
+            .iter()
+            .map(|(r, _)| r.as_str())
+            .collect();
+        assert_eq!(unavailable, ["explorer", "decisions"]);
+        assert!(resolved.unavailable[1].1.contains("TypeSafe AI key"));
+        // An exploring objective needs them all.
+        let problems = resolve(&defaults(), &credentials, true).unwrap_err();
+        assert_eq!(problems.len(), 2, "{problems:?}");
+        assert!(
+            needed("evaluator", false) && !needed("explorer", false) && needed("explorer", true)
+        );
+    }
+
+    /// The review of W12.3: a credential store that cannot be read (no
+    /// store, or a locked one) is one candidate's problem: a key in the
+    /// environment still counts.
+    #[test]
+    fn an_unreadable_store_does_not_hide_a_key_in_the_environment() {
+        let status = |credential: Credential| match credential {
+            Credential::Key(Provider::Anthropic) => KeyStatus::FromEnvironment {
+                variable: "ANTHROPIC_API_KEY",
+            },
+            _ => KeyStatus::Unavailable("no credential store".into()),
+        };
+        let credentials = Credentials {
+            status: &status,
+            prefer_subscription: true,
+            login: None,
+        };
+        let resolved = resolve(&defaults(), &credentials, false).unwrap();
+        let lead = model(&resolved.models, "lead");
+        assert_eq!((lead.access, lead.fallback.as_deref()), (Access::Key, None));
+        assert_eq!(lead.credential, "ANTHROPIC_API_KEY");
+        assert_eq!(model(&resolved.models, "escalation").access, Access::Key);
+        // Nothing usable: the unreadable store is named.
+        let nothing = |_: Credential| KeyStatus::Unavailable("no credential store".into());
+        let credentials = Credentials {
+            status: &nothing,
+            prefer_subscription: true,
+            login: None,
+        };
+        let problems = resolve(&defaults(), &credentials, false).unwrap_err();
+        assert!(
+            problems[0].contains("cannot be read (no credential store)"),
+            "{problems:?}"
+        );
+    }
+
     /// A role with neither its model nor its fallback stops the objective
     /// from starting, naming the role and what is missing.
     #[test]
@@ -492,7 +604,7 @@ mod tests {
             prefer_subscription: true,
             login: None,
         };
-        let problems = resolve(&defaults(), &credentials).unwrap_err();
+        let problems = resolve(&defaults(), &credentials, true).unwrap_err();
         assert_eq!(problems.len(), 1, "{problems:?}");
         assert!(
             problems[0].starts_with("decisions: typesafe/jev-1.13.0 needs a TypeSafe AI key")
@@ -505,7 +617,7 @@ mod tests {
             prefer_subscription: true,
             login: None,
         };
-        let problems = resolve(&defaults(), &credentials).unwrap_err();
+        let problems = resolve(&defaults(), &credentials, true).unwrap_err();
         assert_eq!(problems.len(), 7, "{problems:?}");
         assert!(problems[0].contains("its fallback deepseek/deepseek-v4-pro needs a DeepSeek key"));
         // A model that cannot do the role's work is not used for it.
@@ -518,7 +630,7 @@ mod tests {
             prefer_subscription: true,
             login: None,
         };
-        let problems = resolve(&configured, &credentials).unwrap_err();
+        let problems = resolve(&configured, &credentials, true).unwrap_err();
         assert!(
             problems[0].contains("cannot run a Claude Agent runtime session"),
             "{problems:?}"

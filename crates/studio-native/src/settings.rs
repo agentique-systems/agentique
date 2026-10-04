@@ -282,7 +282,6 @@ const AGENT_FALLBACKS: &[&str] = &[
 ];
 /// The known pinned typed-decision models (C-52).
 const DECISION_MODELS: &[&str] = &["typesafe/jev-1.13.0"];
-const DECISION_FALLBACKS: &[&str] = &["", "typesafe/jev-1.13.0"];
 /// Every effort level a model of the table offers; empty for its default.
 /// A level the chosen model does not offer gives way to its default.
 const EFFORTS: &[&str] = &["", "low", "medium", "high", "xhigh", "max"];
@@ -483,30 +482,9 @@ pub const AGENTS: &[Setting] = &[
     agent_row(
         "agents.decisions.model",
         "Typed decisions",
-        "The model of fast typed decisions in operation (Jev, a known pinned version).",
+        "The model of fast typed decisions in operation (Jev, a known pinned version). It takes no effort and has no fallback: when it is unsure, escalation decides.",
         "typesafe/jev-1.13.0",
         DECISION_MODELS,
-    ),
-    agent_row(
-        "agents.decisions.effort",
-        "Typed decisions effort",
-        "Typed-decision models take no effort.",
-        "",
-        &[""],
-    ),
-    agent_row(
-        "agents.decisions.fallback",
-        "Typed decisions fallback",
-        "Another pinned typed-decision model when its own has no key; empty for none.",
-        "",
-        DECISION_FALLBACKS,
-    ),
-    agent_row(
-        "agents.decisions.fallbackEffort",
-        "Typed decisions fallback effort",
-        "Typed-decision models take no effort.",
-        "",
-        &[""],
     ),
 ];
 
@@ -763,10 +741,17 @@ impl SettingsStore {
     /// model and effort each, and a fallback when one is set.
     pub fn agent_configuration(&self) -> Vec<agq_orchestrator::models::Configured> {
         use agq_orchestrator::models::{Choice, Configured, ROLES};
+        // A row a role does not have (typed decisions have no effort and no
+        // fallback) is not set.
+        let value = |id: &str| {
+            setting(id)
+                .map(|_| self.text(id))
+                .filter(|text| !text.is_empty())
+        };
         let choice = |model: String, effort: String| {
-            agq_providers::ModelRef::parse(&self.text(&model)).map(|model| Choice {
+            agq_providers::ModelRef::parse(&value(&model)?).map(|model| Choice {
                 model,
-                effort: Some(self.text(&effort)).filter(|e| !e.is_empty()),
+                effort: value(&effort),
             })
         };
         ROLES
@@ -910,7 +895,21 @@ mod tests {
         use agq_orchestrator::models::{Kind, ROLES};
         use agq_providers::{ModelRef, capabilities, price};
         for (role, kind) in ROLES {
-            for field in ["model", "effort", "fallback", "fallbackEffort"] {
+            // Typed decisions have a model only: no effort, no fallback.
+            let fields: &[&str] = if kind == Kind::Decisions {
+                &["model"]
+            } else {
+                &["model", "effort", "fallback", "fallbackEffort"]
+            };
+            assert_eq!(
+                AGENTS
+                    .iter()
+                    .filter(|row| row.id.starts_with(&format!("agents.{role}.")))
+                    .count(),
+                fields.len(),
+                "{role}"
+            );
+            for field in fields {
                 let id = format!("agents.{role}.{field}");
                 let row = setting(&id).unwrap_or_else(|| panic!("{id}"));
                 let Allowed::Choice(choices) = row.allowed else {

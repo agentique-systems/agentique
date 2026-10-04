@@ -194,15 +194,18 @@ impl Studio {
             ));
         }
         let setup = self.objective_setup(&repository)?;
-        // Each role's model, resolved now and recorded (C-54): nothing
-        // starts half-configured. Whether this computer has a Claude login
-        // is known first, so a fallback's reason says it.
-        self.login_now();
-        let models = self
-            .agent_models()
+        // Each role's model, resolved now from the credentials read now and
+        // recorded (C-54): nothing it needs is left unresolved. An objective
+        // does not explore yet (W12.5), so the explorer, escalation and
+        // typed decisions are recorded but not needed. Whether this
+        // computer has a Claude login is said when it is known.
+        self.read_credentials();
+        let resolved = self
+            .agent_models(false)
             .map_err(|problems| problems.join("; "))?;
         let mut objective = store.create(intent, &repository, "main", budgets, permissions)?;
-        objective.models = models;
+        objective.models = resolved.models;
+        objective.roles_unavailable = resolved.unavailable.into_iter().collect();
         store.save(&objective)?;
         self.objectives.activity.clear();
         self.objectives
@@ -227,17 +230,27 @@ impl Studio {
         let store = self.objective_store();
         let mut objective = store.active().ok_or("there is no objective to continue")?;
         let setup = self.objective_setup(&objective.repository)?;
-        // The models it started with stay its models (C-54); an objective
-        // a build before C-54 started gets them now.
-        if objective.models.is_empty() {
-            self.login_now();
-            objective.models = self
-                .agent_models()
+        // The models it started with stay its models (C-54); a record
+        // without them (an earlier build saved it) gets them now, from the
+        // current Settings, and the activity says so.
+        let resolved_now = objective.models.is_empty();
+        if resolved_now {
+            self.read_credentials();
+            let resolved = self
+                .agent_models(false)
                 .map_err(|problems| problems.join("; "))?;
+            objective.models = resolved.models;
+            objective.roles_unavailable = resolved.unavailable.into_iter().collect();
             store.save(&objective)?;
         }
         self.objectives
             .note("orchestrator", format!("Continuing: {}", objective.intent));
+        if resolved_now {
+            self.objectives.note(
+                "orchestrator",
+                "its record had no models (an earlier build saved it): they were resolved now from the current Settings",
+            );
+        }
         self.note_models(&objective);
         self.objectives.current = Some(objective.clone());
         self.objectives.handle = Some(run::start(setup, objective));
@@ -383,6 +396,12 @@ impl Studio {
                 .unwrap_or_default();
             self.objectives
                 .note(&model.role, format!("model: {}{why}", model.label()));
+        }
+        for (role, why) in &objective.roles_unavailable {
+            self.objectives.note(
+                role,
+                format!("no model, which this objective does not need: {why}"),
+            );
         }
     }
 

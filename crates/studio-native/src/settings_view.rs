@@ -172,7 +172,7 @@ fn status_line(text: String, tone: Option<Tone>, theme: &ui::Theme) -> AnyElemen
 /// (C-54): `route` is the Claude Agent runtime's, `None` on the loop.
 fn assistant_now(
     route: Option<(String, Option<String>)>,
-    choice: &agq_assistant::ModelChoice,
+    loop_model: &str,
     theme: &ui::Theme,
 ) -> AnyElement {
     match route {
@@ -182,8 +182,7 @@ fn assistant_now(
         }
         None => status_line(
             format!(
-                "Now: {} on Agentique's own loop, which calls its model directly (an API key; a Claude subscription token works only in the Claude Agent runtime).",
-                choice.label()
+                "Now: {loop_model} on Agentique's own loop, which calls its model directly (an API key; a Claude subscription token works only in the Claude Agent runtime)."
             ),
             None,
             theme,
@@ -397,7 +396,10 @@ impl SettingsView {
                     models: None,
                     listing: None,
                     confirm_remove: false,
-                    status: agq_providers::key_status(provider),
+                    status: self
+                        .studio
+                        .read(cx)
+                        .credential(agq_providers::Credential::Key(provider)),
                     message: None,
                     _subscription: subscription,
                 },
@@ -515,6 +517,9 @@ impl SettingsView {
                 state.tested.clear();
                 state.status = KeyStatus::Stored;
                 state.message = Some("Saved in Windows Credential Manager.".into());
+                self.studio
+                    .update(cx, |studio, _| studio.read_credentials());
+                let state = self.provider(provider, window, cx);
                 state.check = None;
                 let id: &'static str = match provider {
                     Provider::Anthropic => "providers.anthropic.keyHint",
@@ -556,7 +561,7 @@ impl SettingsView {
                 });
                 self.set("providers.anthropic.tokenHint", json!(hint), cx);
                 self.studio
-                    .update(cx, |studio, _| studio.apply_runtime_choice());
+                    .update(cx, |studio, _| studio.read_credentials());
             }
             Err(error) => self.token_message = Some(error.0),
         }
@@ -580,8 +585,10 @@ impl SettingsView {
                 input
             }
         };
-        let status =
-            agq_providers::credential_status(agq_providers::Credential::ClaudeSubscription);
+        let status = self
+            .studio
+            .read(cx)
+            .credential(agq_providers::Credential::ClaudeSubscription);
         let hint = self
             .studio
             .read(cx)
@@ -684,7 +691,14 @@ impl SettingsView {
         state.confirm_remove = false;
         match keys::remove(provider) {
             Ok(()) => {
-                state.status = agq_providers::key_status(provider);
+                self.studio
+                    .update(cx, |studio, _| studio.read_credentials());
+                let status = self
+                    .studio
+                    .read(cx)
+                    .credential(agq_providers::Credential::Key(provider));
+                let state = self.provider(provider, window, cx);
+                state.status = status;
                 state.message = Some("The saved key was removed.".into());
                 let id: &'static str = match provider {
                     Provider::Anthropic => "providers.anthropic.keyHint",
@@ -907,14 +921,10 @@ impl SettingsView {
         let safe_mode = studio.safe_mode;
         // The Assistant's one credential: the endpoint's provider's key, or
         // the Anthropic credential Settings choose (C-54).
-        let key = agq_providers::credential_status(
-            match crate::agent_runtime::model_access(
-                studio.settings.text("assistant.provider").as_str(),
-            ) {
-                Some(endpoint) => agq_providers::Credential::Key(endpoint.provider),
-                None => studio.anthropic_credential(),
-            },
-        );
+        let key = studio.credential(match studio.runtime_endpoint() {
+            Some(endpoint) => agq_providers::Credential::Key(endpoint.provider),
+            None => studio.anthropic_credential(),
+        });
         let mut lines = studio
             .runtime
             .health
@@ -1573,27 +1583,28 @@ impl SettingsView {
     ) -> Option<AnyElement> {
         let theme = cx.theme().clone();
         let studio = self.studio.read(cx);
+        // From the credentials as last read: drawing reads no store.
         let resolved = studio.agent_models_each();
         let assistant = studio.assistant_route();
-        let choice = studio.settings.model_choice();
+        let loop_model = studio.conversation.model_name.clone();
         let mut blocks: Vec<AnyElement> = Vec::new();
         let line = |text: String, tone: Option<Tone>, _: &App| status_line(text, tone, &theme);
         if query.is_none_or(|q| matches(q, &["assistant", "conversation", "model"])) {
             let mut rows = vec![line(
-                "The Assistant's provider, model and effort are in Settings › Assistant; on the Claude Agent runtime its Anthropic default is claude-sonnet-5-5.".into(),
+                format!(
+                    "The Assistant's provider, model and effort are in Settings › Assistant; on the Claude Agent runtime its Anthropic default is {}.",
+                    Provider::Anthropic.default_model()
+                ),
                 None,
                 cx,
             )];
-            rows.push(assistant_now(assistant, &choice, &theme));
+            rows.push(assistant_now(assistant, &loop_model, &theme));
             blocks.push(group(Some("Assistant"), rows, cx).into_any_element());
         }
         for (role, outcome) in resolved {
-            let no_fallback = self
-                .studio
-                .read(cx)
-                .settings
-                .text(&format!("agents.{role}.fallback"))
-                .is_empty();
+            let id = format!("agents.{role}.fallback");
+            let no_fallback = settings::setting(&id).is_none()
+                || self.studio.read(cx).settings.text(&id).is_empty();
             let mut rows: Vec<AnyElement> = ["model", "effort", "fallback", "fallbackEffort"]
                 .iter()
                 .filter(|field| **field != "fallbackEffort" || !no_fallback)
@@ -1608,6 +1619,14 @@ impl SettingsView {
             if rows.is_empty() {
                 continue;
             }
+            if settings::setting(&format!("agents.{role}.effort")).is_none() {
+                rows.push(line(
+                    "A typed-decision model takes no effort and has no fallback: when it is unsure, the escalation model decides.".into(),
+                    None,
+                    cx,
+                ));
+            }
+            let needed = agq_orchestrator::models::needed(role, false);
             rows.push(match outcome {
                 Ok(model) => match &model.fallback {
                     None => line(
@@ -1632,9 +1651,16 @@ impl SettingsView {
                         cx,
                     ),
                 },
-                Err(problem) => line(
+                Err(problem) if needed => line(
                     format!("Not available, so no objective starts: {problem}"),
                     Some(Tone::Danger),
+                    cx,
+                ),
+                Err(problem) => line(
+                    format!(
+                        "Not available now; only an objective that explores needs it: {problem}"
+                    ),
+                    Some(Tone::Warning),
                     cx,
                 ),
             });
@@ -2093,7 +2119,7 @@ impl Render for SettingsView {
                         .collect();
                     if !rows.is_empty() {
                         let studio = self.studio.read(cx);
-                        rows.push(assistant_now(studio.assistant_route(), &studio.settings.model_choice(), &theme));
+                        rows.push(assistant_now(studio.assistant_route(), &studio.conversation.model_name, &theme));
                     }
                     let card = self.runtime_card(query, cx);
                     (!rows.is_empty() || card.is_some()).then(|| {

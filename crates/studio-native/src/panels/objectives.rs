@@ -401,6 +401,13 @@ fn route(role: &str, model: Result<RoleModel, String>, theme: &ui::Theme) -> gpu
             },
             model.fallback.is_some(),
         ),
+        // Not needed by an objective that does not explore (W12.5 adds
+        // exploring objectives): recorded, never a reason not to start.
+        Err(problem) if !agq_orchestrator::models::needed(role, false) => (
+            format!("{role} · no model now"),
+            format!("{problem}. Only an objective that explores needs it."),
+            false,
+        ),
         Err(problem) => (
             format!("{role} · not available"),
             format!("{problem}. Nothing starts until it has a model."),

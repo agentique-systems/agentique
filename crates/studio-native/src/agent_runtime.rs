@@ -40,21 +40,30 @@ pub const CLAUDE_AGENT: &str = "claude-agent";
 /// SDK's own small tasks).
 pub const DEEPSEEK_MODEL: &str = "deepseek-v4-pro";
 
-/// Whether a key or token is there (the environment or the credential
-/// store).
-fn present(credential: Credential) -> bool {
+/// Every credential Agentique may hold: each provider's key, and the Claude
+/// subscription token.
+pub fn credentials() -> impl Iterator<Item = Credential> {
+    Provider::ALL
+        .into_iter()
+        .map(Credential::Key)
+        .chain([Credential::ClaudeSubscription])
+}
+
+/// Whether a key or token is there.
+fn present(status: KeyStatus) -> bool {
     matches!(
-        agq_providers::credential_status(credential),
+        status,
         KeyStatus::Stored | KeyStatus::FromEnvironment { .. }
     )
 }
 
 /// Where the Claude Agent runtime's model answers, from the Settings'
-/// provider and the keys there are: Anthropic's API, or DeepSeek's
-/// Anthropic-compatible endpoint (C-53). With no provider chosen, Anthropic
-/// when an API key or the Claude subscription token is there (C-54), else
-/// DeepSeek when its key is.
-pub fn model_access(provider: &str) -> Option<Endpoint> {
+/// provider and the keys there are (`status`): Anthropic's API, or
+/// DeepSeek's Anthropic-compatible endpoint (C-53). With no provider chosen,
+/// Anthropic when an API key or the Claude subscription token is there
+/// (C-54), else DeepSeek when its key is.
+pub fn model_access(provider: &str, status: &dyn Fn(Credential) -> KeyStatus) -> Option<Endpoint> {
+    let present = |credential| present(status(credential));
     let anthropic =
         present(Credential::Key(Provider::Anthropic)) || present(Credential::ClaudeSubscription);
     match provider {
@@ -234,7 +243,7 @@ impl Studio {
     /// (fine, text).
     pub fn credential_lines(&self) -> Vec<(bool, String)> {
         let mut providers = vec![
-            model_access(self.settings.text("assistant.provider").as_str())
+            self.runtime_endpoint()
                 .map(|e| e.provider)
                 .unwrap_or(Provider::Anthropic),
         ];
@@ -252,7 +261,7 @@ impl Studio {
         }
         for credential in credentials {
             let name = credential.name();
-            lines.push(match agq_providers::credential_status(credential) {
+            lines.push(match self.credential(credential) {
                 KeyStatus::FromEnvironment { variable } => (
                     true,
                     format!("{name}: from {variable}; {}.", billed(credential)),
@@ -295,8 +304,6 @@ impl Studio {
 pub enum Work {
     Check(Receiver<Health>),
     Install(Receiver<Result<Health, String>>, Arc<AtomicBool>),
-    /// Whether this computer has a Claude login (C-54).
-    Login(Receiver<Result<Login, String>>),
 }
 
 #[derive(Default)]
@@ -309,6 +316,18 @@ pub struct RuntimeState {
     /// Whether this computer has a Claude login, once checked: shown, and
     /// named in a fallback's reason, never used (C-54).
     pub login: Option<Result<Login, String>>,
+    /// The check of the Claude login running on its own thread, beside any
+    /// other setup work.
+    pub login_probe: Option<Receiver<Result<Login, String>>>,
+    /// Where each key and the subscription token come from, as last read
+    /// (C-54): read when the Studio starts, when Settings or the
+    /// Objectives panel opens, when a key or the token is saved or removed,
+    /// and before an objective starts; drawing never reads the store.
+    pub credentials: std::collections::BTreeMap<Credential, KeyStatus>,
+    /// The Assistant's route on the Claude Agent runtime, as the runtime
+    /// choice last made it: its label and why it is not the configured
+    /// one (C-54); `None` on Agentique's own loop.
+    pub assistant: Option<(String, Option<String>)>,
 }
 
 impl Studio {
@@ -318,6 +337,34 @@ impl Studio {
             CLAUDE_AGENT => CLAUDE_AGENT.into(),
             _ => LOOP.into(),
         }
+    }
+
+    /// Where `credential` comes from, as last read ([`read_credentials`]
+    /// (Self::read_credentials)); never reads the store.
+    pub fn credential(&self, credential: Credential) -> KeyStatus {
+        self.runtime
+            .credentials
+            .get(&credential)
+            .cloned()
+            .unwrap_or(KeyStatus::Missing)
+    }
+
+    /// Reads where each key and the token come from again (the environment,
+    /// else the credential store), and applies what changed to the
+    /// Assistant's runtime.
+    pub fn read_credentials(&mut self) {
+        self.runtime.credentials = credentials()
+            .map(|c| (c, agq_providers::credential_status(c)))
+            .collect();
+        self.apply_runtime_choice();
+    }
+
+    /// Where the Claude Agent runtime's model answers for the Assistant,
+    /// from the Settings and the credentials as last read.
+    pub fn runtime_endpoint(&self) -> Option<Endpoint> {
+        model_access(self.settings.text("assistant.provider").as_str(), &|c| {
+            self.credential(c)
+        })
     }
 
     /// Which Anthropic credential the Claude Agent runtime's sessions use
@@ -332,7 +379,7 @@ impl Studio {
         } else {
             (token, key)
         };
-        if present(first) || !present(second) {
+        if present(self.credential(first)) || !present(self.credential(second)) {
             first
         } else {
             second
@@ -340,10 +387,10 @@ impl Studio {
     }
 
     /// Starts checking whether this computer has a Claude login, on its own
-    /// thread, unless that is known or other setup work runs (Settings and
-    /// the Objectives panel show it; C-54).
+    /// thread, unless that is known or being checked (Settings and the
+    /// Objectives panel show it; C-54). Other setup work goes on beside it.
     pub fn probe_login(&mut self) {
-        if self.runtime.login.is_some() || self.runtime.work.is_some() || self.safe_mode {
+        if self.runtime.login.is_some() || self.runtime.login_probe.is_some() || self.safe_mode {
             return;
         }
         let installation = Installation {
@@ -366,31 +413,41 @@ impl Studio {
         std::thread::spawn(move || {
             let _ = sender.send(claude_agent::login(&node, &installation));
         });
-        self.runtime.work = Some(Work::Login(receiver));
+        self.runtime.login_probe = Some(receiver);
     }
 
-    /// Whether this computer has a Claude login, checked now if it is not
-    /// known yet (blocking, about a second; before an objective starts, so
-    /// its record says it).
-    pub fn login_now(&mut self) -> Option<&Login> {
-        if self.runtime.login.is_none() && !self.safe_mode {
-            let installation = Installation {
-                root: Installation::default_root(),
-            };
-            if let Ok(node) = claude_agent::find_node()
-                && installation.installed()
-            {
-                self.runtime.login = Some(claude_agent::login(&node, &installation));
+    /// Takes the Claude login's check when it has ended. Returns whether it
+    /// did.
+    pub fn poll_login(&mut self) -> bool {
+        let Some(receiver) = &self.runtime.login_probe else {
+            return false;
+        };
+        let login = match receiver.try_recv() {
+            Ok(login) => login,
+            Err(TryRecvError::Empty) => return false,
+            Err(TryRecvError::Disconnected) => {
+                Err("the check stopped without a result".to_string())
             }
-        }
-        self.runtime.login.as_ref().and_then(|l| l.as_ref().ok())
+        };
+        self.runtime.login_probe = None;
+        self.runtime.login = Some(login);
+        self.apply_runtime_choice();
+        self.mark(Dirty::LAYOUT | Dirty::STATUS);
+        true
     }
 
     /// Each Orchestrator role's model as Settings configure it and the
-    /// credentials there are allow (C-54), or each role that has neither
-    /// its model nor its fallback, named with what is missing.
-    pub fn agent_models(&self) -> Result<Vec<RoleModel>, Vec<String>> {
-        self.resolving(agq_orchestrator::models::resolve)
+    /// credentials allow (C-54), for an objective that explores or not;
+    /// or each role it needs that has neither its model nor its fallback,
+    /// named with what is missing. Whether this computer has a Claude login
+    /// is said when it is known.
+    pub fn agent_models(
+        &self,
+        explore: bool,
+    ) -> Result<agq_orchestrator::models::Resolved, Vec<String>> {
+        self.resolving(|configured, credentials| {
+            agq_orchestrator::models::resolve(configured, credentials, explore)
+        })
     }
 
     /// [`agent_models`](Self::agent_models), role by role, for Settings and
@@ -399,9 +456,8 @@ impl Studio {
         self.resolving(agq_orchestrator::models::resolve_each)
     }
 
-    /// Runs a resolution with the roles as Settings configure them and the
-    /// credentials there are (each looked up once: the environment, else
-    /// the credential store), and this computer's Claude login.
+    /// Runs a resolution with the roles as Settings configure them, the
+    /// credentials as last read, and this computer's Claude login.
     fn resolving<T>(
         &self,
         resolve: impl FnOnce(
@@ -410,14 +466,7 @@ impl Studio {
         ) -> T,
     ) -> T {
         let configured = self.settings.agent_configuration();
-        let known = std::cell::RefCell::new(std::collections::BTreeMap::new());
-        let status = |credential: Credential| {
-            known
-                .borrow_mut()
-                .entry(credential)
-                .or_insert_with(|| agq_providers::credential_status(credential))
-                .clone()
-        };
+        let status = |credential: Credential| self.credential(credential);
         let credentials = agq_orchestrator::models::Credentials {
             status: &status,
             prefer_subscription: self.settings.text("providers.anthropic.credential") != "key",
@@ -426,15 +475,20 @@ impl Studio {
         resolve(&configured, &credentials)
     }
 
-    /// The Assistant's model on the Claude Agent runtime now, and why it is
-    /// not the configured one when it is not (C-54): its label and the
-    /// reason. `None` on Agentique's own loop.
+    /// The Assistant's model on the Claude Agent runtime, and why it is not
+    /// the configured one when it is not (C-54), as the runtime choice last
+    /// made it. `None` on Agentique's own loop.
     pub fn assistant_route(&self) -> Option<(String, Option<String>)> {
-        if self.runtime_setting() != CLAUDE_AGENT {
+        self.runtime.assistant.clone()
+    }
+
+    /// [`assistant_route`](Self::assistant_route), worked out.
+    fn route_now(&self) -> Option<(String, Option<String>)> {
+        if self.runtime_setting() != CLAUDE_AGENT || self.safe_mode {
             return None;
         }
         let configured = self.settings.text("assistant.provider");
-        let endpoint = model_access(configured.as_str());
+        let endpoint = self.runtime_endpoint();
         let credential = match &endpoint {
             Some(endpoint) => Credential::Key(endpoint.provider),
             None => self.anthropic_credential(),
@@ -498,11 +552,12 @@ impl Studio {
     /// turns.
     pub fn apply_runtime_choice(&mut self) {
         let choice = self.settings.model_choice();
+        self.runtime.assistant = self.route_now();
         if self.runtime_setting() != CLAUDE_AGENT || self.safe_mode {
             self.conversation.use_choice(choice);
             return;
         }
-        let endpoint = model_access(self.settings.text("assistant.provider").as_str());
+        let endpoint = self.runtime_endpoint();
         let provider = endpoint
             .as_ref()
             .map(|e| e.provider)
@@ -521,11 +576,7 @@ impl Studio {
             root: Installation::default_root(),
         };
         let name = provider.name();
-        let problem = match (
-            &node,
-            installation.installed(),
-            agq_providers::credential_status(credential),
-        ) {
+        let problem = match (&node, installation.installed(), self.credential(credential)) {
             (Err(why), _, _) => Some(why.clone()),
             (_, false, _) => Some(
                 "The Claude Agent runtime is not installed: Settings › Assistant › Install.".into(),
@@ -703,8 +754,9 @@ impl Studio {
 
     /// Takes finished setup work. Returns whether anything changed.
     pub fn poll_runtime(&mut self) -> bool {
+        let login = self.poll_login();
         let Some(work) = &self.runtime.work else {
-            return false;
+            return login;
         };
         let finished = match work {
             Work::Check(receiver) => match receiver.try_recv() {
@@ -721,22 +773,9 @@ impl Studio {
                     Some(Err("The installation stopped without a result.".to_string()))
                 }
             },
-            Work::Login(receiver) => {
-                let login = match receiver.try_recv() {
-                    Ok(login) => login,
-                    Err(TryRecvError::Empty) => return false,
-                    Err(TryRecvError::Disconnected) => {
-                        Err("the check stopped without a result".to_string())
-                    }
-                };
-                self.runtime.work = None;
-                self.runtime.login = Some(login);
-                self.mark(Dirty::LAYOUT | Dirty::STATUS);
-                return true;
-            }
         };
         let Some(result) = finished else {
-            return false;
+            return login;
         };
         self.runtime.work = None;
         match result {
@@ -874,5 +913,60 @@ mod tests {
             app.conversation_development().is_none(),
             "safe mode has none"
         );
+    }
+
+    /// The review of W12.3: what Settings and the Objectives panel draw
+    /// (each role's model, the credential lines, the Assistant's route)
+    /// comes from the credentials as last read, so drawing reads no store;
+    /// reading them again is an act of its own.
+    #[test]
+    fn drawing_uses_the_credentials_as_last_read() {
+        use agq_orchestrator::record::Access;
+        use agq_providers::{Credential, KeyStatus, Provider};
+        let (mut app, _folder) = studio("credentials-as-read");
+        // What the store and environment hold here does not matter: the
+        // last read says the subscription token and the DeepSeek and
+        // TypeSafe AI keys are there, and nothing else.
+        app.runtime.credentials = super::credentials()
+            .map(|c| (c, KeyStatus::Missing))
+            .collect();
+        for credential in [
+            Credential::ClaudeSubscription,
+            Credential::Key(Provider::DeepSeek),
+            Credential::Key(Provider::TypeSafe),
+        ] {
+            app.runtime
+                .credentials
+                .insert(credential, KeyStatus::Stored);
+        }
+        let each = app.agent_models_each();
+        let lead = each[0].1.as_ref().unwrap();
+        assert_eq!((each[0].0, lead.access), ("lead", Access::Subscription));
+        let escalation = &each.iter().find(|(r, _)| *r == "escalation").unwrap().1;
+        assert_eq!(
+            escalation.as_ref().unwrap().model.to_string(),
+            "deepseek/deepseek-v4-pro"
+        );
+        let lines = app.credential_lines();
+        assert!(
+            lines.iter().any(|(fine, l)| *fine
+                && l.starts_with(
+                    "Claude subscription token: saved in the Windows Credential Manager"
+                )),
+            "{lines:?}"
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|(fine, l)| !*fine && l.starts_with("Anthropic key: none")),
+            "{lines:?}"
+        );
+        assert_eq!(app.anthropic_credential(), Credential::ClaudeSubscription);
+        // Now the last read says nothing is there: so do the roles.
+        for status in app.runtime.credentials.values_mut() {
+            *status = KeyStatus::Missing;
+        }
+        assert!(app.agent_models(false).is_err());
+        assert!(app.agent_models_each().iter().all(|(_, m)| m.is_err()));
     }
 }

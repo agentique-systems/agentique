@@ -166,12 +166,15 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
             "{role}: {spent:?}"
         );
     }
+    // Every session of a role is built on its model: the implementer's
+    // first attempt and its repair alike.
+    let implementer: Vec<_> = built.iter().filter(|(r, ..)| r == "implementer").collect();
+    assert!(implementer.len() >= 2, "{built:?}");
     assert!(
-        built.iter().all(|(r, ..)| r != "implementer")
-            || built
-                .iter()
-                .filter(|(r, ..)| r == "implementer")
-                .all(|(_, m, _)| m == "deepseek-flash")
+        implementer
+            .iter()
+            .all(|(_, m, e)| m == "deepseek-flash" && e.as_deref() == Some("high")),
+        "{built:?}"
     );
     assert!(record.spent.roles["lead"]["deepseek/deepseek-flash"].tokens > 0);
     assert!(

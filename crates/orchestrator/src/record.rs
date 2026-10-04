@@ -480,6 +480,11 @@ pub struct Objective {
     /// C-54 has none.
     #[serde(default)]
     pub models: Vec<RoleModel>,
+    /// The roles it does not need that had no model when it started, each
+    /// with why (C-54): an objective that does not explore needs no
+    /// explorer, escalation or typed decisions.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub roles_unavailable: BTreeMap<String, String>,
 }
 
 impl Objective {
@@ -553,6 +558,7 @@ impl Store {
             continuation: None,
             note: None,
             models: Vec::new(),
+            roles_unavailable: BTreeMap::new(),
         };
         self.save(&objective)?;
         Ok(objective)
@@ -830,6 +836,10 @@ mod tests {
                 credential: "DEEPSEEK_API_KEY".into(),
                 billed: "per token, to the DeepSeek account of this key".into(),
             }],
+            roles_unavailable: BTreeMap::from([(
+                "decisions".to_string(),
+                "typesafe/jev-1.13.0 needs a TypeSafe AI key".to_string(),
+            )]),
         };
         objective.spent.add(
             "lead",
@@ -889,7 +899,11 @@ mod tests {
         }
         let objective = with_models();
         let text = serde_json::to_string_pretty(&objective).unwrap();
-        assert!(text.contains("\"models\"") && text.contains("\"roles\""));
+        assert!(
+            text.contains("\"models\"")
+                && text.contains("\"roles\"")
+                && text.contains("\"rolesUnavailable\"")
+        );
         // The previous build reads it, and sees what it knew.
         let previous: Previous = serde_json::from_str(&text).unwrap();
         assert_eq!(previous.format, 1);
@@ -900,9 +914,14 @@ mod tests {
         // A record the previous build wrote reads with the new fields empty.
         let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
         old.as_object_mut().unwrap().remove("models");
+        old.as_object_mut().unwrap().remove("rolesUnavailable");
         old["spent"].as_object_mut().unwrap().remove("roles");
         let read: Objective = serde_json::from_value(old).unwrap();
-        assert!(read.models.is_empty() && read.spent.roles.is_empty());
+        assert!(
+            read.models.is_empty()
+                && read.spent.roles.is_empty()
+                && read.roles_unavailable.is_empty()
+        );
         assert_eq!(read.spent.tokens, 2000);
         // And the store keeps format 1.
         let dir = tempfile::tempdir().unwrap();
