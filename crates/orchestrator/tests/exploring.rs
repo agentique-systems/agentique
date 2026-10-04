@@ -615,3 +615,124 @@ fn the_operators_messages_go_to_the_implementer_at_work_and_otherwise_to_the_lea
     let summary = &record.cycle().unwrap().attempts[0].summary;
     assert!(summary.contains("Call it Archive"), "{summary}");
 }
+
+/// The Studio built from this checkout (`cargo build -p agq-studio-native`).
+fn built_studio() -> Option<PathBuf> {
+    let target = std::env::var_os("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target"));
+    let exe = target.join("debug").join(agq_launcher::STUDIO);
+    exe.is_file().then_some(exe)
+}
+
+/// Live, with the Studio built (opens windows; no key, no model): a test
+/// instance starts as one (`--test-instance`, `--control-speed instant`),
+/// in the stated condition `recovered` it says which build did not start,
+/// in `with an objective` it has the recorded objective in its app data,
+/// and an exploration by the rules runs in a live instance whose folder is
+/// removed after use.
+///
+/// ```text
+/// cargo build -p agq-studio-native
+/// cargo test -p agq-orchestrator --test exploring -- --ignored --nocapture
+/// ```
+#[test]
+#[ignore = "opens windows: run with the Studio built (no keys needed)"]
+fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
+    use agq_orchestrator::control::{CONDITIONS, FAILED_BUILD, Flags, TestInstance};
+    use agq_orchestrator::explore::{self, Changes, LiveInstance, Plan};
+    let Some(exe) = built_studio() else {
+        panic!("build the Studio first: cargo build -p agq-studio-native");
+    };
+    let flags = Flags::of(&exe);
+    assert!(flags.test_instance && flags.control_speed, "{flags:?}");
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap();
+    let sample = repository.join("models").join("url-shortener");
+    let dir = tempfile::tempdir().unwrap();
+    for condition in CONDITIONS {
+        let folder = dir.path().join(condition.replace(' ', "-"));
+        let options = Options {
+            speed: Some("instant".into()),
+            condition: Some(condition.to_string()),
+            ..Options::default()
+        };
+        let mut instance =
+            TestInstance::start_with(&exe, &folder, &repository, &repository, &options).unwrap();
+        let mut client = instance.connect(Duration::from_secs(180)).unwrap();
+        let observed = client.observe(true).unwrap();
+        eprintln!(
+            "{condition}: status “{}”, speed {}",
+            observed["status"], observed["agents"]["speed"]
+        );
+        assert_eq!(observed["agents"]["speed"], "instant");
+        if condition == "recovered" {
+            let status = observed["status"].as_str().unwrap_or_default();
+            assert!(
+                status.contains(FAILED_BUILD) && status.contains("did not start"),
+                "{status}"
+            );
+        } else {
+            let store = Store::new(folder.join("session").join("objectives"));
+            assert_eq!(store.list().len(), 1);
+        }
+        drop(client);
+        drop(instance);
+        assert!(!folder.exists(), "the test instance's folder is removed");
+    }
+    // An exploration by the rules in a live instance, as a cycle runs it.
+    let folder = dir.path().join("explore");
+    let mut live = LiveInstance::with(
+        &exe,
+        &sample,
+        &folder,
+        Options {
+            speed: Some("instant".into()),
+            ..Options::default()
+        },
+    );
+    let plan = Plan {
+        goal: "Look at the history".into(),
+        way: agq_orchestrator::decide::Way::Rules,
+        seed: 3,
+        steps: 8,
+        seconds: 300,
+        // The rules spend nothing (a run stops when spend reaches budget).
+        usd: 0.01,
+        changes: Changes::default(),
+        start: "models/url-shortener".into(),
+        conversation: false,
+        turn_ms: 10_000,
+        stop_ms: 10_000,
+    };
+    let answers = agq_orchestrator::decide::Decider::default();
+    let none = ModelRef::new(Provider::DeepSeek, "none");
+    let deciding = explore::Deciding {
+        answers: &answers,
+        explorer: none.clone(),
+        effort: None,
+        escalation: none,
+        escalation_effort: None,
+    };
+    let run = explore::explore(
+        &mut live,
+        &plan,
+        &deciding,
+        &Knowledge::new("live"),
+        &mut || true,
+    );
+    eprintln!(
+        "explored {} steps in {:.0} s: {} keys covered, {} finding(s), {} recoveries; {}",
+        run.actions,
+        run.seconds,
+        run.covered.len(),
+        run.findings.len(),
+        run.recoveries.len(),
+        run.ended
+    );
+    assert_eq!(run.actions, 8, "{}", run.ended);
+    drop(live);
+    assert!(!folder.exists(), "the live instance's folder is removed");
+}

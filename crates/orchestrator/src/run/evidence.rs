@@ -521,7 +521,9 @@ impl Driver {
             seed: self.cycle().n as u64,
             steps: CHANGED_STEPS,
             seconds: 600,
-            usd: 0.0,
+            // The rules spend nothing; a run stops once its spend reaches
+            // its budget, so the budget is above nothing.
+            usd: RULES_USD,
             changes,
             start: super::explore::STARTS[0].to_string(),
             conversation: false,
@@ -584,6 +586,10 @@ impl Driver {
 
 /// The steps of the rules' exploration of a change's areas.
 const CHANGED_STEPS: u32 = 10;
+
+/// The spend budget of an exploration by the rules (which ask no model):
+/// above nothing, since a run stops when its spend reaches its budget.
+const RULES_USD: f64 = 0.01;
 
 #[cfg(test)]
 mod tests {
