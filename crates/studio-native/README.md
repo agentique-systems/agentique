@@ -175,8 +175,14 @@ Ctrl+, (or the Settings button) shows Settings in place of the Surface and
 the Panels (`settings_view.rs`; the table and `settings.json` are in
 `settings.rs`). Sections: Providers (paste a key, Test, Save; the key goes to
 the Windows Credential Manager and only its hint is shown again; the model
-list with capabilities and list prices), Assistant (provider, model, effort),
-Appearance, Keyboard and About; the search box finds rows by label,
+list with capabilities and list prices; for Anthropic also the Operator's
+Claude subscription token from `claude setup-token`, which only the Claude
+Agent runtime's sessions use, and which of the two they use when both are
+there), Assistant (provider, model, effort; the Claude Agent runtime's card
+says which credential each provider the agents use has, who pays, and
+whether this computer has a Claude login and why it is not used), Agents
+(C-54: each Orchestrator role's model, effort and fallback, with what it
+resolves to now), Appearance, Keyboard and About; the search box finds rows by label,
 description and synonyms. Choices apply at once and are saved to
 `settings.json` beside the session file. The theme, contrast and reduced
 motion commands change the same settings. Environment variables

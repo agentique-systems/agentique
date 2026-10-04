@@ -22,6 +22,8 @@
 //! - [`knowledge`]: the testing knowledge kept across runs.
 //! - [`observed`]: what exploration reads from a test instance, in one
 //!   place.
+//! - [`models`]: each role's model, resolved before an objective starts
+//!   (C-54).
 //! - [`run`]: the driver.
 #![forbid(unsafe_code)]
 
@@ -33,6 +35,7 @@ pub mod findings;
 pub mod forge;
 pub mod gates;
 pub mod knowledge;
+pub mod models;
 pub mod observed;
 pub mod record;
 pub mod roles;

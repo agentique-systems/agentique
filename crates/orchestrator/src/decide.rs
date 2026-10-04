@@ -365,6 +365,8 @@ pub struct Decider {
     pub providers: Providers,
     pub jev_model: String,
     pub model: ModelRef,
+    /// The reasoning model's effort; `None` for its default.
+    pub effort: Option<String>,
     /// Jev's confidence at or above which its answer is used.
     pub threshold: f64,
     /// How long Jev may take.
@@ -377,6 +379,7 @@ impl Default for Decider {
             providers: Providers::new(),
             jev_model: agq_providers::jev::DEFAULT_MODEL.into(),
             model: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+            effort: None,
             threshold: 0.6,
             deadline: Duration::from_secs(4),
         }
@@ -521,7 +524,7 @@ impl Decider {
         ask_model(
             self,
             &self.model,
-            None,
+            self.effort.as_deref(),
             &situation.question(),
             CHOICE,
             &read,

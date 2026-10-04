@@ -85,6 +85,107 @@ pub struct Spend {
     /// Time worked, not counting time paused.
     #[serde(default)]
     pub seconds: f64,
+    /// The same by role, and by model within a role (`provider/model`), so
+    /// the models of a session's SDK subagents show under its role (C-54).
+    /// Included in the totals above.
+    #[serde(default)]
+    pub roles: BTreeMap<String, BTreeMap<String, Cost>>,
+}
+
+/// What some usage cost: US dollars at the model's own list price (for a
+/// Claude subscription, what the API would have charged), and tokens.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Cost {
+    pub usd: f64,
+    pub tokens: u64,
+    /// Some of it had no known price (counted at a high one).
+    #[serde(default)]
+    pub unknown: bool,
+}
+
+impl Cost {
+    pub fn add(&mut self, other: Cost) {
+        self.usd += other.usd;
+        self.tokens += other.tokens;
+        self.unknown |= other.unknown;
+    }
+}
+
+impl Spend {
+    /// Counts `cost` of `model`'s usage by `role`, in the totals too.
+    pub fn add(&mut self, role: &str, model: &agq_providers::ModelRef, cost: Cost) {
+        self.usd += cost.usd;
+        self.tokens += cost.tokens;
+        self.unknown |= cost.unknown;
+        self.roles
+            .entry(role.to_string())
+            .or_default()
+            .entry(model.to_string())
+            .or_default()
+            .add(cost);
+    }
+
+    /// What `role` spent, all its models together.
+    pub fn role(&self, role: &str) -> Cost {
+        let mut total = Cost::default();
+        for cost in self.roles.get(role).into_iter().flat_map(BTreeMap::values) {
+            total.add(*cost);
+        }
+        total
+    }
+}
+
+/// Which credential a role's model runs on (C-54).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Access {
+    /// The provider's API key, billed per token to its account.
+    Key,
+    /// The Operator's Claude subscription token, within the plan's limits;
+    /// the Claude Agent runtime only.
+    Subscription,
+}
+
+/// The model a role uses for the whole objective, resolved by the Studio
+/// before it started (C-54): the configured one when its provider has a
+/// credential Agentique may use, otherwise its fallback, with why.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoleModel {
+    /// `lead`, `implementer`, `reviewer`, `evaluator`, `explorer`,
+    /// `escalation` or `decisions` (`models::ROLES`).
+    pub role: String,
+    pub model: agq_providers::ModelRef,
+    #[serde(default)]
+    pub effort: Option<String>,
+    pub access: Access,
+    /// The model Settings name for the role.
+    pub configured: agq_providers::ModelRef,
+    /// Why the configured model is not used and its fallback is.
+    #[serde(default)]
+    pub fallback: Option<String>,
+    /// Where the credential comes from: its environment variable, or the
+    /// Windows Credential Manager. Never the credential.
+    pub credential: String,
+    /// Who pays for it.
+    pub billed: String,
+}
+
+impl RoleModel {
+    /// `claude-opus-5-5 · high · Claude subscription (your plan's limits
+    /// apply)`, `deepseek-v4-pro · max · DeepSeek`.
+    pub fn label(&self) -> String {
+        let mut text = self.model.model.clone();
+        if let Some(effort) = &self.effort {
+            text.push_str(&format!(" · {effort}"));
+        }
+        text.push_str(&match self.access {
+            Access::Subscription => " · Claude subscription (your plan's limits apply)".into(),
+            Access::Key => format!(" · {}", self.model.provider.name()),
+        });
+        text
+    }
 }
 
 /// Where a cycle is.
@@ -374,6 +475,16 @@ pub struct Objective {
     pub continuation: Option<Continuation>,
     /// Why it ended, in plain words.
     pub note: Option<String>,
+    /// Each role's model for every session of the objective (C-54), as the
+    /// Studio resolved them before it started. A record of a build before
+    /// C-54 has none.
+    #[serde(default)]
+    pub models: Vec<RoleModel>,
+    /// The roles it does not need that had no model when it started, each
+    /// with why (C-54): an objective that does not explore needs no
+    /// explorer, escalation or typed decisions.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub roles_unavailable: BTreeMap<String, String>,
 }
 
 impl Objective {
@@ -446,6 +557,8 @@ impl Store {
             spent: Spend::default(),
             continuation: None,
             note: None,
+            models: Vec::new(),
+            roles_unavailable: BTreeMap::new(),
         };
         self.save(&objective)?;
         Ok(objective)
@@ -658,6 +771,164 @@ mod tests {
                 "completed"
             ]
         );
+    }
+
+    /// Spend by role and by model within it (C-54): each model's usage is
+    /// counted under its role and in the totals, so a session's subagents'
+    /// models show.
+    #[test]
+    fn spend_is_counted_by_role_and_model() {
+        use agq_providers::{ModelRef, Provider};
+        let mut spent = Spend::default();
+        let pro = ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro");
+        let flash = ModelRef::new(Provider::DeepSeek, "deepseek-flash");
+        let cost = |usd: f64, tokens: u64| Cost {
+            usd,
+            tokens,
+            unknown: false,
+        };
+        spent.add("lead", &pro, cost(0.25, 1000));
+        spent.add("lead", &flash, cost(0.01, 300));
+        spent.add("lead", &pro, cost(0.25, 1000));
+        spent.add(
+            "reviewer",
+            &pro,
+            Cost {
+                unknown: true,
+                ..cost(0.5, 10)
+            },
+        );
+        assert_eq!(spent.role("lead"), cost(0.51, 2300));
+        assert_eq!(
+            spent.roles["lead"]["deepseek/deepseek-v4-pro"],
+            cost(0.5, 2000)
+        );
+        assert_eq!(spent.roles["lead"]["deepseek/deepseek-flash"].tokens, 300);
+        assert!(spent.role("reviewer").unknown && spent.unknown);
+        assert!((spent.usd - 1.01).abs() < 1e-9);
+        assert_eq!(spent.tokens, 2310);
+        assert_eq!(spent.role("evaluator"), Cost::default());
+    }
+
+    fn with_models() -> Objective {
+        use agq_providers::{ModelRef, Provider};
+        let mut objective = Objective {
+            format: FORMAT,
+            id: "objective-1".into(),
+            intent: "Fix it".into(),
+            created: "2026-10-04T00:00:00Z".into(),
+            state: State::Running,
+            budgets: Budgets::default(),
+            permissions: Permissions::default(),
+            repository: PathBuf::from("C:/agentique"),
+            base_branch: "main".into(),
+            cycles: vec![Cycle::new(1)],
+            spent: Spend::default(),
+            continuation: None,
+            note: None,
+            models: vec![RoleModel {
+                role: "lead".into(),
+                model: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+                effort: Some("max".into()),
+                access: Access::Key,
+                configured: ModelRef::new(Provider::Anthropic, "claude-opus-5-5"),
+                fallback: Some("no Anthropic API key or Claude subscription token".into()),
+                credential: "DEEPSEEK_API_KEY".into(),
+                billed: "per token, to the DeepSeek account of this key".into(),
+            }],
+            roles_unavailable: BTreeMap::from([(
+                "decisions".to_string(),
+                "typesafe/jev-1.13.0 needs a TypeSafe AI key".to_string(),
+            )]),
+        };
+        objective.spent.add(
+            "lead",
+            &ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+            Cost {
+                usd: 0.5,
+                tokens: 2000,
+                unknown: false,
+            },
+        );
+        objective
+    }
+
+    /// `objective.json` stays format 1 (C-54, §7.6 locked part (4)): the
+    /// fields W12.3 adds are optional, a record written before them is read
+    /// with them empty, and the previous build reads a record that has them.
+    /// The previous build's reader is these types without the new fields and
+    /// with the same serde attributes (none in this file refuses unknown
+    /// fields, the last assertion keeps it so, and serde's default is to skip
+    /// fields a type does not know); `Previous` and
+    /// `PreviousSpend` are exactly that reader for the two types that gained
+    /// fields, and every other type is unchanged.
+    #[test]
+    fn a_record_with_models_and_spend_by_role_stays_format_1() {
+        #[derive(Default, Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct PreviousSpend {
+            usd: f64,
+            #[serde(default)]
+            unknown: bool,
+            tokens: u64,
+            #[serde(default)]
+            decisions: u32,
+            #[serde(default)]
+            seconds: f64,
+        }
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct Previous {
+            format: u32,
+            id: String,
+            intent: String,
+            created: String,
+            state: State,
+            budgets: Budgets,
+            permissions: Permissions,
+            repository: PathBuf,
+            base_branch: String,
+            #[serde(default)]
+            cycles: Vec<Cycle>,
+            #[serde(default)]
+            spent: PreviousSpend,
+            continuation: Option<Continuation>,
+            note: Option<String>,
+        }
+        let objective = with_models();
+        let text = serde_json::to_string_pretty(&objective).unwrap();
+        assert!(
+            text.contains("\"models\"")
+                && text.contains("\"roles\"")
+                && text.contains("\"rolesUnavailable\"")
+        );
+        // The previous build reads it, and sees what it knew.
+        let previous: Previous = serde_json::from_str(&text).unwrap();
+        assert_eq!(previous.format, 1);
+        assert_eq!(previous.spent.tokens, 2000);
+        assert_eq!(previous.cycles.len(), 1);
+        // This build reads it back whole.
+        assert_eq!(serde_json::from_str::<Objective>(&text).unwrap(), objective);
+        // A record the previous build wrote reads with the new fields empty.
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        old.as_object_mut().unwrap().remove("models");
+        old.as_object_mut().unwrap().remove("rolesUnavailable");
+        old["spent"].as_object_mut().unwrap().remove("roles");
+        let read: Objective = serde_json::from_value(old).unwrap();
+        assert!(
+            read.models.is_empty()
+                && read.spent.roles.is_empty()
+                && read.roles_unavailable.is_empty()
+        );
+        assert_eq!(read.spent.tokens, 2000);
+        // And the store keeps format 1.
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path());
+        store.save(&objective).unwrap();
+        assert_eq!(store.load(&objective.id).unwrap(), objective);
+        assert!(!include_str!("record.rs").contains(concat!("deny_unknown", "_fields")));
     }
 
     #[test]

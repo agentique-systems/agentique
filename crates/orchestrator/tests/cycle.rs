@@ -4,14 +4,18 @@
 //! commits, the required checks and command criteria on a clean checkout,
 //! the key gate, a repair round, the independent review, and a merge the
 //! objective's permissions do not allow, which stops the cycle with the
-//! reviewed change waiting on its branch. Needs Node and git (skipped
-//! without Node).
+//! reviewed change waiting on its branch; each role on its own model and
+//! effort, and the spend by role and model (C-54). Needs Node and git
+//! (skipped without Node).
 
 use agq_assistant::claude_agent::{ClaudeAgent, Installation, find_node};
-use agq_orchestrator::record::{Budgets, Permissions, Phase, State, Store};
+use agq_orchestrator::record::{
+    Access, Budgets, Objective, Permissions, Phase, RoleModel, State, Store,
+};
 use agq_orchestrator::run::{self, Command, Event, Setup};
-use agq_providers::Secret;
+use agq_providers::{ModelRef, Provider, Secret};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const KEY: &str = "sk-fake-0123456789abcdef";
@@ -38,21 +42,36 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
     let dir = tempfile::tempdir().unwrap();
     let repository = repository_with(dir.path(), &[]);
     let store = Store::new(dir.path().join("objectives"));
-    let setup = setup_with(dir.path(), &store, node);
-    let objective = store
-        .create(
-            "Leave a note of the improvement",
-            &repository,
-            "main",
-            Budgets {
-                usd: 1.0,
-                cycles: 1,
-                attempts: 3,
-                hours: 1.0,
-            },
-            Permissions::default(),
-        )
-        .unwrap();
+    let mut setup = setup_with(dir.path(), &store, node.clone());
+    // The factory is given each role's own model (C-54).
+    let built = Arc::new(Mutex::new(Vec::<(String, String, Option<String>)>::new()));
+    let made = built.clone();
+    let factory = setup.runtime;
+    setup.runtime = Box::new(move |model, development| {
+        made.lock().unwrap().push((
+            model.role.clone(),
+            model.model.model.clone(),
+            model.effort.clone(),
+        ));
+        factory(model, development)
+    });
+    let objective = with_models(
+        store
+            .create(
+                "Leave a note of the improvement",
+                &repository,
+                "main",
+                Budgets {
+                    usd: 1.0,
+                    cycles: 1,
+                    attempts: 3,
+                    hours: 1.0,
+                },
+                Permissions::default(),
+            )
+            .unwrap(),
+        &store,
+    );
     let id = objective.id.clone();
     let handle = run::start(setup, objective);
     let deadline = Instant::now() + Duration::from_secs(240);
@@ -127,6 +146,48 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
         );
     }
     assert!(record.spent.tokens > 0);
+    // Each role ran on its own model and effort, and spent under its role,
+    // by model: its own, and its subagent's.
+    let built = built.lock().unwrap().clone();
+    for (role, model, effort) in [
+        ("lead", "deepseek-v4-pro", Some("max")),
+        ("implementer", "deepseek-flash", Some("high")),
+        ("reviewer", "deepseek-v4-pro", Some("low")),
+    ] {
+        assert!(
+            built
+                .iter()
+                .any(|(r, m, e)| r == role && m == model && e.as_deref() == effort),
+            "{role}: {built:?}"
+        );
+        let spent = &record.spent.roles[role];
+        assert!(
+            spent[&format!("deepseek/{model}")].tokens >= 1100,
+            "{role}: {spent:?}"
+        );
+    }
+    // Every session of a role is built on its model: the implementer's
+    // first attempt and its repair alike.
+    let implementer: Vec<_> = built.iter().filter(|(r, ..)| r == "implementer").collect();
+    assert!(implementer.len() >= 2, "{built:?}");
+    assert!(
+        implementer
+            .iter()
+            .all(|(_, m, e)| m == "deepseek-flash" && e.as_deref() == Some("high")),
+        "{built:?}"
+    );
+    assert!(record.spent.roles["lead"]["deepseek/deepseek-flash"].tokens > 0);
+    assert!(
+        !record.spent.roles["implementer"].contains_key("deepseek/deepseek-v4-pro"),
+        "the implementer's spend is its own"
+    );
+    let by_role: u64 = record
+        .spent
+        .roles
+        .keys()
+        .map(|role| record.spent.role(role).tokens)
+        .sum();
+    assert_eq!(by_role, record.spent.tokens);
     let journal = store.journal(&id);
     assert!(journal.iter().any(|line| line.key == "cycle-1/worktree"));
     assert!(
@@ -162,6 +223,30 @@ fn repository_with(dir: &Path, files: &[&str]) -> PathBuf {
     repository
 }
 
+/// The objective with each role's model, as the Studio records them before
+/// it starts (C-54): different models and efforts, to see each role get its
+/// own.
+fn with_models(mut objective: Objective, store: &Store) -> Objective {
+    let model = |role: &str, id: &str, effort: &str| RoleModel {
+        role: role.into(),
+        model: ModelRef::new(Provider::DeepSeek, id),
+        effort: Some(effort.into()),
+        access: Access::Key,
+        configured: ModelRef::new(Provider::Anthropic, "claude-opus-5-5"),
+        fallback: Some("no Anthropic API key or Claude subscription token".into()),
+        credential: "DEEPSEEK_API_KEY".into(),
+        billed: "per token, to the DeepSeek account of this key".into(),
+    };
+    objective.models = vec![
+        model("lead", "deepseek-v4-pro", "max"),
+        model("implementer", "deepseek-flash", "high"),
+        model("reviewer", "deepseek-v4-pro", "low"),
+        model("evaluator", "deepseek-flash", "high"),
+    ];
+    store.save(&objective).unwrap();
+    objective
+}
+
 fn setup_with(dir: &Path, store: &Store, node: agq_assistant::claude_agent::Node) -> Setup {
     let data = dir.join("agent");
     let script = companion();
@@ -169,15 +254,15 @@ fn setup_with(dir: &Path, store: &Store, node: agq_assistant::claude_agent::Node
         store: store.clone(),
         work: dir.join("work"),
         builds: dir.join("builds"),
-        runtime: Box::new(move |_| {
+        runtime: Box::new(move |model, _| {
             let mut agent = ClaudeAgent::new(
                 node.clone(),
                 Installation {
                     root: data.join("runtime"),
                 },
                 data.clone(),
-                Some("deepseek-v4-pro".into()),
-                None,
+                Some(model.model.model.clone()),
+                model.effort.clone(),
                 Secret::new("sk-test-session"),
             );
             agent.script = Some(script.clone());
@@ -199,20 +284,23 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
     let dir = tempfile::tempdir().unwrap();
     let repository = repository_with(dir.path(), &["HOLD-ONCE"]);
     let store = Store::new(dir.path().join("objectives"));
-    let objective = store
-        .create(
-            "Leave a note of the improvement",
-            &repository,
-            "main",
-            Budgets {
-                usd: 1.0,
-                cycles: 1,
-                attempts: 3,
-                hours: 1.0,
-            },
-            Permissions::default(),
-        )
-        .unwrap();
+    let objective = with_models(
+        store
+            .create(
+                "Leave a note of the improvement",
+                &repository,
+                "main",
+                Budgets {
+                    usd: 1.0,
+                    cycles: 1,
+                    attempts: 3,
+                    hours: 1.0,
+                },
+                Permissions::default(),
+            )
+            .unwrap(),
+        &store,
+    );
     let id = objective.id.clone();
     // The implementer works; Agentique closes and interrupts it.
     let handle = run::start(setup_with(dir.path(), &store, node.clone()), objective);

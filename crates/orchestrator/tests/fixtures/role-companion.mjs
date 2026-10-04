@@ -117,6 +117,13 @@ switch (role) {
   default:
     out({ type: "assistant", id: "msg_end", model: "deepseek-v4-pro", content: [{ type: "text", text: `No script for ${role}.` }] });
 }
+// The usage of the model the session was started on, and of a subagent on
+// the fast model (C-54: spend by role and by model within it).
+const used = o.model ?? "deepseek-v4-pro";
+const usageByModel = { [used]: { inputTokens: 1000, outputTokens: 100, cacheReadTokens: 0, cacheWriteTokens: 0 } };
+if (used !== "deepseek-flash") {
+  usageByModel["deepseek-flash"] = { inputTokens: 10, outputTokens: 5, cacheReadTokens: 0, cacheWriteTokens: 0 };
+}
 out({
   type: "result",
   isError: false,
@@ -125,7 +132,7 @@ out({
   numTurns: 2,
   costUsd: 0.01,
   usage: { inputTokens: 1000, outputTokens: 100, cacheReadTokens: 0, cacheWriteTokens: 0 },
-  usageByModel: { "deepseek-v4-pro": { inputTokens: 1000, outputTokens: 100, cacheReadTokens: 0, cacheWriteTokens: 0 } },
+  usageByModel,
   sessionId: session,
   denials: [],
   errors: [],

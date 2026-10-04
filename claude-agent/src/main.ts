@@ -10,10 +10,16 @@
 //                      (its tools, MCP servers, permission mode) from the
 //                      SDK's own start message; the refused key ends it
 //                      before any model runs, so it costs nothing
+//   main.ts --login    whether this computer has a Claude login (C-54), from
+//                      the SDK's Claude Code binary's `claude auth status`
+//                      with the Operator's own configuration: only whether
+//                      and how, never a token, email or organisation;
+//                      Agentique never uses it
 
 import { query } from "@anthropic-ai/claude-agent-sdk/core";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, readFileSync, statSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
@@ -22,7 +28,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type McpFactory, Turn } from "./bridge.ts";
 import { type CompanionMessage, LineSplitter, PROTOCOL, decode, encode } from "./protocol.ts";
-import { SERVER } from "./policy.ts";
+import { SERVER, loginEnvironment, readLogin } from "./policy.ts";
 
 const CLIENT = "agentique/1";
 
@@ -63,10 +69,24 @@ function out(message: CompanionMessage): void {
   process.stdout.write(encode(message));
 }
 
-async function verify(): Promise<void> {
+/** The SDK's Claude Code binary for this platform, as its manifest names it. */
+function bundledBinary(): { binary: string; entry: Record<string, unknown> } | null {
   const sdk = sdkPackage();
   const platform = `${process.platform}-${process.arch}`;
   const entry = (sdk.manifest.platforms as Record<string, Record<string, unknown>>)?.[platform];
+  if (!entry) {
+    return null;
+  }
+  const binary = fileURLToPath(
+    import.meta.resolve(`@anthropic-ai/claude-agent-sdk-${platform}/${String(entry.binary)}`),
+  );
+  return { binary, entry };
+}
+
+async function verify(): Promise<void> {
+  const sdk = sdkPackage();
+  const platform = `${process.platform}-${process.arch}`;
+  const bundled = bundledBinary();
   const result: Record<string, unknown> = {
     protocol: PROTOCOL,
     node: process.version,
@@ -74,13 +94,11 @@ async function verify(): Promise<void> {
     claudeCode: sdk.claudeCode,
     platform,
   };
-  if (!entry) {
+  if (!bundled) {
     result.binary = null;
     result.problem = `the SDK has no Claude Code binary for ${platform}`;
   } else {
-    const binary = fileURLToPath(
-      import.meta.resolve(`@anthropic-ai/claude-agent-sdk-${platform}/${String(entry.binary)}`),
-    );
+    const { binary, entry } = bundled;
     const hash = createHash("sha256");
     await new Promise<void>((resolve, reject) => {
       createReadStream(binary).on("data", (d) => hash.update(d)).on("end", resolve).on("error", reject);
@@ -93,9 +111,45 @@ async function verify(): Promise<void> {
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 
+/**
+ * `claude auth status` with the Operator's own configuration (C-54): the
+ * SDK's Claude Code binary, or a `claude` on the PATH without it. Prints
+ * `{"login": {...}}` with only whether and how this computer is logged in,
+ * or `{"login": null, "problem": "..."}`.
+ */
+async function login(): Promise<void> {
+  let binary = "claude";
+  try {
+    binary = bundledBinary()?.binary ?? binary;
+  } catch {
+    // Not installed for this platform: a `claude` on the PATH, if any.
+  }
+  const result = await new Promise<{ stdout: string; error: string | null }>((resolve) => {
+    execFile(
+      binary,
+      ["auth", "status", "--json"],
+      { env: loginEnvironment(process.env), timeout: 20_000, windowsHide: true, maxBuffer: 1024 * 1024 },
+      // A computer without a login exits non-zero with the same JSON.
+      (error, stdout) => resolve({ stdout: String(stdout ?? ""), error: error && !stdout ? error.message : null }),
+    );
+  });
+  const status = readLogin(result.stdout);
+  process.stdout.write(
+    `${JSON.stringify(
+      status !== null
+        ? { login: status }
+        : { login: null, problem: result.error ?? "claude auth status did not answer in JSON" },
+    )}\n`,
+  );
+}
+
 async function probe(): Promise<void> {
   const base = await mkdtemp(join(tmpdir(), "agentique-probe-"));
-  const from = { ...process.env, ANTHROPIC_API_KEY: "sk-ant-agentique-probe-not-a-key" };
+  const from = {
+    ...process.env,
+    ANTHROPIC_API_KEY: "sk-ant-agentique-probe-not-a-key",
+    CLAUDE_CODE_OAUTH_TOKEN: undefined,
+  };
   const messages: CompanionMessage[] = [];
   const turn = new Turn((m) => messages.push(m), { query: query as never }, mcpServer, from, CLIENT);
   const timer = setTimeout(() => void turn.stop("the probe took too long"), 60_000);
@@ -201,10 +255,11 @@ async function serve(): Promise<void> {
 }
 
 const mode = process.argv[2];
-const work = mode === "--verify" ? verify() : mode === "--probe" ? probe() : serve();
+const work =
+  mode === "--verify" ? verify() : mode === "--probe" ? probe() : mode === "--login" ? login() : serve();
 work.catch((error) => {
   process.stderr.write(`${(error as Error).stack ?? String(error)}\n`);
-  if (mode !== "--verify" && mode !== "--probe") {
+  if (mode !== "--verify" && mode !== "--probe" && mode !== "--login") {
     out({ type: "error", kind: "runtime", message: String(error) });
   }
   process.exit(2);

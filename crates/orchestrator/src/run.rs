@@ -6,7 +6,8 @@
 
 use crate::control::{Client, TestInstance};
 use crate::record::{
-    Attempt, Check, Continuation, Criterion, Cycle, Objective, Outcome, Phase, Review, State, Store,
+    Attempt, Check, Continuation, Cost, Criterion, Cycle, Objective, Outcome, Phase, Review,
+    RoleModel, State, Store,
 };
 use crate::roles::{self, Role};
 use crate::{builds, forge, gates};
@@ -60,8 +61,10 @@ pub enum Event {
     },
 }
 
-/// Makes a Claude Agent runtime for a role's session.
-pub type RuntimeFactory = Box<dyn Fn(&Development) -> Result<ClaudeAgent, String> + Send>;
+/// Makes a Claude Agent runtime for a role's session, on the role's model,
+/// effort and credential as the objective recorded them (C-54).
+pub type RuntimeFactory =
+    Box<dyn Fn(&RoleModel, &Development) -> Result<ClaudeAgent, String> + Send>;
 
 /// What the Orchestrator works with, given once.
 pub struct Setup {
@@ -574,8 +577,15 @@ impl Driver {
                 self.target().display().to_string(),
             )],
         };
-        let mut agent = (self.setup.runtime)(&development)?;
+        // The role's own model, effort and credential, as recorded when the
+        // objective started (C-54); never another role's.
+        let assigned = crate::models::for_role(&self.objective.models, role.name())?.clone();
+        let mut agent = (self.setup.runtime)(&assigned, &development)?;
         agent.development = Some(development);
+        // What is left of the spend budget, as a ceiling the SDK enforces
+        // within the session (on Anthropic's API, where its prices are the
+        // model's own; the totals below stop the objective in any case).
+        agent.spend_ceiling = Some(self.objective.budgets.usd - self.objective.spent.usd);
         let controls = self.controls.clone();
         controls.step.store(false, Ordering::SeqCst);
         controls
@@ -670,34 +680,53 @@ impl Driver {
         let mut execute = checked(&toolset.definitions, &mut executor);
         let spent_before = self.objective.spent.usd;
         let budget = self.objective.budgets.usd;
-        let cost = RefCell::new((0.0f64, 0u64, false));
+        // This session's cost by model (`provider/model`): its own model and
+        // those of its SDK subagents, each at its own price.
+        let cost: RefCell<Vec<(agq_providers::ModelRef, Cost)>> = RefCell::new(Vec::new());
+        let count = |model: &agq_providers::ModelRef, add: Cost| {
+            let mut costs = cost.borrow_mut();
+            match costs.iter_mut().find(|(m, _)| m == model) {
+                Some((_, total)) => total.add(add),
+                None => costs.push((model.clone(), add)),
+            }
+            costs.iter().map(|(_, c)| c.usd).sum::<f64>()
+        };
         let session_id: RefCell<Option<String>> = RefCell::new(None);
         let stop = self.controls.stop.clone();
         let mut on_event = |event: TurnEvent| match event {
             TurnEvent::Stream(StreamEvent::ModelUsage { model, usage }) => {
-                let mut c = cost.borrow_mut();
-                match usage.cost_usd(&model) {
-                    Some(usd) => c.0 += usd,
-                    None => {
-                        // No price known: counted at a high one, so the
-                        // spend budget still stops it.
-                        c.0 += unpriced(&usage);
-                        c.2 = true;
-                    }
-                }
-                c.1 += usage.input_tokens
+                let tokens = usage.input_tokens
                     + usage.output_tokens
                     + usage.cache_read_input_tokens
                     + usage.cache_creation_input_tokens;
-                if spent_before + c.0 >= budget {
+                let add = match usage.cost_usd(&model) {
+                    Some(usd) => Cost {
+                        usd,
+                        tokens,
+                        unknown: false,
+                    },
+                    // No price known: counted at a high one, so the spend
+                    // budget still stops it.
+                    None => Cost {
+                        usd: unpriced(&usage),
+                        tokens,
+                        unknown: true,
+                    },
+                };
+                if spent_before + count(&model, add) >= budget {
                     stop.store(true, Ordering::SeqCst);
                 }
             }
             TurnEvent::Stream(StreamEvent::Usage(usage)) => {
-                let mut c = cost.borrow_mut();
-                c.1 += usage.input_tokens + usage.output_tokens;
-                c.0 += unpriced(&usage);
-                c.2 = true;
+                // Usage without its model: the role's own, unpriced.
+                let add = Cost {
+                    usd: unpriced(&usage),
+                    tokens: usage.input_tokens + usage.output_tokens,
+                    unknown: true,
+                };
+                if spent_before + count(&assigned.model, add) >= budget {
+                    stop.store(true, Ordering::SeqCst);
+                }
             }
             TurnEvent::Stream(StreamEvent::ToolCallStarted { name, .. }) => {
                 let _ = self.events.send(Event::Activity {
@@ -730,6 +759,7 @@ impl Driver {
             }
             _ => {}
         };
+        self.note(role.name(), format!("model: {}", assigned.label()));
         self.note(role.name(), "starts");
         agent.run(
             &mut conversation,
@@ -744,10 +774,9 @@ impl Driver {
         if let Some(model) = model.borrow_mut().as_mut() {
             model.close();
         }
-        let (usd, tokens, unknown) = *cost.borrow();
-        self.objective.spent.usd += usd;
-        self.objective.spent.tokens += tokens;
-        self.objective.spent.unknown |= unknown;
+        for (model, add) in cost.take() {
+            self.objective.spent.add(role.name(), &model, add);
+        }
         if let Some(id) = session_id.borrow().clone() {
             self.cycle_mut().sessions.insert(role.name().into(), id);
         }

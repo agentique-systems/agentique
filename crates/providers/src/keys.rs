@@ -1,13 +1,14 @@
 //! Keys (R-25, ROADMAP §4.9): stored in the Windows Credential Manager, one
 //! generic credential per provider (target `agentique:<provider>`,
-//! persistence Local), never in a file, a log, the project or the System
+//! persistence Local) and one for the Operator's Claude subscription token
+//! (`agentique:anthropic-subscription`, C-54), never in a file, a log, the project or the System
 //! State. A non-empty environment variable wins over the stored key. One
 //! thread owns all credential access, with a timeout per call, because the
 //! store does not reliably order operations on one entry from different
 //! threads [46]. Without a credential store (not Windows) keys come only
 //! from the environment; there is no plain-text fallback.
 
-use crate::Provider;
+use crate::Credential;
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
@@ -26,9 +27,9 @@ impl std::fmt::Display for KeyError {
 }
 
 enum Command {
-    Get(Provider, Sender<Result<Option<String>, KeyError>>),
-    Set(Provider, String, Sender<Result<(), KeyError>>),
-    Delete(Provider, Sender<Result<(), KeyError>>),
+    Get(Credential, Sender<Result<Option<String>, KeyError>>),
+    Set(Credential, String, Sender<Result<(), KeyError>>),
+    Delete(Credential, Sender<Result<(), KeyError>>),
 }
 
 /// The credential thread's inbox.
@@ -42,28 +43,28 @@ fn inbox() -> &'static Mutex<Sender<Command>> {
                 let store = open_store();
                 for command in commands {
                     match command {
-                        Command::Get(provider, reply) => {
+                        Command::Get(credential, reply) => {
                             let _ = reply.send(
                                 store
                                     .as_ref()
                                     .map_err(Clone::clone)
-                                    .and_then(|_| get(provider)),
+                                    .and_then(|_| get(credential)),
                             );
                         }
-                        Command::Set(provider, key, reply) => {
+                        Command::Set(credential, key, reply) => {
                             let _ = reply.send(
                                 store
                                     .as_ref()
                                     .map_err(Clone::clone)
-                                    .and_then(|_| set(provider, &key)),
+                                    .and_then(|_| set(credential, &key)),
                             );
                         }
-                        Command::Delete(provider, reply) => {
+                        Command::Delete(credential, reply) => {
                             let _ = reply.send(
                                 store
                                     .as_ref()
                                     .map_err(Clone::clone)
-                                    .and_then(|_| delete(provider)),
+                                    .and_then(|_| delete(credential)),
                             );
                         }
                     }
@@ -88,14 +89,17 @@ fn ask<T>(command: impl FnOnce(Sender<Result<T, KeyError>>) -> Command) -> Resul
     })
 }
 
-/// The stored key for `provider`, if any; an error when the store cannot be
+/// The stored key (or token), if any; an error when the store cannot be
 /// read (R-25 point 5: say so, never guess).
-pub(crate) fn stored(provider: Provider) -> Result<Option<String>, KeyError> {
-    ask(|reply| Command::Get(provider, reply))
+pub(crate) fn stored(credential: impl Into<Credential>) -> Result<Option<String>, KeyError> {
+    let credential = credential.into();
+    ask(|reply| Command::Get(credential, reply))
 }
 
-/// Stores `key` for `provider` in the Windows Credential Manager.
-pub fn store(provider: Provider, key: &str) -> Result<(), KeyError> {
+/// Stores `key` for a provider (or the subscription token) in the Windows
+/// Credential Manager.
+pub fn store(credential: impl Into<Credential>, key: &str) -> Result<(), KeyError> {
+    let credential = credential.into();
     let key = key.trim();
     if key.is_empty() {
         return Err(KeyError("The key is empty.".into()));
@@ -107,13 +111,14 @@ pub fn store(provider: Provider, key: &str) -> Result<(), KeyError> {
             "The key is longer than the Credential Manager holds (2,560 bytes).".into(),
         ));
     }
-    ask(|reply| Command::Set(provider, key.to_string(), reply))
+    ask(|reply| Command::Set(credential, key.to_string(), reply))
 }
 
-/// Removes `provider`'s stored key; removing a key that is not there is not
+/// Removes a stored key (or token); removing one that is not there is not
 /// an error.
-pub fn remove(provider: Provider) -> Result<(), KeyError> {
-    ask(|reply| Command::Delete(provider, reply))
+pub fn remove(credential: impl Into<Credential>) -> Result<(), KeyError> {
+    let credential = credential.into();
+    ask(|reply| Command::Delete(credential, reply))
 }
 
 /// What Settings shows instead of a key: its fixed prefix and last four
@@ -156,43 +161,42 @@ fn open_store() -> Result<(), KeyError> {
     ))
 }
 
-fn entry(provider: Provider) -> Result<keyring_core::Entry, KeyError> {
-    let target = format!("agentique:{}", provider.id());
+fn entry(credential: Credential) -> Result<keyring_core::Entry, KeyError> {
+    let user = credential.id();
+    let target = format!("agentique:{user}");
     let modifiers =
         std::collections::HashMap::from([("target", target.as_str()), ("persistence", "Local")]);
-    keyring_core::Entry::new_with_modifiers("agentique", provider.id(), &modifiers).map_err(
-        |error| {
-            KeyError(format!(
-                "The credential for {} could not be addressed ({error}).",
-                provider.name()
-            ))
-        },
-    )
+    keyring_core::Entry::new_with_modifiers("agentique", &user, &modifiers).map_err(|error| {
+        KeyError(format!(
+            "The credential for the {} could not be addressed ({error}).",
+            credential.name()
+        ))
+    })
 }
 
-fn get(provider: Provider) -> Result<Option<String>, KeyError> {
-    match entry(provider)?.get_password() {
+fn get(credential: Credential) -> Result<Option<String>, KeyError> {
+    match entry(credential)?.get_password() {
         Ok(key) => Ok(Some(key)),
         Err(keyring_core::Error::NoEntry) => Ok(None),
         Err(error) => Err(KeyError(format!(
-            "The stored {} key could not be read ({error}).",
-            provider.name()
+            "The stored {} could not be read ({error}).",
+            credential.name()
         ))),
     }
 }
 
-fn set(provider: Provider, key: &str) -> Result<(), KeyError> {
-    entry(provider)?
+fn set(credential: Credential, key: &str) -> Result<(), KeyError> {
+    entry(credential)?
         .set_password(key)
-        .map_err(|error| KeyError(format!("The {} key could not be saved in the Windows Credential Manager ({error}). Set its environment variable instead.", provider.name())))
+        .map_err(|error| KeyError(format!("The {} could not be saved in the Windows Credential Manager ({error}). Set its environment variable instead.", credential.name())))
 }
 
-fn delete(provider: Provider) -> Result<(), KeyError> {
-    match entry(provider)?.delete_credential() {
+fn delete(credential: Credential) -> Result<(), KeyError> {
+    match entry(credential)?.delete_credential() {
         Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(()),
         Err(error) => Err(KeyError(format!(
-            "The stored {} key could not be removed ({error}).",
-            provider.name()
+            "The stored {} could not be removed ({error}).",
+            credential.name()
         ))),
     }
 }
@@ -212,6 +216,7 @@ mod tests {
 
     #[test]
     fn an_empty_key_is_refused() {
-        assert!(store(Provider::DeepSeek, "  ").is_err());
+        assert!(store(crate::Provider::DeepSeek, "  ").is_err());
+        assert!(store(Credential::ClaudeSubscription, "").is_err());
     }
 }

@@ -5,7 +5,9 @@
 // `message`, `gate`, `interrupt` or `close`. Everything the companion says
 // goes to standard output; standard error is diagnostics only. Any line that
 // is not a known message ends the turn with a protocol error: the companion
-// never guesses.
+// never guesses. C-54 adds optional fields only: the credential the SDK
+// uses in `init`, the `source` of an `auth` error when it would have used
+// another, and a session's spend ceiling in `start`.
 
 export const PROTOCOL = 2;
 
@@ -107,6 +109,12 @@ export interface StartOptions {
    * development instructions (true) or are the whole system prompt.
    */
   preset: boolean;
+  /**
+   * A spend ceiling for the session in US dollars (C-54), which the SDK
+   * enforces with its own estimate at Claude's prices; the Studio gives one
+   * only for Anthropic's API. Absent or null: none.
+   */
+  maxBudgetUsd?: number | null;
 }
 
 export type GateMode = "run" | "pause" | "step";
@@ -128,10 +136,34 @@ export interface Effective {
   tools: string[];
   mcpServers: { name: string; status: string }[];
   permissionMode: string;
+  /**
+   * The credential the SDK uses (C-54), as it reported it before the first
+   * model call: where its key comes from (`ANTHROPIC_API_KEY` for a given
+   * key; `none` with the subscription token), its API (`firstParty` is
+   * Anthropic's, also through an Anthropic-compatible endpoint) and its
+   * token's source (`CLAUDE_CODE_OAUTH_TOKEN` for the given subscription
+   * token). Never an email or an organisation.
+   */
   apiKeySource: string;
+  apiProvider: string;
+  tokenSource: string;
   skills: string[];
   agents: string[];
   plugins: string[];
+}
+
+/**
+ * Whether this computer has a Claude login (C-54), from `claude auth
+ * status`: only whether and how, never its token, email or organisation.
+ * Agentique never uses it; Settings say why.
+ */
+export interface Login {
+  loggedIn: boolean;
+  /** `none`, `claude.ai`, `oauth_token`, `api_key`, `api_key_helper` or `third_party`. */
+  authMethod: string;
+  apiProvider: string | null;
+  /** The claude.ai plan (`max`, `pro`, …), when it is one. */
+  subscriptionType: string | null;
 }
 
 export interface Usage {
@@ -187,14 +219,19 @@ export type CompanionMessage =
       denials: string[];
       errors: string[];
     }
-  | { type: "error"; kind: ErrorKind; message: string }
+  /**
+   * `source` is set when the SDK would have used another credential than
+   * the key the Studio gave (`kind` is then `auth`): the source it named.
+   */
+  | { type: "error"; kind: ErrorKind; message: string; source?: string }
   | { type: "log"; text: string };
 
 /**
- * Why a turn could not go on: the key was refused, the runtime failed, the
- * protocol was broken, or the Studio stopped it.
+ * Why a turn could not go on: the key was refused or another credential
+ * would have been used, a Claude plan's usage limit was reached, the runtime
+ * failed, the protocol was broken, or the Studio stopped it.
  */
-export type ErrorKind = "auth" | "runtime" | "protocol" | "interrupted";
+export type ErrorKind = "auth" | "limit" | "runtime" | "protocol" | "interrupted";
 
 export function encode(message: CompanionMessage): string {
   return JSON.stringify(message) + "\n";
@@ -283,6 +320,10 @@ export function decode(line: string): HostMessage {
       }
       if (typeof options.preset !== "boolean") {
         throw new Error("`start` options.preset must be true or false");
+      }
+      const ceiling = options.maxBudgetUsd;
+      if (ceiling !== undefined && ceiling !== null && !(typeof ceiling === "number" && Number.isFinite(ceiling) && ceiling > 0)) {
+        throw new Error("`start` options.maxBudgetUsd must be a positive number or null");
       }
       return message as unknown as HostMessage;
     }

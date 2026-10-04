@@ -377,6 +377,111 @@ fn the_companion_gets_the_key_and_nothing_else_of_the_environment() {
     assert!(said.contains("parent=none"), "{said}");
 }
 
+// --- Credentials (C-54) --------------------------------------------------------
+
+/// A session gets exactly one credential: a key, or the Claude subscription
+/// token without any key; the SDK's reported credential reaches the Studio;
+/// the spend ceiling goes to the SDK only on Anthropic's own API.
+#[test]
+fn a_session_gets_one_credential_and_reports_the_one_it_uses() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = agent(dir.path(), fixture()) else {
+        return;
+    };
+    agent.spend_ceiling = Some(1.5);
+    let turn = run(&mut agent, asked("scenario:given Hello."), false);
+    let said = texts(&turn.conversation).join(" ");
+    assert!(
+        said.contains("key=sk-test-key; oauth=none; ceiling=1.5"),
+        "{said}"
+    );
+    let effective = agent.effective.clone().unwrap();
+    assert_eq!(effective.api_key_source, "ANTHROPIC_API_KEY");
+    assert_eq!(effective.credential(), "ANTHROPIC_API_KEY (firstParty)");
+    // The subscription token, alone.
+    let mut agent = agent.with_subscription(Secret::new("oauth-test-token"));
+    assert!(agent.label().ends_with("(Claude subscription)"));
+    let turn = run(&mut agent, asked("scenario:given Hello."), false);
+    let said = texts(&turn.conversation).join(" ");
+    assert!(
+        said.contains("key=none; oauth=oauth-test-token; ceiling=1.5"),
+        "{said}"
+    );
+    let effective = agent.effective.clone().unwrap();
+    assert_eq!(
+        (
+            effective.api_key_source.as_str(),
+            effective.token_source.as_str()
+        ),
+        ("none", "CLAUDE_CODE_OAUTH_TOKEN")
+    );
+    assert_eq!(
+        effective.credential(),
+        "CLAUDE_CODE_OAUTH_TOKEN (firstParty)"
+    );
+    // Through another provider's endpoint: no ceiling (the SDK estimates
+    // at Claude's prices), and a subscription token is never sent there.
+    let Some(mut deepseek) = agent_with_key(dir.path()) else {
+        return;
+    };
+    deepseek.endpoint = Some(Endpoint::deepseek());
+    deepseek.spend_ceiling = Some(1.5);
+    let turn = run(&mut deepseek, asked("scenario:given Hello."), false);
+    assert!(
+        texts(&turn.conversation).join(" ").contains("ceiling=null"),
+        "{:?}",
+        texts(&turn.conversation)
+    );
+    let mut deepseek = deepseek.with_subscription(Secret::new("oauth-test-token"));
+    let turn = run(&mut deepseek, asked("scenario:given Hello."), false);
+    assert!(texts(&turn.conversation).is_empty());
+    assert!(
+        notices(&turn.conversation)[0].contains("works only with Anthropic's own API"),
+        "{:?}",
+        notices(&turn.conversation)
+    );
+}
+
+fn agent_with_key(dir: &Path) -> Option<ClaudeAgent> {
+    agent(&dir.join("other"), fixture())
+}
+
+/// The companion's refusal of another credential (the machine's claude.ai
+/// login, say) reaches the Conversation as it said it, not as a refused key.
+#[test]
+fn another_credential_is_named_and_nothing_ran() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = agent(dir.path(), fixture()) else {
+        return;
+    };
+    let turn = run(&mut agent, asked("scenario:credential Hello."), false);
+    assert!(turn.calls.is_empty());
+    let notices = notices(&turn.conversation);
+    assert_eq!(notices.len(), 1, "{notices:?}");
+    assert!(
+        notices[0].contains("claude.ai login") && notices[0].contains("before anything reached"),
+        "{notices:?}"
+    );
+    assert!(!notices[0].contains("refused the API key"), "{notices:?}");
+}
+
+/// A Claude plan's usage limit ends the session with the reason.
+#[test]
+fn a_plan_limit_ends_the_session_with_the_reason() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(agent) = agent(dir.path(), fixture()) else {
+        return;
+    };
+    let mut agent = agent.with_subscription(Secret::new("oauth-test-token"));
+    let turn = run(&mut agent, asked("scenario:limit Hello."), false);
+    let notices = notices(&turn.conversation);
+    assert_eq!(notices.len(), 1, "{notices:?}");
+    assert!(
+        notices[0].contains("usage limit is reached") && notices[0].contains("API key"),
+        "{notices:?}"
+    );
+}
+
 // --- Protocol 2: development sessions (C-53) ---------------------------------
 
 fn development(dir: &Path) -> Development {
@@ -1016,5 +1121,116 @@ fn live_without_commands_the_policy_hook_still_holds() {
     assert!(
         refusals.iter().any(|r| r.contains("trusted-local")),
         "{refusals:?}"
+    );
+}
+
+/// W12.3 (C-54): live sessions run only on the credential they are given,
+/// as the SDK itself reports before the first model call. On DeepSeek's
+/// endpoint with its key, the SDK reports `ANTHROPIC_API_KEY`; on the
+/// Operator's Claude subscription token, a development session on
+/// `claude-sonnet-5-5` reports that token's source, and a command the agent
+/// runs sees neither the token nor a key (only "present" or "absent" is
+/// printed, never a value). Each part runs when its credential is there
+/// (`DEEPSEEK_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, or the credential
+/// store); costs a cent or two on DeepSeek and a few calls of the plan.
+/// `AGQ_LIVE=1 cargo test -p agq-assistant --test claude_agent live_sessions -- --ignored --nocapture`
+#[test]
+#[ignore = "live: costs money; set AGQ_LIVE=1 and a DeepSeek key or a Claude subscription token"]
+fn live_sessions_run_only_on_the_credential_they_are_given() {
+    if std::env::var("AGQ_LIVE").as_deref() != Ok("1") {
+        eprintln!("AGQ_LIVE is not 1: skipped");
+        return;
+    }
+    let companion = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../claude-agent");
+    let dir = tempfile::tempdir().unwrap();
+    let mut tried = 0;
+    if let Ok(Some(key)) = agq_providers::runtime_key(agq_providers::Provider::DeepSeek) {
+        tried += 1;
+        let mut agent = ClaudeAgent::new(
+            node().expect("Node.js on the PATH"),
+            Installation {
+                root: dir.path().join("runtime"),
+            },
+            dir.path().join("deepseek"),
+            Some("deepseek-v4-pro".into()),
+            Some("max".into()),
+            key,
+        )
+        .with_endpoint(Endpoint::deepseek());
+        agent.script = Some(companion.join("src/main.ts"));
+        let turn = run_answering(
+            &mut agent,
+            asked("Answer with the single word OK and use no tool."),
+            |_| ToolResult::answer("not used"),
+        );
+        let effective = agent.effective.clone().expect("the SDK reported its start");
+        eprintln!(
+            "DeepSeek: credential {} · answer {:?} · notices {:?}",
+            effective.credential(),
+            texts(&turn.conversation),
+            notices(&turn.conversation)
+        );
+        assert!(notices(&turn.conversation).is_empty());
+        assert_eq!(effective.api_key_source, "ANTHROPIC_API_KEY");
+        assert!(texts(&turn.conversation).join(" ").contains("OK"));
+    }
+    if let Ok(Some(token)) =
+        agq_providers::runtime_credential(agq_providers::Credential::ClaudeSubscription)
+    {
+        tried += 1;
+        let development = development(&dir.path().join("subscription"));
+        let mut agent = ClaudeAgent::new(
+            node().expect("Node.js on the PATH"),
+            Installation {
+                root: dir.path().join("runtime"),
+            },
+            dir.path().join("subscription").join("agent"),
+            Some("claude-sonnet-5-5".into()),
+            Some("high".into()),
+            Secret::new("not used"),
+        )
+        .with_subscription(token)
+        .with_development(development);
+        agent.script = Some(companion.join("src/main.ts"));
+        let turn = run_answering(
+            &mut agent,
+            asked(
+                "Run exactly this command with your Bash tool, then quote its output and nothing else: \
+                 node -e \"console.log([process.env.CLAUDE_CODE_OAUTH_TOKEN ? 'TOKEN-PRESENT' : 'TOKEN-ABSENT', process.env.ANTHROPIC_API_KEY ? 'KEY-PRESENT' : 'KEY-ABSENT'].join(' '))\"",
+            ),
+            |_| ToolResult::answer("not used"),
+        );
+        let effective = agent.effective.clone().expect("the SDK reported its start");
+        let outputs: Vec<String> = turn
+            .events
+            .iter()
+            .filter_map(|e| match e {
+                TurnEvent::ToolFinished(r) => Some(r.content.clone()),
+                _ => None,
+            })
+            .collect();
+        eprintln!(
+            "Subscription: credential {} · command output {outputs:?} · answer {:?} · notices {:?}",
+            effective.credential(),
+            texts(&turn.conversation),
+            notices(&turn.conversation)
+        );
+        assert_eq!(effective.token_source, "CLAUDE_CODE_OAUTH_TOKEN");
+        assert_eq!(effective.api_provider, "firstParty");
+        assert_eq!(effective.api_key_source, "none");
+        assert!(
+            outputs
+                .iter()
+                .any(|o| o.contains("TOKEN-ABSENT KEY-ABSENT")),
+            "{outputs:?}"
+        );
+        assert!(
+            outputs.iter().all(|o| !o.contains("PRESENT")),
+            "{outputs:?}"
+        );
+    }
+    assert!(
+        tried > 0,
+        "no DeepSeek key and no Claude subscription token"
     );
 }

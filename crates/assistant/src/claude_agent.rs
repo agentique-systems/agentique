@@ -17,13 +17,16 @@
 //!   queued messages and the pause gate ([`Steering`]), against Anthropic's
 //!   API or an Anthropic-compatible [`Endpoint`].
 //! - [`find_node`], [`Installation::install`], [`verify`] and [`probe`] are
-//!   Settings' setup and health check.
+//!   Settings' setup and health check; [`login`] says whether this computer
+//!   has a Claude login (C-54), which is never used.
 //!
 //! Without a development session the companion gets an environment built
 //! from nothing but what it needs; with one, the Studio's environment
-//! without anything that looks like a secret. The model's key goes into it
-//! and nowhere else (§7.6), and the SDK keeps it out of the session's
-//! commands. What the agent can do is decided in the companion's policy and
+//! without anything that looks like a secret. The session's one credential
+//! ([`Access`]: an API key, or the Operator's Claude subscription token,
+//! C-54) goes into it and nowhere else (§7.6); the SDK keeps it out of the
+//! session's commands, and the companion stops a session whose SDK reports
+//! another credential before its first model call. What the agent can do is decided in the companion's policy and
 //! by the Studio's own checks; neither is an operating-system sandbox.
 
 use crate::conversation::{Conversation, Entry, ToolResult};
@@ -340,7 +343,12 @@ pub struct Verified {
     pub checksum_matches: bool,
 }
 
-fn companion_output(node: &Node, installation: &Installation, mode: &str) -> Result<Value, String> {
+fn companion_output(
+    node: &Node,
+    installation: &Installation,
+    mode: &str,
+    also: &[(String, String)],
+) -> Result<Value, String> {
     let script = installation.script()?;
     let output = hidden(Command::new(&node.path))
         .args(["--experimental-strip-types", "--no-warnings"])
@@ -348,6 +356,7 @@ fn companion_output(node: &Node, installation: &Installation, mode: &str) -> Res
         .arg(mode)
         .env_clear()
         .envs(base_environment(node))
+        .envs(also.iter().cloned())
         .current_dir(installation.folder())
         .stdin(Stdio::null())
         .output()
@@ -374,7 +383,7 @@ pub fn verify(node: &Node, installation: &Installation) -> Result<Verified, Stri
             "The Claude Agent runtime is not installed (SDK {SDK_VERSION})."
         ));
     }
-    let value = companion_output(node, installation, "--verify")?;
+    let value = companion_output(node, installation, "--verify", &[])?;
     Ok(Verified {
         node: value["node"].as_str().unwrap_or_default().into(),
         sdk: value["sdk"].as_str().unwrap_or_default().into(),
@@ -394,6 +403,14 @@ pub struct Effective {
     pub claude_code: String,
     pub skills: Vec<String>,
     pub agents: Vec<String>,
+    /// The credential the SDK said it uses (C-54), as the companion checked
+    /// it before the first model call: where its key comes from
+    /// (`ANTHROPIC_API_KEY`; `none` with the subscription token), its API
+    /// (`firstParty` is Anthropic's) and its token's source
+    /// (`CLAUDE_CODE_OAUTH_TOKEN`). Never an email or an organisation.
+    pub api_key_source: String,
+    pub api_provider: String,
+    pub token_source: String,
 }
 
 impl Effective {
@@ -424,6 +441,25 @@ impl Effective {
             claude_code: value["claudeCode"].as_str().unwrap_or_default().into(),
             skills: strings("skills"),
             agents: strings("agents"),
+            api_key_source: value["apiKeySource"].as_str().unwrap_or_default().into(),
+            api_provider: value["apiProvider"].as_str().unwrap_or_default().into(),
+            token_source: value["tokenSource"].as_str().unwrap_or_default().into(),
+        }
+    }
+
+    /// The credential as the SDK named it, for Settings and the activity:
+    /// the token's source with a subscription token, else the key's, and
+    /// the API kind it reported (`firstParty` also for an
+    /// Anthropic-compatible endpoint).
+    pub fn credential(&self) -> String {
+        let api = match self.api_provider.as_str() {
+            "" => String::new(),
+            other => format!(" ({other})"),
+        };
+        match (self.token_source.as_str(), self.api_key_source.as_str()) {
+            ("" | "none", "") => "not reported".into(),
+            ("" | "none", key) => format!("{key}{api}"),
+            (token, _) => format!("{token}{api}"),
         }
     }
 
@@ -482,11 +518,92 @@ impl Effective {
 /// Anthropic refuses before any model runs (so it costs nothing), and
 /// reports what the agent could do. Blocking, up to about a minute.
 pub fn probe(node: &Node, installation: &Installation) -> Result<Effective, String> {
-    let value = companion_output(node, installation, "--probe")?;
+    let value = companion_output(node, installation, "--probe", &[])?;
     if value["init"].is_null() {
         return Err("The SDK did not report how it started.".into());
     }
     Ok(Effective::from(&value["init"]))
+}
+
+/// Whether this computer has a Claude login (C-54), as `claude auth status`
+/// says: only whether and how, never its token, email or organisation.
+/// Agentique never uses it; Settings and the agents' fallbacks say why.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Login {
+    pub logged_in: bool,
+    /// `none`, `claude.ai`, `oauth_token`, `api_key`, `api_key_helper` or
+    /// `third_party`.
+    pub method: String,
+    pub api_provider: Option<String>,
+    /// The claude.ai plan (`max`, `pro`, …), when it is one.
+    pub subscription: Option<String>,
+}
+
+impl Login {
+    fn from(value: &Value) -> Option<Login> {
+        let text = |field: &str| {
+            value[field]
+                .as_str()
+                .filter(|t| !t.is_empty())
+                .map(str::to_string)
+        };
+        Some(Login {
+            logged_in: value["loggedIn"].as_bool()?,
+            method: text("authMethod").unwrap_or_else(|| "none".into()),
+            api_provider: text("apiProvider"),
+            subscription: text("subscriptionType"),
+        })
+    }
+
+    /// `claude.ai (Max)`, `a Console API key`, …; `None` when there is no
+    /// login.
+    pub fn describe(&self) -> Option<String> {
+        if !self.logged_in || self.method == "none" {
+            return None;
+        }
+        let plan = self.subscription.as_deref().map(|plan| {
+            let mut chars = plan.chars();
+            let first = chars.next().map(|c| c.to_uppercase().collect::<String>());
+            format!(" ({}{})", first.unwrap_or_default(), chars.as_str())
+        });
+        Some(match self.method.as_str() {
+            "claude.ai" => format!("claude.ai{}", plan.unwrap_or_default()),
+            "oauth_token" => "a Claude subscription token".into(),
+            "api_key" => "an API key that Claude Code stored".into(),
+            "api_key_helper" => "an apiKeyHelper command".into(),
+            "third_party" => "a cloud provider's credentials".into(),
+            other => other.to_string(),
+        })
+    }
+}
+
+/// Runs the documented `claude auth status` with the SDK's Claude Code
+/// binary (or a `claude` on the PATH without it), with the Operator's home
+/// folder and app data and nothing else of the Studio's environment: no
+/// configuration folder of Agentique's, no key and no token, so it reads the
+/// Operator's real configuration. Blocking, about a second.
+pub fn login(node: &Node, installation: &Installation) -> Result<Login, String> {
+    let home: Vec<(String, String)> = [
+        "USERPROFILE",
+        "HOME",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "USERNAME",
+        "XDG_CONFIG_HOME",
+    ]
+    .iter()
+    .filter_map(|name| std::env::var(name).ok().map(|v| (name.to_string(), v)))
+    .collect();
+    let value = companion_output(node, installation, "--login", &home)?;
+    match Login::from(&value["login"]) {
+        Some(login) => Ok(login),
+        None => Err(value["problem"]
+            .as_str()
+            .unwrap_or("claude auth status gave no answer")
+            .to_string()),
+    }
 }
 
 /// The variables every process of the runtime needs on Windows, and Node's
@@ -533,6 +650,17 @@ fn prepend_path(env: &mut Vec<(String, String)>, node: &Node) {
     }
 }
 
+/// The one credential a session gets (C-54): an API key (Anthropic's, or an
+/// Anthropic-compatible endpoint's provider's), or the Operator's Claude
+/// subscription token, which works only with Anthropic's own API. The
+/// companion is given exactly one, and stops a session whose SDK reports
+/// another before its first model call.
+#[derive(Debug)]
+pub enum Access {
+    Key(Secret),
+    Subscription(Secret),
+}
+
 /// The Claude Agent runtime for one conversation or task.
 pub struct ClaudeAgent {
     pub node: Node,
@@ -543,7 +671,11 @@ pub struct ClaudeAgent {
     /// The model id, or `None` for the SDK's default.
     pub model: Option<String>,
     pub effort: Option<String>,
-    key: Secret,
+    access: Access,
+    /// A spend ceiling for each session in US dollars (what is left of an
+    /// objective's budget), given to the SDK on Anthropic's own API only,
+    /// since the SDK estimates at Claude's prices (C-54).
+    pub spend_ceiling: Option<f64>,
     /// What the SDK reported when the last turn started.
     pub effective: Option<Effective>,
     /// Another companion script, for tests of the protocol (a scripted
@@ -573,7 +705,8 @@ impl ClaudeAgent {
             data,
             model,
             effort,
-            key,
+            access: Access::Key(key),
+            spend_ceiling: None,
             effective: None,
             script: None,
             development: None,
@@ -601,6 +734,18 @@ impl ClaudeAgent {
     pub fn with_endpoint(mut self, endpoint: Endpoint) -> ClaudeAgent {
         self.endpoint = Some(endpoint);
         self
+    }
+
+    /// The same runtime on the Operator's Claude subscription token instead
+    /// of a key (C-54): Anthropic's own API, within the plan's limits.
+    pub fn with_subscription(mut self, token: Secret) -> ClaudeAgent {
+        self.access = Access::Subscription(token);
+        self
+    }
+
+    /// Whether it runs on the Claude subscription token.
+    pub fn on_subscription(&self) -> bool {
+        matches!(self.access, Access::Subscription(_))
     }
 
     /// The model as costed: the endpoint's provider answers, at its prices.
@@ -780,7 +925,14 @@ impl Companion {
                 env
             }
         };
-        env.push(("ANTHROPIC_API_KEY".into(), agent.key.expose().to_string()));
+        // Exactly one credential: with the token, no ANTHROPIC_API_KEY,
+        // which would take precedence (C-54).
+        env.push(match &agent.access {
+            Access::Key(key) => ("ANTHROPIC_API_KEY".into(), key.expose().to_string()),
+            Access::Subscription(token) => {
+                ("CLAUDE_CODE_OAUTH_TOKEN".into(), token.expose().to_string())
+            }
+        });
         let mut child = hidden(Command::new(&agent.node.path))
             .args(["--experimental-strip-types", "--no-warnings"])
             .arg(&script)
@@ -855,6 +1007,7 @@ impl Runtime for ClaudeAgent {
     fn label(&self) -> String {
         let through = match &self.endpoint {
             Some(endpoint) => format!(" (through {})", endpoint.provider.name()),
+            None if self.on_subscription() => " (Claude subscription)".into(),
             None => String::new(),
         };
         match &self.model {
@@ -919,6 +1072,12 @@ impl Runtime for ClaudeAgent {
                 }
             }
         };
+        if self.on_subscription() && self.endpoint.is_some() {
+            turn.notice(
+                "A Claude subscription token works only with Anthropic's own API, not through another provider's endpoint; nothing was sent.",
+            );
+            return;
+        }
         let mut companion = match Companion::start(self) {
             Ok(companion) => companion,
             Err(error) => {
@@ -976,6 +1135,9 @@ impl Runtime for ClaudeAgent {
                     .as_ref()
                     .map(|e| json!({ "baseUrl": e.base_url, "fastModel": e.fast_model })),
                 "preset": development.as_ref().is_some_and(|d| d.preset),
+                "maxBudgetUsd": self
+                    .spend_ceiling
+                    .filter(|usd| *usd > 0.0 && self.endpoint.is_none()),
             }
         });
         if let Err(error) = companion.send(&start) {
@@ -1298,6 +1460,10 @@ impl Runtime for ClaudeAgent {
                             "error_max_turns" => format!(
                                 "Paused after {max_calls} steps in one turn. Send a message to let the Assistant continue."
                             ),
+                            "error_max_budget_usd" => format!(
+                                "The session reached its spend ceiling (${:.2}, what was left of the budget, as the SDK estimates it) and ended.",
+                                self.spend_ceiling.unwrap_or_default()
+                            ),
                             other => format!(
                                 "The Claude Agent runtime ended the turn with an error ({other}){}",
                                 if errors.is_empty() { String::new() } else { format!(": {}", errors.join("; ")) }
@@ -1309,13 +1475,21 @@ impl Runtime for ClaudeAgent {
                 "error" => {
                     let text = message["message"].as_str().unwrap_or_default();
                     match message["kind"].as_str().unwrap_or_default() {
-                        "auth" => turn.notice(&match &self.endpoint {
-                            None => "Anthropic refused the API key. Check it in Settings › Providers › Anthropic (or ANTHROPIC_API_KEY); everything else works as usual.".to_string(),
-                            Some(endpoint) => format!(
+                        // The SDK would have used another credential than
+                        // the one given (C-54): the companion's message
+                        // says which, and nothing reached the model.
+                        "auth" if message["source"].is_string() => turn.notice(text),
+                        "auth" => turn.notice(&match (&self.endpoint, self.on_subscription()) {
+                            (None, true) => "Anthropic refused the Claude subscription token. Make a new one with `claude setup-token` and save it in Settings › Providers › Anthropic (or CLAUDE_CODE_OAUTH_TOKEN); everything else works as usual.".to_string(),
+                            (None, false) => "Anthropic refused the API key. Check it in Settings › Providers › Anthropic (or ANTHROPIC_API_KEY); everything else works as usual.".to_string(),
+                            (Some(endpoint), _) => format!(
                                 "{0} refused the API key. Check it in Settings › Providers › {0}; everything else works as usual.",
                                 endpoint.provider.name()
                             ),
                         }),
+                        // A Claude plan's usage limit: the session ends; it
+                        // never moves to a paid key.
+                        "limit" => turn.notice(text),
                         "interrupted" => turn.notice(STOPPED),
                         kind => turn.notice(&format!("The Claude Agent runtime failed ({kind}): {text}")),
                     }
@@ -1550,6 +1724,28 @@ mod tests {
         assert!(COMPANION[2].1.contains("PROTOCOL"));
         let protocol = COMPANION[5].1;
         assert!(protocol.contains(&format!("export const PROTOCOL = {PROTOCOL};")));
+    }
+
+    /// What the companion's `--login` prints is read as whether and how this
+    /// computer is logged in; there is nothing else in it to read.
+    #[test]
+    fn a_local_login_is_described_without_who() {
+        let login = Login::from(&json!({
+            "loggedIn": true,
+            "authMethod": "claude.ai",
+            "apiProvider": "firstParty",
+            "subscriptionType": "max"
+        }))
+        .unwrap();
+        assert_eq!(login.describe().as_deref(), Some("claude.ai (Max)"));
+        let none = Login::from(&json!({ "loggedIn": false, "authMethod": "none" })).unwrap();
+        assert_eq!(none.describe(), None);
+        let key = Login::from(&json!({ "loggedIn": true, "authMethod": "api_key" })).unwrap();
+        assert_eq!(
+            key.describe().as_deref(),
+            Some("an API key that Claude Code stored")
+        );
+        assert!(Login::from(&Value::Null).is_none());
     }
 
     #[test]

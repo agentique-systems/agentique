@@ -10,16 +10,32 @@
 // session, the pause gate (Pause holds the session at its next tool call,
 // Step lets one through), and reports of the SDK's own tool results,
 // subagent tasks and compaction, so the Studio shows what the agent does.
+//
+// The credential check (C-54): the prompt is held until the SDK has said
+// which credential it uses, and given only when that is the key the Studio
+// gave; otherwise the turn ends with an `auth` error and nothing reached the
+// model.
 
 import type {
   CompanionMessage,
   Effective,
+  ErrorKind,
   GateMode,
   StartOptions,
   ToolDefinition,
   Usage,
 } from "./protocol.ts";
-import { type HookHost, agentEnvironment, agentiqueTool, qualified, sdkOptions } from "./policy.ts";
+import {
+  type HookHost,
+  agentEnvironment,
+  agentiqueTool,
+  credentialProblem,
+  given,
+  initProblem,
+  projectCredentialProblem,
+  qualified,
+  sdkOptions,
+} from "./policy.ts";
 
 /** What a tool call came back with. */
 export interface ToolAnswer {
@@ -40,7 +56,29 @@ export interface Sdk {
 
 export interface QueryLike extends AsyncIterable<Record<string, unknown>> {
   interrupt(): Promise<unknown>;
+  /** The SDK's answer to its start, before any prompt: its `account` says
+   * which credential it uses. */
+  initializationResult(): Promise<{ account?: Record<string, unknown> }>;
 }
+
+/** How long the SDK may take to answer its start (as the probe allows). */
+export const CREDENTIAL_LIMIT_MS = 60_000;
+
+/** The source a failed credential check names: the one that is not the given credential. */
+function offending(reported: (field: string) => string, kind: string): string {
+  const key = reported("apiKeySource");
+  const token = reported("tokenSource");
+  if (kind === "key") {
+    return key !== "ANTHROPIC_API_KEY" ? key : token;
+  }
+  if (token !== "CLAUDE_CODE_OAUTH_TOKEN") {
+    return token;
+  }
+  return key !== "" && key !== "none" ? key : reported("apiProvider");
+}
+
+/** The credential fields of the SDK's account, and nothing else of it. */
+type Credential = Pick<Effective, "apiKeySource" | "apiProvider" | "tokenSource">;
 
 /** How much of a built-in tool's result the Studio is shown. */
 export const TOOL_DONE_LIMIT = 4000;
@@ -102,6 +140,11 @@ export class Turn {
   private next = 1;
   private query: QueryLike | null = null;
   private stopped: string | null = null;
+  /** How the stop is reported, and the credential source that caused it. */
+  private stoppedKind: ErrorKind = "interrupted";
+  private stoppedSource: string | null = null;
+  /** The credential the SDK said it uses, once checked. */
+  private credential: Credential = { apiKeySource: "", apiProvider: "", tokenSource: "" };
   private finish: () => void = () => {};
   /** Messages for the session not yet given to it, and who waits for one. */
   private readonly queued: string[] = [];
@@ -142,6 +185,20 @@ export class Turn {
 
   /** Runs the turn to its end. Resolves once the SDK is done. */
   async run(start: StartOptions): Promise<void> {
+    // A project's settings that bring a credential of their own: the
+    // session does not start (C-54).
+    const settings = projectCredentialProblem(start.cwd, start.settingSources);
+    if (settings !== null) {
+      this.over_ = true;
+      this.send({
+        type: "error",
+        kind: "auth",
+        message: `${settings[0].toUpperCase()}${settings.slice(1)}. The session was not started; remove them from the project's settings.`,
+        source: "project settings",
+      });
+      this.send({ type: "done" });
+      return;
+    }
     const names = start.tools.map((t) => t.name);
     const server = this.mcp(start.tools, (name, input, signal) =>
       this.call(name, input, names, signal),
@@ -149,11 +206,19 @@ export class Turn {
     const done = new Promise<void>((resolve) => {
       this.finish = resolve;
     });
+    let checked: (given: boolean) => void = () => {};
+    const credential = new Promise<boolean>((resolve) => {
+      checked = resolve;
+    });
     // The Operator's message, then any message the Studio queues, while the
     // input stays open until the turn ends (streaming input, so the turn can
-    // be interrupted and steered).
+    // be interrupted and steered). Nothing is given before the credential
+    // check has passed (C-54).
     const turn = this;
     const prompt = (async function* () {
+      if (!(await credential) || turn.stopped !== null) {
+        return;
+      }
       turn.given += 1;
       yield { type: "user", uuid: turn.stamp(), message: { role: "user", content: start.prompt }, parent_tool_use_id: null };
       for (;;) {
@@ -182,6 +247,7 @@ export class Turn {
     );
     try {
       this.query = this.sdk.query({ prompt, options: options as Record<string, unknown> });
+      void this.checkCredential(this.query).then(checked);
       for await (const message of this.query) {
         if (this.handle(message)) {
           break;
@@ -197,9 +263,15 @@ export class Turn {
       }
       this.release(this.stopped ?? "the turn ended");
       this.finish();
+      // A query that ended before its credential was known gives no prompt.
+      checked(false);
     }
     if (this.stopped !== null) {
-      this.send({ type: "error", kind: "interrupted", message: this.stopped });
+      this.send(
+        this.stoppedSource === null
+          ? { type: "error", kind: this.stoppedKind, message: this.stopped }
+          : { type: "error", kind: this.stoppedKind, message: this.stopped, source: this.stoppedSource },
+      );
     }
     this.over_ = true;
     for (const text of this.queued.splice(0)) {
@@ -304,12 +376,19 @@ export class Turn {
     return [total, delta];
   }
 
-  /** Stops the turn: waiting calls are not run, and the SDK is interrupted. */
-  async stop(reason: string): Promise<void> {
+  /**
+   * Stops the turn: waiting calls are not run, and the SDK is interrupted.
+   * The turn ends with an error of `kind` (`auth` when the credential check
+   * failed, naming the `source` the SDK reported; `limit` at a plan's usage
+   * limit).
+   */
+  async stop(reason: string, kind: ErrorKind = "interrupted", source: string | null = null): Promise<void> {
     if (this.stopped !== null) {
       return;
     }
     this.stopped = reason;
+    this.stoppedKind = kind;
+    this.stoppedSource = source;
     this.release(reason);
     try {
       await this.query?.interrupt();
@@ -318,6 +397,58 @@ export class Turn {
     }
     this.abort.abort();
     this.finish();
+  }
+
+  /**
+   * The credential check (C-54), before any prompt is given: the SDK's
+   * answer to its start says which credential it uses, and only the one the
+   * Studio gave may be used. True when the prompt may go to the model.
+   */
+  private async checkCredential(query: QueryLike): Promise<boolean> {
+    let account: Record<string, unknown> | undefined;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    try {
+      const late = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`no answer within ${CREDENTIAL_LIMIT_MS / 1000} seconds`)),
+          CREDENTIAL_LIMIT_MS,
+        );
+      });
+      account = (await Promise.race([query.initializationResult(), late]))?.account;
+    } catch (error) {
+      // The SDK did not start (its binary failed, or it did not answer):
+      // a runtime failure, with its cause; still nothing was sent.
+      if (this.stopped === null) {
+        void this.stop(
+          `The SDK did not start, so the session was stopped before anything reached the model: ${describe(error)}`,
+          "runtime",
+        );
+      }
+      return false;
+    } finally {
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
+    }
+    if (this.stopped !== null) {
+      return false;
+    }
+    const problem = credentialProblem(account, this.from);
+    const reported = (field: string) => (typeof account?.[field] === "string" ? (account[field] as string) : "");
+    if (problem !== null) {
+      void this.stop(
+        `${problem[0].toUpperCase()}${problem.slice(1)}; Agentique gives a session one credential and uses no other, so the session was stopped before anything reached the model.`,
+        "auth",
+        offending(reported, given(this.from)),
+      );
+      return false;
+    }
+    this.credential = {
+      apiKeySource: reported("apiKeySource"),
+      apiProvider: reported("apiProvider"),
+      tokenSource: reported("tokenSource"),
+    };
+    return true;
   }
 
   /** Waits at the gate while paused; never once stopped. */
@@ -372,7 +503,22 @@ export class Turn {
     const subtype = message.subtype;
     const top = message.parent_tool_use_id == null;
     if (type === "system" && subtype === "init") {
-      this.send({ type: "init", ...effective(message) });
+      this.send({ type: "init", ...effective(message, this.credential) });
+      const problem = initProblem(message.apiKeySource, this.from);
+      if (problem !== null) {
+        void this.stop(
+          `${problem[0].toUpperCase()}${problem.slice(1)}; Agentique gives a session one credential and uses no other, so the session was stopped.`,
+          "auth",
+          String(message.apiKeySource),
+        );
+      }
+    } else if (type === "rate_limit_event") {
+      // A Claude plan's usage limit (C-54): the role's session ends with the
+      // reason; it never moves to a paid key.
+      const info = (message.rate_limit_info ?? {}) as Record<string, unknown>;
+      if (info.status === "rejected") {
+        void this.stop(limitReached(info), "limit");
+      }
     } else if (type === "system" && subtype === "api_retry") {
       const error = String(message.error ?? "unknown");
       this.send({
@@ -458,6 +604,10 @@ export class Turn {
           message: "The model's API refused the key (authentication failed).",
         });
         return true;
+      }
+      if (message.error === "rate_limit" && given(this.from) === "token") {
+        void this.stop(limitReached({}), "limit");
+        return false;
       }
       this.send({ type: "assistant", id: String(inner.id ?? ""), model: String(inner.model ?? ""), content });
     } else if (type === "user" && top) {
@@ -562,8 +712,22 @@ export class Turn {
   }
 }
 
-/** The SDK's init message as what the agent can actually do. */
-export function effective(message: Record<string, unknown>): Effective {
+/** Why a session on the Claude subscription stopped at its plan's limit. */
+export function limitReached(info: Record<string, unknown>): string {
+  const which = typeof info.rateLimitType === "string" ? ` (${info.rateLimitType.replace(/_/g, " ")})` : "";
+  const at = typeof info.resetsAt === "number" ? new Date(info.resetsAt < 1e12 ? info.resetsAt * 1000 : info.resetsAt) : null;
+  const resets = at !== null && !Number.isNaN(at.getTime()) ? `; it resets at ${at.toISOString().slice(0, 16).replace("T", " ")} UTC` : "";
+  return `The Claude plan's usage limit is reached${which}${resets}. The session ended; it does not move to an API key.`;
+}
+
+/**
+ * The SDK's init message as what the agent can actually do, with the
+ * credential it said it uses before the first model call.
+ */
+export function effective(
+  message: Record<string, unknown>,
+  credential: Pick<Effective, "apiKeySource" | "apiProvider" | "tokenSource"> = { apiKeySource: "", apiProvider: "", tokenSource: "" },
+): Effective {
   const strings = (value: unknown) => (Array.isArray(value) ? value.map((v) => (typeof v === "string" ? v : String((v as Record<string, unknown>)?.name ?? v))) : []);
   return {
     sessionId: String(message.session_id ?? ""),
@@ -577,7 +741,9 @@ export function effective(message: Record<string, unknown>): Effective {
         }))
       : [],
     permissionMode: String(message.permissionMode ?? ""),
-    apiKeySource: String(message.apiKeySource ?? ""),
+    apiKeySource: String(message.apiKeySource ?? credential.apiKeySource),
+    apiProvider: credential.apiProvider,
+    tokenSource: credential.tokenSource,
     skills: strings(message.skills),
     agents: strings(message.agents),
     plugins: strings(message.plugins),
