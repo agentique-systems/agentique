@@ -1525,22 +1525,33 @@ impl SettingsView {
         let assistant = studio.assistant_route();
         let choice = studio.settings.model_choice();
         let mut blocks: Vec<AnyElement> = Vec::new();
-        let line = |text: String, tone: Option<Tone>, cx: &App| -> AnyElement {
-            match tone {
-                Some(tone) => div()
-                    .px(r(16.0))
-                    .py(r(10.0))
-                    .child(ui::inline_message(tone, text, cx))
-                    .into_any_element(),
-                None => div()
-                    .px(r(16.0))
-                    .py(r(10.0))
-                    .text_size(r(theme::text::SM))
-                    .line_height(r(17.0))
-                    .text_color(theme.text_secondary)
-                    .child(text)
-                    .into_any_element(),
-            }
+        // A line that wraps, marked by its tone (as the runtime card's).
+        let line = |text: String, tone: Option<Tone>, _: &App| -> AnyElement {
+            let mark = match tone {
+                Some(Tone::Success) => Some((IconName::Check, theme.success.text)),
+                Some(Tone::Danger) => Some((IconName::Warning, theme.danger.text)),
+                Some(_) => Some((IconName::Warning, theme.warning.text)),
+                None => None,
+            };
+            div()
+                .px(r(16.0))
+                .py(r(10.0))
+                .flex()
+                .items_start()
+                .gap(r(8.0))
+                .when_some(mark, |this, (glyph, color)| {
+                    this.child(icon(glyph).size(14.0).color(color))
+                })
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .text_size(r(theme::text::SM))
+                        .line_height(r(17.0))
+                        .text_color(theme.text_secondary)
+                        .child(text),
+                )
+                .into_any_element()
         };
         if query.is_none_or(|q| matches(q, &["assistant", "conversation", "model"])) {
             let mut rows = vec![line(

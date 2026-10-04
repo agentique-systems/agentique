@@ -394,7 +394,7 @@ fn route(role: &str, model: Result<RoleModel, String>, theme: &ui::Theme) -> gpu
             format!("{role} · {}", model.label()),
             match &model.fallback {
                 Some(why) => format!(
-                    "Its fallback: {} {why}. {}; {}.",
+                    "On its fallback, since {} {why}. {}; {}.",
                     model.configured, model.credential, model.billed
                 ),
                 None => format!("{}; {}.", model.credential, model.billed),
