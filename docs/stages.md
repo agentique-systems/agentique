@@ -1642,18 +1642,24 @@ here says the Operator accepted anything).
   `held`, `stopped`, `expired`, `invalid`, `timeout`, `failed`) and
   `conversation.usd` estimates the conversation's spend. The Orchestrator
   does not pass `--test-instance` or `--control-speed` yet.
-- **After the independent review:** a press still down when Stop comes is
-  released where it was made, as the agent's step; stopping the Assistant
+- **After the independent review:** a press still down when Stop comes (or
+  when an approval dialog has opened) is let go away from its control, as
+  the agent's input, so it becomes neither a click nor a drag; stopping the Assistant
   ends its action in progress; in a test instance, the Assistant's turn an
   agent's message started acts within that agent's window hold, and the
   Assistant holds nothing once its turn ends; `--test-instance` refuses to
   start without a session of its own; a Stop the Operator gave is lifted
   only by the Operator's Resume; the Conversation's text (messages, replies,
   thinking, a message added to a running turn) is observed only in a test
-  instance; the controls that are the Operator's by id are one table, read by
-  the refusal and the mark alike, which also refuses typing into a focused
-  Operator's field and Space or Enter on a focused Operator's control; the
-  brand and the project's name drag the window too.
+  instance (in the Operator's window no value of the Conversation's is
+  observed, and its items are named "Message 2 from you", "Reply 3, part
+  2", "Tool call 4", "Tool error 4", "A question for you"); the controls
+  that are the Operator's by id are one table, read by the refusal and the
+  mark alike; buttons and switches report their focus, so typing into a
+  focused Operator's field and Space or Enter on a focused Operator's
+  button or switch are refused up front; the Assistant answering the
+  supervisor's own message takes no hold; the brand and the project's name
+  drag the window too.
 
 Measured for W12.2 (2026-10-04, the reference machine, while two other
 agents built in parallel):

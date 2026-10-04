@@ -277,7 +277,8 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   text, what History saves, worked out once per revision: undo restores it
   exactly); `agents` (the gate, actions held, the window's
   `holder`, the `speed`); every drawn control (`ui/target.rs`: id, role,
-  label, value except a key's, enabled, selected, focused, region, the
+  label, value except a key's, enabled, selected, focused (fields, buttons
+  and switches), region, the
   bounds of its visible part, `hidden`, and `operatorOnly` where agents may
   not act on it); and the commands, available or why not, likewise marked.
   `operatorOnly` comes from the same rules that refuse an agent's action up
@@ -325,11 +326,13 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   some of it is unpriced), all bounded. Its messages, tool cards and
   thinking rows are controls (items), the composer is the field `Message`,
   Send and Stop are `send` and `stop`. The Conversation's text (the
-  `lastMessage`, the `lastReply`, the messages' and thinking rows' labels, a
+  `lastMessage`, the `lastReply`, the labels of its messages, tool cards,
+  questions and thinking, any value such as the Operator's unsent draft, a
   message the Operator added to a running turn) is observed only in a test
   instance: in the Operator's own window an observation could reach an
-  agent's provider, so messages read "Message 3 from you" and "Reply 4 from
-  the Assistant".
+  agent's provider, so its items read "Message 2 from you", "Reply 3, part
+  2", "Tool call 4" or "Tool error 4", "A question for you", numbered by
+  their own count, with their ids unchanged.
 - **One agent at a time.** The first agent to act holds the window until it
   sends `op: release` or has been idle for 30 s (`control::IDLE`); another
   agent's action is refused with "the window is in use by <agent>; act in
@@ -349,7 +352,8 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   its decision, done or refused with the reason) and offers Pause, Step and
   Stop; Pause and Step take effect between typed characters, Stop ends the
   action at once and refuses agents until Resume (a press still down is
-  released where it was made, as the agent's input); stopping the Assistant
+  let go away from its control, as the agent's input, so it becomes
+  neither a click nor a drag); stopping the Assistant
   ends its action in progress the same way. The endpoint's holder has the
   same through `op: gate` (`pause`, `step`, `run`, `stop`), except that it
   cannot lift a Stop the Operator gave in the window. Nothing is

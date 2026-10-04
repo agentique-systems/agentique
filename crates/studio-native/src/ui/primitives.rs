@@ -184,7 +184,7 @@ impl Switch {
 }
 
 impl RenderOnce for Switch {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.theme().clone();
         let on = self.on;
         let track = if on {
@@ -193,13 +193,20 @@ impl RenderOnce for Switch {
             theme.pressed
         };
         let knob_id = ElementId::Name(format!("{:?}-knob", self.id).into());
-        // For agents (C-54): what it switches, and whether it is on.
+        // For agents (C-54): what it switches, whether it is on, and whether
+        // it has the focus (its own handle, so Space is known to reach it).
+        let focus = window
+            .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
+            .read(cx)
+            .clone();
         let control = crate::ui::target::Control::new("switch", self.label.clone())
             .id(self.id.to_string())
             .value(if on { "on" } else { "off" })
             .enabled(!self.disabled)
-            .selected(on);
+            .selected(on)
+            .focused(focus.is_focused(window));
         let mut button = gpui_base::Button::new(self.id)
+            .track_focus(&focus)
             .role(gpui::Role::Switch)
             .accessibility_label(self.label)
             .disabled(self.disabled)

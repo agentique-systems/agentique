@@ -92,6 +92,9 @@ pub const IDLE: Duration = Duration::from_secs(30);
 pub const SUPERVISOR: &str = "orchestrator";
 /// The name the Studio's own Assistant acts under.
 pub const ASSISTANT: &str = "Assistant";
+/// Where a press still down is let go when its action ends before its
+/// release: away from every control, outside the window.
+const AWAY: (f32, f32) = (-1.0, -1.0);
 /// How long a click's ripple and a scroll's arrow are drawn.
 const EFFECT: Duration = Duration::from_millis(700);
 
@@ -1047,7 +1050,7 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
         }
         Action::Type(_) => match focused {
             None => Some("no field has the focus, so the text would go to the Studio's shortcuts; fill a field instead".into()),
-            Some(d) if d.control.role != "field" => Some(format!("`{}` is not a field", d.control.label)),
+            Some(d) if d.control.role != "field" => Some(format!("`{}` has the focus, which is not a field; fill a field instead", d.control.label)),
             Some(d) => operators_control(studio, d),
         },
         _ => None,
@@ -1134,7 +1137,14 @@ fn control_json(studio: &Studio, d: &Drawn) -> Value {
         // Outside the visible part of its panel: a click scrolls to it.
         v["hidden"] = json!(true);
     }
-    if let Some(value) = &c.value {
+    // In the Operator's own window an observation could reach an agent's
+    // provider: the Conversation's text (the Operator's draft among it) is
+    // left out, and its items are named without it.
+    let private = d.region == "conversation" && !studio.args.test_instance;
+    if private && let Some(label) = conversation_label(studio, d) {
+        v["label"] = json!(label);
+    }
+    if let Some(value) = c.value.as_ref().filter(|_| !private) {
         v["value"] = json!(value.to_string());
     }
     if !c.enabled {
@@ -1150,6 +1160,102 @@ fn control_json(studio: &Studio, d: &Drawn) -> Value {
         v["operatorOnly"] = json!(true);
     }
     v
+}
+
+/// What an item of the Conversation is, without its text, by its control
+/// id: "Message 2 from you", "Reply 3, part 2", "Tool call 4" ("Tool error
+/// 4" when it failed), "A question for you", the thinking, an option. The
+/// numbers count each kind in the conversation, so they stay as it scrolls.
+fn conversation_label(studio: &Studio, d: &Drawn) -> Option<String> {
+    use agq_assistant::Entry;
+    use agq_providers::AssistantPart;
+    let id = d.control.id.as_ref();
+    let panel = &studio.conversation;
+    let entries = &panel.conversation.entries;
+    let text_parts = |parts: &[AssistantPart]| -> Vec<usize> {
+        parts
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| matches!(p, AssistantPart::Text { text } if !text.trim().is_empty()))
+            .map(|(slot, _)| slot)
+            .collect()
+    };
+    if let Some(index) = id
+        .strip_prefix("operator-")
+        .and_then(|i| i.parse::<usize>().ok())
+    {
+        let n = entries
+            .iter()
+            .take(index + 1)
+            .filter(|e| matches!(e, Entry::Operator { .. }))
+            .count();
+        return Some(format!("Message {n} from you"));
+    }
+    if let Some((index, slot)) = id.strip_prefix("assistant-").and_then(|rest| {
+        let (index, slot) = rest.split_once('-')?;
+        Some((index.parse::<usize>().ok()?, slot.parse::<usize>().ok()?))
+    }) {
+        let replies = entries
+            .iter()
+            .take(index)
+            .filter(
+                |e| matches!(e, Entry::Assistant { parts, .. } if !text_parts(parts).is_empty()),
+            )
+            .count();
+        // The reply streaming in comes after the conversation's entries.
+        let slots = match entries.get(index) {
+            Some(Entry::Assistant { parts, .. }) => text_parts(parts),
+            _ => panel
+                .live
+                .iter()
+                .enumerate()
+                .filter(|(_, l)| matches!(l, crate::conversation::Live::Text(_)))
+                .map(|(slot, _)| slot)
+                .collect(),
+        };
+        let part = slots.iter().position(|s| *s == slot).map_or(1, |p| p + 1);
+        return Some(if slots.len() > 1 {
+            format!("Reply {}, part {part}", replies + 1)
+        } else {
+            format!("Reply {}", replies + 1)
+        });
+    }
+    if let Some(call) = id.strip_prefix("tool-") {
+        let calls = entries
+            .iter()
+            .flat_map(|e| match e {
+                Entry::Assistant { parts, .. } => parts.as_slice(),
+                _ => &[],
+            })
+            .filter_map(|p| match p {
+                AssistantPart::ToolCall { id, .. } => Some(id.as_str()),
+                _ => None,
+            })
+            .chain(panel.live.iter().filter_map(|l| match l {
+                crate::conversation::Live::Tool { id, .. } => Some(id.as_str()),
+                _ => None,
+            }));
+        let n = calls.take_while(|c| *c != call).count() + 1;
+        let failed = panel.results.get(call).is_some_and(|r| r.is_error);
+        return Some(if failed {
+            format!("Tool error {n}")
+        } else {
+            format!("Tool call {n}")
+        });
+    }
+    if id.starts_with("question-") {
+        return Some("A question for you".into());
+    }
+    if id.starts_with("thinking-") {
+        return Some("The Assistant's thinking".into());
+    }
+    if let Some(n) = id
+        .strip_prefix("option-")
+        .and_then(|n| n.parse::<usize>().ok())
+    {
+        return Some(format!("Option {}", n + 1));
+    }
+    None
 }
 
 /// Cards in view on the Surface, with their bounds in the window.
@@ -1777,14 +1883,10 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
         changed = true;
         let gate = studio.read(cx).control.gate;
         if let Some(why) = active.ending(gate) {
-            // Ended at once. A press still down is released where it was
-            // made, as a step of the agent's (so its effects are the
-            // agent's, and the Operator's own stay refused): no button stays
-            // down, and nothing is dragged.
-            if let Some(Step::Release(_)) = active.steps.front()
-                && let Some(release) = active.steps.pop_front()
-            {
-                let _ = run_step(studio, release, &mut active, window, cx);
+            // Ended at once; a press still down is let go away from its
+            // control, so it becomes neither a click nor a drag.
+            if pending_press(&mut active) {
+                let_go(studio, &active.who.agent, window, cx);
             }
             let answer = Refusal::Stopped.answer(why);
             studio.update(cx, |studio, _| {
@@ -1982,7 +2084,9 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     let what = describe(&action);
     // One agent at a time; the supervisor's own steps by rule and waiting
     // (which only observes) neither take the window nor are refused.
-    let supervisor = request.endpoint && who.agent == SUPERVISOR;
+    // The Assistant answering the supervisor's own message acts as its step.
+    let supervisor = (request.endpoint && who.agent == SUPERVISOR)
+        || (who.agent == ASSISTANT && studio.control.asked_by.as_deref() == Some(SUPERVISOR));
     let holds_window = !supervisor && !matches!(action, Action::Wait(..));
     let holds_as = studio.control.holds_as(&who.agent).to_string();
     let now = Instant::now();
@@ -2180,6 +2284,10 @@ fn run_step(
             | Step::Char { .. }
     ) && let Some(kind) = approval(studio.read(cx))
     {
+        // The button never stays down.
+        if matches!(step, Step::Release(..)) {
+            let_go(studio, &active.who.agent, window, cx);
+        }
         return Err((
             Refusal::OperatorOwn,
             format!("refused: the {kind} dialog opened; it asks for the Operator's own approval"),
@@ -2191,6 +2299,35 @@ fn run_step(
     let clear = studio.clone();
     cx.defer(move |cx| clear.update(cx, |studio, _| studio.control.acting = None));
     result
+}
+
+/// Whether a press of the action is still down, its release the next step
+/// (which is dropped: the press is let go instead).
+fn pending_press(active: &mut Active) -> bool {
+    let pending = matches!(active.steps.front(), Some(Step::Release(_)));
+    if pending {
+        active.steps.pop_front();
+    }
+    pending
+}
+
+/// Lets go of a press still down, as `agent`'s input (its effects are the
+/// agent's; the Operator's own stay refused, whatever dialog has opened):
+/// the pointer moves away from the control with no button held, and the
+/// button goes up there, so the press becomes neither a click nor a drag.
+fn let_go(
+    studio: &gpui::Entity<Studio>,
+    agent: &str,
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) {
+    let away = gpui::point(gpui::px(AWAY.0), gpui::px(AWAY.1));
+    let agent = agent.to_string();
+    studio.update(cx, |studio, _| studio.control.acting = Some(agent));
+    input::move_to(away, None, window, cx);
+    input::pointer_button(away, false, window, cx);
+    let clear = studio.clone();
+    cx.defer(move |cx| clear.update(cx, |studio, _| studio.control.acting = None));
 }
 
 /// The text's characters as steps, before the action's next steps, at the
@@ -3227,8 +3364,8 @@ mod tests {
     }
 
     /// Stop, and the agent's own turn stopped, end the action in progress
-    /// at the next tick; a press still down is released where it was made,
-    /// as a step of the agent's (`run_step`), never moved away.
+    /// at the next tick; a press still down is let go away from its control
+    /// (outside the window), so it becomes neither a click nor a drag.
     #[test]
     fn an_action_ends_at_once_when_stopped_or_when_its_agents_turn_is() {
         let (app, _folder) = crate::edit::app_tests::studio("ending");
@@ -3270,10 +3407,85 @@ mod tests {
             ending.ending(Gate::Run).as_deref(),
             Some("Not run: the Operator stopped the Assistant.")
         );
+        let mut ending = control.active.take().unwrap();
+        assert!(pending_press(&mut ending), "a press is still down");
         assert!(
-            matches!(ending.steps.front(), Some(Step::Release(p)) if *p == at),
-            "the press is released where it was made"
+            !ending
+                .steps
+                .iter()
+                .any(|s| matches!(s, Step::Release(p) if *p == at)),
+            "it is not released on its control"
         );
+        assert!(!pending_press(&mut ending), "and let go once");
+        assert!(AWAY.0 < 0.0 && AWAY.1 < 0.0, "away is outside the window");
+    }
+
+    /// In the Operator's own window the Conversation's items are named
+    /// without their text, and no value (the Operator's draft) is observed;
+    /// a test instance observes them as they are.
+    #[test]
+    fn the_operators_conversation_is_observed_without_its_text() {
+        use agq_providers::AssistantPart;
+        let (mut app, _folder) = crate::edit::app_tests::studio("conversation-labels");
+        let text = |t: &str| AssistantPart::Text { text: t.into() };
+        let call = |id: &str| AssistantPart::ToolCall {
+            id: id.into(),
+            name: "apply_changes".into(),
+            input: json!({}),
+        };
+        let entries = &mut app.conversation.conversation.entries;
+        entries.push(agq_assistant::Entry::Operator {
+            text: "Build a shop".into(),
+        });
+        entries.push(agq_assistant::Entry::Assistant {
+            model: None,
+            parts: vec![text("First, the store."), call("t1"), text("Then the API.")],
+        });
+        entries.push(agq_assistant::Entry::Operator {
+            text: "My secret".into(),
+        });
+        entries.push(agq_assistant::Entry::Assistant {
+            model: None,
+            parts: vec![call("t2"), text("Done.")],
+        });
+        app.conversation.results.insert(
+            "t2".into(),
+            agq_assistant::ToolResult::error("no such type"),
+        );
+        let item = |id: &str, label: &str| Drawn {
+            control: target::Control::new("item", label.to_string()).id(id.to_string()),
+            ..drawn(id, "item", "conversation", false)
+        };
+        let label = |app: &Studio, id: &str| {
+            control_json(app, &item(id, "the text itself"))["label"]
+                .as_str()
+                .unwrap()
+                .to_string()
+        };
+        assert_eq!(label(&app, "operator-2"), "Message 2 from you");
+        assert_eq!(label(&app, "assistant-1-0"), "Reply 1, part 1");
+        assert_eq!(label(&app, "assistant-1-2"), "Reply 1, part 2");
+        assert_eq!(label(&app, "assistant-3-1"), "Reply 2");
+        assert_eq!(label(&app, "tool-t1"), "Tool call 1");
+        assert_eq!(label(&app, "tool-t2"), "Tool error 2");
+        assert_eq!(label(&app, "question-t9"), "A question for you");
+        assert_eq!(
+            label(&app, "thinking-thinking-1-0"),
+            "The Assistant's thinking"
+        );
+        assert_eq!(label(&app, "option-0"), "Option 1");
+        assert_eq!(
+            label(&app, "send"),
+            "the text itself",
+            "a fixed label stays"
+        );
+        let mut composer = drawn("Message", "field", "conversation", true);
+        composer.control = composer.control.value("my unsent draft");
+        assert!(control_json(&app, &composer)["value"].is_null());
+        // A test instance observes them as they are.
+        app.args.test_instance = true;
+        assert_eq!(label(&app, "operator-2"), "the text itself");
+        assert_eq!(control_json(&app, &composer)["value"], "my unsent draft");
     }
 
     /// In a test instance, the Assistant's turn that an agent's message

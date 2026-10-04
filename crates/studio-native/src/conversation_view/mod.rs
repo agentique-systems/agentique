@@ -65,9 +65,6 @@ pub struct Ctx {
     pub expanded: HashSet<String>,
     selection: Option<(TextPoint, TextPoint)>,
     drawn: Rc<RefCell<Vec<Drawn>>>,
-    /// Agents' observations carry the Conversation's text (a test
-    /// instance); in the Operator's own window they name items without it.
-    pub text_shown: bool,
 }
 
 /// One row of the list.
@@ -1227,12 +1224,10 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
             .into_any_element(),
         Item::Operator { place, blocks, editable } => {
             let studio = ctx.studio.clone();
+            // The observation names it without its text in the Operator's
+            // own window (`control::conversation_label`).
             let name = message_name("You", blocks);
-            let label = if ctx.text_shown {
-                control_label(name.clone())
-            } else {
-                format!("Message {} from you", place.0 + 1)
-            };
+            let label = control_label(name.clone());
             div()
                 .flex()
                 .flex_col()
@@ -1270,11 +1265,7 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
         }
         Item::Assistant { place, blocks, copy, streaming } => {
             let name = message_name("Assistant", blocks);
-            let label = if ctx.text_shown {
-                control_label(name.clone())
-            } else {
-                format!("Reply {} from the Assistant", place.0 + 1)
-            };
+            let label = control_label(name.clone());
             div()
                 .flex()
                 .flex_col()
@@ -1415,7 +1406,6 @@ impl Render for ConversationView {
             expanded: self.expanded.clone(),
             selection: self.selection.map(|s| s.range()),
             drawn: self.drawn.clone(),
-            text_shown: self.studio.read(cx).args.test_instance,
         });
         let items = self.items.clone();
         let studio_entity = self.studio.clone();
