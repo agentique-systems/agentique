@@ -1654,6 +1654,8 @@ impl Explorer<'_> {
             if answer["ok"] != false
                 && !self.undo_unavailable
                 && !findings::turn_running(&self.now)
+                // Undo waits for an open dialog (a rename after an insert).
+                && self.now["dialog"].is_null()
                 && findings::changed_model(&before, &self.now)
                 && self.undo_checked.insert(step.key.clone())
             {
@@ -1680,13 +1682,16 @@ impl Explorer<'_> {
                 Ok(())
             }
             Err(reason) => {
-                // Refused by rule or unavailable: no finding, and not tried
-                // again in this run. Whether it did anything is unknown, so
-                // the state is observed again.
-                self.undo_unavailable = true;
-                self.run
-                    .notes
-                    .push(format!("undo could not be checked: {reason}"));
+                // Refused by rule or unavailable: no finding. Refused as the
+                // Operator's, it is not tried again in this run. Whether it
+                // did anything is unknown, so the state is observed again.
+                if reason.contains("Operator's") {
+                    self.undo_unavailable = true;
+                }
+                let note = format!("undo could not be checked: {reason}");
+                if !self.run.notes.contains(&note) {
+                    self.run.notes.push(note);
+                }
                 if let Some(now) = self.observe()? {
                     self.expected_dialog = now["dialog"].clone();
                     self.now = now;
