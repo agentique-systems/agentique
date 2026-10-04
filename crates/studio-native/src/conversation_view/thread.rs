@@ -102,7 +102,14 @@ impl Row {
                 )
                     .hash(&mut hasher);
                 if let Some(d) = &step.directive {
-                    (&d.from, &d.to, d.status.as_ref().map(|(s, _)| s), &d.scope).hash(&mut hasher);
+                    (
+                        &d.from,
+                        &d.to,
+                        d.status.as_ref().map(|(s, _)| s),
+                        &d.scope,
+                        &d.stop,
+                    )
+                        .hash(&mut hasher);
                 }
             }
             What::Fold { count, open } => (1u8, count, open).hash(&mut hasher),
@@ -160,13 +167,19 @@ pub struct DirectiveChip {
     pub status: Option<(String, Tone)>,
     /// For a child objective: its focus and budgets.
     pub scope: Option<String>,
+    /// A child objective still going, which the Operator may stop alone
+    /// (its id).
+    pub stop: Option<String>,
 }
 
 /// Where an Operator's message went, as its chip reads (C-54: "the thread
-/// shows where each message went").
-pub fn routing(to: Option<&str>) -> String {
+/// shows where each message went"): one for the lead waits for its next
+/// turn until the objective's record says it was `given`
+/// (`Objective.delivered`).
+pub fn routing(to: Option<&str>, given: bool) -> String {
     match to {
         Some("implementer") => "to the implementer, at its next tool call".into(),
+        Some("lead") if given => "given to the lead".into(),
         Some("lead") => "waits for the lead's next turn".into(),
         Some(role) => format!("to the {role}"),
         None => "sent".into(),
@@ -226,6 +239,7 @@ fn directive_chip(
             to: "another agent".into(),
             status: None,
             scope: None,
+            stop: None,
         };
     };
     let to = match &record.recipient {
@@ -241,6 +255,14 @@ fn directive_chip(
         DirectiveStatus::Failed => ("failed".into(), Tone::Warning),
         DirectiveStatus::Stopped => ("stopped".into(), Tone::Neutral),
         DirectiveStatus::Refused { reason } => (format!("refused: {reason}"), Tone::Danger),
+    };
+    // A child still going: the Operator may stop it alone.
+    let stop = match &record.recipient {
+        Recipient::Child(id) if record.status == DirectiveStatus::Running => children
+            .iter()
+            .find(|c| &c.id == id && c.active())
+            .map(|c| c.id.clone()),
+        _ => None,
     };
     let scope = match &record.recipient {
         Recipient::Child(_) => {
@@ -269,6 +291,7 @@ fn directive_chip(
         to,
         status: Some(status),
         scope,
+        stop,
     }
 }
 
@@ -359,7 +382,10 @@ impl Builder<'_> {
             if intent {
                 "the objective's intent".to_string()
             } else {
-                routing(entry.to.as_deref())
+                routing(
+                    entry.to.as_deref(),
+                    entry.seq != 0 && entry.seq <= objective.delivered,
+                )
             }
         });
         let open = self.open.contains(&id);
@@ -835,6 +861,28 @@ fn step_card(ctx: &Rc<Ctx>, row: &Row, step: &Step, control: AnyElement, cx: &Ap
         )
         .on_click(move |_: &ClickEvent, _, cx| studio.act(cx, |s| s.address_objective()))
     });
+    // The Operator's own: refused to agents like every `objective-` control.
+    let stop = step
+        .directive
+        .as_ref()
+        .and_then(|d| d.stop.clone())
+        .map(|child| {
+            let studio = ctx.studio.clone();
+            Button::new(
+                SharedString::from(format!("objective-stop-child-{child}")),
+                "Stop this child",
+            )
+            .small()
+            .danger()
+            .tooltip(
+                "Ends this child objective alone; the lead goes on with that",
+                None,
+            )
+            .on_click(move |_: &ClickEvent, _, cx| {
+                let child = child.clone();
+                studio.act(cx, move |s| s.stop_child(&child))
+            })
+        });
     match step.kind {
         Kind::Human => div()
             .id(SharedString::from(row.id.clone()))
@@ -939,16 +987,20 @@ fn step_card(ctx: &Rc<Ctx>, row: &Row, step: &Step, control: AnyElement, cx: &Ap
                             .child(scope),
                     )
                 })
-                .when(details_toggle.is_some() || reply.is_some(), |this| {
-                    this.child(
-                        div()
-                            .flex()
-                            .gap(r(4.0))
-                            .children(details_toggle)
-                            .child(div().flex_1())
-                            .children(reply),
-                    )
-                })
+                .when(
+                    details_toggle.is_some() || reply.is_some() || stop.is_some(),
+                    |this| {
+                        this.child(
+                            div()
+                                .flex()
+                                .gap(r(4.0))
+                                .children(details_toggle)
+                                .child(div().flex_1())
+                                .children(stop)
+                                .children(reply),
+                        )
+                    },
+                )
                 .children(details)
                 .into_any_element()
         }
@@ -1214,6 +1266,7 @@ mod tests {
                 to: "implementer · claude-sonnet-5-5".into(),
                 status: Some(("running".into(), Tone::Info)),
                 scope: None,
+                stop: None,
             })
         );
         assert_eq!(
@@ -1222,7 +1275,8 @@ mod tests {
         );
         assert_eq!(step(&closed[5]).kind, Kind::Result);
         assert_eq!(step(&closed[5]).author, "implementer · claude-sonnet-5-5");
-        assert_eq!(step(&closed[7]).author, "Agentique");
+        // A later build's author is no one's (never credited to Agentique).
+        assert_eq!(step(&closed[7]).author, "unknown author");
         // The fold opened, and one tool call in it: its diff.
         let open = HashSet::from([
             "thread-fold-objective-1-3".to_string(),
@@ -1297,6 +1351,14 @@ mod tests {
             step(&shown[0]).routing.as_deref(),
             Some("waits for the lead's next turn"),
             "not the intent: the first kept message is entry 900"
+        );
+        // Once the record says the lead was given it (W12.5's delivered).
+        let mut given = root.clone();
+        given.delivered = 900;
+        let shown_after = rows(&given, &[], &tail, &HashSet::new(), &none, true);
+        assert_eq!(
+            step(&shown_after[0]).routing.as_deref(),
+            Some("given to the lead")
         );
         assert_ne!(shown[1].id, shown[2].id);
         assert_eq!(parse_id(&shown[1].id), None);
@@ -1491,6 +1553,9 @@ mod tests {
             chip.scope.as_deref(),
             Some("focus: History · $0.50, 1 improvement, 20 steps")
         );
+        // A child still going can be stopped alone, by the Operator (its
+        // control's id is an `objective-` one, refused to agents).
+        assert_eq!(chip.stop.as_deref(), Some("objective-2"));
         root.settle(
             &d1,
             DirectiveStatus::Refused {
@@ -1502,6 +1567,11 @@ mod tests {
         assert_eq!(
             step(&refused[1]).directive.as_ref().unwrap().status,
             Some(("refused: over the parent's budget".into(), Tone::Danger))
+        );
+        assert_eq!(
+            step(&refused[1]).directive.as_ref().unwrap().stop,
+            None,
+            "only a running child's directive offers Stop"
         );
     }
 
@@ -1539,12 +1609,16 @@ mod tests {
     #[test]
     fn a_message_says_where_it_went_and_rows_are_named_for_agents() {
         assert_eq!(
-            routing(Some("implementer")),
+            routing(Some("implementer"), false),
             "to the implementer, at its next tool call"
         );
-        assert_eq!(routing(Some("lead")), "waits for the lead's next turn");
-        assert_eq!(routing(Some("evaluator")), "to the evaluator");
-        assert_eq!(routing(None), "sent");
+        assert_eq!(
+            routing(Some("lead"), false),
+            "waits for the lead's next turn"
+        );
+        assert_eq!(routing(Some("lead"), true), "given to the lead");
+        assert_eq!(routing(Some("evaluator"), false), "to the evaluator");
+        assert_eq!(routing(None, false), "sent");
         let directive = Row {
             id: "thread-objective-1-3".into(),
             objective: "objective-1".into(),
@@ -1563,6 +1637,7 @@ mod tests {
                     to: "implementer".into(),
                     status: Some(("running".into(), Tone::Info)),
                     scope: None,
+                    stop: None,
                 }),
                 routing: None,
                 reply: true,

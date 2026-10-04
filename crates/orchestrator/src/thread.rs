@@ -116,7 +116,7 @@ impl Author {
                 role,
                 model: Some(model),
             } => format!("{role} · {}", model.model),
-            Author::Unknown => "Agentique".into(),
+            Author::Unknown => "unknown author".into(),
         }
     }
 }
@@ -206,23 +206,35 @@ pub fn capped(text: &str, most: usize) -> String {
     format!("{}\n… ({} more bytes)", &text[..end], text.len() - end)
 }
 
-/// `text` with every configured key (of twelve characters or more) in it
-/// replaced by a hint, as the key gate names one: keys never reach a file
-/// or a log (ROADMAP §4.9).
+/// The shortest configured key that is replaced: as the push gate
+/// (`gates::keys`), so a short value that is no key (a word, a number) is
+/// not taken for one. Keys of providers are far longer.
+pub const KEY_CHARS: usize = 12;
+
+/// `text` with every configured key of [`KEY_CHARS`] characters or more in
+/// it replaced by a hint naming its last four characters, as the key gate
+/// names one: keys never reach a file or a log (ROADMAP §4.9).
 pub fn redacted(text: &str, keys: &[String]) -> String {
     let mut text = text.to_string();
-    for key in keys.iter().filter(|k| k.len() >= 12) {
+    for key in keys.iter().filter(|k| k.chars().count() >= KEY_CHARS) {
         if text.contains(key.as_str()) {
-            let hint = format!("[a configured key ending {}]", &key[key.len() - 4..]);
+            let last: String = key.chars().skip(key.chars().count() - 4).collect();
+            let hint = format!("[a configured key ending {last}]");
             text = text.replace(key.as_str(), &hint);
         }
     }
     text
 }
 
-/// Whether `path` names a file that holds keys (as the permission policy's
-/// `SECRET_FILES` do): its contents are never shown. Templates
-/// (`.env.example`, `.sample`, `.template`, `.dist`) hold none.
+/// Files that hold other tools' credentials, whose contents the thread
+/// never shows besides the permission policy's own list of key files
+/// (`policy::SECRET_FILES`, which it reads from).
+const CREDENTIAL_FILES: [&str; 3] = [".npmrc", ".netrc", "credentials.json"];
+
+/// Whether `path` names a file that holds keys: one of the permission
+/// policy's `SECRET_FILES` (the one list of them), or of
+/// [`CREDENTIAL_FILES`]. Templates (`.example`, `.sample`, `.template`,
+/// `.dist`) hold none.
 pub fn key_file(path: &str) -> bool {
     let name = path
         .rsplit(['/', '\\'])
@@ -232,13 +244,33 @@ pub fn key_file(path: &str) -> bool {
     let template = [".example", ".sample", ".template", ".dist"]
         .iter()
         .any(|t| name.ends_with(t));
-    (name == ".env" || name.starts_with(".env.")) && !template
-        || name.ends_with(".pem")
-        || name.ends_with(".key")
-        || name == ".git-credentials"
-        || ["id_rsa", "id_ed25519", "id_ecdsa"]
-            .iter()
-            .any(|k| name.starts_with(k))
+    !template
+        && (CREDENTIAL_FILES.contains(&name.as_str())
+            || agq_assistant::policy::SECRET_FILES.iter().any(|pattern| {
+                let pattern = pattern.trim_start_matches("**/").to_ascii_lowercase();
+                matches_name(&name, &pattern)
+            }))
+}
+
+/// Whether a file's `name` matches `pattern`, where `*` stands for any
+/// characters.
+fn matches_name(name: &str, pattern: &str) -> bool {
+    let parts: Vec<&str> = pattern.split('*').collect();
+    if parts.len() == 1 {
+        return name == pattern;
+    }
+    let (first, last) = (parts[0], parts[parts.len() - 1]);
+    if !name.starts_with(first) || !name.ends_with(last) || name.len() < first.len() + last.len() {
+        return false;
+    }
+    let mut rest = &name[first.len()..name.len() - last.len()];
+    for middle in &parts[1..parts.len() - 1] {
+        match rest.find(middle) {
+            Some(at) => rest = &rest[at + middle.len()..],
+            None => return false,
+        }
+    }
+    true
 }
 
 /// A tool call as the thread shows it: a line naming the tool and what it
@@ -698,11 +730,18 @@ mod tests {
     /// contents are not shown.
     #[test]
     fn keys_and_key_files_never_reach_the_thread() {
-        let keys = vec!["sk-fake-0123456789abcdef".to_string(), "short".to_string()];
-        let said = redacted("curl -H 'x-api-key: sk-fake-0123456789abcdef' short", &keys);
+        let keys = vec![
+            "sk-fake-0123456789abcdef".to_string(),
+            "short".to_string(),
+            "clé-secrète-éèêë".to_string(),
+        ];
+        let said = redacted(
+            "curl -H 'x-api-key: sk-fake-0123456789abcdef' short clé-secrète-éèêë",
+            &keys,
+        );
         assert_eq!(
             said,
-            "curl -H 'x-api-key: [a configured key ending cdef]' short"
+            "curl -H 'x-api-key: [a configured key ending cdef]' short [a configured key ending éèêë]"
         );
         for path in [
             ".env",
@@ -710,6 +749,9 @@ mod tests {
             "certs/server.pem",
             "a.key",
             "/home/u/.ssh/id_ed25519",
+            "C:\\Users\\u\\.npmrc",
+            ".netrc",
+            "gcloud/credentials.json",
         ] {
             assert!(key_file(path), "{path}");
             let (text, details) = activity(
@@ -718,7 +760,12 @@ mod tests {
             );
             assert!(text.ends_with("(a key file: not shown)") && details.is_none());
         }
-        for path in [".env.example", "src/environment.rs", "keyboard.rs"] {
+        for path in [
+            ".env.example",
+            "src/environment.rs",
+            "keyboard.rs",
+            "keys.rs",
+        ] {
             assert!(!key_file(path), "{path}");
         }
     }

@@ -27,6 +27,8 @@ impl Role {
 }
 
 pub const SUBMIT_PROPOSAL: &str = "submit_proposal";
+pub const SUBMIT_EXPLORATION: &str = "submit_exploration";
+pub const DELEGATE: &str = "delegate";
 pub const SUBMIT_IMPLEMENTATION: &str = "submit_implementation";
 pub const SUBMIT_REVIEW: &str = "submit_review";
 pub const SUBMIT_EVALUATION: &str = "submit_evaluation";
@@ -79,12 +81,13 @@ fn submit_proposal() -> Value {
                             "statement": { "type": "string", "description": "What must be true after the change." },
                             "check": {
                                 "type": "object",
-                                "description": "How it is checked: {kind: command, program: [\"cargo\", \"test\", \"-p\", \"agq-x\", \"name_of_test\"]} (a test run: cargo test with -p, --test, --features, --lib and one filter, node --test <file>.test.<ext>, or python -m unittest <module>; it must run at least one test, fail before the change and pass after), {kind: observation, setup: [actions], expect: {screen, dialog, statusContains, selectionContains, control, labelContains, valueContains, enabled, anyLabelContains}} (in a test instance of the change; at least one of these keys, and no others), or {kind: judgment} (the evaluator decides from observations). Each observation criterion starts with no dialog open (the Orchestrator cancels one left open; an approval left open means the criteria after it are not run): put every action it needs in its own setup.",
+                                "description": "How it is checked: {kind: command, program: [\"cargo\", \"test\", \"-p\", \"agq-x\", \"name_of_test\"]} (a test run: cargo test with -p, --test, --features, --lib and one filter, node --test <file>.test.<ext>, or python -m unittest <module>; it must run at least one test, fail before the change and pass after; on the base the Orchestrator brings over the change's new and changed test files, so a test that shows the defect there is one in a test file that compiles against the base), {kind: observation, setup: [actions], expect: {screen, dialog, statusContains, selectionContains, control, labelContains, valueContains, enabled, anyLabelContains}, condition?} (in a test instance, on the base and on the change; at least one of these keys, and no others; `condition` starts it in a stated condition: `recovered` after a build that did not start, or `with an objective` recorded with its thread), or {kind: judgment} (the evaluator decides from observations; never evidence). Each observation criterion starts with no dialog open (the Orchestrator cancels one left open; an approval left open means the criteria after it are not run): put every action it needs in its own setup.",
                                 "properties": {
                                     "kind": { "type": "string", "enum": ["command", "observation", "judgment"] },
                                     "program": { "type": "array", "items": { "type": "string" } },
                                     "setup": { "type": "array", "items": { "type": "object" } },
-                                    "expect": { "type": "object" }
+                                    "expect": { "type": "object" },
+                                    "condition": { "type": "string", "enum": ["recovered", "with an objective"] }
                                 },
                                 "required": ["kind"]
                             }
@@ -100,7 +103,8 @@ fn submit_proposal() -> Value {
                         "properties": { "path": { "type": "string" }, "why": { "type": "string" } },
                         "required": ["path", "why"]
                     }
-                }
+                },
+                "finding": { "type": "string", "description": "The reproduced finding it fixes, by its id in your brief (f1, f2, …): required when the brief lists reproduced findings. Its replay becomes a frozen criterion: it must fail on the original build and pass on the change." }
             },
             "required": ["title", "kind", "why", "parts", "plan", "criteria"],
             "additionalProperties": false
@@ -166,6 +170,39 @@ fn submit_evaluation() -> Value {
     })
 }
 
+fn submit_exploration() -> Value {
+    json!({
+        "name": SUBMIT_EXPLORATION,
+        "description": "Hand the explorer its goal for this cycle's exploration of the running build (it acts in a test instance, choosing each action among the valid ones, and checks invariants after each). Without it, the explorer's goal is the objective.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "goal": { "type": "string", "description": "What to explore, in the words of the screens and panels (the explorer prefers actions whose labels and areas meet its words)." }
+            },
+            "required": ["goal"],
+            "additionalProperties": false
+        }
+    })
+}
+
+fn delegate() -> Value {
+    json!({
+        "name": DELEGATE,
+        "description": "Delegate a child objective that explores one area of the running build and reproduces what it finds, within this objective's budget and permissions (it never pushes, merges or adopts). The Orchestrator validates it (budget within what is left, at most two deep, one child at a time) and records it as your directive; your turn then ends, and the child's result (its findings, coverage and spend) comes back to you as your next message.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "instruction": { "type": "string", "description": "What the child explores and why." },
+                "focus": { "type": "string", "description": "The area, in the words of the screens and panels." },
+                "usd": { "type": "number", "description": "Its spend budget in US dollars, within what is left of this objective's." },
+                "steps": { "type": "integer", "description": "Its exploration's actions, at most this objective's step budget." }
+            },
+            "required": ["instruction", "usd", "steps"],
+            "additionalProperties": false
+        }
+    })
+}
+
 /// The tools a role has (Agentique's; the SDK's own come with the session).
 pub fn tools(role: Role) -> Value {
     let mut list = match role {
@@ -187,6 +224,29 @@ pub fn tools(role: Role) -> Value {
         Role::Evaluator => submit_evaluation(),
     });
     Value::Array(list)
+}
+
+/// The lead's tools for a cycle that explores (C-54): planning the
+/// exploration (`submit_exploration`) or proposing, with `delegate` when it
+/// may delegate (its objective is less than two deep).
+pub fn lead_tools(planning: bool, may_delegate: bool) -> Value {
+    let mut list = tools(Role::Lead);
+    let items = list.as_array_mut().expect("a list");
+    if planning {
+        items.retain(|d| d["name"] != SUBMIT_PROPOSAL);
+        items.push(submit_exploration());
+    }
+    if may_delegate {
+        items.push(delegate());
+    }
+    list
+}
+
+/// The lead's instructions while it plans an exploration.
+pub fn planning_instructions() -> String {
+    format!(
+        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its goal with submit_exploration, in the words of the screens and panels; if one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
+    )
 }
 
 const COMMON: &str = "You are one of the agents Agentique's Orchestrator runs to improve Agentique itself (decision C-53, ROADMAP §4.16). The Operator gave the objective below and watches; nobody approves your steps, so decide yourself and say what you decided. Follow the project's instructions (AGENTS.md, loaded with CLAUDE.md), above all rule 10. The model of the system changes only through Agentique's tools (apply_changes); never edit model files. You never see pixels: the application is observed as text. Deterministic checks and an independent reviewer decide whether your work is merged; your own judgment never overrides a failing check. Be concise.";
@@ -266,13 +326,13 @@ fn earlier(objective: &Objective) -> String {
 pub fn instructions(role: Role) -> String {
     let specific = match role {
         Role::Lead => {
-            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
+            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. When the brief lists reproduced findings (C-54), choose one of them (`finding`): its replay becomes a frozen criterion. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
         }
         Role::Implementer => {
             "Your role: implementer. Implement the frozen proposal in this worktree, and only it. Add tests for the criteria; keep every existing test and check (rule 10). Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
         }
         Role::Reviewer => {
-            "Your role: independent reviewer. You did not write this change. Review it against the frozen proposal and its criteria, the check results and the evaluation below, reading the code in this checkout (you write nothing). Judge correctness, scope (nothing unrelated), simplicity and naming (ROADMAP §1.3, §8.4), whether the tests really check the criteria, and every change to tests, checks or budgets the baseline guard lists. Then call submit_review: approve only a change you would merge as it is."
+            "Your role: independent reviewer. You did not write this change. Review it against the frozen proposal and its criteria, the check results and the evaluation below, reading the code in this checkout (you write nothing). Judge correctness, scope (nothing unrelated), simplicity and naming (ROADMAP §1.3, §8.4), whether the tests really check the criteria, and every change to tests, checks or budgets the baseline guard lists. For each criterion counted as evidence on the original build, check that its failing test asserts the defect itself, not merely that the change exists (a test asserting that a new file, function or control exists fails on the base for any change); request changes when it does not. Then call submit_review: approve only a change you would merge as it is."
         }
         Role::Evaluator => {
             "Your role: evaluator. A test instance of Agentique built from the change is running; observe_app and act_in_app operate it (not the Operator's Studio). Check each behavioural criterion (observation and judgment ones) by operating it as the Operator would, and report each with submit_evaluation: the outcome and the observations it rests on (controls, labels, values, status). If a criterion cannot be checked, say not run and why."
@@ -432,8 +492,12 @@ pub fn test_command(program: &[String]) -> Result<(), String> {
 }
 
 /// A proposal from `submit_proposal`'s input, checked: at least one
-/// criterion with a deterministic check, unique ids, commands as words.
-pub fn read_proposal(input: &Value) -> Result<Proposal, String> {
+/// criterion with a deterministic check (the replay of the finding it
+/// chooses counts), unique ids, commands as words, conditions known; when
+/// `findings` (each `(id, identity)`, the reproduced findings the lead was
+/// given) are listed, one of them chosen; and a change to the part `Studio`
+/// with a behavioural criterion (C-54).
+pub fn read_proposal(input: &Value, findings: &[(String, String)]) -> Result<Proposal, String> {
     let mut proposal: Proposal = serde_json::from_value(json!({
         "title": input["title"],
         "kind": input["kind"],
@@ -444,6 +508,31 @@ pub fn read_proposal(input: &Value) -> Result<Proposal, String> {
         "intendedTestChanges": input.get("intended_test_changes").cloned().unwrap_or(json!([])),
     }))
     .map_err(|e| format!("the proposal cannot be read: {e}"))?;
+    proposal.finding = match (input["finding"].as_str(), findings.is_empty()) {
+        (None, true) => None,
+        (Some(id), true) => {
+            return Err(format!(
+                "there are no reproduced findings to choose; `finding` {id} is not one"
+            ));
+        }
+        (None, false) => {
+            return Err(format!(
+                "choose the reproduced finding it fixes: `finding` is one of {}",
+                findings
+                    .iter()
+                    .map(|(id, _)| id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        (Some(id), false) => Some(
+            findings
+                .iter()
+                .find(|(f, _)| f == id.trim())
+                .map(|(_, identity)| identity.clone())
+                .ok_or_else(|| format!("`finding` {id} is not one of the reproduced findings"))?,
+        ),
+    };
     proposal.title = proposal.title.trim().to_string();
     if proposal.title.is_empty() || proposal.why.trim().is_empty() {
         return Err("a proposal needs a title and why".into());
@@ -456,23 +545,79 @@ pub fn read_proposal(input: &Value) -> Result<Proposal, String> {
         match &criterion.check {
             crate::record::Check::Command { program } => test_command(program)
                 .map_err(|problem| format!("criterion {}: {problem}", criterion.id))?,
-            crate::record::Check::Observation { expect, .. } => crate::control::expectation(expect)
-                .map_err(|problem| format!("criterion {}: {problem}", criterion.id))?,
+            crate::record::Check::Observation {
+                expect, condition, ..
+            } => {
+                crate::control::expectation(expect)
+                    .map_err(|problem| format!("criterion {}: {problem}", criterion.id))?;
+                if let Some(condition) = condition
+                    && !crate::control::CONDITIONS.contains(&condition.as_str())
+                {
+                    return Err(format!(
+                        "criterion {}: `{condition}` is not a condition a test instance starts in ({})",
+                        criterion.id,
+                        crate::control::CONDITIONS.join(", ")
+                    ));
+                }
+            }
             crate::record::Check::Judgment => {}
         }
     }
-    if !proposal.criteria.iter().any(|c| {
-        matches!(
-            c.check,
-            crate::record::Check::Command { .. } | crate::record::Check::Observation { .. }
-        )
-    }) {
+    if criterion_ids_taken(&proposal) {
+        return Err(format!(
+            "`{}` is the replay's criterion id: use another",
+            crate::record::REPLAY
+        ));
+    }
+    if proposal.finding.is_none()
+        && !proposal.criteria.iter().any(|c| {
+            matches!(
+                c.check,
+                crate::record::Check::Command { .. } | crate::record::Check::Observation { .. }
+            )
+        })
+    {
         return Err(
             "at least one criterion needs a deterministic check (a command, or an observation)"
                 .into(),
         );
     }
+    if user_facing(&proposal) && !behavioural(&proposal) {
+        return Err(
+            "a change to the Studio needs a behavioural criterion: an observation or a judgment in a test instance, or the replay of a finding"
+                .into(),
+        );
+    }
     Ok(proposal)
+}
+
+/// Whether a criterion of the lead's takes the id of the replay's.
+fn criterion_ids_taken(proposal: &Proposal) -> bool {
+    proposal
+        .criteria
+        .iter()
+        .any(|c| c.id == crate::record::REPLAY)
+}
+
+/// Whether the proposal changes the part `Studio` (user-facing code).
+pub fn user_facing(proposal: &Proposal) -> bool {
+    proposal.parts.iter().any(|p| {
+        p.rsplit("::")
+            .next()
+            .is_some_and(|name| name.trim() == "Studio")
+    })
+}
+
+/// Whether the proposal has a criterion checked by behaviour in a test
+/// instance: an observation, a judgment, or the replay of its finding.
+pub fn behavioural(proposal: &Proposal) -> bool {
+    proposal.finding.is_some()
+        || proposal.criteria.iter().any(|c| {
+            matches!(
+                c.check,
+                crate::record::Check::Observation { .. } | crate::record::Check::Judgment
+            )
+        })
 }
 
 #[cfg(test)]
@@ -513,18 +658,82 @@ mod tests {
     fn a_proposal_needs_a_deterministic_criterion_and_unique_ids() {
         let base = json!({
             "title": "Fix the gap", "kind": "correctness", "why": "It is wrong at x.rs:3",
-            "parts": ["AgentiqueArchitecture::Studio"], "plan": ["Write the test", "Fix it"],
+            "parts": ["AgentiqueArchitecture::Orchestrator"], "plan": ["Write the test", "Fix it"],
             "criteria": [{ "id": "c1", "statement": "The gap is gone", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "gap"] } }]
         });
-        let proposal = read_proposal(&base).unwrap();
+        let proposal = read_proposal(&base, &[]).unwrap();
         assert_eq!(proposal.criteria.len(), 1);
         let mut judgment_only = base.clone();
         judgment_only["criteria"] =
             json!([{ "id": "c1", "statement": "Looks better", "check": { "kind": "judgment" } }]);
-        assert!(read_proposal(&judgment_only).is_err());
+        assert!(read_proposal(&judgment_only, &[]).is_err());
         let mut twice = base.clone();
         twice["criteria"] = json!([base["criteria"][0], base["criteria"][0]]);
-        assert!(read_proposal(&twice).is_err());
+        assert!(read_proposal(&twice, &[]).is_err());
+    }
+
+    /// C-54: a proposal chooses one of the reproduced findings it was given
+    /// (whose replay is then its criterion), a change to the Studio needs a
+    /// behavioural criterion, and a condition is one a test instance knows.
+    #[test]
+    fn a_proposal_chooses_a_reproduced_finding_and_a_studio_change_is_behavioural() {
+        let base = json!({
+            "title": "Label the filter", "kind": "usability", "why": "The filter has no readable label",
+            "parts": ["AgentiqueArchitecture::Studio"], "plan": ["Label it"],
+            "criteria": [{ "id": "c1", "statement": "It has a test", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "label"] } }]
+        });
+        let findings = vec![
+            (
+                "f1".to_string(),
+                "readable-labels|filter|no label".to_string(),
+            ),
+            ("f2".to_string(), "answers||the instance exited".to_string()),
+        ];
+        assert!(
+            read_proposal(&base, &findings)
+                .unwrap_err()
+                .contains("f1, f2")
+        );
+        let mut chosen = base.clone();
+        chosen["finding"] = json!("f2");
+        let proposal = read_proposal(&chosen, &findings).unwrap();
+        assert_eq!(
+            proposal.finding.as_deref(),
+            Some("answers||the instance exited")
+        );
+        let mut unknown = base.clone();
+        unknown["finding"] = json!("f9");
+        assert!(read_proposal(&unknown, &findings).is_err());
+        assert!(
+            read_proposal(&chosen, &[]).is_err(),
+            "no findings to choose"
+        );
+        // The Studio without a behavioural criterion: refused.
+        assert!(
+            read_proposal(&base, &[])
+                .unwrap_err()
+                .contains("behavioural")
+        );
+        let mut observed = base.clone();
+        observed["criteria"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({ "id": "c2", "statement": "Labelled", "check": { "kind": "observation", "expect": { "anyLabelContains": "Filter" }, "condition": "recovered" } }));
+        assert!(read_proposal(&observed, &[]).is_ok());
+        observed["criteria"][1]["check"]["condition"] = json!("on fire");
+        assert!(read_proposal(&observed, &[]).is_err());
+        let mut taken = base.clone();
+        taken["parts"] = json!(["AgentiqueArchitecture::Orchestrator"]);
+        taken["criteria"][0]["id"] = json!("replay");
+        assert!(
+            read_proposal(&taken, &[]).is_err(),
+            "the replay's id is taken"
+        );
+        // A finding's replay alone is a deterministic, behavioural criterion.
+        let mut replay_only = chosen.clone();
+        replay_only["criteria"] =
+            json!([{ "id": "c1", "statement": "Looks right", "check": { "kind": "judgment" } }]);
+        assert!(read_proposal(&replay_only, &findings).is_ok());
     }
 
     #[test]
@@ -579,17 +788,20 @@ mod tests {
             "parts": [], "plan": ["a"],
             "criteria": [{ "id": "c1", "statement": "s", "check": { "kind": "command", "program": ["git", "push", "origin", "HEAD:main"] } }]
         });
-        assert!(read_proposal(&base).is_err(), "a criterion cannot push");
+        assert!(
+            read_proposal(&base, &[]).is_err(),
+            "a criterion cannot push"
+        );
         let mut empty = base.clone();
         empty["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": {} } }]);
         assert!(
-            read_proposal(&empty).is_err(),
+            read_proposal(&empty, &[]).is_err(),
             "an observation must expect something"
         );
         let mut misspelt = base.clone();
         misspelt["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": { "status_contains": "x" } } }]);
         assert!(
-            read_proposal(&misspelt).is_err(),
+            read_proposal(&misspelt, &[]).is_err(),
             "unknown keys are refused"
         );
     }

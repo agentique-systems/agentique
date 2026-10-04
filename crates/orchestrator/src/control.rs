@@ -3,13 +3,23 @@
 //! control endpoint, and its evaluator (and the Orchestrator's own
 //! assertions) operate it through observations and actions, as an agent
 //! operates the running Studio. The instance and its process tree end with
-//! the value.
+//! the value, and its folder is removed.
+//!
+//! Since C-54 a test instance starts as one (`--test-instance`: agents may
+//! operate its Conversation and undo), at the observer speed it is given
+//! (`--control-speed`), with its Assistant on the scripted stand-in
+//! (`--assistant-stand-in`) when the build is unreviewed, or with the
+//! explorer's provider key in its environment when it is a merged build
+//! that explores; and in a stated condition when a criterion asks
+//! ([`CONDITIONS`]). A flag the build does not know (an older build) is not
+//! passed: what it supports is read from its `--help`.
 
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// How long one request may take (a wait may last up to ten minutes).
@@ -108,6 +118,240 @@ impl Client {
     }
 }
 
+/// The conditions a test instance can be started in (C-54, ROADMAP §4.16),
+/// so criteria about such states are testable: `recovered` (its builds
+/// registry holds a build that did not start, and it starts as the launcher
+/// starts the last known good build after it, `--recovered-from`) and `with
+/// an objective` (a recorded objective and its thread in its app data,
+/// which the Studio shows at start).
+pub const CONDITIONS: [&str; 2] = ["recovered", "with an objective"];
+
+/// The build a `recovered` test instance was started after.
+pub const FAILED_BUILD: &str = "000000000000-0000000000";
+
+/// The provider key a test instance's Assistant may use, and its model.
+#[derive(Clone, Debug)]
+pub struct InstanceKey {
+    pub model: agq_providers::ModelRef,
+    pub secret: Arc<agq_providers::Secret>,
+}
+
+/// How a test instance starts besides its data and project (C-54).
+#[derive(Clone, Debug, Default)]
+pub struct Options {
+    /// Observer mode's speed (`instant`, `fast`, `observe`); `instant` when
+    /// none is given.
+    pub speed: Option<String>,
+    /// Its Assistant on the scripted stand-in (an unreviewed build's).
+    pub stand_in: bool,
+    /// A provider key for its Assistant, preset to that provider and model:
+    /// only for a merged build that explores.
+    pub key: Option<InstanceKey>,
+    /// A stated condition ([`CONDITIONS`]).
+    pub condition: Option<String>,
+    /// The build is unreviewed (a cycle's change): it starts only as a test
+    /// instance with the stand-in Assistant, never as a Studio that would
+    /// read the Operator's credentials; a build without those flags is not
+    /// started.
+    pub unreviewed: bool,
+}
+
+/// What a build's command line supports of what a test instance needs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Flags {
+    pub test_instance: bool,
+    pub control_speed: bool,
+    pub stand_in: bool,
+}
+
+/// How long a build may take to print its `--help`.
+const HELP_WITHIN: Duration = Duration::from_secs(20);
+
+impl Flags {
+    /// Read from `exe --help` (a build before C-54 knows none of them), run
+    /// with only what a process needs in its environment (no key or token:
+    /// the build may be unreviewed) and ended after [`HELP_WITHIN`].
+    pub fn of(exe: &Path) -> Flags {
+        let folder = exe.parent().unwrap_or(Path::new("."));
+        let environment = minimal_environment(folder).unwrap_or_default();
+        let help = Command::new(exe)
+            .arg("--help")
+            .current_dir(folder)
+            .env_clear()
+            .envs(environment)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .ok()
+            .and_then(|mut child| {
+                // Read while it runs: a long help never fills the pipe.
+                let mut stdout = child.stdout.take()?;
+                let reader = std::thread::spawn(move || {
+                    let mut text = String::new();
+                    let _ = std::io::Read::read_to_string(&mut stdout, &mut text);
+                    text
+                });
+                let started = Instant::now();
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(_)) => break,
+                        Ok(None) if started.elapsed() < HELP_WITHIN => {
+                            std::thread::sleep(Duration::from_millis(50))
+                        }
+                        _ => {
+                            // Ended with its tree; the reader then ends too.
+                            agq_execution::process::kill_tree(&mut child);
+                            let _ = reader.join();
+                            return None;
+                        }
+                    }
+                }
+                reader.join().ok()
+            })
+            .unwrap_or_default();
+        Flags {
+            test_instance: help.contains("--test-instance"),
+            control_speed: help.contains("--control-speed"),
+            stand_in: help.contains("--assistant-stand-in"),
+        }
+    }
+}
+
+/// Only what a process needs in its environment, as Execution passes it
+/// (no key, token or other secret), and what a window needs on Linux.
+fn minimal_environment(folder: &Path) -> Result<Vec<(String, String)>, String> {
+    let mut environment = agq_execution::Executor::new(
+        agq_execution::Scope::read_only(folder).map_err(|e| e.to_string())?,
+    )
+    .environment();
+    for name in ["DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"] {
+        if let Ok(value) = std::env::var(name) {
+            environment.push((name.to_string(), value));
+        }
+    }
+    Ok(environment)
+}
+
+/// Prepares `folder` (a test instance's, before it starts) for a stated
+/// condition, and returns the arguments it starts with for it.
+pub fn prepare(folder: &Path, condition: &str) -> Result<Vec<String>, String> {
+    match condition {
+        "recovered" => {
+            let builds = folder.join("builds");
+            std::fs::create_dir_all(&builds).map_err(|e| e.to_string())?;
+            let mut registry = agq_launcher::Registry::load(&builds)?;
+            registry.add(agq_launcher::Entry {
+                id: FAILED_BUILD.into(),
+                created: agq_launcher::now(),
+                commit: String::new(),
+                state: agq_launcher::State::Failed {
+                    reason: "it did not report ready within 60 s".into(),
+                },
+            });
+            registry.save(&builds)?;
+            Ok(vec!["--recovered-from".into(), FAILED_BUILD.into()])
+        }
+        "with an objective" => {
+            seed_objective(&folder.join("session").join("objectives"))?;
+            Ok(Vec::new())
+        }
+        other => Err(format!(
+            "`{other}` is not a condition a test instance starts in ({})",
+            CONDITIONS.join(", ")
+        )),
+    }
+}
+
+/// A recorded objective with its thread, in the objectives folder `at`: a
+/// finished one, so the instance shows it and its thread at start and
+/// nothing goes on by itself.
+pub fn seed_objective(at: &Path) -> Result<crate::record::Objective, String> {
+    use crate::record::{DirectiveStatus, Recipient, Scope, State, Store};
+    use crate::thread::{Author, Kind, ThreadEntry};
+    let store = Store::new(at);
+    let mut objective = store.create(
+        "Find and fix problems in the Library panel",
+        Path::new("."),
+        "main",
+        crate::record::Budgets::default(),
+        crate::record::Permissions::default(),
+    )?;
+    let lead = Author::agent(
+        "lead",
+        Some(agq_providers::ModelRef::new(
+            agq_providers::Provider::DeepSeek,
+            "deepseek-v4-pro",
+        )),
+    );
+    let implementer = Author::agent(
+        "implementer",
+        Some(agq_providers::ModelRef::new(
+            agq_providers::Provider::DeepSeek,
+            "deepseek-flash",
+        )),
+    );
+    let id = objective.direct(
+        "lead",
+        Recipient::Role("implementer".into()),
+        Scope {
+            instruction: "Implement the frozen proposal “Label the Library's kind filter”".into(),
+            focus: None,
+            budgets: None,
+            permissions: None,
+        },
+        Some("cycle-1/proposal".into()),
+    );
+    objective.settle(&id, DirectiveStatus::Done, Some("approved".into()));
+    objective.cycles.push(crate::record::Cycle::new(1));
+    if let Some(cycle) = objective.cycle_mut() {
+        cycle.phase = crate::record::Phase::Done;
+    }
+    objective.state = State::Done;
+    objective.note = Some("1 cycle(s) done, 0 adopted.".into());
+    store.save(&objective)?;
+    let post = |entry: ThreadEntry| store.append_thread(&objective.id, entry);
+    post(ThreadEntry::new(
+        Kind::Human,
+        Author::Operator,
+        objective.intent.clone(),
+    ))?;
+    post(ThreadEntry::event("Cycle 1: Proposing an improvement"))?;
+    post(
+        ThreadEntry::new(
+            Kind::Directive,
+            lead,
+            "Proposes: Label the Library's kind filter",
+        )
+        .with_details("Title: Label the Library's kind filter\nAcceptance criteria (frozen):\n- c1 — the filter has a readable label")
+        .for_directive(Some(&id)),
+    )?;
+    let step = post(
+        ThreadEntry::new(
+            Kind::Event,
+            implementer.clone(),
+            "Starts its session on deepseek-flash · DeepSeek",
+        )
+        .for_directive(Some(&id)),
+    )?;
+    let mut edit = ThreadEntry::new(
+        Kind::Activity,
+        implementer.clone(),
+        "Edit crates/studio-native/src/panels/library.rs",
+    )
+    .with_details("- .placeholder(\"kind\")\n+ .placeholder(\"Filter by kind\")")
+    .for_directive(Some(&id));
+    edit.under = Some(step.seq);
+    post(edit)?;
+    post(
+        ThreadEntry::new(Kind::Result, implementer, "Submits the implementation")
+            .with_details("Labelled the filter; added a test.")
+            .for_directive(Some(&id)),
+    )?;
+    post(ThreadEntry::event("Cycle 1: Done"))?;
+    Ok(objective)
+}
+
 /// A running test instance: a Studio executable with its own session and
 /// app data, its builds folder and its control endpoint.
 pub struct TestInstance {
@@ -119,31 +363,85 @@ pub struct TestInstance {
 impl TestInstance {
     /// Starts `exe` with its data in `folder` (made fresh), opening
     /// `project`, with Agentique's repository at `repository` (a checkout of
-    /// the commit, never the Operator's).
+    /// the commit, never the Operator's), as a test instance at `instant`
+    /// speed with no key and its own Assistant as the build has it.
     pub fn start(
         exe: &Path,
         folder: &Path,
         project: &Path,
         repository: &Path,
     ) -> Result<TestInstance, String> {
+        TestInstance::start_with(exe, folder, project, repository, &Options::default())
+    }
+
+    /// [`TestInstance::start`] with `options`.
+    pub fn start_with(
+        exe: &Path,
+        folder: &Path,
+        project: &Path,
+        repository: &Path,
+        options: &Options,
+    ) -> Result<TestInstance, String> {
+        let flags = Flags::of(exe);
+        if options.unreviewed && !(flags.test_instance && flags.stand_in) {
+            return Err(format!(
+                "this unreviewed build is not started: it does not support {}, and as a plain Studio it would read the Operator's credentials",
+                [
+                    (!flags.test_instance).then_some("--test-instance"),
+                    (!flags.stand_in).then_some("--assistant-stand-in"),
+                ]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+                .join(" and ")
+            ));
+        }
         let _ = std::fs::remove_dir_all(folder);
         std::fs::create_dir_all(folder).map_err(|e| e.to_string())?;
         let endpoint = folder.join("control.json");
+        let mut arguments = Vec::new();
+        if flags.test_instance {
+            arguments.push("--test-instance".to_string());
+        }
+        if flags.control_speed {
+            arguments.push("--control-speed".into());
+            arguments.push(options.speed.clone().unwrap_or_else(|| "instant".into()));
+        }
+        if options.stand_in && flags.stand_in {
+            arguments.push("--assistant-stand-in".into());
+        }
+        if let Some(condition) = &options.condition {
+            arguments.extend(prepare(folder, condition)?);
+        }
+        let session = folder.join("session");
+        std::fs::create_dir_all(&session).map_err(|e| e.to_string())?;
         let errors = std::fs::File::create(folder.join("errors.log"))
             .map(Stdio::from)
             .unwrap_or_else(|_| Stdio::null());
         // Only what a process needs (as Execution passes it): the Studio's
         // keys and tokens stay with the Studio, since a test instance runs
         // code no reviewer has read yet.
-        let mut environment = agq_execution::Executor::new(
-            agq_execution::Scope::read_only(repository).map_err(|e| e.to_string())?,
-        )
-        .environment();
-        // What a window needs on Linux.
-        for name in ["DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"] {
-            if let Ok(value) = std::env::var(name) {
-                environment.push((name.to_string(), value));
-            }
+        let mut environment = minimal_environment(repository)?;
+        // A merged build that explores: its Assistant on the explorer's
+        // provider and model, with that key in its environment only (a test
+        // instance reads keys from nowhere else).
+        // Only a build known to start as a test instance (which reads keys
+        // from its environment alone) gets one; a build whose flags cannot
+        // be read gets none.
+        if let Some(key) = options.key.as_ref().filter(|_| flags.test_instance) {
+            environment.push((
+                key.model.provider.key_variable().to_string(),
+                key.secret.expose().to_string(),
+            ));
+            let settings = json!({
+                "format": 1,
+                "assistant.provider": key.model.provider.id(),
+                "assistant.model": key.model.model,
+            });
+            agq_launcher::write_atomically(
+                &session.join("settings.json"),
+                settings.to_string().as_bytes(),
+            )?;
         }
         // Its working folder is its own, so a relative path typed into one of
         // its fields (a project folder, say) stays inside it.
@@ -153,11 +451,12 @@ impl TestInstance {
             .envs(environment)
             .arg("--no-restore")
             .arg("--session")
-            .arg(folder.join("session").join("studio-session.json"))
+            .arg(session.join("studio-session.json"))
             .arg("--control")
             .arg(&endpoint)
             .arg("--project")
             .arg(project)
+            .args(&arguments)
             .env("AGENTIQUE_BUILDS", folder.join("builds"))
             .env("AGENTIQUE_REPOSITORY", repository)
             .stdin(Stdio::null())
@@ -207,6 +506,18 @@ impl TestInstance {
 impl Drop for TestInstance {
     fn drop(&mut self) {
         agq_execution::process::kill_tree(&mut self.child);
+        remove_folder(&self.folder);
+    }
+}
+
+/// Removes a test instance's folder after use, trying again for a moment
+/// while the system releases its files.
+pub fn remove_folder(folder: &Path) {
+    for _ in 0..20 {
+        if std::fs::remove_dir_all(folder).is_ok() || !folder.exists() {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(100));
     }
 }
 
@@ -341,6 +652,59 @@ pub fn holds(observation: &Value, expect: &Value) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Test instances in a stated condition (C-54): `recovered` has a
+    /// builds registry with a build that did not start and starts after
+    /// it; `with an objective` has a recorded objective and its thread in
+    /// its app data, beside its session. Anything else is refused.
+    #[test]
+    fn a_test_instance_is_prepared_in_a_stated_condition() {
+        let dir = tempfile::tempdir().unwrap();
+        let recovered = dir.path().join("recovered");
+        let arguments = prepare(&recovered, "recovered").unwrap();
+        assert_eq!(arguments, vec!["--recovered-from", FAILED_BUILD]);
+        let registry = agq_launcher::Registry::load(&recovered.join("builds")).unwrap();
+        assert!(matches!(
+            registry
+                .builds
+                .iter()
+                .find(|b| b.id == FAILED_BUILD)
+                .map(|b| &b.state),
+            Some(agq_launcher::State::Failed { .. })
+        ));
+        let seeded = dir.path().join("objective");
+        assert!(prepare(&seeded, "with an objective").unwrap().is_empty());
+        let store = crate::record::Store::new(seeded.join("session").join("objectives"));
+        let objective = store.list().pop().expect("a recorded objective");
+        assert!(!objective.active(), "finished: nothing goes on by itself");
+        assert_eq!(objective.directives.len(), 1);
+        let thread = store.thread(&objective.id, 0);
+        assert!(thread.len() >= 6);
+        assert!(
+            thread
+                .iter()
+                .any(|e| e.under.is_some() && e.details.is_some())
+        );
+        assert!(prepare(&dir.path().join("x"), "on fire").is_err());
+        // A build that knows none of the flags (or is not there) gets none,
+        // and an unreviewed one is then not started at all.
+        let missing = dir.path().join("missing.exe");
+        assert_eq!(Flags::of(&missing), Flags::default());
+        let refused = TestInstance::start_with(
+            &missing,
+            &dir.path().join("i"),
+            dir.path(),
+            dir.path(),
+            &Options {
+                unreviewed: true,
+                ..Options::default()
+            },
+        );
+        assert!(
+            refused.err().unwrap_or_default().contains("not started"),
+            "an unreviewed build without the flags never starts"
+        );
+    }
 
     #[test]
     fn an_observation_criterion_checks_every_field_it_names() {

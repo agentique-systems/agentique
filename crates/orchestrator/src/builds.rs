@@ -2,7 +2,9 @@
 //! commit into its own folder with a manifest, for trying and adopting; and
 //! a debug build of a cycle's checkout, for the test instance its evaluator
 //! operates. Each builds a fresh checkout of exactly its commit, so its
-//! output never comes from another working copy's files.
+//! output never comes from another working copy's files. One build runs at a
+//! time (C-54): each takes the builds folder's lock ([`lock`]), which the
+//! Studio's Settings › Builds and the Orchestrator share.
 
 use agq_execution::git;
 use agq_execution::process::Program;
@@ -10,8 +12,35 @@ use agq_execution::{Executor, Scope};
 use agq_launcher::{Entry, Manifest, Registry, State};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+
+/// Waits for the builds folder's lock (`root/build.lock`) and holds it while
+/// the returned file lives: one build at a time, whoever starts it. A
+/// cancel while waiting gives up.
+pub fn lock(root: &Path, cancel: &AtomicBool) -> Result<std::fs::File, String> {
+    std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;
+    let path = root.join("build.lock");
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(&path)
+        .map_err(|e| format!("{}: {e}", path.display()))?;
+    loop {
+        match file.try_lock() {
+            Ok(()) => return Ok(file),
+            Err(std::fs::TryLockError::WouldBlock) => {}
+            Err(std::fs::TryLockError::Error(e)) => {
+                return Err(format!("{}: {e}", path.display()));
+            }
+        }
+        if cancel.load(Ordering::SeqCst) {
+            return Err("stopped while another build was running".into());
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+}
 
 /// A commit's short form, for names.
 pub fn short(commit: &str) -> &str {
@@ -29,6 +58,7 @@ pub fn build(
     root: &Path,
     cancel: Arc<AtomicBool>,
 ) -> Result<Manifest, String> {
+    let _building = lock(root, &cancel)?;
     let created = agq_launcher::now();
     let id = format!(
         "{}-{}",
@@ -137,12 +167,15 @@ pub fn build(
 }
 
 /// A debug build of the Studio in `checkout` (a cycle's clean checkout),
-/// into `target`: the executable a cycle's test instance runs.
+/// into `target`, holding the lock of the builds folder `builds`: the
+/// executable a cycle's test instance runs.
 pub fn debug_studio(
     checkout: &Path,
     target: &Path,
+    builds: &Path,
     cancel: Arc<AtomicBool>,
 ) -> Result<PathBuf, String> {
+    let _building = lock(builds, &cancel)?;
     let executor = Executor::new(Scope::read_only(checkout).map_err(|e| e.to_string())?)
         .trusted(true)
         .target_dir(target.to_path_buf())
@@ -257,6 +290,13 @@ mod tests {
             .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
             .unwrap_or_default();
         assert!(!branches.contains("agentique/"), "{branches}");
+        // One build at a time: while one holds the lock, another waits,
+        // and a stopped one gives up.
+        let held = lock(&root, &AtomicBool::new(false)).unwrap();
+        let stopped = AtomicBool::new(true);
+        assert!(lock(&root, &stopped).is_err());
+        drop(held);
+        assert!(lock(&root, &stopped).is_ok());
         // Tampered with afterwards: refused.
         std::fs::write(folder.join(agq_launcher::LAUNCHER), b"changed").unwrap();
         assert!(Manifest::load(&folder).unwrap().matches(&folder).is_err());

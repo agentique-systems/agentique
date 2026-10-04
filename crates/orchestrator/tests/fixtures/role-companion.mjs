@@ -98,7 +98,9 @@ switch (role) {
     writeFileSync(join(o.cwd, "IMPROVEMENT.md"), repairing ? "Improved.\n" : `Improved with ${KEY}.\n`);
     writeFileSync(
       join(o.cwd, "note.test.mjs"),
-      'import { test } from "node:test";\nimport assert from "node:assert";\nimport { readFileSync } from "node:fs";\ntest("the note says it improved", () => {\n  assert.equal(readFileSync("IMPROVEMENT.md", "utf8").trim(), "Improved.");\n});\n',
+      // On the base it fails by an assertion (there is no note), which is
+      // evidence; a missing file's error would not be (C-54).
+      'import { test } from "node:test";\nimport assert from "node:assert";\nimport { existsSync, readFileSync } from "node:fs";\ntest("the note says it improved", () => {\n  assert.ok(existsSync("IMPROVEMENT.md"), "there is a note");\n  assert.equal(readFileSync("IMPROVEMENT.md", "utf8").trim(), "Improved.");\n});\n',
     );
     await call("submit_implementation", { summary: repairing ? "Removed the key from the note." : "Wrote the note." });
     out({ type: "assistant", id: "msg_end", model: "deepseek-v4-pro", content: [{ type: "text", text: "Implemented." }] });

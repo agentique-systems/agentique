@@ -99,13 +99,15 @@ pub fn answer_time(action: &Value) -> Duration {
 
 /// A test instance of a Studio executable, started fresh each time from a
 /// copy of the start project, in its own folder (its data, its working
-/// folder and the repository it is told about are all in there).
+/// folder and the repository it is told about are all in there), which is
+/// removed when it is done with.
 pub struct LiveInstance {
     exe: PathBuf,
     /// The start project: a project folder, or its model folder.
     start: PathBuf,
     folder: PathBuf,
     starts: u32,
+    options: crate::control::Options,
     // The connection closes before the process ends.
     client: Option<Client>,
     instance: Option<TestInstance>,
@@ -113,11 +115,23 @@ pub struct LiveInstance {
 
 impl LiveInstance {
     pub fn new(exe: &Path, start: &Path, folder: &Path) -> LiveInstance {
+        LiveInstance::with(exe, start, folder, crate::control::Options::default())
+    }
+
+    /// One started with `options` each time (C-54: its speed, its
+    /// Assistant's stand-in or key, a stated condition).
+    pub fn with(
+        exe: &Path,
+        start: &Path,
+        folder: &Path,
+        options: crate::control::Options,
+    ) -> LiveInstance {
         LiveInstance {
             exe: exe.to_path_buf(),
             start: start.to_path_buf(),
             folder: folder.to_path_buf(),
             starts: 0,
+            options,
             client: None,
             instance: None,
         }
@@ -195,8 +209,13 @@ impl Instance for LiveInstance {
         copy_model(&self.start, &project.join("model"))?;
         // Its repository is the project's copy, so nothing it opens or
         // writes lies outside its folder.
-        let mut instance =
-            TestInstance::start(&self.exe, &base.join("instance"), &project, &project)?;
+        let mut instance = TestInstance::start_with(
+            &self.exe,
+            &base.join("instance"),
+            &project,
+            &project,
+            &self.options,
+        )?;
         // Connected in short slices, so a stop is heard while it starts.
         let started = Instant::now();
         let mut client = loop {
@@ -219,6 +238,14 @@ impl Instance for LiveInstance {
 
     fn folder(&self) -> Option<PathBuf> {
         Some(self.folder.clone())
+    }
+}
+
+impl Drop for LiveInstance {
+    fn drop(&mut self) {
+        self.client = None;
+        self.instance = None;
+        crate::control::remove_folder(&self.folder);
     }
 }
 

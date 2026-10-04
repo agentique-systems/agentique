@@ -81,10 +81,50 @@ what to change.
   reduced; `replay` is what a cycle's criterion runs. The testing
   knowledge (`testing/<project>/knowledge.json`, format 1, beside the
   objectives' records) keeps coverage, findings and runs across runs.
+- **Exploring cycles** (`run/explore.rs`, `run/evidence.rs`; C-54): when an
+  objective explores, a cycle first explores and reproduces (the lead plans
+  the goal, may delegate an area; the explorer runs in a test instance of
+  the base build at the Operator's observer speed, after replaying the
+  findings fixed since; at most three new findings, most severe first, are
+  reproduced and reduced), then the lead proposes to fix one, whose replay
+  is frozen as the criterion `replay`. Every criterion runs on the base
+  before the change: one must fail there with evidence (the replay, an
+  observation, or a test that compiles, runs and fails with the change's
+  test files brought over) and none may pass. A change is evaluated in test
+  instances whenever a criterion is behavioural or it touches the Studio's
+  code by the links (the replay on the change, a short exploration by the
+  rules of the areas it touched). Two explorations in a row with nothing new
+  reproduced, with no known finding left untried, end the objective. The
+  evidence is made with each checked commit's own test files, and only a
+  criterion's own expectation or an assertion failing counts. Test
+  instances start as such
+  (`--test-instance`, `--control-speed`, the stand-in Assistant for an
+  unreviewed build, the explorer's key only for a merged one), in a stated
+  condition when a criterion asks (`recovered`, `with an objective`); the
+  driver reaches builds and instances through `run::Studios` (`Live`, or a
+  stand-in in tests).
+- **Delegation** (`run/children.rs`; C-54): the lead's `delegate` tool,
+  checked (budget left, two deep at most, one child at a time) and recorded
+  as its directive; the child objective runs inside the parent's run,
+  explores and reproduces, and its result goes to the lead's next turn.
+  `Command::StopChild` stops one child; Stop stops them all. The Operator's
+  messages go to the implementer while it works and otherwise wait for the
+  lead's next turn.
+- **Durability and bounds** (C-54): an objective interrupted because the
+  Operator closed Agentique waits for Continue; one an adoption handed over,
+  or that was running when the launcher recovered a crash, goes on by
+  itself; two resumes without progress stop it (`Objective::on_start`). A
+  cycle's worktrees are removed when it ends (a failed or interrupted
+  cycle's `work` is kept, the three most recent), each by its name; merged
+  branches are deleted here and on the host; one build at a time
+  (`builds::lock`); test-instance folders are removed after use. An
+  unreviewed build starts only as a test instance with the stand-in
+  Assistant, or not at all.
 
 Budgets (spend in USD at the models' prices, usage without a price at a
 high one, kept by role and by model within it; improvements, attempts per
-cycle, hours worked) and the Operator's
+cycle, hours worked, an exploration's steps, model calls per session role)
+and the Operator's
 Pause, Step, Resume, Stop and messages apply while an agent works. Commands
 an implementer runs are not confined (they run with the Operator's rights,
 as any build does); the gates check what reaches the change, and GitHub's

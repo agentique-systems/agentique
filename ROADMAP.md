@@ -2261,15 +2261,21 @@ not in the Conversation or a model's context: closing the Conversation,
 compaction of a session, an adoption, a crash recovered by the launcher, or
 the Operator closing and reopening Agentique leaves it able to continue from
 its saved point without repeating a completed side effect. It continues by
-itself after an adoption or a crash the launcher recovered, saying so in its
-thread; one interrupted because the Operator closed Agentique waits for the
-Operator's Continue; a Pause holds across restarts; a resume that fails twice
-stops the objective with its record. Within the Operator's budgets and
-permissions, one intent runs a continuing loop: an exploring objective
-explores, fixes, adopts, and explores the adopted build again, cycle after
-cycle, without waiting for another message, until its budgets are used up,
-two explorations in a row reproduce no new problem, no progress stops it (as
-above), or the Operator stops it.
+itself after an adoption, or a fallback to the last known good build
+(`--recovered-from`), saying so in its thread; one interrupted because the
+Operator closed Agentique waits for the Operator's Continue; a crash the
+launcher restarts in the same build is not recognised as a restart (the
+launcher passes no flag, and it is a locked part), so such an objective
+waits for the Operator's Continue, as after a close; a Pause holds across
+restarts; a resume that fails twice stops the objective with its record.
+Within the Operator's budgets and permissions, one intent runs a continuing
+loop: an exploring objective explores, fixes, adopts, and explores the
+adopted build again, cycle after cycle, without waiting for another
+message, until its budgets are used up, two explorations in a row reproduce
+no new problem while no reproduced finding left unfixed is still eligible (a
+reproduced finding a cycle did not fix is offered again, once it reproduces
+on the new base, until the objective has tried it twice), no progress stops
+it (as above), or the Operator stops it.
 
 **Credentials of test instances** (decided in this session, pending the
 Operator, §7.6). A test instance of a merged build used for exploration may
@@ -3428,6 +3434,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-04 | **C-54 clarified by the Operator** ("one window, role models"): the Conversation is the one window for intent, agent communication, observation and steering, and the Objectives panel a dashboard of the same objectives, both on the same records and commands; the Assistant is the entry point and answers ordinary requests on its role's model, while an objective started from the Conversation (or the panel) runs the lead and the specialists on theirs, with no agent forwarding messages; directives are first-class records (author, recipient, parent objective, scope, status, result) created only by a tool the Orchestrator validates, streamed into the objective's thread, with scoped handoffs and separate sessions; an objective continues by itself through cycles, adoptions and supported restarts within its budgets; agents genuinely operate the Conversation in test instances (`--test-instance`), never in the Operator's window. §4.16 ("The Operator's own", visible agents, the Conversation, directives and delegation, durable work), §3.6, Scenario K (K1, K4, K8), Stage 12's work items, C-54 (§7.1), the glossary (Conversation, Objectives panel, directive, thread), `AGENTS.md` and the self-model follow. This amends the locked-parts row above: in (3), the Objectives panel's delegation field is not built, and agents may operate the Conversation in a test instance; in (4), the objective's thread (`objectives/<id>/thread.jsonl`) replaces the activity file, under the same `objectives` data format | The Operator's instruction in this session; it replaces the delegation field typed into the Objectives panel with structured directives the Conversation shows |
 | 2026-10-04 | Decided in this session under C-54, pending the Operator: a test instance of a merged build used for exploration may be given the explorer's provider key for its own Assistant, so self-testing of the Conversation reaches real answers within the objective's spend budget; a test instance of an unreviewed build (evaluation) still receives no credential (W11.5) and its Assistant runs on the scripted stand-in the journeys use, so the Conversation's own behaviour is testable there, while a criterion that needs a real model is not run, never a pass. An objective continues by itself after an adoption or a crash the launcher recovers; one interrupted because the Operator closed Agentique waits for the Operator's Continue, as in W11.7, and a Pause is kept across restarts | Self-testing the Conversation needs a model to answer; merged code has been reviewed, unreviewed code has not; closing Agentique is the Operator's way to stop spending |
 | 2026-10-04 | W12.6 under C-54, persistence: beside a project's conversation file the Studio keeps `conversation.objectives.json` (when each entry was added, and the objectives started while that conversation was open), so an objective's thread interleaves in time and shows only in the conversation it was started from; it is covered by the existing `conversation` data format (2), whose file is unchanged, and a previous build never reads it. A test instance never runs an objective (it shows a recorded one), the Assistant's `propose_objective` only opens the start form, and a message to an ended objective is refused | One place for intent without changing the conversation's format; self-testing must never start real work |
+| 2026-10-04 | W12.5 under C-54, as built: an objective continues by itself only after an adoption (its continuation) or a fallback to the last known good build (`--recovered-from`); a crash the launcher restarts in the same build passes no flag, and the launcher is locked, so such an objective waits for the Operator's Continue, as after a close (the Studio marks it interrupted as it closes). A reproduced finding a failed cycle left unfixed stays eligible, once it reproduces again on the new base, until the objective has tried it twice. Evidence on the base, as built: command criteria run with the checked commit's own new and changed test files, recorded with their blob ids and run again when an attempt's differ; only a failing test whose own output shows an assertion failing counts (not an `unwrap` or `expect` on nothing, a `TypeError`, a Python `ERROR`); an observation counts only when its own expectation fails (a setup action that failed, a broken connection or an instance that did not start is no evidence); only the frozen criteria and the replay count | The independent reviews of W12.5 (PR #115); §4.16 "Durable, continuing work" and "Evidence, gates and bounds" |
 
 ### 7.7 The original requirements
 

@@ -3,8 +3,23 @@
 //! recorded results, runs each role's agent session, checks what the agents
 //! hand over, records every outcome and side effect, and stops on a budget
 //! used up, on no progress, or when the Operator stops it.
+//!
+//! Since C-54: a cycle of an objective that explores starts with Explore and
+//! Reproduce (`explore`); its criteria are checked on the base for evidence
+//! and a user-facing change is evaluated by behaviour (`evidence`); the
+//! lead may delegate a child objective, which runs inside this run
+//! (`children`); the Operator's messages go to the implementer while it
+//! works and otherwise wait for the lead's next turn; and a cycle's
+//! worktrees are removed when it ends.
 
-use crate::control::{Client, TestInstance};
+mod children;
+mod evidence;
+mod explore;
+
+pub use explore::STARTS;
+
+use crate::control::{Client, Options, TestInstance};
+use crate::explore::Instance;
 use crate::record;
 use crate::record::{
     Attempt, Check, Continuation, Cost, Criterion, Cycle, DirectiveStatus, Objective, Outcome,
@@ -24,10 +39,12 @@ use agq_execution::process::Program;
 use agq_execution::{Executor, Scope};
 use serde_json::{Value, json};
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// What the Operator tells a running objective.
@@ -40,8 +57,13 @@ pub enum Command {
     /// Ends the sessions and leaves the objective as it is, to continue
     /// later (the Studio is closing).
     Interrupt,
-    /// A message for the agent at work (queued into its session).
+    /// The Operator's message: to the implementer at its next tool call
+    /// while it works, otherwise waiting for the lead's next turn (C-54);
+    /// never to the reviewer or the explorer.
     Message(String),
+    /// Stops one child objective (its id) running inside this one: its
+    /// directive ends as stopped, and the parent's lead goes on with that.
+    StopChild(String),
 }
 
 /// What the Orchestrator tells the Studio.
@@ -86,6 +108,70 @@ pub struct Setup {
     pub protected: Vec<String>,
     /// The build this Studio runs, if it runs from the builds folder.
     pub running_build: Option<String>,
+    /// How fast agents act in a test instance the Operator may watch
+    /// (Settings' `control.speed`: `observe`, `fast` or `instant`; C-54).
+    pub speed: String,
+    /// A provider's key, for a test instance of a merged build that
+    /// explores (C-54): the Studio's credentials; none in tests.
+    pub credential: CredentialSource,
+    /// What builds the Studio and starts its test instances.
+    pub studios: Box<dyn Studios + Send>,
+}
+
+/// Where a key for a test instance comes from.
+pub type CredentialSource =
+    Box<dyn Fn(agq_providers::Credential) -> Option<agq_providers::Secret> + Send>;
+
+/// What builds the Studio for test instances and starts them (C-54):
+/// [`Live`] does it for real; tests put a stand-in in its place, as
+/// exploration's [`Instance`] boundary allows.
+pub trait Studios {
+    /// A debug build of the Studio in `checkout` into `target`, holding the
+    /// lock of the builds folder `builds`: its executable.
+    fn build(
+        &self,
+        checkout: &Path,
+        target: &Path,
+        builds: &Path,
+        cancel: Arc<AtomicBool>,
+    ) -> Result<PathBuf, String>;
+
+    /// A test instance of `exe`, started fresh from a copy of `start` (a
+    /// project) for each run or replay, in `folder`, with `options`.
+    fn instance(
+        &self,
+        exe: &Path,
+        start: &Path,
+        folder: &Path,
+        options: Options,
+    ) -> Box<dyn Instance>;
+}
+
+/// The real Studio: debug builds with Cargo, test instances as processes.
+pub struct Live;
+
+impl Studios for Live {
+    fn build(
+        &self,
+        checkout: &Path,
+        target: &Path,
+        builds: &Path,
+        cancel: Arc<AtomicBool>,
+    ) -> Result<PathBuf, String> {
+        builds::debug_studio(checkout, target, builds, cancel)
+    }
+
+    fn instance(
+        &self,
+        exe: &Path,
+        start: &Path,
+        folder: &Path,
+        options: Options,
+    ) -> Box<dyn Instance> {
+        Box::new(crate::explore::LiveInstance::with(
+            exe, start, folder, options,
+        ))
+    }
 }
 
 /// A running objective, as the Studio holds it.
@@ -94,10 +180,16 @@ pub struct Handle {
     pub events: Receiver<Event>,
     thread: Option<std::thread::JoinHandle<()>>,
     paused: Arc<AtomicBool>,
+    controls: Controls,
 }
 
 impl Handle {
     pub fn send(&self, command: Command) {
+        // Agentique is closing: it takes effect now, not when the commands'
+        // thread gets to it, so every save after says so.
+        if command == Command::Interrupt {
+            self.controls.apply(Command::Interrupt);
+        }
         let _ = self.commands.send(command);
     }
 
@@ -155,6 +247,42 @@ fn outcome_lines(attempt: &Attempt) -> String {
         .join("\n")
 }
 
+/// Whether a user-facing change was evaluated in a test instance: one of
+/// its behavioural outcomes (an observation or judgment criterion, the
+/// replay, the changed areas' exploration) ran there, passing or failing.
+fn evaluated(outcomes: &[Outcome], proposal: &record::Proposal, user_facing: &[String]) -> Outcome {
+    let name = "the user-facing change was evaluated in a test instance";
+    let behavioural: Vec<&str> = proposal
+        .criteria
+        .iter()
+        .filter(|c| !matches!(c.check, Check::Command { .. }))
+        .map(|c| c.id.as_str())
+        .chain([record::REPLAY, evidence::CHANGED_AREAS])
+        .collect();
+    let ran: Vec<&str> = outcomes
+        .iter()
+        .filter(|o| behavioural.contains(&o.name.as_str()))
+        .filter(|o| o.verdict == "passed" || o.verdict == "failed")
+        .map(|o| o.name.as_str())
+        .collect();
+    if ran.is_empty() {
+        Outcome::new(
+            name,
+            "failed",
+            format!(
+                "nothing behavioural ran in a test instance of the change to {}",
+                user_facing.join(", ")
+            ),
+        )
+    } else {
+        Outcome::new(
+            name,
+            "passed",
+            format!("{} ran for {}", ran.join(", "), user_facing.join(", ")),
+        )
+    }
+}
+
 /// The agent of `role` in `objective`, with the model recorded for it.
 fn agent_of(objective: &Objective, role: &str) -> Author {
     Author::agent(
@@ -170,11 +298,13 @@ fn agent_of(objective: &Objective, role: &str) -> Author {
 /// The Operator's command as its thread shows it.
 fn command_entry(command: &Command) -> Option<ThreadEntry> {
     let text = match command {
-        Command::Message(text) => {
+        // Its entry says where it went: the commands' thread routes it.
+        Command::Message(_) => return None,
+        Command::StopChild(child) => {
             return Some(ThreadEntry::new(
-                Kind::Human,
+                Kind::Event,
                 Author::Operator,
-                text.clone(),
+                format!("Stops the child objective {child}"),
             ));
         }
         Command::Pause => "Paused",
@@ -196,6 +326,7 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         controls.apply(Command::Pause);
     }
     let paused = controls.paused.clone();
+    let held = controls.clone();
     let poster = Poster {
         store: setup.store.clone(),
         objective: objective.id.clone(),
@@ -210,10 +341,27 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
     std::thread::spawn(move || {
         let received: Receiver<Command> = received;
         for command in received {
-            if let Some(entry) = command_entry(&command) {
-                let _ = commanded.post(entry);
+            match command {
+                Command::Message(text) => {
+                    // To the implementer while it works; otherwise it waits
+                    // in the thread for the lead's next turn.
+                    let to = if applied.working().as_deref() == Some("implementer") {
+                        "implementer"
+                    } else {
+                        "lead"
+                    };
+                    let _ = commanded.post(ThreadEntry::message(text.clone(), to));
+                    if to == "implementer" {
+                        applied.apply(Command::Message(text));
+                    }
+                }
+                command => {
+                    if let Some(entry) = command_entry(&command) {
+                        let _ = commanded.post(entry);
+                    }
+                    applied.apply(command);
+                }
             }
-            applied.apply(command);
         }
     });
     if let Err(error) = cargo_settings(&setup.work) {
@@ -225,12 +373,13 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         .name("agentique-objective".into())
         .spawn(move || {
             let mut driver = Driver {
-                setup,
+                setup: Rc::new(setup),
                 objective,
                 events,
                 poster,
                 controls,
                 last: Instant::now(),
+                delegated: 0,
             };
             driver.run();
         })
@@ -240,8 +389,12 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         events: events_received,
         thread: Some(thread),
         paused,
+        controls: held,
     }
 }
+
+/// The `work` worktrees of failed or interrupted cycles kept (C-54).
+const KEPT_WORK: usize = 3;
 
 /// Makes every file of a checkout newer than anything built before (Cargo
 /// judges freshness by file times, and the build folder is shared).
@@ -272,14 +425,6 @@ fn freshen(folder: &Path) {
 fn tests_ran(output: &str) -> Option<usize> {
     let mut total = None;
     let mut add = |n: usize| total = Some(total.unwrap_or(0) + n);
-    let number_after = |line: &str, marker: &str| -> Option<usize> {
-        let rest = &line[line.find(marker)? + marker.len()..];
-        rest.trim_start()
-            .split(|c: char| !c.is_ascii_digit())
-            .next()?
-            .parse()
-            .ok()
-    };
     for line in output.lines() {
         if line.contains("test result:") {
             let passed = number_after(line, ". ").unwrap_or(0);
@@ -297,6 +442,16 @@ fn tests_ran(output: &str) -> Option<usize> {
         }
     }
     total
+}
+
+/// The number written after `marker` in `line`, if any.
+fn number_after(line: &str, marker: &str) -> Option<usize> {
+    let rest = &line[line.find(marker)? + marker.len()..];
+    rest.trim_start()
+        .split(|c: char| !c.is_ascii_digit())
+        .next()?
+        .parse()
+        .ok()
 }
 
 /// Cargo's settings for every checkout in the work folder (Cargo reads a
@@ -343,9 +498,56 @@ struct Controls {
     step: Arc<AtomicBool>,
     /// The session at work's steering (messages and its gate).
     steering: Steering,
+    /// The role whose session runs now: the Operator's messages go to the
+    /// implementer's.
+    working: Arc<Mutex<Option<String>>>,
+    /// The stop of each child objective running inside this run, by id.
+    children: Arc<Mutex<BTreeMap<String, Arc<AtomicBool>>>>,
 }
 
 impl Controls {
+    fn working(&self) -> Option<String> {
+        self.working.lock().ok().and_then(|w| w.clone())
+    }
+
+    fn set_working(&self, role: Option<&str>) {
+        if let Ok(mut working) = self.working.lock() {
+            *working = role.map(str::to_string);
+        }
+    }
+
+    /// The controls of child objective `id` running inside this run: the
+    /// same pause, steering and interruption, and a stop of its own, which
+    /// this run's stop also sets.
+    fn child(&self, id: &str) -> Controls {
+        let stop = match self.children.lock() {
+            // Stopped already (the Operator's stop came first), or new.
+            Ok(mut children) => children
+                .entry(id.to_string())
+                .or_insert_with(|| Arc::new(AtomicBool::new(self.stopped())))
+                .clone(),
+            Err(_) => Arc::new(AtomicBool::new(self.stopped())),
+        };
+        Controls {
+            stop,
+            ..self.clone()
+        }
+    }
+
+    fn forget(&self, id: &str) {
+        if let Ok(mut children) = self.children.lock() {
+            children.remove(id);
+        }
+    }
+
+    fn stop_children(&self) {
+        if let Ok(children) = self.children.lock() {
+            for stop in children.values() {
+                stop.store(true, Ordering::SeqCst);
+            }
+        }
+    }
+
     fn apply(&self, command: Command) {
         match command {
             Command::Pause => {
@@ -362,12 +564,23 @@ impl Controls {
             }
             Command::Stop => {
                 self.stop.store(true, Ordering::SeqCst);
+                self.stop_children();
                 self.steering.set_gate(Gate::Run);
             }
             Command::Interrupt => {
                 self.interrupted.store(true, Ordering::SeqCst);
                 self.stop.store(true, Ordering::SeqCst);
+                self.stop_children();
                 self.steering.set_gate(Gate::Run);
+            }
+            Command::StopChild(id) => {
+                // Kept for a child about to start, too.
+                if let Ok(mut children) = self.children.lock() {
+                    children
+                        .entry(id)
+                        .or_insert_with(|| Arc::new(AtomicBool::new(false)))
+                        .store(true, Ordering::SeqCst);
+                }
             }
             Command::Message(text) => self.steering.queue(&text),
         }
@@ -379,13 +592,16 @@ impl Controls {
 }
 
 struct Driver {
-    setup: Setup,
+    /// Shared with the child objectives that run inside this run.
+    setup: Rc<Setup>,
     objective: Objective,
     events: Sender<Event>,
     poster: Poster,
     controls: Controls,
     /// Since when time worked is not yet counted.
     last: Instant,
+    /// Children the lead delegated in its current turn.
+    delegated: usize,
 }
 
 /// What a role's session handed over.
@@ -393,6 +609,56 @@ struct Session {
     submitted: Option<Value>,
     /// What the session said last, for a report.
     said: String,
+    /// The child objective the lead delegated, checked (C-54).
+    delegated: Option<children::Asked>,
+    /// Delegations the Orchestrator refused, with why.
+    refused: Vec<(Value, String)>,
+}
+
+/// What a session works with besides its role's own: the test instance its
+/// control tools operate, the lead's tools for an exploring cycle, and the
+/// reproduced findings it may choose among.
+#[derive(Default)]
+struct With<'a> {
+    test: Option<&'a mut Client>,
+    kit: Option<Toolset>,
+    offered: Vec<(String, String)>,
+}
+
+/// What an exploration by the rules decides with: they ask no model, so
+/// the models named are never used.
+fn by_rules(answers: &crate::decide::Decider) -> crate::explore::Deciding<'_> {
+    let none = agq_providers::ModelRef::new(agq_providers::Provider::DeepSeek, "none");
+    crate::explore::Deciding {
+        answers,
+        explorer: none.clone(),
+        effort: None,
+        escalation: none,
+        escalation_effort: None,
+    }
+}
+
+/// What supervises an exploration or a replay in the driver: the
+/// Operator's Pause holds it between steps (Step lets one through), Stop
+/// ends it.
+struct Watch {
+    controls: Controls,
+}
+
+impl crate::explore::Supervisor for Watch {
+    fn go_on(&mut self) -> bool {
+        while self.controls.paused.load(Ordering::SeqCst) && !self.controls.stopped() {
+            if self.controls.step.swap(false, Ordering::SeqCst) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        }
+        !self.controls.stopped()
+    }
+
+    fn stopped(&mut self) -> bool {
+        self.controls.stopped()
+    }
 }
 
 type Next = Result<Phase, String>;
@@ -436,6 +702,11 @@ impl Driver {
 
     fn save(&mut self) {
         self.count_time();
+        // Interrupted because the Operator closed Agentique: every save from
+        // now says so (the Studio marks the record too as it closes).
+        if self.controls.interrupted.load(Ordering::SeqCst) {
+            self.objective.interrupted = true;
+        }
         if let Err(error) = self.setup.store.save(&self.objective) {
             self.event(format!(
                 "The objective's record could not be saved: {error}"
@@ -575,6 +846,11 @@ impl Driver {
 
     fn run(&mut self) {
         self.opening();
+        if self.objective.interrupted {
+            // Continued: it was interrupted when Agentique closed.
+            self.objective.interrupted = false;
+            self.save();
+        }
         if self.objective.continuation.is_some()
             && let Some(cycle) = self.objective.cycle_mut()
         {
@@ -592,6 +868,22 @@ impl Driver {
             let phase = match self.objective.cycle().map(|c| c.phase) {
                 None | Some(Phase::Done) => {
                     let done = self.objective.cycles.len() as u32;
+                    if self.objective.parent.is_some() && done > 0 {
+                        // A child explores once; its result goes back.
+                        let result = children::child_result(&self.objective);
+                        self.end(State::Done, result);
+                        return;
+                    }
+                    if self.objective.explore
+                        && self.empty_explorations() >= 2
+                        && self.untried().is_empty()
+                    {
+                        self.end(
+                            State::Done,
+                            "Nothing new reproduced: two explorations in a row found no new problem that reproduced.".into(),
+                        );
+                        return;
+                    }
                     if done >= self.objective.budgets.cycles {
                         let adopted = self.objective.cycles.iter().filter(|c| c.adopted).count();
                         self.end(
@@ -600,26 +892,32 @@ impl Driver {
                         );
                         return;
                     }
-                    self.objective.cycles.push(Cycle::new(done + 1));
-                    self.save();
+                    self.new_cycle(done + 1);
                     Phase::Propose
                 }
                 Some(Phase::Failed) => {
                     let blocker = self.cycle().blocker.clone().unwrap_or_default();
                     let done = self.objective.cycles.len() as u32;
-                    if done >= self.objective.budgets.cycles {
+                    if done >= self.objective.budgets.cycles || self.objective.parent.is_some() {
                         self.end(State::Failed, blocker);
                         return;
                     }
-                    self.objective.cycles.push(Cycle::new(done + 1));
-                    self.save();
+                    self.new_cycle(done + 1);
                     Phase::Propose
                 }
                 Some(phase) => phase,
             };
-            self.event(format!("Cycle {}: {}", self.cycle().n, phase.label()));
+            self.event(format!(
+                "Cycle {}: {}",
+                self.cycle().n,
+                self.cycle().label()
+            ));
             let next = match phase {
-                Phase::Propose => self.propose(),
+                Phase::Propose => match self.cycle().exploring {
+                    Some(record::Exploring::Explore) => self.explore(),
+                    Some(record::Exploring::Reproduce) => self.reproduce(),
+                    None => self.propose(),
+                },
                 Phase::Implement => self.implement(String::new()),
                 Phase::Check => self.check(),
                 Phase::Evaluate => self.evaluate(),
@@ -650,9 +948,12 @@ impl Driver {
             match next {
                 Ok(next) => {
                     self.cycle_mut().phase = next;
+                    // It got further: a resume after this is a fresh one.
+                    self.objective.resumes = 0;
                     if next == Phase::Done {
                         self.objective
                             .settle_running(DirectiveStatus::Done, "the cycle is done");
+                        self.clean_cycle(false);
                     }
                     self.save();
                 }
@@ -680,9 +981,142 @@ impl Driver {
                     let cycle = self.cycle_mut();
                     cycle.blocker = Some(blocker);
                     cycle.phase = Phase::Failed;
+                    self.clean_cycle(true);
                     self.save();
                 }
             }
+        }
+    }
+
+    /// Starts cycle `n`: exploring first when the objective explores.
+    fn new_cycle(&mut self, n: u32) {
+        let mut cycle = Cycle::new(n);
+        if self.objective.explore {
+            cycle.exploring = Some(record::Exploring::Explore);
+        }
+        self.objective.cycles.push(cycle);
+        self.save();
+    }
+
+    /// The cycle's worktrees and folders, removed as it ends (C-54): all of
+    /// them, but its `work` worktree when `keep_work` (a failed or
+    /// interrupted cycle's, of which the three most recent are kept), each
+    /// by its name.
+    fn clean_cycle(&mut self, keep_work: bool) {
+        let Some(n) = self.objective.cycle().map(|c| c.n) else {
+            return;
+        };
+        let repository = self.objective.repository.clone();
+        let id = self.id();
+        for name in ["lead", "base", "base-tests", "verify", "trial"] {
+            let _ = git::remove_worktree(&repository, &format!("{id}-{n}-{name}"));
+        }
+        let cycle_folder = self.folder("work");
+        let cycle_folder = cycle_folder.parent().unwrap_or(&cycle_folder).to_path_buf();
+        for entry in std::fs::read_dir(&cycle_folder)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
+            if entry.file_name() != "work" {
+                crate::control::remove_folder(&entry.path());
+            }
+        }
+        if !keep_work {
+            self.remove_work(false);
+        }
+        // Each by its name: the Operator's own worktrees are never touched.
+        self.prune_kept_work();
+    }
+
+    /// The cycle's `work` worktree, removed (its branch stays).
+    fn remove_work(&mut self, _merged: bool) {
+        let repository = self.objective.repository.clone();
+        let n = self.cycle().n;
+        let name = format!("{}-{n}", self.id());
+        let _ = git::remove_worktree(&repository, &name);
+        crate::control::remove_folder(&self.folder("work"));
+    }
+
+    /// The merged branch, deleted here if the host's merge did not, and
+    /// what became of it here and on the host, said in the thread.
+    fn delete_branch(&mut self) {
+        let Some(branch) = self.cycle().branch.clone() else {
+            return;
+        };
+        let repository = self.objective.repository.clone();
+        let here = forge::run(
+            &repository,
+            &[
+                "git",
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                &format!("refs/heads/{branch}"),
+            ],
+            Duration::from_secs(60),
+        )
+        .is_ok();
+        let local = if !here {
+            "deleted here".to_string()
+        } else {
+            match forge::run(
+                &repository,
+                &["git", "branch", "-D", &branch],
+                Duration::from_secs(60),
+            ) {
+                Ok(_) => "deleted here".to_string(),
+                Err(error) => format!("kept here ({error})"),
+            }
+        };
+        let remote = match forge::run(
+            &repository,
+            &["git", "ls-remote", "--heads", "origin", &branch],
+            Duration::from_secs(120),
+        ) {
+            Ok(listed) if listed.stdout.trim().is_empty() => "deleted on the host".to_string(),
+            Ok(_) => "kept on the host".to_string(),
+            Err(error) => format!("not known on the host ({error})"),
+        };
+        self.event(format!("The merged branch {branch}: {local}, {remote}"));
+    }
+
+    /// The `work` worktrees kept from failed or interrupted cycles, of all
+    /// objectives: the three most recent stay, the others go.
+    fn prune_kept_work(&self) {
+        let mut kept: Vec<(std::time::SystemTime, String, PathBuf)> = Vec::new();
+        for objective in std::fs::read_dir(&self.setup.work)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
+            for cycle in std::fs::read_dir(objective.path())
+                .into_iter()
+                .flatten()
+                .flatten()
+            {
+                let work = cycle.path().join("work");
+                let Some(n) = cycle
+                    .file_name()
+                    .to_str()
+                    .and_then(|c| c.strip_prefix("cycle-"))
+                    .map(str::to_string)
+                else {
+                    continue;
+                };
+                if work.is_dir() {
+                    let at = std::fs::metadata(&work)
+                        .and_then(|m| m.modified())
+                        .unwrap_or(std::time::UNIX_EPOCH);
+                    let name = format!("{}-{n}", objective.file_name().to_string_lossy());
+                    kept.push((at, name, work));
+                }
+            }
+        }
+        kept.sort_by_key(|k| std::cmp::Reverse(k.0));
+        for (_, name, work) in kept.into_iter().skip(KEPT_WORK) {
+            let _ = git::remove_worktree(&self.objective.repository, &name);
+            crate::control::remove_folder(&work);
         }
     }
 
@@ -695,12 +1129,22 @@ impl Driver {
         self.objective.note = Some(
             "Interrupted when Agentique closed; continue it from the Objectives panel.".into(),
         );
+        self.objective.interrupted = true;
         self.event("Interrupted when Agentique closed; it goes on when you continue it");
         self.save();
         true
     }
 
     fn end(&mut self, state: State, note: String) {
+        // A cycle still under way when it stops keeps its work (the three
+        // most recent are kept); the rest of its worktrees go.
+        if self
+            .objective
+            .cycle()
+            .is_some_and(|c| !matches!(c.phase, Phase::Done | Phase::Failed))
+        {
+            self.clean_cycle(true);
+        }
         self.event(note.clone());
         let settled = match state {
             State::Stopped => DirectiveStatus::Stopped,
@@ -724,8 +1168,15 @@ impl Driver {
         policy: Policy,
         brief: String,
         resume: bool,
-        mut test: Option<&mut Client>,
+        with: With,
     ) -> Result<Session, String> {
+        let With {
+            mut test,
+            kit,
+            offered,
+        } = with;
+        // What the lead may delegate now, as its `delegate` tool checks it.
+        let bounds = self.bounds();
         let mut model = WorkingModel::new(cwd.to_path_buf());
         if role == Role::Implementer {
             model = model.confirming(self.objective.permissions.locked.clone());
@@ -776,22 +1227,30 @@ impl Driver {
             });
         }
         conversation.entries.push(Entry::Operator { text: brief });
-        let toolset = Toolset {
+        let toolset = kit.unwrap_or_else(|| Toolset {
             system: roles::instructions(role),
             definitions: roles::tools(role),
-        };
+        });
+        // This session's cost by model (`provider/model`): its own model and
+        // those of its SDK subagents, each at its own price.
+        let cost: RefCell<Vec<(agq_providers::ModelRef, Cost)>> = RefCell::new(Vec::new());
         let submitted: RefCell<Option<Value>> = RefCell::new(None);
+        let delegated: RefCell<Option<children::Asked>> = RefCell::new(None);
+        let refused: RefCell<Vec<(Value, String)>> = RefCell::new(Vec::new());
         let model = RefCell::new(Some(model));
         let events = self.events.clone();
         let role_name = role.name().to_string();
+        let lead = self.agent("lead");
+        let refusals = self.poster.clone();
         let mut executor = |call: &ToolCall| -> ToolResult {
             match call.name.as_str() {
                 roles::SUBMIT_PROPOSAL
+                | roles::SUBMIT_EXPLORATION
                 | roles::SUBMIT_IMPLEMENTATION
                 | roles::SUBMIT_REVIEW
                 | roles::SUBMIT_EVALUATION => {
                     if call.name == roles::SUBMIT_PROPOSAL
-                        && let Err(problem) = roles::read_proposal(&call.input)
+                        && let Err(problem) = roles::read_proposal(&call.input, &offered)
                     {
                         return ToolResult::error(format!(
                             "Not accepted: {problem}. Fix it and submit again."
@@ -799,6 +1258,39 @@ impl Driver {
                     }
                     *submitted.borrow_mut() = Some(call.input.clone());
                     ToolResult::answer("Received. End your turn now with one short sentence.")
+                }
+                roles::DELEGATE if role == Role::Lead => {
+                    // Checked now; recorded and started when the turn ends.
+                    let checked = if delegated.borrow().is_some() {
+                        Err("one child at a time: you delegated one in this turn".into())
+                    } else {
+                        bounds.check(&call.input, cost.borrow().iter().map(|(_, c)| c.usd).sum())
+                    };
+                    match checked {
+                        Ok(asked) => {
+                            *delegated.borrow_mut() = Some(asked);
+                            ToolResult::answer(
+                                "Delegated: the Orchestrator starts the child objective when your turn ends, and you will receive its result as your next message. End your turn now with one short sentence.",
+                            )
+                        }
+                        Err(reason) => {
+                            refusals.post(
+                                ThreadEntry::new(
+                                    Kind::Directive,
+                                    lead.clone(),
+                                    format!(
+                                        "Asks to delegate: {} (refused: {reason})",
+                                        call.input["instruction"].as_str().unwrap_or_default()
+                                    ),
+                                )
+                                .with_details(call.input.to_string()),
+                            );
+                            refused
+                                .borrow_mut()
+                                .push((call.input.clone(), reason.clone()));
+                            ToolResult::error(format!("Refused: {reason}."))
+                        }
+                    }
                 }
                 "observe_app" | "act_in_app" => {
                     let mut body = if call.name == "observe_app" {
@@ -842,9 +1334,6 @@ impl Driver {
         let mut execute = checked(&toolset.definitions, &mut executor);
         let spent_before = self.objective.spent.usd;
         let budget = self.objective.budgets.usd;
-        // This session's cost by model (`provider/model`): its own model and
-        // those of its SDK subagents, each at its own price.
-        let cost: RefCell<Vec<(agq_providers::ModelRef, Cost)>> = RefCell::new(Vec::new());
         let count = |model: &agq_providers::ModelRef, add: Cost| {
             let mut costs = cost.borrow_mut();
             match costs.iter_mut().find(|(m, _)| m == model) {
@@ -862,6 +1351,9 @@ impl Driver {
             .objective
             .running_for(role.name())
             .map(|d| d.id.clone());
+        // The role at work from now: the Operator's messages to the
+        // implementer go to its session.
+        self.controls.set_working(Some(role.name()));
         // The session's start is the step its activity folds under.
         let step = self.post(
             ThreadEntry::new(
@@ -979,8 +1471,15 @@ impl Driver {
             &mut on_event,
             &controls.stop,
         );
+        controls.set_working(None);
         drop(execute);
         controls.step.store(false, Ordering::SeqCst);
+        // Messages the implementer's session ended before taking wait for
+        // the lead's next turn, and the thread says so.
+        for text in controls.steering.clear_messages() {
+            self.event("The implementer's session ended before it took your message: it waits for the lead's next turn");
+            self.post(ThreadEntry::message(text, "lead"));
+        }
         if let Some(model) = model.borrow_mut().as_mut() {
             model.close();
         }
@@ -1011,6 +1510,8 @@ impl Driver {
         }
         Ok(Session {
             submitted: submitted.into_inner(),
+            delegated: delegated.into_inner(),
+            refused: refused.into_inner(),
             said,
         })
     }
@@ -1091,53 +1592,61 @@ impl Driver {
     /// and its expectation is observed. A setup action that fails fails the
     /// criterion; when the way cannot be cleared (an approval left open, or
     /// the instance gone), the criterion is not run, which is no pass.
+    /// Its outcome, and whether the criterion's own expectation decided it
+    /// (a setup action that failed, a broken connection or a way that could
+    /// not be cleared did not: on the base, that is no evidence).
     fn observe_criterion(
         &mut self,
         client: &mut Client,
         criterion: &Criterion,
         setup: &[Value],
         expect: &Value,
-    ) -> Outcome {
-        let outcome = |verdict: &str, detail: String| Outcome {
-            name: criterion.id.clone(),
-            verdict: verdict.into(),
-            detail,
-        };
+    ) -> (Outcome, bool) {
+        let outcome =
+            |verdict: &str, detail: String| Outcome::new(criterion.id.clone(), verdict, detail);
         let cleared = match self.clear_dialogs(client, &criterion.statement) {
             Ok(cleared) => cleared,
             Err(problem) => {
-                return outcome(
-                    "not run",
-                    format!("the way to it could not be cleared: {problem}"),
+                return (
+                    outcome(
+                        "not run",
+                        format!("the way to it could not be cleared: {problem}"),
+                    ),
+                    false,
                 );
             }
         };
-        let mut result = Ok(());
+        let mut setup_failed = None;
         for action in setup {
-            result = match client.act("orchestrator", &criterion.id, action.clone()) {
+            match client.act("orchestrator", &criterion.id, action.clone()) {
                 Ok(answer) if answer["ok"] == false => {
-                    Err(format!("setup action failed: {answer}"))
+                    setup_failed = Some(format!("setup action failed: {answer}"));
                 }
-                Ok(_) => Ok(()),
-                Err(error) => Err(error),
-            };
-            if result.is_err() {
+                Ok(_) => {}
+                Err(error) => setup_failed = Some(format!("setup action not carried out: {error}")),
+            }
+            if setup_failed.is_some() {
                 break;
             }
         }
-        let result = result.and_then(|()| {
-            client
-                .observe(true)
-                .and_then(|o| crate::control::holds(&o, expect))
-        });
-        let (verdict, mut detail) = match result {
-            Ok(()) => ("passed", "observed".to_string()),
-            Err(problem) => ("failed", problem),
+        let (verdict, mut detail, own) = match setup_failed {
+            Some(problem) => ("failed", problem, false),
+            None => match client.observe(true) {
+                Err(error) => (
+                    "failed",
+                    format!("it could not be observed: {error}"),
+                    false,
+                ),
+                Ok(observation) => match crate::control::holds(&observation, expect) {
+                    Ok(()) => ("passed", "observed".to_string(), true),
+                    Err(problem) => ("failed", problem, true),
+                },
+            },
         };
         if !cleared.is_empty() {
             detail = format!("{detail} (first cancelled: {})", cleared.join(", "));
         }
-        outcome(verdict, detail)
+        (outcome(verdict, detail), own)
     }
 
     fn policy(&self, folder: &Path, write: bool, commands: bool) -> Policy {
@@ -1178,16 +1687,7 @@ impl Driver {
 
     fn propose(&mut self) -> Next {
         let repository = self.objective.repository.clone();
-        let head = git::head(&repository).map_err(|e| e.to_string())?;
-        if head.branch.as_deref() != Some(self.objective.base_branch.as_str()) {
-            return Err(format!(
-                "paused: the repository is on {}, not {}",
-                head.branch.as_deref().unwrap_or("a detached commit"),
-                self.objective.base_branch
-            ));
-        }
-        let base = self.cycle().base.clone().unwrap_or(head.commit);
-        self.cycle_mut().base = Some(base.clone());
+        let base = self.cycle_base()?;
         // Proposed and handed over before a restart: not asked again.
         let handed = format!("cycle-{}/proposal", self.cycle().n);
         if self.cycle().proposal.is_some()
@@ -1201,22 +1701,41 @@ impl Driver {
         }
         let lead = self.checkout("lead", &base)?;
         let policy = self.policy(&lead, false, false);
-        let mut brief = roles::brief(Role::Lead, &self.objective, "");
+        let kit = Toolset {
+            system: roles::instructions(Role::Lead),
+            definitions: roles::lead_tools(false, self.objective.explore && self.may_delegate()),
+        };
+        let mut brief = roles::brief(Role::Lead, &self.objective, &self.findings_brief());
         for attempt in 0..2 {
-            let session = self.session(
-                Role::Lead,
+            let session = self.lead(
                 &lead,
                 policy.clone(),
                 brief.clone(),
+                kit.clone(),
                 attempt > 0,
-                None,
             )?;
-            match session.submitted.as_ref().map(roles::read_proposal) {
+            // The findings it may choose among, children's included.
+            let (offered, _) = self.offered_findings();
+            match session
+                .submitted
+                .as_ref()
+                .map(|input| roles::read_proposal(input, &offered))
+            {
                 Some(Ok(proposal)) => {
-                    // The proposal, frozen, handed to the implementer.
+                    // The proposal, frozen, handed to the implementer; the
+                    // finding it fixes is frozen with it (its replay).
                     let title = proposal.title.clone();
                     let text = roles::proposal_text(&proposal);
-                    self.cycle_mut().proposal = Some(proposal);
+                    let finding = proposal.finding.as_ref().and_then(|identity| {
+                        self.cycle()
+                            .findings
+                            .iter()
+                            .find(|f| &f.identity == identity)
+                            .cloned()
+                    });
+                    let cycle = self.cycle_mut();
+                    cycle.proposal = Some(proposal);
+                    cycle.replay = finding.clone();
                     self.direct(
                         "lead",
                         Recipient::Role("implementer".into()),
@@ -1228,7 +1747,14 @@ impl Driver {
                         },
                         Some(handed.clone()),
                         format!("Proposes: {title}"),
-                        text,
+                        match &finding {
+                            Some(f) => format!(
+                                "{text}\nFixes: {} (its replay is the frozen criterion `{}`)",
+                                explore::finding_line(f),
+                                record::REPLAY
+                            ),
+                            None => text,
+                        },
                     );
                     let _ = git::remove_worktree(
                         &repository,
@@ -1252,6 +1778,25 @@ impl Driver {
             }
         }
         Err("the lead did not hand over an acceptable proposal".into())
+    }
+
+    /// What the lead is told of an exploring cycle: the reproduced findings
+    /// to choose among, and what the testing knowledge says.
+    fn findings_brief(&self) -> String {
+        if !self.objective.explore {
+            return String::new();
+        }
+        let (offered, text) = self.offered_findings();
+        format!(
+            "Reproduced findings of this cycle{}:\n{}\n\n{}",
+            if offered.is_empty() {
+                ""
+            } else {
+                " (choose the one you fix with `finding`)"
+            },
+            if text.is_empty() { "none" } else { &text },
+            self.testing_summary()
+        )
     }
 
     fn implement(&mut self, context: String) -> Next {
@@ -1289,7 +1834,14 @@ impl Driver {
             .objective
             .running_for("implementer")
             .map(|d| d.id.clone());
-        let session = self.session(Role::Implementer, &work, policy, brief, repairing, None)?;
+        let session = self.session(
+            Role::Implementer,
+            &work,
+            policy,
+            brief,
+            repairing,
+            With::default(),
+        )?;
         let submitted = session
             .submitted
             .as_ref()
@@ -1379,6 +1931,7 @@ impl Driver {
                 name: words.join(" "),
                 verdict: "not run".into(),
                 detail: problem,
+                judged: false,
             };
         }
         self.run_command(folder, words, timeout, true)
@@ -1402,6 +1955,7 @@ impl Driver {
                 name,
                 verdict: "not run".into(),
                 detail: "an empty command".into(),
+                judged: false,
             };
         };
         let executor = match Scope::read_only(folder) {
@@ -1415,6 +1969,7 @@ impl Driver {
                     name,
                     verdict: "not run".into(),
                     detail: error.to_string(),
+                    judged: false,
                 };
             }
         };
@@ -1429,6 +1984,7 @@ impl Driver {
                     name,
                     verdict: "failed".into(),
                     detail: "it ran no test".into(),
+                    judged: false,
                 }
             }
             Ok(finished)
@@ -1440,12 +1996,14 @@ impl Driver {
                     name,
                     verdict: "failed".into(),
                     detail: "the run exited well but says tests failed".into(),
+                    judged: false,
                 }
             }
             Ok(finished) if finished.success => Outcome {
                 name,
                 verdict: "passed".into(),
                 detail: String::new(),
+                judged: false,
             },
             Ok(finished) => Outcome {
                 name,
@@ -1454,11 +2012,13 @@ impl Driver {
                     &format!("{}\n{}", finished.stdout, finished.stderr),
                     40,
                 ),
+                judged: false,
             },
             Err(error) => Outcome {
                 name,
                 verdict: "not run".into(),
                 detail: error.to_string(),
+                judged: false,
             },
         }
     }
@@ -1483,21 +2043,61 @@ impl Driver {
         cargo_settings(&self.setup.work)?;
         self.remove_build_settings()?;
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
-        // Once per cycle: the command criteria on the base must fail (or
-        // run no test), so that passing after shows the change.
-        if self.cycle().before.is_empty() {
-            let before = self.checkout("base", &base)?;
-            let mut outcomes = Vec::new();
-            for criterion in &proposal.criteria {
-                if let Check::Command { program } = &criterion.check {
-                    let mut outcome = self.criterion(&before, program, Duration::from_secs(1800));
-                    outcome.name = criterion.id.clone();
-                    outcomes.push(outcome);
-                }
-            }
+        // Each criterion on the base, before the change, where none may
+        // pass and one must fail with evidence (C-54): once per cycle, and
+        // the test runs again whenever this commit's test files differ from
+        // those the evidence was made with.
+        let tests = self.test_files(&base, &commit)?;
+        let made = self.cycle().evidence.clone();
+        if !self.cycle().before.is_empty() && made.as_ref().is_none_or(|e| e.tests != tests) {
+            let again = self.commands_on_base(&commit, &tests)?;
             if self.controls.stopped() {
                 return Err("stopped".into());
             }
+            self.post(
+                ThreadEntry::event(format!(
+                    "This attempt's test files differ: its test runs on the base were made again with those of {}",
+                    builds::short(&commit)
+                ))
+                .with_details(
+                    again
+                        .iter()
+                        .map(|o| format!("- {}: {} ({})", o.name, o.verdict, o.detail))
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                ),
+            );
+            let cycle = self.cycle_mut();
+            for outcome in again {
+                match cycle.before.iter_mut().find(|o| o.name == outcome.name) {
+                    Some(earlier) => *earlier = outcome,
+                    None => cycle.before.push(outcome),
+                }
+            }
+            cycle.evidence = Some(record::Evidence {
+                commit: commit.clone(),
+                tests: tests.clone(),
+            });
+            self.save();
+        }
+        if self.cycle().before.is_empty() {
+            let outcomes = self.on_base(&commit, &tests)?;
+            if self.controls.stopped() {
+                return Err("stopped".into());
+            }
+            self.cycle_mut().evidence = Some(record::Evidence {
+                commit: commit.clone(),
+                tests: tests.clone(),
+            });
+            self.post(
+                ThreadEntry::event("The criteria on the base, before the change").with_details(
+                    outcomes
+                        .iter()
+                        .map(|o| format!("- {}: {} ({})", o.name, o.verdict, o.detail))
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                ),
+            );
             self.cycle_mut().before = outcomes;
             self.save();
         }
@@ -1558,6 +2158,7 @@ impl Driver {
                 name: "locked elements unchanged".into(),
                 verdict: "passed".into(),
                 detail: String::new(),
+                judged: false,
             },
             Ok(found) => Outcome {
                 name: "locked elements unchanged".into(),
@@ -1566,11 +2167,13 @@ impl Driver {
                     "the change touches locked elements the objective does not name: {}",
                     found.join(", ")
                 ),
+                judged: false,
             },
             Err(error) => Outcome {
                 name: "locked elements unchanged".into(),
                 verdict: "not run".into(),
                 detail: error,
+                judged: false,
             },
         });
         // The code of locked parts, by the links (the change's and the
@@ -1603,6 +2206,7 @@ impl Driver {
                     name: "code of locked parts unchanged".into(),
                     verdict: "passed".into(),
                     detail: String::new(),
+ judged: false,
                 },
                 Ok(found) => Outcome {
                     name: "code of locked parts unchanged".into(),
@@ -1611,11 +2215,13 @@ impl Driver {
                         "the change touches the code of locked parts the objective does not name: {}",
                         found.join(", ")
                     ),
+ judged: false,
                 },
                 Err(error) => Outcome {
                     name: "code of locked parts unchanged".into(),
                     verdict: "not run".into(),
                     detail: error,
+ judged: false,
                 },
             }
         } else {
@@ -1623,33 +2229,42 @@ impl Driver {
                 name: "code of locked parts unchanged".into(),
                 verdict: "passed".into(),
                 detail: "no model, so nothing is locked".into(),
+ judged: false,
             }
         });
-        // The criteria failed before the change.
-        let already: Vec<String> = self
-            .cycle()
-            .before
-            .iter()
-            .filter(|o| o.passed())
-            .map(|o| o.name.clone())
-            .collect();
-        gates.push(Outcome {
-            name: "the criteria fail before the change".into(),
-            verdict: if already.is_empty() {
-                "passed"
-            } else {
-                "failed"
+        // The criteria show the defect on the base (C-54), by their own
+        // outcomes there, made with this commit's test files.
+        let mut ids: Vec<String> = proposal.criteria.iter().map(|c| c.id.clone()).collect();
+        if self.cycle().replay.is_some() {
+            ids.push(record::REPLAY.to_string());
+        }
+        let mut shown = gates::defect_shown(&self.cycle().before, &ids);
+        match &self.cycle().evidence {
+            Some(made) if made.tests == tests => {
+                let note = format!(
+                    "evidence made on the base with the test files of {}{}",
+                    builds::short(&made.commit),
+                    if made.commit == commit {
+                        String::new()
+                    } else {
+                        format!(", the same as {}'s", builds::short(&commit))
+                    }
+                );
+                shown.detail = if shown.detail.is_empty() {
+                    note
+                } else {
+                    format!("{}\n{note}", shown.detail)
+                };
             }
-            .into(),
-            detail: if already.is_empty() {
-                String::new()
-            } else {
-                format!(
-                    "{} already pass on the base, so they do not show the change",
-                    already.join(", ")
-                )
-            },
-        });
+            _ => {
+                shown.verdict = "failed".into();
+                shown.detail = format!(
+                    "the evidence on the base was not made with {}'s test files",
+                    builds::short(&commit)
+                );
+            }
+        }
+        gates.push(shown);
         let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
         attempt.checks = checks;
         attempt.criteria = criteria;
@@ -1673,109 +2288,95 @@ impl Driver {
 
     fn evaluate(&mut self) -> Next {
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
-        let behavioural: Vec<_> = proposal
-            .criteria
-            .iter()
-            .filter(|c| !matches!(c.check, Check::Command { .. }))
-            .cloned()
-            .collect();
-        if behavioural.is_empty() {
-            return Ok(Phase::Review);
-        }
         let commit = self
             .cycle()
             .attempt()
             .and_then(|a| a.commit.clone())
             .ok_or("nothing to evaluate")?;
+        let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
         let verify = self.checkout("verify", &commit)?;
-        self.event("building the change for a test instance");
-        let exe = builds::debug_studio(&verify, &self.target(), self.controls.stop.clone())?;
-        let mut instance = TestInstance::start(&exe, &self.folder("instance"), &verify, &verify)?;
-        let mut client = instance.connect(Duration::from_secs(180))?;
-        let mut outcomes = Vec::new();
-        if let Some(dialog) = Self::dialog_at_start(&mut client) {
-            outcomes.push(Outcome {
-                name: "no dialog when it starts".into(),
-                verdict: "failed".into(),
-                detail: format!("the {dialog} dialog is open when the test instance starts"),
-            });
+        // User-facing code: the part Studio's, by its links on the base and
+        // in the change (C-54), so dropping a link does not hide it.
+        let patch =
+            git::patch_of(&self.objective.repository, &base, &commit).map_err(|e| e.to_string())?;
+        let files: Vec<String> = patch
+            .files
+            .iter()
+            .map(|f| f.path.replace('\\', "/"))
+            .collect();
+        let mut links = Vec::new();
+        if let Ok(text) = std::fs::read_to_string(verify.join("model").join("links.json")) {
+            links.push(text);
         }
-        for criterion in &behavioural {
-            if let Check::Observation { setup, expect } = &criterion.check {
-                let outcome = self.observe_criterion(&mut client, criterion, setup, expect);
-                outcomes.push(outcome);
-            }
+        if let Ok(shown) = forge::run(
+            &self.objective.repository,
+            &["git", "show", &format!("{base}:model/links.json")],
+            Duration::from_secs(60),
+        ) {
+            links.push(shown.stdout);
         }
-        let judged: Vec<_> = behavioural
+        let user_facing = gates::user_facing(&files, &links);
+        let observed: Vec<&Criterion> = proposal
+            .criteria
+            .iter()
+            .filter(|c| matches!(c.check, Check::Observation { .. }))
+            .collect();
+        let judged: Vec<&Criterion> = proposal
+            .criteria
             .iter()
             .filter(|c| matches!(c.check, Check::Judgment))
             .collect();
-        if !judged.is_empty() {
-            let context = format!(
-                "Criteria to judge in the test instance: {}\nThe test instance shows the cycle's commit {} with the project open.",
-                judged
-                    .iter()
-                    .map(|c| format!("{} ({})", c.id, c.statement))
-                    .collect::<Vec<_>>()
-                    .join("; "),
-                builds::short(&commit)
-            );
-            let brief = roles::brief(Role::Evaluator, &self.objective, &context);
-            let policy = self.policy(&verify, false, false);
-            let session = self.session(
-                Role::Evaluator,
-                &verify,
-                policy,
-                brief,
-                false,
-                Some(&mut client),
-            )?;
-            let reported = session.submitted.unwrap_or_default();
-            self.post(
-                ThreadEntry::new(
-                    Kind::Result,
-                    self.agent("evaluator"),
-                    "Reports the criteria it judged",
-                )
-                .with_details(
-                    reported["criteria"]
-                        .as_array()
-                        .into_iter()
-                        .flatten()
-                        .map(|c| {
-                            format!(
-                                "- {}: {} ({})",
-                                c["id"].as_str().unwrap_or_default(),
-                                c["outcome"].as_str().unwrap_or("not run"),
-                                c["observations"].as_str().unwrap_or_default()
-                            )
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n"),
-                ),
-            );
-            for criterion in judged {
-                let found = reported["criteria"]
-                    .as_array()
-                    .into_iter()
-                    .flatten()
-                    .find(|c| c["id"] == criterion.id.as_str());
-                outcomes.push(match found {
-                    Some(c) => Outcome {
-                        name: criterion.id.clone(),
-                        verdict: c["outcome"].as_str().unwrap_or("not run").to_string(),
-                        detail: c["observations"].as_str().unwrap_or_default().to_string(),
-                    },
-                    None => Outcome {
-                        name: criterion.id.clone(),
-                        verdict: "not run".into(),
-                        detail: "the evaluator did not report it".into(),
-                    },
-                });
-            }
+        let replay = self.cycle().replay.is_some();
+        if observed.is_empty() && judged.is_empty() && !replay && user_facing.is_empty() {
+            return Ok(Phase::Review);
         }
-        drop(client);
-        drop(instance);
+        if !user_facing.is_empty() && observed.is_empty() && judged.is_empty() && !replay {
+            // Its criteria are frozen: no later attempt can add one.
+            let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
+            attempt.gates.push(Outcome::new(
+                "a user-facing change has a behavioural criterion",
+                "failed",
+                format!("it changes {}", user_facing.join(", ")),
+            ));
+            return Err(format!(
+                "the change touches user-facing code ({}), but its frozen criteria have no behavioural one, which a later attempt cannot add",
+                user_facing.join(", ")
+            ));
+        }
+        self.event("Building the change for its test instances");
+        let exe = self.setup.studios.build(
+            &verify,
+            &self.target(),
+            &self.setup.builds,
+            self.controls.stop.clone(),
+        )?;
+        // An unreviewed build: started only as a test instance with no
+        // credential and its Assistant on the scripted stand-in.
+        let unreviewed = Options {
+            speed: Some("instant".into()),
+            stand_in: true,
+            unreviewed: true,
+            ..Options::default()
+        };
+        let mut outcomes: Vec<Outcome> = self
+            .observe_criteria(&exe, &verify, &observed, "change", &unreviewed)
+            .into_iter()
+            .map(|seen| seen.outcome)
+            .collect();
+        // The replay and the changed areas start from the base's start
+        // projects, which the change cannot alter.
+        let start = self.checkout("base", &base)?;
+        outcomes.extend(self.evaluate_by_behaviour(&exe, &start, &user_facing));
+        if !judged.is_empty() {
+            let options = Options {
+                speed: Some(self.setup.speed.clone()),
+                ..unreviewed.clone()
+            };
+            outcomes.extend(self.judge(&exe, &verify, &commit, &judged, &options)?);
+        }
+        if !user_facing.is_empty() {
+            outcomes.push(evaluated(&outcomes, &proposal, &user_facing));
+        }
         if self.controls.stopped() {
             return Err("stopped".into());
         }
@@ -1800,6 +2401,116 @@ impl Driver {
             );
             Ok(Phase::Repair)
         }
+    }
+
+    /// The judgment criteria, by the evaluator in a test instance of the
+    /// change; when the instance does not start, each is not run (no pass).
+    fn judge(
+        &mut self,
+        exe: &Path,
+        verify: &Path,
+        commit: &str,
+        judged: &[&Criterion],
+        options: &Options,
+    ) -> Result<Vec<Outcome>, String> {
+        let not_run = |why: &str| -> Vec<Outcome> {
+            judged
+                .iter()
+                .map(|c| Outcome {
+                    judged: true,
+                    ..Outcome::new(c.id.clone(), "not run", why)
+                })
+                .collect()
+        };
+        let started =
+            TestInstance::start_with(exe, &self.folder("instance"), verify, verify, options)
+                .and_then(|mut instance| {
+                    let client = instance.connect(Duration::from_secs(180))?;
+                    Ok((instance, client))
+                });
+        let (instance, mut client) = match started {
+            Ok(started) => started,
+            Err(problem) => {
+                return Ok(not_run(&format!(
+                    "its test instance did not start: {problem}"
+                )));
+            }
+        };
+        let context = format!(
+            "Criteria to judge in the test instance: {}\nThe test instance shows the cycle's commit {} with the project open.",
+            judged
+                .iter()
+                .map(|c| format!("{} ({})", c.id, c.statement))
+                .collect::<Vec<_>>()
+                .join("; "),
+            builds::short(commit)
+        );
+        let brief = roles::brief(Role::Evaluator, &self.objective, &context);
+        let policy = self.policy(verify, false, false);
+        let session = self.session(
+            Role::Evaluator,
+            verify,
+            policy,
+            brief,
+            false,
+            With {
+                test: Some(&mut client),
+                ..With::default()
+            },
+        )?;
+        let reported = session.submitted.unwrap_or_default();
+        self.post(
+            ThreadEntry::new(
+                Kind::Result,
+                self.agent("evaluator"),
+                "Reports the criteria it judged",
+            )
+            .with_details(
+                reported["criteria"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(|c| {
+                        format!(
+                            "- {}: {} ({})",
+                            c["id"].as_str().unwrap_or_default(),
+                            c["outcome"].as_str().unwrap_or("not run"),
+                            c["observations"].as_str().unwrap_or_default()
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+            ),
+        );
+        let mut outcomes = Vec::new();
+        for criterion in judged {
+            let found = reported["criteria"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .find(|c| c["id"] == criterion.id.as_str());
+            outcomes.push(match found {
+                Some(c) => Outcome {
+                    judged: true,
+                    ..Outcome::new(
+                        criterion.id.clone(),
+                        c["outcome"].as_str().unwrap_or("not run"),
+                        c["observations"].as_str().unwrap_or_default(),
+                    )
+                },
+                None => Outcome {
+                    judged: true,
+                    ..Outcome::new(
+                        criterion.id.clone(),
+                        "not run",
+                        "the evaluator did not report it",
+                    )
+                },
+            });
+        }
+        drop(client);
+        drop(instance);
+        Ok(outcomes)
     }
 
     fn review(&mut self) -> Next {
@@ -1832,7 +2543,14 @@ impl Driver {
         );
         let brief = roles::brief(Role::Reviewer, &self.objective, &context);
         let policy = self.policy(&verify, false, false);
-        let session = self.session(Role::Reviewer, &verify, policy, brief, false, None)?;
+        let session = self.session(
+            Role::Reviewer,
+            &verify,
+            policy,
+            brief,
+            false,
+            With::default(),
+        )?;
         let verdict = session.submitted.ok_or("the reviewer gave no verdict")?;
         let review = Review {
             verdict: verdict["verdict"]
@@ -1907,9 +2625,18 @@ impl Driver {
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         let baseline = gates::baseline(&patch, &proposal, Some(&review));
         let approved = review.verdict == "approve";
+        let asked = review.findings.join("\n");
         self.cycle_mut().review = Some(review);
         let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
-        attempt.gates.retain(|g| g.name != baseline.name);
+        attempt
+            .gates
+            .retain(|g| g.name != baseline.name && g.name != record::REVIEW);
+        if !approved {
+            // Identified as `review`, whatever its wording (C-54).
+            attempt
+                .gates
+                .push(Outcome::new(record::REVIEW, "failed", asked));
+        }
         let kept = baseline.passed();
         attempt.gates.push(baseline);
         if approved && kept {
@@ -2100,6 +2827,7 @@ impl Driver {
                     name: "the repository's checks".into(),
                     verdict: "failed".into(),
                     detail: what,
+                    judged: false,
                 });
                 return Ok(Phase::Repair);
             }
@@ -2108,6 +2836,9 @@ impl Driver {
             }
         }
         let subject = format!("{} (#{})", proposal.title, pr.number);
+        // The branch is merged next: its worktree goes first, so the host's
+        // merge can delete the branch here and on the host.
+        self.remove_work(false);
         let merged = self
             .setup
             .store
@@ -2116,7 +2847,22 @@ impl Driver {
             })?;
         self.cycle_mut().merged = Some(merged.clone());
         self.save();
+        // The finding it fixed is fixed (the next exploration replays it
+        // first), and the merged branch and its worktree go (C-54).
+        if let Some(finding) = self.cycle().replay.clone() {
+            let file = crate::knowledge::Knowledge::file(&self.setup.store, &repository);
+            let project = crate::knowledge::Knowledge::key(&repository);
+            let number = pr.number;
+            if let Err(error) = crate::knowledge::Knowledge::change(&file, &project, |k| {
+                k.fixed(&finding.identity, &merged, Some(number))
+            }) {
+                self.event(format!(
+                    "The testing knowledge could not record the fix: {error}"
+                ));
+            }
+        }
         self.event(format!("merged as {}", builds::short(&merged)));
+        self.delete_branch();
         if let Err(problem) = forge::follow(&repository, &base_branch, &merged) {
             return Err(format!("paused: {problem}"));
         }
@@ -2227,12 +2973,14 @@ impl Driver {
                 name: "it starts".into(),
                 verdict: "failed".into(),
                 detail: problem,
+                judged: false,
             }),
             Ok(mut client) => {
                 outcomes.push(Outcome {
                     name: "it starts".into(),
                     verdict: "passed".into(),
                     detail: String::new(),
+                    judged: false,
                 });
                 let observed = client.observe(false)?;
                 let opened = observed["project"]["folder"].as_str().map(PathBuf::from);
@@ -2241,12 +2989,14 @@ impl Driver {
                         name: "it opens the project".into(),
                         verdict: "passed".into(),
                         detail: String::new(),
+                        judged: false,
                     }
                 } else {
                     Outcome {
                         name: "it opens the project".into(),
                         verdict: "failed".into(),
                         detail: format!("it shows {}", observed["screen"]),
+                        judged: false,
                     }
                 });
                 if let Some(dialog) = Self::dialog_at_start(&mut client) {
@@ -2254,18 +3004,34 @@ impl Driver {
                         name: "no dialog when it starts".into(),
                         verdict: "failed".into(),
                         detail: format!("the {dialog} dialog is open when the build starts"),
+                        judged: false,
                     });
-                }
-                let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
-                for criterion in &proposal.criteria {
-                    if let Check::Observation { setup, expect } = &criterion.check {
-                        let outcome = self.observe_criterion(&mut client, criterion, setup, expect);
-                        outcomes.push(outcome);
-                    }
                 }
             }
         }
         drop(instance);
+        // The criteria observable in the application, each in its stated
+        // condition (the build is merged, but its Assistant is the stand-in:
+        // a trial spends nothing).
+        let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
+        let observed: Vec<&Criterion> = proposal
+            .criteria
+            .iter()
+            .filter(|c| matches!(c.check, Check::Observation { .. }))
+            .collect();
+        if !observed.is_empty() {
+            // A merged build: one without the newer flags still starts.
+            let merged_build = Options {
+                speed: Some("instant".into()),
+                stand_in: true,
+                ..Options::default()
+            };
+            outcomes.extend(
+                self.observe_criteria(&exe, &source, &observed, "trial", &merged_build)
+                    .into_iter()
+                    .map(|seen| seen.outcome),
+            );
+        }
         let passed = outcomes.iter().all(Outcome::passed);
         let lines = outcomes
             .iter()
@@ -2352,6 +3118,48 @@ impl Driver {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A user-facing change counts as evaluated only when something
+    /// behavioural ran in a test instance (passing or failing).
+    #[test]
+    fn a_user_facing_change_is_evaluated_only_when_something_behavioural_ran() {
+        let proposal = record::Proposal {
+            title: "t".into(),
+            kind: "usability".into(),
+            why: "w".into(),
+            parts: Vec::new(),
+            plan: Vec::new(),
+            criteria: vec![
+                Criterion {
+                    id: "c1".into(),
+                    statement: "s".into(),
+                    check: Check::Command {
+                        program: vec!["cargo".into(), "test".into()],
+                    },
+                },
+                Criterion {
+                    id: "c2".into(),
+                    statement: "s".into(),
+                    check: Check::Judgment,
+                },
+            ],
+            intended_test_changes: Vec::new(),
+            finding: None,
+        };
+        let files = vec!["crates/studio-native/src/a.rs".to_string()];
+        let not_run = [
+            Outcome::new("c1: cargo test", "passed", ""),
+            Outcome::new("c2", "not run", "its test instance did not start"),
+            Outcome::new(evidence::CHANGED_AREAS, "not run", "it did not explore"),
+        ];
+        assert!(!evaluated(&not_run, &proposal, &files).passed());
+        let ran = [
+            Outcome::new("c2", "not run", "x"),
+            Outcome::new(record::REPLAY, "failed", "it still fails"),
+        ];
+        let outcome = evaluated(&ran, &proposal, &files);
+        assert!(outcome.passed() && outcome.detail.starts_with("replay"));
+    }
 
     #[test]
     fn a_test_run_says_how_many_tests_ran() {

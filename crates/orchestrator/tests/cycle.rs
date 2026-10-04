@@ -340,6 +340,9 @@ fn setup_with(dir: &Path, store: &Store, node: agq_assistant::claude_agent::Node
         checks: vec![vec!["git".into(), "status".into(), "--short".into()]],
         protected: Vec::new(),
         running_build: None,
+        speed: "instant".into(),
+        credential: Box::new(|_| None),
+        studios: Box::new(run::Live),
     }
 }
 
@@ -397,6 +400,12 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
     let interrupted = store.load(&id).unwrap();
     assert_eq!(interrupted.state, State::Running, "still to be continued");
     assert!(interrupted.active());
+    // Interrupted when Agentique closed: it waits for Continue (C-54).
+    assert!(interrupted.interrupted);
+    assert!(matches!(
+        interrupted.on_start(true),
+        agq_orchestrator::record::Resuming::Wait(_)
+    ));
     let cycle = interrupted.cycle().unwrap();
     assert_eq!(cycle.phase, Phase::Implement);
     assert!(
@@ -422,6 +431,7 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
         std::thread::sleep(Duration::from_millis(50));
     }
     let record = store.load(&id).unwrap();
+    assert!(!record.interrupted, "continued");
     let cycle = record.cycle().unwrap();
     assert_eq!(record.cycles.len(), 1, "the same cycle went on");
     assert!(

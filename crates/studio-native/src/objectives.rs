@@ -19,7 +19,7 @@
 use crate::studio::{Dirty, Studio};
 use agq_assistant::claude_agent::{self, Installation};
 use agq_orchestrator::record::{
-    Access, Budgets, DirectiveStatus, Objective, Permissions, State, Store,
+    Access, Budgets, DirectiveStatus, Objective, Permissions, Resuming, State, Store,
 };
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
 use agq_orchestrator::thread::{self, Author, Kind, ThreadEntry};
@@ -388,7 +388,7 @@ fn configured_keys() -> Vec<String> {
         .chain([agq_providers::Credential::ClaudeSubscription])
         .filter_map(|c| agq_providers::runtime_credential(c).ok().flatten())
         .map(|k| k.expose().to_string())
-        .filter(|k| k.len() >= 12)
+        .filter(|k| k.chars().count() >= thread::KEY_CHARS)
         .collect()
 }
 
@@ -494,6 +494,14 @@ impl Studio {
             checks,
             protected,
             running_build: self.running_build(),
+            // Exploration's test instances run at the Operator's speed, so
+            // they can watch (C-54).
+            speed: format!("{:?}", self.control_speed()).to_lowercase(),
+            // A merged build that explores may get the explorer's key (C-54).
+            credential: Box::new(|credential| {
+                agq_providers::runtime_credential(credential).ok().flatten()
+            }),
+            studios: Box::new(run::Live),
         })
     }
 
@@ -812,6 +820,84 @@ impl Studio {
         Ok(())
     }
 
+    /// Stops child objective `id` alone (C-54): a running objective's run
+    /// stops it (`Command::StopChild`), its directive ends as stopped and
+    /// the lead goes on with that; one that is not running has the child's
+    /// record stopped here, and its directive settled, for the lead's next
+    /// turn.
+    pub fn stop_child(&mut self, id: &str) {
+        if self.refused_to_agents("stopping an objective") {
+            return;
+        }
+        let Some(child) = self
+            .objectives
+            .children
+            .iter()
+            .find(|c| c.id == id)
+            .cloned()
+        else {
+            return;
+        };
+        if !child.active() {
+            return;
+        }
+        if self.objectives.running() {
+            self.objective_command(Command::StopChild(id.to_string()));
+            return;
+        }
+        let store = self.objective_store();
+        let all = store.list();
+        let mut stopping = vec![child.clone()];
+        stopping.extend(descendants(&all, id));
+        for mut objective in stopping.into_iter().filter(Objective::active) {
+            objective.state = State::Stopped;
+            objective.note = Some("Stopped by the Operator.".into());
+            objective.settle_running(DirectiveStatus::Stopped, "stopped by the Operator");
+            let _ = store.save(&objective);
+            self.objective_entry(
+                &objective.id,
+                ThreadEntry::new(Kind::Event, Author::Operator, "Stopped"),
+            );
+        }
+        // Its parent's directive to it, and the lead's handoff.
+        if let Some(parent_id) = child.parent.clone()
+            && let Ok(mut parent) = store.load(&parent_id)
+        {
+            let directive = parent
+                .directives
+                .iter()
+                .find(|d| d.recipient == agq_orchestrator::record::Recipient::Child(id.to_string()))
+                .map(|d| d.id.clone());
+            if let Some(directive) = &directive {
+                parent.settle(
+                    directive,
+                    DirectiveStatus::Stopped,
+                    Some("stopped by the Operator".into()),
+                );
+                let _ = store.save(&parent);
+            }
+            let mut handoff = ThreadEntry::new(
+                Kind::Result,
+                Author::Agentique,
+                format!("The child objective {id} was stopped by the Operator"),
+            )
+            .with_details("stopped by the Operator")
+            .for_directive(directive.as_deref());
+            handoff.to = Some("lead".into());
+            self.objective_entry(&parent_id, handoff);
+        }
+        let all = store.list();
+        if let Some(root) = self
+            .objectives
+            .current
+            .clone()
+            .and_then(|r| store.load(&r.id).ok())
+        {
+            self.objectives.show(&store, root, &all);
+        }
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
+    }
+
     /// Ends the running objective's sessions and waits up to `within` for
     /// it to save where it was (Agentique is closing or handing over).
     pub fn interrupt_objective(&mut self, within: Duration) {
@@ -825,6 +911,14 @@ impl Studio {
         let started = std::time::Instant::now();
         while !handle.finished() && started.elapsed() < within {
             std::thread::sleep(Duration::from_millis(20));
+        }
+        // Marked interrupted now, before Agentique exits, whatever the run
+        // saved by then (C-54): the next start waits for the Operator's
+        // Continue. An adoption's continuation still goes on by itself.
+        if let Some(id) = self.objectives.current.as_ref().map(|o| o.id.clone())
+            && let Err(error) = self.objective_store().mark_interrupted(&id)
+        {
+            eprintln!("The objective could not be marked interrupted: {error}");
         }
     }
 
@@ -844,10 +938,9 @@ impl Studio {
                 .find(|o| o.active())
                 .or(roots.first())
                 .map(|o| (*o).clone());
-            if let Some(objective) = shown {
+            if let Some(mut objective) = shown {
                 let active = objective.active();
-                let continues = objective.continuation.is_some();
-                self.objectives.show(&store, objective, &all);
+                self.objectives.show(&store, objective.clone(), &all);
                 self.objectives.read_keys();
                 changed = true;
                 if active && self.args.test_instance {
@@ -855,15 +948,46 @@ impl Studio {
                         "A recorded objective: this test instance shows it and does not run it."
                             .into(),
                     );
-                } else if active && continues && !self.safe_mode {
-                    if let Err(problem) = self.continue_objective() {
-                        self.objectives.message =
-                            Some(format!("The objective could not continue: {problem}"));
-                    }
                 } else if active {
-                    self.objectives.message = Some(
-                        "An objective is not finished: Continue goes on from where it was.".into(),
-                    );
+                    // It goes on by itself after an adoption, or when the
+                    // launcher started the last known good build after one
+                    // that did not start (`--recovered-from`; a plain start
+                    // under the launcher, `--supervised`, is no recovery);
+                    // it waits after the Operator closed Agentique, and
+                    // otherwise; it stops after resuming twice without
+                    // getting further (C-54).
+                    let recovered = self.args.recovered_from.is_some();
+                    match objective.on_start(recovered) {
+                        Resuming::Continue(_) if self.safe_mode => {
+                            self.objectives.message = Some(
+                                "An objective is not finished: Continue goes on from where it was (not by itself in safe mode).".into(),
+                            );
+                        }
+                        Resuming::Continue(why) => {
+                            objective.resumes += 1;
+                            let _ = store.save(&objective);
+                            self.objectives.current = Some(objective);
+                            self.objective_note(Author::Agentique, why);
+                            if let Err(problem) = self.continue_objective() {
+                                self.objectives.message =
+                                    Some(format!("The objective could not continue: {problem}"));
+                                self.objective_note(
+                                    Author::Agentique,
+                                    format!("It could not go on: {problem}"),
+                                );
+                            }
+                        }
+                        Resuming::Wait(why) => self.objectives.message = Some(why),
+                        Resuming::Stop(why) => {
+                            objective.state = State::Failed;
+                            objective.note = Some(why.clone());
+                            objective.settle_running(DirectiveStatus::Failed, &why);
+                            let _ = store.save(&objective);
+                            self.objectives.current = Some(objective);
+                            self.objective_note(Author::Agentique, why.clone());
+                            self.objectives.message = Some(why);
+                        }
+                    }
                 }
             }
         }
