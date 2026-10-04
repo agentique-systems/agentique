@@ -119,13 +119,18 @@ struct Poster {
     store: Store,
     objective: String,
     events: Sender<Event>,
+    /// Configured keys: replaced by a hint in what is written (§4.9).
+    keys: Vec<String>,
 }
 
 impl Poster {
-    fn post(&self, entry: ThreadEntry) {
+    /// Adds `entry` and returns it as added (number 0 when it could not be
+    /// kept: shown all the same, saying so).
+    fn post(&self, mut entry: ThreadEntry) -> ThreadEntry {
+        entry.text = thread::redacted(&entry.text, &self.keys);
+        entry.details = entry.details.map(|d| thread::redacted(&d, &self.keys));
         let shown = match self.store.append_thread(&self.objective, entry.clone()) {
             Ok(added) => added,
-            // Shown all the same, unnumbered, saying it was not kept.
             Err(error) => ThreadEntry {
                 objective: self.objective.clone(),
                 at: agq_launcher::now(),
@@ -133,7 +138,8 @@ impl Poster {
                 ..entry
             },
         };
-        let _ = self.events.send(Event::Thread(shown));
+        let _ = self.events.send(Event::Thread(shown.clone()));
+        shown
     }
 }
 
@@ -146,10 +152,7 @@ fn outcome_lines(attempt: &Attempt) -> String {
         .chain(&attempt.gates)
         .map(|o| format!("- {}: {}", o.name, o.verdict))
         .collect::<Vec<_>>()
-        .join(
-            "
-",
-        )
+        .join("\n")
 }
 
 /// The agent of `role` in `objective`, with the model recorded for it.
@@ -197,6 +200,7 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         store: setup.store.clone(),
         objective: objective.id.clone(),
         events: events.clone(),
+        keys: setup.keys.clone(),
     };
     // The Operator's commands take effect as they arrive, also while an
     // agent works (its session reads the same steering and stop), and go
@@ -207,13 +211,13 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         let received: Receiver<Command> = received;
         for command in received {
             if let Some(entry) = command_entry(&command) {
-                commanded.post(entry);
+                let _ = commanded.post(entry);
             }
             applied.apply(command);
         }
     });
     if let Err(error) = cargo_settings(&setup.work) {
-        poster.post(ThreadEntry::event(format!(
+        let _ = poster.post(ThreadEntry::event(format!(
             "The build settings could not be written: {error}"
         )));
     }
@@ -399,8 +403,8 @@ impl Driver {
         self.poster.post(ThreadEntry::event(text));
     }
 
-    fn post(&self, entry: ThreadEntry) {
-        self.poster.post(entry);
+    fn post(&self, entry: ThreadEntry) -> ThreadEntry {
+        self.poster.post(entry)
     }
 
     /// The agent of `role`, with the model the objective recorded for it.
@@ -428,22 +432,6 @@ impl Driver {
                 .for_directive(Some(&id)),
         );
         id
-    }
-
-    /// Settles every directive still running in this objective (it
-    /// stopped, or its cycle ended).
-    fn settle_running(&mut self, status: DirectiveStatus, result: &str) {
-        let running: Vec<String> = self
-            .objective
-            .directives
-            .iter()
-            .filter(|d| d.status == DirectiveStatus::Running)
-            .map(|d| d.id.clone())
-            .collect();
-        for id in running {
-            self.objective
-                .settle(&id, status.clone(), Some(result.to_string()));
-        }
     }
 
     fn save(&mut self) {
@@ -547,7 +535,7 @@ impl Driver {
     /// objective going on, where it goes on from.
     fn opening(&mut self) {
         let id = self.id();
-        if !self.setup.store.thread(&id, 0).is_empty() {
+        if self.setup.store.thread_last(&id) > 0 {
             let at = self
                 .objective
                 .cycle()
@@ -663,7 +651,8 @@ impl Driver {
                 Ok(next) => {
                     self.cycle_mut().phase = next;
                     if next == Phase::Done {
-                        self.settle_running(DirectiveStatus::Done, "the cycle is done");
+                        self.objective
+                            .settle_running(DirectiveStatus::Done, "the cycle is done");
                     }
                     self.save();
                 }
@@ -686,7 +675,8 @@ impl Driver {
                 }
                 Err(blocker) => {
                     self.event(format!("Cycle {} stopped: {blocker}", self.cycle().n));
-                    self.settle_running(DirectiveStatus::Failed, &blocker);
+                    self.objective
+                        .settle_running(DirectiveStatus::Failed, &blocker);
                     let cycle = self.cycle_mut();
                     cycle.blocker = Some(blocker);
                     cycle.phase = Phase::Failed;
@@ -717,7 +707,7 @@ impl Driver {
             State::Done => DirectiveStatus::Done,
             _ => DirectiveStatus::Failed,
         };
-        self.settle_running(settled, &note);
+        self.objective.settle_running(settled, &note);
         self.objective.state = state;
         self.objective.note = Some(note);
         self.save();
@@ -872,13 +862,29 @@ impl Driver {
             .objective
             .running_for(role.name())
             .map(|d| d.id.clone());
+        // The session's start is the step its activity folds under.
+        let step = self.post(
+            ThreadEntry::new(
+                Kind::Event,
+                author.clone(),
+                format!(
+                    "{} its session on {}",
+                    if resume { "Resumes" } else { "Starts" },
+                    assigned.label()
+                ),
+            )
+            .for_directive(directive.as_deref()),
+        );
+        let under = (step.seq > 0).then_some(step.seq);
         let poster = self.poster.clone();
         let activity = |text: String, details: Option<String>| {
             let mut entry = ThreadEntry::new(Kind::Activity, author.clone(), text)
                 .for_directive(directive.as_deref());
             entry.details = details;
+            entry.under = under;
             poster.post(entry);
         };
+        // Tool calls whose input is still coming: (id, tool, input so far).
         let calls: RefCell<Vec<(String, String, String)>> = RefCell::new(Vec::new());
         let mut on_event = |event: TurnEvent| match event {
             TurnEvent::Stream(StreamEvent::ModelUsage { model, usage }) => {
@@ -922,11 +928,21 @@ impl Driver {
                 let mut calls = calls.borrow_mut();
                 if let Some(at) = calls.iter().position(|(i, ..)| *i == id) {
                     calls[at].2.push_str(&json);
-                    if let Ok(input) = serde_json::from_str::<Value>(&calls[at].2) {
+                    // Read once it can be whole (an object ends with `}`).
+                    if calls[at].2.trim_end().ends_with('}')
+                        && let Ok(input) = serde_json::from_str::<Value>(&calls[at].2)
+                    {
                         let (_, name, _) = calls.remove(at);
                         let (text, details) = thread::activity(&name, &input);
                         activity(text, details);
                     }
+                }
+            }
+            TurnEvent::Stream(StreamEvent::ToolCallId { stream_id, id }) => {
+                // The provider's id for a call that started under the
+                // stream's: its result comes under this one.
+                if let Some(call) = calls.borrow_mut().iter_mut().find(|c| c.0 == stream_id) {
+                    call.0 = id;
                 }
             }
             TurnEvent::ToolFinished(result) => {
@@ -955,18 +971,10 @@ impl Driver {
             TurnEvent::Entry(Entry::Notice { text }) => activity(text, None),
             _ => {}
         };
-        activity(
-            format!(
-                "{} its session on {}",
-                if resume { "resumes" } else { "starts" },
-                assigned.label()
-            ),
-            None,
-        );
         agent.run(
             &mut conversation,
             &toolset,
-            role.max_calls(),
+            self.objective.budgets.calls_of(role.name()) as usize,
             &mut execute,
             &mut on_event,
             &controls.stop,
@@ -1214,6 +1222,7 @@ impl Driver {
                         Recipient::Role("implementer".into()),
                         record::Scope {
                             instruction: format!("Implement the frozen proposal “{title}”"),
+                            focus: None,
                             budgets: None,
                             permissions: None,
                         },
@@ -1301,8 +1310,9 @@ impl Driver {
             .with_details(summary.clone())
             .for_directive(directive.as_deref()),
         );
-        // A repair it was directed to make is done when it hands it over;
-        // the proposal's directive goes on until the cycle ends.
+        // A repair it was directed to make is done when it hands it over,
+        // failed when it ends without; the proposal's directive goes on
+        // until the review approves or the cycle ends.
         if let Some(id) = &directive
             && self.objective.directive(id).is_some_and(|d| {
                 d.refers_to
@@ -1310,8 +1320,12 @@ impl Driver {
                     .is_some_and(|r| r.contains("/review-"))
             })
         {
-            self.objective
-                .settle(id, DirectiveStatus::Done, Some(summary.clone()));
+            let status = if submitted.is_some() {
+                DirectiveStatus::Done
+            } else {
+                DirectiveStatus::Failed
+            };
+            self.objective.settle(id, status, Some(summary.clone()));
         }
         let a = self.cycle().attempts.len() as u32 + 1;
         let message = format!(
@@ -1737,10 +1751,7 @@ impl Driver {
                             )
                         })
                         .collect::<Vec<_>>()
-                        .join(
-                            "
-",
-                        ),
+                        .join("\n"),
                 ),
             );
             for criterion in judged {
@@ -1807,14 +1818,7 @@ impl Driver {
                 + "\n… (the diff goes on; read the files)";
         }
         let attempt = self.cycle().attempt().cloned().unwrap_or_default();
-        let outcomes = attempt
-            .checks
-            .iter()
-            .chain(&attempt.criteria)
-            .chain(&attempt.gates)
-            .map(|o| format!("- {}: {}", o.name, o.verdict))
-            .collect::<Vec<_>>()
-            .join("\n");
+        let outcomes = outcome_lines(&attempt);
         let changes = gates::listed_test_changes(&patch);
         let context = format!(
             "The implementer's summary: {}\n\nOutcomes:\n{outcomes}\n\nChanges to tests, checks or budgets the baseline guard lists: {}\n\nThe diff against {}:\n{diff}",
@@ -1849,10 +1853,7 @@ impl Driver {
             .iter()
             .map(|f| format!("- {f}"))
             .collect::<Vec<_>>()
-            .join(
-                "
-",
-            );
+            .join("\n");
         self.post(
             ThreadEntry::new(
                 Kind::Result,
@@ -1891,10 +1892,10 @@ impl Driver {
                 Recipient::Role("implementer".into()),
                 record::Scope {
                     instruction: format!(
-                        "Repair attempt {} as the review asks:
-{findings}",
+                        "Repair attempt {} as the review asks:\n{findings}",
                         attempt.n
                     ),
+                    focus: None,
                     budgets: None,
                     permissions: None,
                 },
@@ -1912,6 +1913,26 @@ impl Driver {
         let kept = baseline.passed();
         attempt.gates.push(baseline);
         if approved && kept {
+            // The proposal's directive is done: its implementation passed
+            // every check and the review.
+            let handed = format!("cycle-{}/proposal", self.cycle().n);
+            let done: Vec<String> = self
+                .objective
+                .directives
+                .iter()
+                .filter(|d| {
+                    d.refers_to.as_deref() == Some(handed.as_str())
+                        && d.status == DirectiveStatus::Running
+                })
+                .map(|d| d.id.clone())
+                .collect();
+            for id in done {
+                self.objective.settle(
+                    &id,
+                    DirectiveStatus::Done,
+                    Some(format!("approved as {}", builds::short(&commit))),
+                );
+            }
             Ok(Phase::Merge)
         } else {
             Ok(Phase::Repair)
@@ -2067,6 +2088,13 @@ impl Driver {
         })? {
             forge::Checks::Passed => {}
             forge::Checks::Failed(what) => {
+                self.post(
+                    ThreadEntry::event(format!(
+                        "The repository's checks failed on pull request #{}; back to the implementer",
+                        pr.number
+                    ))
+                    .with_details(what.clone()),
+                );
                 let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
                 attempt.gates.push(Outcome {
                     name: "the repository's checks".into(),
@@ -2243,10 +2271,7 @@ impl Driver {
             .iter()
             .map(|o| format!("- {}: {}", o.name, o.verdict))
             .collect::<Vec<_>>()
-            .join(
-                "
-",
-            );
+            .join("\n");
         self.post(
             ThreadEntry::event(if passed {
                 format!("The build {build} passed its trial")

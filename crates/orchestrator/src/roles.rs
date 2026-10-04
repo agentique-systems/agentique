@@ -24,16 +24,6 @@ impl Role {
             Role::Evaluator => "evaluator",
         }
     }
-
-    /// A bound on the session's model calls.
-    pub fn max_calls(self) -> usize {
-        match self {
-            Role::Lead => 80,
-            Role::Implementer => 160,
-            Role::Reviewer => 60,
-            Role::Evaluator => 80,
-        }
-    }
 }
 
 pub const SUBMIT_PROPOSAL: &str = "submit_proposal";
