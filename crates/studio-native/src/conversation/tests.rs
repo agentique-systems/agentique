@@ -812,6 +812,16 @@ use agq_orchestrator::thread::{Author, Kind, ThreadEntry};
 /// test instance is seeded, with its thread so far; shown as the Studio
 /// finds it at start.
 fn seeded(app: &mut Studio, state: State) -> String {
+    seeded_with(app, state, None)
+}
+
+/// [`seeded`], handed over to this build when `continuation` is given (a
+/// Studio would continue it by itself).
+fn seeded_with(
+    app: &mut Studio,
+    state: State,
+    continuation: Option<agq_orchestrator::record::Continuation>,
+) -> String {
     let store = app.objective_store();
     let mut objective = store
         .create(
@@ -819,10 +829,17 @@ fn seeded(app: &mut Studio, state: State) -> String {
             std::path::Path::new("C:/agentique"),
             "main",
             Budgets::default(),
-            Permissions::default(),
+            // Push, merge and adopt, as a real record may allow.
+            Permissions {
+                push: true,
+                merge: true,
+                adopt: true,
+                ..Permissions::default()
+            },
         )
         .unwrap();
     objective.state = state;
+    objective.continuation = continuation;
     store.save(&objective).unwrap();
     store
         .append_thread(
@@ -835,14 +852,27 @@ fn seeded(app: &mut Studio, state: State) -> String {
 }
 
 /// A reply in an objective's thread goes to the objective, never to the
-/// Assistant: one that is not running keeps it in its thread for the
-/// lead's next turn. Whom the composer addresses changes only when the
-/// Operator switches.
+/// Assistant: one waiting to continue keeps it in its thread for the lead's
+/// next turn. Whom the composer addresses changes only when the Operator
+/// switches. An objective that has ended takes no message: no agent would
+/// read it (W12.6's review: this test kept one for a stopped objective
+/// before, and now expects the refusal).
 #[test]
 fn a_reply_goes_into_the_objectives_thread_and_never_to_the_assistant() {
+    // An ended objective: refused, and the composer stays the Assistant's.
+    let (mut app, _folder) = assisted("reply-ended", vec![]);
+    let ended = seeded(&mut app, State::Stopped);
+    assert!(!app.objectives.takes_messages());
+    app.address_objective();
+    assert_eq!(app.conversation.addressed, None, "{}", app.status);
+    let refused = app.message_objective(&ended, "Too late").unwrap_err();
+    assert!(refused.contains("ended"), "{refused}");
+    assert_eq!(app.objective_store().thread_last(&ended), 1, "nothing kept");
+    // One waiting to continue takes it.
     // No replies scripted: a turn of the Assistant would fail.
     let (mut app, _folder) = assisted("reply-objective", vec![]);
-    let id = seeded(&mut app, State::Stopped);
+    let id = seeded(&mut app, State::Running);
+    assert!(app.objectives.unfinished());
     assert_eq!(app.objectives.current.as_ref().map(|o| &o.id), Some(&id));
     assert_eq!(app.conversation.addressed, None, "the Assistant at first");
     app.address_objective();
@@ -951,6 +981,12 @@ fn the_start_form_opens_from_the_message_and_the_assistants_proposal() {
         "{}",
         refused.content
     );
+    // The Assistant's model is not told the Operator's objective.
+    assert!(
+        !refused.content.contains("Find and fix problems"),
+        "{}",
+        refused.content
+    );
     assert!(!busy.objectives.form.in_conversation);
 }
 
@@ -961,7 +997,7 @@ fn the_start_form_opens_from_the_message_and_the_assistants_proposal() {
 #[test]
 fn objectives_are_the_operators_and_a_test_instance_lets_agents_reply() {
     let (mut app, _folder) = assisted("objective-refusals", vec![]);
-    let id = seeded(&mut app, State::Stopped);
+    let id = seeded(&mut app, State::Running);
     let before = app.objective_store().thread_last(&id);
     app.control.acting = Some("explorer".into());
     assert!(app.message_objective(&id, "from an agent").is_err());
@@ -984,6 +1020,7 @@ fn objectives_are_the_operators_and_a_test_instance_lets_agents_reply() {
     assert_eq!(app.objective_store().thread_last(&id), before + 1);
     assert!(app.start_objective(request.clone()).is_err());
     app.control.acting = None;
+    app.args.test_instance = false;
     // The Operator's budgets are checked before anything starts.
     let mut wrong = request;
     wrong.budgets.calls.insert("lead".into(), 0);
@@ -1009,9 +1046,89 @@ fn the_conversation_keeps_when_each_entry_was_added() {
     for (i, time) in times.iter().enumerate() {
         assert_eq!(app.conversation.time_of(i), Some(time.as_str()));
     }
+    // The objectives started from it are kept beside it too.
+    app.conversation.started.push("objective-1".into());
+    app.save_conversation();
+    app.load_conversation(&folder);
+    assert_eq!(app.conversation.started, vec!["objective-1".to_string()]);
     // A new conversation starts without them.
     app.new_conversation();
     assert_eq!(app.conversation.time_of(0), None);
+    assert!(app.conversation.started.is_empty());
+    app.load_conversation(&folder);
+    assert!(app.conversation.started.is_empty(), "saved so");
+}
+
+/// A test instance never runs an objective (W12.6's review): a recorded
+/// one handed over to a build (a continuation, push, merge and adopt
+/// allowed) is shown and not continued by itself, and starting or
+/// continuing one is refused.
+#[test]
+fn a_test_instance_runs_no_objective() {
+    let (mut app, _folder) = assisted("test-instance-objective", vec![]);
+    app.args.test_instance = true;
+    let id = seeded_with(
+        &mut app,
+        State::Running,
+        Some(agq_orchestrator::record::Continuation {
+            cycle: 1,
+            build: "a-build".into(),
+            at: "2026-10-04T10:00:00Z".into(),
+        }),
+    );
+    assert_eq!(app.objectives.current.as_ref().map(|o| &o.id), Some(&id));
+    assert!(app.objectives.handle.is_none(), "not continued");
+    let said = app.objectives.message.clone().unwrap_or_default();
+    assert!(said.contains("does not run it"), "{said}");
+    let continued = app.continue_objective().unwrap_err();
+    assert!(continued.contains("test instance"), "{continued}");
+    let started = app
+        .start_objective(crate::objectives::StartRequest {
+            intent: "Something else".into(),
+            explore: false,
+            budgets: Budgets::default(),
+            permissions: Permissions::default(),
+        })
+        .unwrap_err();
+    assert!(started.contains("test instance"), "{started}");
+    assert!(app.objectives.handle.is_none());
+    // It still takes a reply, kept for the lead's next turn.
+    assert_eq!(app.message_objective(&id, "A reply"), Ok(()));
+}
+
+/// While the Assistant waits for an answer, the message answers it, even
+/// when the composer addresses an objective.
+#[test]
+fn an_open_question_is_answered_whomever_the_composer_addresses() {
+    let (mut app, _folder) = assisted(
+        "question-addressed",
+        vec![
+            reply(
+                vec![tool(
+                    "q1",
+                    tools::ASK_OPERATOR,
+                    json!({ "question": "Which store?", "options": ["SQL", "Memory"] }),
+                )],
+                "tool_use",
+            ),
+            reply(vec![text("Memory it is.")], "end_turn"),
+        ],
+    );
+    let id = seeded(&mut app, State::Running);
+    say(&mut app, "Add a store");
+    wait(&mut app, |app| app.conversation.waiting.is_some());
+    app.address_objective();
+    assert_eq!(app.conversation.addressed.as_ref(), Some(&id));
+    let before = app.objective_store().thread_last(&id);
+    say(&mut app, "Memory");
+    wait(&mut app, finished);
+    assert_eq!(result(&app, "q1").content, "Memory");
+    assert_eq!(
+        app.objective_store().thread_last(&id),
+        before,
+        "not the objective's"
+    );
+    assert_valid(&app);
 }
 
 /// A test instance's scripted stand-in (`--assistant-stand-in`): it reads

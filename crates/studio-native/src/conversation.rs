@@ -105,27 +105,30 @@ impl agq_assistant::Model for StandIn {
     }
 }
 
-/// Where a conversation's entry times are kept: beside it.
-fn times_path(conversation: &Path) -> PathBuf {
-    conversation.with_file_name("conversation.times.json")
+/// What a conversation keeps beside its file for objectives (C-54):
+/// `conversation.objectives.json`, format 1.
+fn beside_path(conversation: &Path) -> PathBuf {
+    conversation.with_file_name("conversation.objectives.json")
 }
 
-/// The entry times kept for a conversation; none when the file is missing
-/// or unreadable (its entries then have no known time).
-fn load_times(conversation: &Path) -> Vec<String> {
-    std::fs::read_to_string(times_path(conversation))
+/// The entry times and the objectives started kept beside a conversation;
+/// none when the file is missing or unreadable (its entries then have no
+/// known time, and it shows no objective's thread).
+fn load_beside(conversation: &Path) -> (Vec<String>, Vec<String>) {
+    let file = std::fs::read_to_string(beside_path(conversation))
         .ok()
         .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
         .filter(|file| file["format"] == 1)
-        .and_then(|file| {
-            file["times"].as_array().map(|times| {
-                times
-                    .iter()
-                    .map(|t| t.as_str().unwrap_or_default().to_string())
-                    .collect()
-            })
-        })
-        .unwrap_or_default()
+        .unwrap_or_default();
+    let strings = |field: &str| -> Vec<String> {
+        file[field]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|t| t.as_str().unwrap_or_default().to_string())
+            .collect()
+    };
+    (strings("times"), strings("objectives"))
 }
 
 /// The Conversation panel's state.
@@ -203,9 +206,13 @@ pub struct ConversationPanel {
     pub runtime_given: bool,
     /// When each entry of the conversation was added (RFC 3339, empty when
     /// not known), kept beside the conversation file
-    /// (`conversation.times.json`), so objectives' threads interleave with
-    /// it in time order; the conversation file itself is unchanged.
+    /// (`conversation.objectives.json`), so objectives' threads interleave
+    /// with it in time order; the conversation file itself is unchanged.
     times: Vec<String>,
+    /// The objectives started while this conversation was open (from it or
+    /// the Objectives panel), kept beside it too: it shows their threads
+    /// (C-54); a new conversation starts without them.
+    pub started: Vec<String>,
 }
 
 /// Part of the reply that is streaming in.
@@ -311,6 +318,7 @@ impl ConversationPanel {
             addressed: None,
             runtime_given: false,
             times: Vec::new(),
+            started: Vec::new(),
         }
     }
 
@@ -515,11 +523,12 @@ impl Studio {
                 Conversation::default()
             }
         };
-        // When its entries were added, if this build kept it.
-        panel.times = if panel.read_error.is_none() && read == path {
-            load_times(&path)
+        // When its entries were added and the objectives started from it,
+        // if this build kept them.
+        (panel.times, panel.started) = if panel.read_error.is_none() && read == path {
+            load_beside(&path)
         } else {
-            Vec::new()
+            Default::default()
         };
         panel.index_results();
         panel.epoch += 1;
@@ -555,7 +564,7 @@ impl Studio {
         panel.epoch += 1;
     }
 
-    fn save_conversation(&mut self) {
+    pub(crate) fn save_conversation(&mut self) {
         let panel = &mut self.conversation;
         let Some(path) = &panel.path else { return };
         let saved = path
@@ -566,11 +575,16 @@ impl Studio {
             .err()
             .map(|error| format!("The conversation could not be saved: {error}"));
         // The entries' times, for the order of objectives' threads beside
-        // them; a time not kept only moves a thread's entries later.
+        // them, and the objectives started from it; a time not kept only
+        // moves a thread's entries later.
         if panel.save_error.is_none() {
             let count = panel.conversation.entries.len().min(panel.times.len());
-            let file = serde_json::json!({ "format": 1, "times": &panel.times[..count] });
-            let _ = agq_launcher::write_atomically(&times_path(path), file.to_string().as_bytes());
+            let file = serde_json::json!({
+                "format": 1,
+                "times": &panel.times[..count],
+                "objectives": &panel.started,
+            });
+            let _ = agq_launcher::write_atomically(&beside_path(path), file.to_string().as_bytes());
         }
     }
 
@@ -593,6 +607,13 @@ impl Studio {
         if text.is_empty() || self.project.is_none() {
             return;
         }
+        // An open question of the Assistant's is answered first, whomever
+        // the composer addresses.
+        if self.answer_question(&text) {
+            self.conversation.input.clear();
+            self.conversation.input_set += 1;
+            return;
+        }
         // Addressed to an objective (C-54): a reply in its thread, the same
         // command as the Objectives panel's message field. Never the
         // Assistant's.
@@ -605,11 +626,6 @@ impl Studio {
                 }
                 Err(problem) => self.status = format!("Not sent: {problem}"),
             }
-            return;
-        }
-        if self.answer_question(&text) {
-            self.conversation.input.clear();
-            self.conversation.input_set += 1;
             return;
         }
         let panel = &mut self.conversation;
@@ -1216,6 +1232,8 @@ impl Studio {
         panel.editing = None;
         panel.conversation = Conversation::default();
         panel.results.clear();
+        // Objectives started from the earlier one are not this one's.
+        panel.started.clear();
         panel.epoch += 1;
         panel.shown = true;
         panel.focus_input = true;
@@ -1245,6 +1263,11 @@ impl Studio {
             self.status = "No objective is shown to write to".into();
             return;
         };
+        // A message would reach no agent of an objective that has ended.
+        if !self.objectives.takes_messages() {
+            self.status = "The objective has ended: no agent would read a message".into();
+            return;
+        }
         let panel = &mut self.conversation;
         panel.addressed = Some(id);
         panel.shown = true;

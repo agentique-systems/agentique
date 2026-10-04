@@ -24,6 +24,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, prelude::FluentBuilder,
 };
 use std::collections::{BTreeMap, HashSet};
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 /// One row of an objective's thread as the Conversation shows it.
@@ -57,6 +58,9 @@ pub enum What {
         details: Option<String>,
         open: bool,
     },
+    /// The objective in one line, where its thread is not shown (it was not
+    /// started from this conversation, or ended before this session).
+    Summary { intent: String, state: String },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -73,6 +77,76 @@ pub struct Step {
     pub directive: Option<DirectiveChip>,
     /// For the Operator's message: where it went.
     pub routing: Option<String>,
+    /// Offers Reply: a directive of an objective that still takes messages.
+    pub reply: bool,
+}
+
+impl Row {
+    /// Its identity and version for the list: what can change in a row of
+    /// a thread whose entries never change once written (their text grows
+    /// only while it streams in), without hashing whole texts.
+    pub fn key(&self) -> u64 {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        (&self.id, &self.at, self.depth).hash(&mut hasher);
+        match &self.what {
+            What::Step(step) => {
+                (
+                    0u8,
+                    &step.author,
+                    step.text.len(),
+                    step.streaming,
+                    step.details.as_ref().map(String::len),
+                    step.open,
+                    &step.routing,
+                    step.reply,
+                )
+                    .hash(&mut hasher);
+                if let Some(d) = &step.directive {
+                    (&d.from, &d.to, d.status.as_ref().map(|(s, _)| s), &d.scope).hash(&mut hasher);
+                }
+            }
+            What::Fold { count, open } => (1u8, count, open).hash(&mut hasher),
+            What::Activity { text, open, .. } => (2u8, text.len(), open).hash(&mut hasher),
+            What::Summary { intent, state } => (3u8, intent, state).hash(&mut hasher),
+        }
+        hasher.finish()
+    }
+}
+
+/// An entry's text as it shows now: the part that arrived while it streams
+/// in (`shown` characters), else all of it; and whether it is streaming.
+pub fn shown_text(entry: &ThreadEntry, shown: Option<usize>) -> (String, bool) {
+    match shown {
+        Some(shown) => (
+            entry.text.chars().take(shown).collect(),
+            shown < entry.text.chars().count(),
+        ),
+        None => (entry.text.clone(), false),
+    }
+}
+
+/// Whether the Conversation shows `objective`'s thread (C-54): one started
+/// from this conversation that is still going, or that ran in this Studio
+/// since it started; in a test instance, the recorded objective it is
+/// there to show. Otherwise it shows the objective in one line.
+pub fn shows_thread(started_here: bool, active: bool, ran_here: bool, test_instance: bool) -> bool {
+    test_instance || started_here && (active || ran_here)
+}
+
+/// The objective in one line, at its start among the conversation's
+/// entries.
+pub fn summary(objective: &Objective, state: &str) -> Row {
+    Row {
+        id: "thread-summary".into(),
+        objective: objective.id.clone(),
+        seq: 0,
+        at: objective.created.clone(),
+        depth: 0,
+        what: What::Summary {
+            intent: objective.intent.clone(),
+            state: state.to_string(),
+        },
+    }
 }
 
 /// A directive as its record says: from whom, to whom, where it stands.
@@ -204,8 +278,12 @@ struct Builder<'a> {
     threads: &'a BTreeMap<String, Vec<ThreadEntry>>,
     open: &'a HashSet<String>,
     shown: &'a dyn Fn(&ThreadEntry) -> Option<usize>,
+    /// The objective takes messages: its directives offer Reply.
+    replies: bool,
     rows: Vec<Row>,
     nested: HashSet<String>,
+    /// Entries that could not be kept, counted for their ids.
+    unkept: usize,
 }
 
 impl Builder<'_> {
@@ -236,27 +314,13 @@ impl Builder<'_> {
                 last_step = entry.seq;
             }
         }
-        let first_message = (depth == 0)
-            .then(|| {
-                entries
-                    .iter()
-                    .find(|e| e.kind == Kind::Human && e.author == Author::Operator)
-                    .map(|e| e.seq)
-            })
-            .flatten();
         if let Some(activity) = under.get(&0) {
             let at = at.unwrap_or_else(|| activity[0].at.as_str()).to_string();
             self.fold(&objective.id, 0, &at, depth, activity);
         }
         for entry in entries.iter().filter(|e| e.kind != Kind::Activity) {
             let at = at.unwrap_or(&entry.at).to_string();
-            self.step(
-                objective,
-                entry,
-                &at,
-                depth,
-                first_message == Some(entry.seq),
-            );
+            self.step(objective, entry, &at, depth);
             if entry.seq != 0
                 && let Some(activity) = under.get(&entry.seq)
             {
@@ -280,22 +344,17 @@ impl Builder<'_> {
         }
     }
 
-    fn step(
-        &mut self,
-        objective: &Objective,
-        entry: &ThreadEntry,
-        at: &str,
-        depth: u8,
-        intent: bool,
-    ) {
-        let id = format!("thread-{}-{}", entry.objective, entry.seq);
-        let (text, streaming) = match (self.shown)(entry) {
-            Some(shown) => (
-                entry.text.chars().take(shown).collect(),
-                shown < entry.text.chars().count(),
-            ),
-            None => (entry.text.clone(), false),
+    fn step(&mut self, objective: &Objective, entry: &ThreadEntry, at: &str, depth: u8) {
+        // An entry that could not be kept has no number: its id is its own.
+        let id = if entry.seq == 0 {
+            self.unkept += 1;
+            format!("thread-{}-unkept{}", entry.objective, self.unkept)
+        } else {
+            format!("thread-{}-{}", entry.objective, entry.seq)
         };
+        let (text, streaming) = shown_text(entry, (self.shown)(entry));
+        // The intent is the thread's first entry, whatever is kept of it.
+        let intent = entry.seq == 1;
         let routing = (entry.kind == Kind::Human && entry.author == Author::Operator).then(|| {
             if intent {
                 "the objective's intent".to_string()
@@ -320,6 +379,7 @@ impl Builder<'_> {
                 directive: (entry.kind == Kind::Directive)
                     .then(|| directive_chip(entry, objective, self.children)),
                 routing,
+                reply: self.replies && depth == 0 && entry.kind == Kind::Directive,
             }),
         });
     }
@@ -364,22 +424,25 @@ impl Builder<'_> {
 /// The rows of `root`'s thread (an objective the Operator started) and its
 /// `children`'s, each child's nested under the directive that started it
 /// (one with no such directive shown follows the rest); `open` names the
-/// rows expanded, and `shown` how many characters of an entry show while it
-/// streams in.
+/// rows expanded, `shown` how many characters of an entry show while it
+/// streams in, and `replies` whether the objective still takes messages.
 pub fn rows(
     root: &Objective,
     children: &[Objective],
     threads: &BTreeMap<String, Vec<ThreadEntry>>,
     open: &HashSet<String>,
     shown: &dyn Fn(&ThreadEntry) -> Option<usize>,
+    replies: bool,
 ) -> Vec<Row> {
     let mut builder = Builder {
         children,
         threads,
         open,
         shown,
+        replies,
         rows: Vec::new(),
         nested: HashSet::new(),
+        unkept: 0,
     };
     builder.objective(root, 0, None);
     for child in children {
@@ -446,6 +509,9 @@ pub fn label(row: &Row) -> String {
         What::Activity { author, text, .. } => {
             super::control_label(format!("Tool call by {author}: {text}"))
         }
+        What::Summary { intent, state } => super::control_label(format!(
+            "Objective “{intent}”, {state}: its record is in the Objectives panel"
+        )),
     }
 }
 
@@ -463,7 +529,7 @@ fn fold_words(count: usize, step: u64) -> String {
 /// objective and its entry's number.
 pub fn parse_id(id: &str) -> Option<(bool, &str, u64)> {
     let rest = id.strip_prefix("thread-")?;
-    if rest.starts_with("reply-") {
+    if rest.starts_with("reply-") || rest == "summary" {
         return None;
     }
     let (fold, rest) = match rest.strip_prefix("fold-") {
@@ -472,6 +538,27 @@ pub fn parse_id(id: &str) -> Option<(bool, &str, u64)> {
     };
     let (objective, seq) = rest.rsplit_once('-')?;
     Some((fold, objective, seq.parse().ok()?))
+}
+
+/// How an observation in the Operator's own window names a control of the
+/// Conversation by its id (`thread-…`), if it is a thread's row: what it
+/// is and who wrote it, never its text. `entry` finds an entry shown.
+pub fn private_name<'a>(
+    id: &str,
+    entry: impl Fn(&str, u64) -> Option<&'a ThreadEntry>,
+) -> Option<String> {
+    let rest = id.strip_prefix("thread-")?;
+    if rest.starts_with("reply-") {
+        // A fixed label, "Reply".
+        return None;
+    }
+    if rest == "summary" {
+        return Some("The objective shown, in a line".into());
+    }
+    Some(match parse_id(id) {
+        Some((fold, objective, seq)) => private_label(entry(objective, seq), fold, seq),
+        None => "An entry of the objective's thread".into(),
+    })
 }
 
 /// How an observation in the Operator's own window names a thread's row:
@@ -516,6 +603,7 @@ pub fn render_row(ctx: &Rc<Ctx>, row: &Row, cx: &App) -> AnyElement {
         let open = match &row.what {
             What::Step(step) => step.open,
             What::Fold { open, .. } | What::Activity { open, .. } => *open,
+            What::Summary { .. } => false,
         };
         ui::target::control(
             ui::target::Control::new("item", label(row))
@@ -525,6 +613,48 @@ pub fn render_row(ctx: &Rc<Ctx>, row: &Row, cx: &App) -> AnyElement {
     };
     let body = match &row.what {
         What::Step(step) => step_card(ctx, row, step, control(), cx),
+        What::Summary { intent, state } => {
+            let studio = ctx.studio.clone();
+            div()
+                .id(SharedString::from(row.id.clone()))
+                .relative()
+                .child(control())
+                .flex()
+                .items_center()
+                .gap(r(6.0))
+                .px(r(10.0))
+                .py(r(6.0))
+                .rounded(r(crate::tokens::radius::CARD))
+                .border_1()
+                .border_color(theme.separator)
+                .text_size(r(theme::text::SM))
+                .child(icon(IconName::Agent).size(13.0).color(theme.text_faint))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .overflow_hidden()
+                        .text_ellipsis()
+                        .whitespace_nowrap()
+                        .text_color(theme.text_secondary)
+                        .child(format!("Objective “{intent}” · {state}")),
+                )
+                .child(
+                    Button::new("show-objectives", "Objectives panel")
+                        .small()
+                        .ghost()
+                        .tooltip("Its record, children and latest steps", None)
+                        .on_click(move |_: &ClickEvent, _, cx| {
+                            studio.act(cx, |s| {
+                                s.panel = crate::studio::Panel::Objectives;
+                                s.inspector_hidden = false;
+                                s.panels_hidden = false;
+                                s.mark(crate::studio::Dirty::LAYOUT);
+                            })
+                        }),
+                )
+                .into_any_element()
+        }
         What::Fold { count, open } => div()
             .id(SharedString::from(row.id.clone()))
             .relative()
@@ -690,7 +820,7 @@ fn step_card(ctx: &Rc<Ctx>, row: &Row, step: &Step, control: AnyElement, cx: &Ap
     };
     // Reply on the objective's own directives; the bar's "Write to it"
     // serves the rest.
-    let reply = (row.depth == 0 && step.kind == Kind::Directive).then(|| {
+    let reply = step.reply.then(|| {
         let studio = ctx.studio.clone();
         Button::new(
             SharedString::from(format!("thread-reply-{}-{}", row.objective, row.seq)),
@@ -721,7 +851,13 @@ fn step_card(ctx: &Rc<Ctx>, row: &Row, step: &Step, control: AnyElement, cx: &Ap
                     .gap(r(6.0))
                     .text_size(r(theme::text::XS))
                     .text_color(theme.text_muted)
-                    .child("you → the objective")
+                    // The Operator's message, or a child's intent from the
+                    // agent that asked for it.
+                    .child(if step.routing.is_some() {
+                        "you → the objective".to_string()
+                    } else {
+                        format!("{} → the objective", step.author)
+                    })
                     .when_some(step.routing.clone(), |this, routing| {
                         this.child(ui::Chip::new(routing).icon(IconName::ArrowRight))
                     }),
@@ -937,6 +1073,7 @@ mod tests {
                     What::Step(_) => "step",
                     What::Fold { .. } => "fold",
                     What::Activity { .. } => "activity",
+                    What::Summary { .. } => "summary",
                 };
                 (r.seq, what, r.depth)
             })
@@ -1039,7 +1176,7 @@ mod tests {
         ];
         let threads = BTreeMap::from([(o.to_string(), thread)]);
         let none = |_: &ThreadEntry| None;
-        let closed = rows(&root, &[], &threads, &HashSet::new(), &none);
+        let closed = rows(&root, &[], &threads, &HashSet::new(), &none, true);
         assert_eq!(
             steps(&closed),
             vec![
@@ -1092,7 +1229,7 @@ mod tests {
             "thread-objective-1-4".to_string(),
             "thread-objective-1-3".to_string(),
         ]);
-        let opened = rows(&root, &[], &threads, &open, &none);
+        let opened = rows(&root, &[], &threads, &open, &none, true);
         assert_eq!(
             steps(&opened)[3..6],
             [(3, "fold", 0), (4, "activity", 0), (5, "activity", 0)]
@@ -1109,17 +1246,133 @@ mod tests {
         );
         // The status follows the record.
         root.settle(&d1, DirectiveStatus::Done, Some("Implemented".into()));
-        let done = rows(&root, &[], &threads, &HashSet::new(), &none);
+        let done = rows(&root, &[], &threads, &HashSet::new(), &none, true);
         assert_eq!(
             step(&done[2]).directive.as_ref().unwrap().status,
             Some(("done".into(), Tone::Success))
         );
         // A directive streaming in shows the part that arrived.
         let partly = |e: &ThreadEntry| (e.seq == 3).then_some(9);
-        let streaming = rows(&root, &[], &threads, &HashSet::new(), &partly);
+        let streaming = rows(&root, &[], &threads, &HashSet::new(), &partly, true);
         assert_eq!(step(&streaming[2]).text, "Implement");
         assert!(step(&streaming[2]).streaming);
         assert!(!step(&streaming[1]).streaming);
+        // A row's key follows what shows: the text arriving, a fold
+        // opening; the same row keeps its key.
+        assert_ne!(streaming[2].key(), closed[2].key());
+        assert_ne!(opened[3].key(), closed[3].key());
+        assert_eq!(
+            rows(&root, &[], &threads, &HashSet::new(), &none, true)[2].key(),
+            done[2].key()
+        );
+        // Reply is offered on the objective's directives while it takes
+        // messages, never on an ended one's.
+        assert!(step(&closed[2]).reply && !step(&closed[0]).reply);
+        let ended = rows(&root, &[], &threads, &HashSet::new(), &none, false);
+        assert!(!step(&ended[2]).reply);
+    }
+
+    /// The intent is the thread's first entry, labelled so even when only
+    /// the latest entries are kept; a later message of the Operator's says
+    /// where it went; a child's intent is the asking agent's, not "you".
+    /// Entries that could not be kept have ids of their own.
+    #[test]
+    fn the_intent_is_the_first_entry_and_unkept_entries_have_their_own_ids() {
+        let records = Records::new("intent");
+        let root = records.objective("objective-1", None);
+        let o = "objective-1";
+        let mut later = entry(o, 900, 9, Kind::Human, Author::Operator, "Keep it small");
+        later.to = Some("lead".into());
+        let tail = BTreeMap::from([(
+            o.to_string(),
+            vec![
+                later,
+                entry(o, 0, 10, Kind::Event, Author::Agentique, "not kept"),
+                entry(o, 0, 11, Kind::Event, Author::Agentique, "not kept either"),
+            ],
+        )]);
+        let none = |_: &ThreadEntry| None;
+        let shown = rows(&root, &[], &tail, &HashSet::new(), &none, true);
+        assert_eq!(
+            step(&shown[0]).routing.as_deref(),
+            Some("waits for the lead's next turn"),
+            "not the intent: the first kept message is entry 900"
+        );
+        assert_ne!(shown[1].id, shown[2].id);
+        assert_eq!(parse_id(&shown[1].id), None);
+        assert_eq!(
+            private_name(&shown[1].id, |_, _| None).as_deref(),
+            Some("An entry of the objective's thread")
+        );
+        let first = BTreeMap::from([(
+            o.to_string(),
+            vec![entry(
+                o,
+                1,
+                1,
+                Kind::Human,
+                Author::Operator,
+                "Find problems",
+            )],
+        )]);
+        let shown = rows(&root, &[], &first, &HashSet::new(), &none, true);
+        assert_eq!(
+            step(&shown[0]).routing.as_deref(),
+            Some("the objective's intent")
+        );
+        let child = records.objective("objective-2", None);
+        let asked = BTreeMap::from([(
+            "objective-2".to_string(),
+            vec![entry(
+                "objective-2",
+                1,
+                1,
+                Kind::Human,
+                Author::agent("lead", None),
+                "Explore History",
+            )],
+        )]);
+        let shown = rows(&child, &[], &asked, &HashSet::new(), &none, true);
+        assert_eq!(
+            step(&shown[0]).routing,
+            None,
+            "the lead's, not the Operator's"
+        );
+        assert_eq!(step(&shown[0]).author, "lead");
+    }
+
+    /// C-54: a conversation shows the thread of an objective started from
+    /// it while it goes on, or once it ended if it ran in this Studio;
+    /// otherwise the objective in one line. A test instance shows the
+    /// recorded objective it is there for.
+    #[test]
+    fn a_conversation_shows_the_threads_started_from_it() {
+        // Started here: going on, or ran in this session.
+        assert!(shows_thread(true, true, false, false));
+        assert!(shows_thread(true, false, true, false));
+        // Started here, ended in an earlier session: one line.
+        assert!(!shows_thread(true, false, false, false));
+        // Started elsewhere (another project, an earlier conversation).
+        assert!(!shows_thread(false, true, true, false));
+        assert!(shows_thread(false, false, false, true));
+        let records = Records::new("summary");
+        let root = records.objective("objective-1", None);
+        let line = summary(&root, "done");
+        assert_eq!(line.id, "thread-summary");
+        assert_eq!(line.at, root.created);
+        assert_eq!(
+            label(&line),
+            "Objective “Find and fix problems in the Library panel”, done: its record is in the Objectives panel"
+        );
+        assert_eq!(
+            private_name("thread-summary", |_, _| None).as_deref(),
+            Some("The objective shown, in a line")
+        );
+        assert_eq!(
+            private_name("thread-reply-objective-1-3", |_, _| None),
+            None
+        );
+        assert_eq!(private_name("send", |_, _| None), None);
     }
 
     /// C-54: a child objective's thread is nested under the directive that
@@ -1209,6 +1462,7 @@ mod tests {
             &threads,
             &HashSet::new(),
             &none,
+            true,
         );
         let order: Vec<(&str, u64, u8)> = shown
             .iter()
@@ -1244,7 +1498,7 @@ mod tests {
             },
             None,
         );
-        let refused = rows(&root, &[child], &threads, &HashSet::new(), &none);
+        let refused = rows(&root, &[child], &threads, &HashSet::new(), &none, true);
         assert_eq!(
             step(&refused[1]).directive.as_ref().unwrap().status,
             Some(("refused: over the parent's budget".into(), Tone::Danger))
@@ -1311,6 +1565,7 @@ mod tests {
                     scope: None,
                 }),
                 routing: None,
+                reply: true,
             }),
         };
         assert_eq!(

@@ -542,7 +542,8 @@ pub const COMMANDS: &[Command] = &[
     Command {
         id: CommandId::StartObjective,
         label: "Start as objective…",
-        shortcut: "Ctrl+Enter",
+        // Ctrl+Enter works in the message only, so no shortcut is shown.
+        shortcut: "",
         description: "Show the start form in the Conversation with your message as the intent, its budgets, permissions and each role's model; nothing starts until you press Start (Ctrl+Enter in the message)",
         key: None,
     },

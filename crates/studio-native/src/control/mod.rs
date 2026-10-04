@@ -1154,7 +1154,12 @@ fn control_json(studio: &Studio, d: &Drawn) -> Value {
     if private && let Some(label) = conversation_label(studio, d) {
         v["label"] = json!(label);
     }
-    if let Some(value) = c.value.as_ref().filter(|_| !private) {
+    // An objective's fields hold the Operator's words (an intent taken from
+    // the composer's draft, a message to the agents) wherever they are
+    // drawn: their values too only in a test instance.
+    let objective_field =
+        c.role == "field" && c.id.starts_with("objective-") && !studio.args.test_instance;
+    if let Some(value) = c.value.as_ref().filter(|_| !private && !objective_field) {
         v["value"] = json!(value.to_string());
     }
     if !c.enabled {
@@ -1182,15 +1187,10 @@ fn conversation_label(studio: &Studio, d: &Drawn) -> Option<String> {
     let id = d.control.id.as_ref();
     let panel = &studio.conversation;
     // An objective's thread (C-54): what each row is and who wrote it.
-    if let Some((fold, objective, seq)) = crate::conversation_view::thread::parse_id(id) {
-        let entry = studio
-            .objectives
-            .threads
-            .get(objective)
-            .and_then(|t| t.iter().find(|e| e.seq == seq));
-        return Some(crate::conversation_view::thread::private_label(
-            entry, fold, seq,
-        ));
+    if id.starts_with("thread-") {
+        return crate::conversation_view::thread::private_name(id, |objective, seq| {
+            studio.objectives.entry(objective, seq)
+        });
     }
     let entries = &panel.conversation.entries;
     let text_parts = |parts: &[AssistantPart]| -> Vec<usize> {
@@ -1413,7 +1413,12 @@ fn objective_json(studio: &Studio, text_shown: bool) -> Value {
         return Value::Null;
     };
     let running = state.running();
-    let entries: usize = state.threads.values().map(Vec::len).sum();
+    // This objective's tree only.
+    let entries: usize = std::iter::once(objective)
+        .chain(&state.children)
+        .filter_map(|o| state.threads.get(&o.id))
+        .map(Vec::len)
+        .sum();
     let last = state.threads.get(&objective.id).and_then(|t| t.last());
     let children: Vec<Value> = state
         .children
@@ -3497,6 +3502,41 @@ mod tests {
     /// In the Operator's own window the Conversation's items are named
     /// without their text, and no value (the Operator's draft) is observed;
     /// a test instance observes them as they are.
+    #[test]
+    fn an_objectives_fields_are_observed_without_their_text_in_the_operators_window() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("objective-fields");
+        let field = |id: &str, region: &'static str, value: &str| {
+            let mut d = drawn(id, "field", region, false);
+            d.control = d.control.value(value.to_string());
+            d
+        };
+        // The intent taken from the composer's draft, in the panel, and the
+        // message to the agents: the Operator's words.
+        let intent = field("objective-intent", "inspector", "my unsent draft");
+        let message = field("objective-message", "inspector", "a note for the lead");
+        let mut merge = drawn("objective-merge", "switch", "inspector", false);
+        merge.control = merge.control.value("on");
+        let name = field("Name", "inspector", "LinkStore");
+        for d in [&intent, &message] {
+            let observed = control_json(&app, d);
+            assert!(observed["value"].is_null(), "{observed}");
+            assert_eq!(observed["operatorOnly"], true);
+        }
+        assert_eq!(
+            control_json(&app, &merge)["value"],
+            "on",
+            "a switch's state stays"
+        );
+        assert_eq!(
+            control_json(&app, &name)["value"],
+            "LinkStore",
+            "other fields stay"
+        );
+        app.args.test_instance = true;
+        assert_eq!(control_json(&app, &intent)["value"], "my unsent draft");
+        assert_eq!(control_json(&app, &message)["value"], "a note for the lead");
+    }
+
     #[test]
     fn an_objectives_thread_is_the_operators_except_in_a_test_instance() {
         use agq_orchestrator::thread::{Author, Kind, ThreadEntry};

@@ -23,8 +23,9 @@ use agq_orchestrator::record::{
 };
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
 use agq_orchestrator::thread::{self, Author, Kind, ThreadEntry};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
 
 /// The latest entries of each shown objective's thread kept in memory (the
@@ -113,6 +114,17 @@ pub struct ObjectivesState {
     pub streaming: HashMap<(String, u64), (Instant, usize)>,
     /// Counts changes to what is shown, so views rebuild only then.
     pub version: u64,
+    /// Counts steps of the directives streaming in: a view updates only
+    /// their rows.
+    pub stream_version: u64,
+    /// The objectives run in this Studio since it started (started or
+    /// continued here): the Conversation shows their threads once they end
+    /// too.
+    pub ran: HashSet<String>,
+    /// The configured keys, for redacting the Studio's own entries: read on
+    /// a thread of their own, never per entry on the window's thread.
+    keys: Option<Vec<String>>,
+    reading_keys: Option<Receiver<Vec<String>>>,
     /// Why the last start or command did not happen.
     pub message: Option<String>,
     pub form: StartForm,
@@ -134,6 +146,42 @@ impl ObjectivesState {
     /// Not finished and not running: interrupted, waiting for Continue.
     pub fn unfinished(&self) -> bool {
         !self.running() && self.current.as_ref().is_some_and(Objective::active)
+    }
+
+    /// Whether a message to the objective shown can reach an agent: it runs,
+    /// or waits to continue (a finished one has no lead left to read it).
+    pub fn takes_messages(&self) -> bool {
+        self.running() || self.unfinished()
+    }
+
+    /// An entry of a shown thread, by its objective and number.
+    pub fn entry(&self, objective: &str, seq: u64) -> Option<&ThreadEntry> {
+        self.threads
+            .get(objective)?
+            .iter()
+            .rev()
+            .find(|e| e.seq == seq)
+    }
+
+    /// The configured keys as last read: read again on a thread of their
+    /// own when they may have changed ([`ObjectivesState::read_keys`]);
+    /// read here, once, only before the first reading arrives.
+    fn keys(&mut self) -> Vec<String> {
+        if let Some(read) = self.reading_keys.as_ref().and_then(|r| r.try_recv().ok()) {
+            self.keys = Some(read);
+            self.reading_keys = None;
+        }
+        self.keys.get_or_insert_with(configured_keys).clone()
+    }
+
+    /// Reads the configured keys again, on a thread of its own (a key or
+    /// the token was saved or removed, or an objective is shown).
+    pub fn read_keys(&mut self) {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = sender.send(configured_keys());
+        });
+        self.reading_keys = Some(receiver);
     }
 
     /// Whether the workspace's tick should poll.
@@ -222,8 +270,9 @@ impl ObjectivesState {
             }
             now_shown < length
         });
+        // Only the rows streaming change: views update just them.
         if changed {
-            self.version += 1;
+            self.stream_version += 1;
         }
         changed
     }
@@ -346,10 +395,9 @@ fn configured_keys() -> Vec<String> {
 /// The Studio's own `entry` (an Operator's message, a note quoting an
 /// error) with every configured key in it replaced by a hint: keys never
 /// reach a thread.
-fn redacted(mut entry: ThreadEntry) -> ThreadEntry {
-    let keys = configured_keys();
-    entry.text = thread::redacted(&entry.text, &keys);
-    entry.details = entry.details.map(|d| thread::redacted(&d, &keys));
+fn redacted(mut entry: ThreadEntry, keys: &[String]) -> ThreadEntry {
+    entry.text = thread::redacted(&entry.text, keys);
+    entry.details = entry.details.map(|d| thread::redacted(&d, keys));
     entry
 }
 
@@ -423,6 +471,7 @@ impl Studio {
                 model.effort.clone(),
             )
         });
+        // Read now, at the Operator's Start or Continue.
         let keys = configured_keys();
         let checks = agq_implementation::task::ProjectChecks::agentique()
             .commands
@@ -456,6 +505,7 @@ impl Studio {
         if self.refused_to_agents("starting an objective") {
             return Err("starting an objective is the Operator's own".into());
         }
+        self.runs_objectives()?;
         if self.objectives.running() {
             return Err("an objective is running: stop it first".into());
         }
@@ -498,9 +548,15 @@ impl Studio {
         objective.models = resolved.models;
         objective.roles_unavailable = resolved.unavailable.into_iter().collect();
         store.save(&objective)?;
+        // The open conversation shows its thread (C-54).
+        if self.project.is_some() {
+            self.conversation.started.push(objective.id.clone());
+            self.save_conversation();
+        }
         // Its thread starts with the intent and each role's model, written
         // by the Orchestrator as it starts.
         let state = &mut self.objectives;
+        state.ran.insert(objective.id.clone());
         state.threads.clear();
         state.streaming.clear();
         state.children.clear();
@@ -516,16 +572,13 @@ impl Studio {
     /// Opens the start form in the Conversation with `proposal` (C-54):
     /// nothing starts until the Operator presses Start.
     pub fn open_start_form(&mut self, proposal: Proposal) -> Result<(), String> {
+        // The reason goes to the Assistant's model too: it names no
+        // objective.
         if self.objectives.running() || self.objectives.unfinished() {
-            let intent = self
-                .objectives
-                .current
-                .as_ref()
-                .map(|o| o.intent.clone())
-                .unwrap_or_default();
-            return Err(format!(
-                "the objective “{intent}” is not finished: one objective runs at a time"
-            ));
+            return Err(
+                "an objective is not finished, and one runs at a time; the Operator sees it in the Objectives panel"
+                    .into(),
+            );
         }
         let form = &mut self.objectives.form;
         form.proposal = Some(proposal);
@@ -562,6 +615,7 @@ impl Studio {
         if self.refused_to_agents("continuing an objective") {
             return Err("continuing an objective is the Operator's own".into());
         }
+        self.runs_objectives()?;
         if self.objectives.running() {
             return Ok(());
         }
@@ -589,14 +643,14 @@ impl Studio {
         }
         // A record an earlier build saved has no thread yet: it starts with
         // the intent, as the Operator gave it.
+        let keys = self.objectives.keys();
         if store.thread_last(&objective.id) == 0
             && let Err(error) = store.append_thread(
                 &objective.id,
-                redacted(ThreadEntry::new(
-                    Kind::Human,
-                    Author::Operator,
-                    objective.intent.clone(),
-                )),
+                redacted(
+                    ThreadEntry::new(Kind::Human, Author::Operator, objective.intent.clone()),
+                    &keys,
+                ),
             )
         {
             self.objectives.message = Some(format!("The objective's thread: {error}"));
@@ -627,9 +681,24 @@ impl Studio {
                 );
             }
         }
+        self.objectives.ran.insert(objective.id.clone());
         self.objectives.handle = Some(run::start(setup, objective));
         self.objectives.message = None;
         self.mark(Dirty::LAYOUT | Dirty::STATUS | Dirty::CONVERSATION);
+        Ok(())
+    }
+
+    /// Whether this Studio may run objectives: a test instance never does
+    /// (C-54). Its objectives are recorded ones, there to be observed and
+    /// operated; running one would start an Orchestrator with its record's
+    /// permissions inside an instance that is itself under test.
+    fn runs_objectives(&self) -> Result<(), String> {
+        if self.args.test_instance {
+            return Err(
+                "a test instance runs no objective: it shows recorded ones to observe and operate"
+                    .into(),
+            );
+        }
         Ok(())
     }
 
@@ -676,7 +745,8 @@ impl Studio {
     /// Adds `entry` to objective `id`'s thread and shows it, saying so when
     /// it could not be kept.
     fn objective_entry(&mut self, id: &str, entry: ThreadEntry) {
-        let entry = redacted(entry);
+        let keys = self.objectives.keys();
+        let entry = redacted(entry, &keys);
         let shown = self
             .objective_store()
             .append_thread(id, entry.clone())
@@ -723,6 +793,12 @@ impl Studio {
             return Err(
                 "a message goes to the objective you started; its children are steered through it"
                     .into(),
+            );
+        }
+        // Kept for no one: a finished objective's lead takes no more turns.
+        if !self.objectives.takes_messages() {
+            return Err(
+                "the objective has ended, so no agent would read it; start a new objective".into(),
             );
         }
         if self.objectives.running() {
@@ -772,8 +848,14 @@ impl Studio {
                 let active = objective.active();
                 let continues = objective.continuation.is_some();
                 self.objectives.show(&store, objective, &all);
+                self.objectives.read_keys();
                 changed = true;
-                if active && continues && !self.safe_mode {
+                if active && self.args.test_instance {
+                    self.objectives.message = Some(
+                        "A recorded objective: this test instance shows it and does not run it."
+                            .into(),
+                    );
+                } else if active && continues && !self.safe_mode {
                     if let Err(problem) = self.continue_objective() {
                         self.objectives.message =
                             Some(format!("The objective could not continue: {problem}"));
@@ -839,10 +921,14 @@ impl Studio {
             self.objectives.version += 1;
             changed = true;
         }
-        let rate = stream_rate(self.control_speed());
-        changed |= self.objectives.stream(Instant::now(), rate);
         if changed {
             self.mark(Dirty::LAYOUT | Dirty::STATUS | Dirty::CONVERSATION);
+        }
+        // Directives streaming in change the Conversation alone.
+        let rate = stream_rate(self.control_speed());
+        if self.objectives.stream(Instant::now(), rate) {
+            self.mark(Dirty::CONVERSATION);
+            changed = true;
         }
         changed
     }
@@ -899,6 +985,9 @@ mod tests {
         }
         assert_eq!(state.threads["o"].len(), SHOWN);
         assert_eq!(state.last_shown("o"), SHOWN as u64 + 49);
+        // The oldest went: 1, 2, 3, the one not kept, and 4 to 49.
+        assert_eq!(state.threads["o"].first().map(|e| e.seq), Some(50));
+        assert!(state.threads["o"].iter().all(|e| e.seq >= 50));
     }
 
     /// A directive that arrives while shown streams in at the observer
@@ -912,7 +1001,11 @@ mod tests {
         assert_eq!(state.shown_chars(&directive), Some(0));
         assert_eq!(state.shown_chars(&state.threads["o"][1].clone()), None);
         let (arrived, _) = state.streaming[&("o".to_string(), 1)];
+        let version = state.version;
         assert!(state.stream(arrived + Duration::from_millis(300), Some(30.0)));
+        // Only the streaming rows change: the rest is not worked out again.
+        assert_eq!(state.version, version);
+        assert_eq!(state.stream_version, 1);
         assert_eq!(state.shown_chars(&directive), Some(9));
         // Done: it shows whole and no longer streams.
         assert!(state.stream(arrived + Duration::from_secs(5), Some(30.0)));

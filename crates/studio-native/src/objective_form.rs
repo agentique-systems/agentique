@@ -158,6 +158,16 @@ impl ObjectiveForm {
         cx.notify();
     }
 
+    /// Closes the form shown in the Conversation, forgetting the intent it
+    /// took from the message: the panel shows the form empty.
+    fn cancel(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
+        self.intent
+            .update(cx, |state, cx| state.set_value("", window, cx));
+        self.by_assistant = false;
+        self.studio.act(cx, |studio| studio.close_start_form());
+        cx.notify();
+    }
+
     /// Explore on: three improvements unless changed (it explores, fixes
     /// and explores again); off: one.
     fn set_explore(&mut self, on: bool, window: &mut Window, cx: &mut Context<Self>) {
@@ -228,7 +238,6 @@ impl Render for ObjectiveForm {
                 })
             }
         };
-        let studio_entity = self.studio.clone();
         div()
             .flex()
             .flex_col()
@@ -323,9 +332,7 @@ impl Render for ObjectiveForm {
                                 .small()
                                 .ghost()
                                 .tooltip("Close the form; nothing starts", None)
-                                .on_click(move |_: &ClickEvent, _, cx| {
-                                    studio_entity.act(cx, |studio| studio.close_start_form())
-                                }),
+                                .on_click(cx.listener(Self::cancel)),
                         )
                     })
                     .child(

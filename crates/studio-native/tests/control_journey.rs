@@ -1413,10 +1413,11 @@ fn an_agent_operates_an_objectives_thread_in_a_test_instance() {
     assert_readable(&studio.observe(), "the Conversation after a turn");
 }
 
-/// In the Operator's own window (C-54): the objective's thread is named
-/// without its text, and an agent can neither expand it, reply in it,
-/// switch whom the composer addresses, nor start, steer or stop an
-/// objective, through controls or commands.
+/// In the Operator's own window (C-54): an objective not started from this
+/// conversation shows in one line, named without its text, and an agent
+/// can neither use it, switch whom the composer addresses, nor start,
+/// steer or stop an objective, through controls or commands; an
+/// objective's field holds no text an agent observes.
 #[test]
 #[ignore = "opens a window: run on a desktop with --ignored"]
 fn the_operators_conversation_and_objectives_are_refused_to_agents() {
@@ -1433,27 +1434,21 @@ fn the_operators_conversation_and_objectives_are_refused_to_agents() {
         "the Operator's text: {objective}"
     );
     assert!(objective["thread"]["last"]["text"].is_null(), "{objective}");
+    // Not started from this conversation: the objective in one line, named
+    // without its text, its thread in the Objectives panel.
     let directive_id = format!("thread-{}-{}", seeded.root, seeded.directive);
-    let directive = control(&shown, &directive_id).unwrap_or_else(|| panic!("{shown}"));
-    assert_eq!(
-        directive["label"],
-        format!("Directive, entry {}, by lead", seeded.directive)
-    );
-    assert_eq!(directive["operatorOnly"], true);
+    assert!(control(&shown, &directive_id).is_none(), "{shown}");
+    let line = control(&shown, "thread-summary").unwrap_or_else(|| panic!("{shown}"));
+    assert_eq!(line["label"], "The objective shown, in a line");
+    assert_eq!(line["operatorOnly"], true);
     assert!(
         !shown.to_string().contains(seeded.secret),
         "no text of the thread is observed"
     );
-    let fold = format!("thread-fold-{}-{}", seeded.root, seeded.directive);
-    let reply = format!("thread-reply-{}-{}", seeded.root, seeded.directive);
     for (action, why) in [
         (
-            json!({ "kind": "click", "control": fold }),
-            "open the tool calls",
-        ),
-        (
-            json!({ "kind": "click", "control": reply }),
-            "reply in the thread",
+            json!({ "kind": "click", "control": "show-objectives" }),
+            "open the Objectives panel from the Conversation",
         ),
         (
             json!({ "kind": "click", "control": "conversation-to" }),
@@ -1491,4 +1486,13 @@ fn the_operators_conversation_and_objectives_are_refused_to_agents() {
         after["objective"]["thread"]["entries"], 9,
         "nothing was added"
     );
+    // The panel's message field: its value is the Operator's.
+    studio.must(
+        json!({ "kind": "click", "control": "Objectives" }),
+        "look at the Objectives panel",
+    );
+    let panel = studio.observe();
+    let field = control(&panel, "objective-message").unwrap_or_else(|| panic!("{panel}"));
+    assert!(field["value"].is_null(), "{field}");
+    assert_eq!(field["operatorOnly"], true);
 }

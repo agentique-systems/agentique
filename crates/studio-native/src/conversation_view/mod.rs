@@ -182,10 +182,13 @@ pub struct ConversationView {
     model_menu: Option<(Entity<Menu>, Subscription)>,
     /// The objective's start form, shared with the Objectives panel (C-54).
     form: Entity<crate::objective_form::ObjectiveForm>,
-    /// The shown objective's thread as rows with their keys, and what they
-    /// were worked out from (the objectives' version, `expanded_version`).
+    /// The shown objective's thread as rows with their keys, what they were
+    /// worked out from (the objectives' version, `expanded_version`,
+    /// whether the thread or one line shows, the conversation's epoch), and
+    /// the streaming step they show.
     thread_rows: Rc<Vec<(Rc<thread::Row>, u64)>>,
-    thread_from: Option<(u64, u64)>,
+    thread_from: Option<(u64, u64, bool, u64)>,
+    streamed: u64,
     /// Counts changes to `expanded`.
     expanded_version: u64,
     _subscriptions: Vec<Subscription>,
@@ -245,17 +248,20 @@ impl ConversationView {
                         });
                         cx.notify();
                     }
-                    // Ctrl+Enter: the message as an objective's intent
-                    // (C-54); Enter sends it.
+                    // Ctrl+Enter: to the Assistant, the message as an
+                    // objective's intent (C-54); to the objective, it sends
+                    // as Enter does.
                     InputEvent::PressEnter {
                         secondary: true,
                         shift: false,
                     } => {
-                        this.studio.act(cx, |studio| {
-                            if studio.conversation.addressed.is_none() {
-                                studio.execute(crate::commands::CommandId::StartObjective);
-                            }
-                        });
+                        if this.studio.read(cx).conversation.addressed.is_some() {
+                            this.send(window, cx);
+                        } else {
+                            this.studio.act(cx, |studio| {
+                                studio.execute(crate::commands::CommandId::StartObjective)
+                            });
+                        }
                     }
                     InputEvent::PressEnter { shift: false, .. } => this.send(window, cx),
                     _ => {}
@@ -284,6 +290,7 @@ impl ConversationView {
             form,
             thread_rows: Rc::new(Vec::new()),
             thread_from: None,
+            streamed: 0,
             expanded_version: 0,
             _subscriptions: subscriptions,
         }
@@ -299,32 +306,75 @@ impl ConversationView {
         cx.notify();
     }
 
-    /// The shown objective's thread as rows, worked out again only when it
-    /// or what is expanded changed.
+    /// The shown objective's thread as rows (or the objective in one line,
+    /// where this conversation does not show its thread), worked out again
+    /// only when it, what is expanded or the conversation changed; while
+    /// directives stream in, only their rows are.
     fn thread_rows(&mut self, studio: &Studio) -> Rc<Vec<(Rc<thread::Row>, u64)>> {
         let objectives = &studio.objectives;
-        let from = (objectives.version, self.expanded_version);
+        let shows = objectives.current.as_ref().is_some_and(|root| {
+            thread::shows_thread(
+                studio.conversation.started.contains(&root.id),
+                objectives.takes_messages(),
+                objectives.ran.contains(&root.id),
+                studio.args.test_instance,
+            )
+        });
+        let from = (
+            objectives.version,
+            self.expanded_version,
+            shows,
+            studio.conversation.epoch,
+        );
         if self.thread_from != Some(from) {
             self.thread_from = Some(from);
+            self.streamed = objectives.stream_version;
             let rows = match &objectives.current {
-                Some(root) => thread::rows(
+                Some(root) if shows => thread::rows(
                     root,
                     &objectives.children,
                     &objectives.threads,
                     &self.expanded,
                     &|entry| objectives.shown_chars(entry),
+                    objectives.takes_messages(),
                 ),
+                Some(root) => vec![thread::summary(
+                    root,
+                    crate::objectives::state_word(root, objectives.running()),
+                )],
                 None => Vec::new(),
             };
             self.thread_rows = Rc::new(
                 rows.into_iter()
                     .map(|row| {
-                        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-                        format!("{row:?}").hash(&mut hasher);
-                        (Rc::new(row), hasher.finish())
+                        let key = row.key();
+                        (Rc::new(row), key)
                     })
                     .collect(),
             );
+        } else if self.streamed != objectives.stream_version {
+            self.streamed = objectives.stream_version;
+            let mut rows = (*self.thread_rows).clone();
+            for (row, key) in &mut rows {
+                let thread::What::Step(step) = &row.what else {
+                    continue;
+                };
+                if !step.streaming {
+                    continue;
+                }
+                let Some(entry) = objectives.entry(&row.objective, row.seq) else {
+                    continue;
+                };
+                let (text, streaming) = thread::shown_text(entry, objectives.shown_chars(entry));
+                let mut changed = (**row).clone();
+                if let thread::What::Step(step) = &mut changed.what {
+                    step.text = text;
+                    step.streaming = streaming;
+                }
+                *key = changed.key();
+                *row = Rc::new(changed);
+            }
+            self.thread_rows = Rc::new(rows);
         }
         self.thread_rows.clone()
     }
@@ -587,7 +637,11 @@ impl ConversationView {
         let times: Vec<Option<&str>> = (0..entries.len()).map(|i| panel.time_of(i)).collect();
         let ats: Vec<&str> = thread_rows.iter().map(|(row, _)| row.at.as_str()).collect();
         let slots = thread::merge(&times, &ats);
-        if entries.is_empty() && live.is_empty() && thread_rows.is_empty() {
+        // A new conversation is empty, whatever objective the panel has.
+        let thread_shown = thread_rows
+            .iter()
+            .any(|(row, _)| !matches!(row.what, thread::What::Summary { .. }));
+        if entries.is_empty() && live.is_empty() && !thread_shown {
             items.push(Item::Empty);
         }
         for slot in slots {
@@ -1426,7 +1480,7 @@ use gpui::AnimationExt as _;
 fn address_chip(
     studio: &Entity<Studio>,
     to_objective: bool,
-    objective_shown: bool,
+    objective_open: bool,
     cx: &App,
 ) -> AnyElement {
     let theme = cx.theme();
@@ -1438,7 +1492,8 @@ fn address_chip(
             "Write to the objective's agents instead",
         )
     };
-    let can_switch = to_objective || objective_shown;
+    // To an objective that still takes messages; back, always.
+    let can_switch = to_objective || objective_open;
     let studio = studio.clone();
     div()
         .id("conversation-to")
@@ -1707,10 +1762,13 @@ impl Render for ConversationView {
             .as_ref()
             .filter(|_| !objective_free)
             .map(|o| ObjectiveBar::of(o, objectives));
-        let objective_shown = objectives.current.is_some();
+        let objective_open = objectives.takes_messages();
+        // An open question of the Assistant's is answered first, whomever
+        // the composer addresses.
+        let to_objective = addressed.is_some() && !question;
         let has_text = !panel.input.trim().is_empty();
         let can_send = has_text
-            && (addressed.is_some() || question || steering || (!running && key_missing.is_none()));
+            && (to_objective || question || steering || (!running && key_missing.is_none()));
         let usage = panel.usage;
         let mut model = panel.model_name.clone();
         let mut hover = format!(
@@ -1907,7 +1965,7 @@ impl Render for ConversationView {
                             .border_color(if self.composer.read(cx).focus_handle(cx).is_focused(window) { theme.accent.border } else { theme.border })
                             .shadow(theme.shadow_small())
                             // Whom it addresses, when not the Assistant.
-                            .when_some(addressed_intent.clone(), |this, intent| {
+                            .when_some(addressed_intent.clone().filter(|_| to_objective), |this, intent| {
                                 this.child(
                                     div()
                                         .px(r(12.0))
@@ -1966,7 +2024,7 @@ impl Render for ConversationView {
                                     .gap(r(6.0))
                                     // Whom it addresses: the Assistant or the
                                     // objective, switched only here (C-54).
-                                    .child(address_chip(&self.studio, addressed.is_some(), objective_shown, cx))
+                                    .child(address_chip(&self.studio, addressed.is_some(), objective_open, cx))
                                     // The selection, one click from the message (context chips).
                                     .when(!selection_names.is_empty(), |this| {
                                         let studio = studio_entity.clone();
@@ -2000,7 +2058,7 @@ impl Render for ConversationView {
                                         )
                                     })
                                     .child(div().flex_1().min_w_0())
-                                    .when(steering && addressed.is_none(), |this| {
+                                    .when(steering && !to_objective, |this| {
                                         let studio = self.studio.clone();
                                         this.when(can_send, |this| {
                                             this.child(
@@ -2065,7 +2123,7 @@ impl Render for ConversationView {
                                                 }),
                                         )
                                     })
-                                    .when(addressed.is_some(), |this| {
+                                    .when(to_objective, |this| {
                                         this.child(
                                             Button::new("send", "Send")
                                                 .small()
@@ -2077,7 +2135,7 @@ impl Render for ConversationView {
                                                 .on_click(cx.listener(|this, _: &ClickEvent, window, cx| this.send(window, cx))),
                                         )
                                     })
-                                    .when(addressed.is_some() && running, |this| {
+                                    .when(to_objective && running, |this| {
                                         this.child(
                                             Button::new("stop", "Stop")
                                                 .small()
@@ -2090,7 +2148,7 @@ impl Render for ConversationView {
                                                 }),
                                         )
                                     })
-                                    .when(addressed.is_none(), |this| this.child(if running && !question {
+                                    .when(!to_objective, |this| this.child(if running && !question {
                                         Button::new("stop", "Stop")
                                             .small()
                                             .danger()
