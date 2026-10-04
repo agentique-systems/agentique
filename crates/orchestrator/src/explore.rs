@@ -134,7 +134,12 @@ impl Instance for LiveInstance {
     fn act(&mut self, act: &Act) -> Result<Value, String> {
         let client = self.client()?;
         let instance = client.instance.clone();
-        client.call(json!({
+        // A wait answers when its condition holds or its time is up.
+        let waits = act.action["timeoutMs"].as_u64().map(Duration::from_millis);
+        if let Some(wait) = waits {
+            client.answer_within(wait + ANSWER)?;
+        }
+        let answer = client.call(json!({
             "op": "act",
             "agent": act.agent,
             "why": act.why,
@@ -142,7 +147,11 @@ impl Instance for LiveInstance {
             "expect": { "instance": instance },
             "observed": act.observed,
             "action": act.action,
-        }))
+        }));
+        if waits.is_some() {
+            client.answer_within(ANSWER)?;
+        }
+        answer
     }
 
     fn restart(&mut self) -> Result<(), String> {
@@ -188,7 +197,9 @@ pub struct Step {
     /// What the explorer expected it to show.
     #[serde(default)]
     pub expect: Option<Value>,
-    /// `explorer` (chosen), `check` (the undo check's undo and redo) or
+    /// `explorer` (chosen), `check` (the undo check's undo and redo, Stop
+    /// after a turn ran past its budget), `wait` (for a turn of the
+    /// Assistant to end: `label` is `the turn`, or `the stop` after Stop) or
     /// `recovery` (a dialog cancelled by rule, Escape out of a dead end).
     pub by: String,
 }
@@ -334,6 +345,76 @@ const KEYWORDS: [&str; 12] = [
     "import",
 ];
 
+/// The fixed requests the explorer makes in the Conversation: what a person
+/// asks Agentique's Assistant, and what nobody should have to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Request {
+    /// Explain the selected element.
+    Explain,
+    /// Add a part with a given name.
+    AddPart,
+    /// Connect two parts of the model.
+    Connect,
+    /// Something unrelated to the model.
+    OffTopic,
+    Empty,
+    Whitespace,
+    /// About 2,500 characters.
+    Long,
+}
+
+impl Request {
+    pub const ALL: [Request; 7] = [
+        Request::Explain,
+        Request::AddPart,
+        Request::Connect,
+        Request::OffTopic,
+        Request::Empty,
+        Request::Whitespace,
+        Request::Long,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Request::Explain => "explain",
+            Request::AddPart => "add-part",
+            Request::Connect => "connect",
+            Request::OffTopic => "off-topic",
+            Request::Empty => "empty",
+            Request::Whitespace => "whitespace",
+            Request::Long => "long",
+        }
+    }
+
+    /// Its text; connecting names two elements the model has, when it has
+    /// two.
+    pub fn text(self, names: &[String]) -> String {
+        match self {
+            Request::Explain => "Explain what the selected element does, in two sentences.".into(),
+            Request::AddPart => "Add a part named Probe to the model.".into(),
+            Request::Connect => match names {
+                [a, b, ..] => format!("Connect {a} to {b}."),
+                _ => "Connect the first two parts of the model.".into(),
+            },
+            Request::OffTopic => "What is a good recipe for pancakes?".into(),
+            Request::Empty => String::new(),
+            Request::Whitespace => "   ".into(),
+            Request::Long => {
+                "Describe every part of the model and how the parts work together. ".repeat(38)
+            }
+        }
+    }
+
+    /// The class of a request's text: one of the fixed ones, or `written`
+    /// (a model wrote it).
+    pub fn of(text: &str, names: &[String]) -> &'static str {
+        Request::ALL
+            .into_iter()
+            .find(|r| r.text(names) == text)
+            .map_or("written", Request::name)
+    }
+}
+
 /// An action that is valid on the screen observed.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Candidate {
@@ -351,13 +432,18 @@ pub struct Candidate {
     pub field: bool,
 }
 
-/// The Operator's own, until every observation says so with `operatorOnly`:
-/// Settings and the Conversation (regions), the Objectives panel's controls,
-/// the agents' Pause, Step and Resume, and the system's folder picker, which
-/// no agent can see (id prefixes).
+/// The Operator's own where an observation does not say with `operatorOnly`
+/// (a Studio that marks nothing): Settings and the Conversation (regions)
+/// and the Operator's commands (the Studio's `OPERATORS_COMMANDS`). Where
+/// the observation marks controls and commands, its marks decide.
 const OPERATORS_REGIONS: [&str; 2] = ["settings", "conversation"];
-const OPERATORS_PREFIXES: [&str; 3] = ["objective-", "agents-", "browse-"];
-/// The Operator's commands (the Studio's `OPERATORS_COMMANDS`).
+/// Never the explorer's, whatever the marks say: the Objectives panel
+/// (objectives are the Operator's; a lead's delegation is not the
+/// explorer's), the agents' Pause, Step and Resume (the supervisor's), and
+/// the system's folder picker, which no agent can see.
+const NEVER_PREFIXES: [&str; 3] = ["objective-", "agents-", "browse-"];
+/// Undo and redo are the undo check's, never chosen.
+const CHECKS_COMMANDS: [&str; 2] = ["undo", "redo"];
 const OPERATORS_COMMANDS: [&str; 10] = [
     "lock",
     "trust-local",
@@ -381,6 +467,33 @@ fn outside(value: &str, folder: &Path) -> bool {
         || value.get(1..3).is_some_and(|s| s == ":\\" || s == ":/");
     let comparable = |s: &str| s.to_lowercase().replace('/', "\\");
     absolute && !comparable(value).starts_with(&comparable(&folder.display().to_string()))
+}
+
+/// Whether the observation marks what is the Operator's own
+/// (`operatorOnly` on controls or commands): then its marks decide.
+fn marks_operators_own(observation: &Value) -> bool {
+    ["controls", "commands"].iter().any(|list| {
+        observation[*list]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|c| c.get("operatorOnly").is_some())
+    })
+}
+
+/// The names of the elements in view (without their package), for requests
+/// that name two.
+fn existing_names(observation: &Value) -> Vec<String> {
+    observation["cards"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|c| c["element"].as_str())
+        .filter_map(|q| q.rsplit("::").next())
+        .map(|n| n.trim_matches('\'').to_string())
+        .filter(|n| !n.is_empty())
+        .take(2)
+        .collect()
 }
 
 /// The name of an element the model has, for the duplicate input: the
@@ -444,33 +557,36 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                 .any(|c| outside(c["value"].as_str().unwrap_or_default(), folder))
         });
     let existing = existing_name(observation);
-    // What a dialog's confirm (or Enter) would confirm: the input class of
-    // each of its fields, so confirming other inputs is other coverage.
-    let mut confirming: Vec<String> = observation["controls"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter(|c| scope == Some("dialog") && c["region"] == "dialog" && c["role"] == "field")
-        .map(|c| {
-            let value = c["value"].as_str().unwrap_or_default();
-            format!(
-                "{}={}",
-                c["id"].as_str().unwrap_or_default(),
-                Input::of(value, existing.as_deref()).name()
-            )
-        })
-        .collect();
-    confirming.sort();
-    let confirming = confirming.join(",");
-    let with_inputs = |key: String, about: String| {
-        if confirming.is_empty() {
-            (key, about)
-        } else {
-            (
-                format!("{key}|{confirming}"),
-                format!("{about} with {confirming}"),
-            )
+    let names = existing_names(observation);
+    let marked = marks_operators_own(observation);
+    // What submitting would submit, by region: the input class of each of a
+    // dialog's fields, the request class of the Conversation's composer. So
+    // confirming or sending other inputs is other coverage.
+    let mut submitting: BTreeMap<&str, Vec<String>> = BTreeMap::new();
+    for c in observation["controls"].as_array().into_iter().flatten() {
+        let region = c["region"].as_str().unwrap_or_default();
+        if c["role"] != "field" || !matches!(region, "dialog" | "conversation") {
+            continue;
         }
+        let value = c["value"].as_str().unwrap_or_default();
+        let class = if region == "conversation" {
+            Request::of(value, &names)
+        } else {
+            Input::of(value, existing.as_deref()).name()
+        };
+        submitting
+            .entry(region)
+            .or_default()
+            .push(format!("{}={class}", c["id"].as_str().unwrap_or_default()));
+    }
+    let with_inputs = |region: &str, key: String, about: String| match submitting.get(region) {
+        Some(inputs) => {
+            let mut inputs = inputs.clone();
+            inputs.sort();
+            let inputs = inputs.join(",");
+            (format!("{key}|{inputs}"), format!("{about} with {inputs}"))
+        }
+        None => (key, about),
     };
     let mut list = Vec::new();
     let mut focused = None;
@@ -483,8 +599,8 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
             || control["enabled"] == false
             || control["hidden"] == true
             || control["operatorOnly"] == true
-            || OPERATORS_REGIONS.contains(&region)
-            || OPERATORS_PREFIXES.iter().any(|p| id.starts_with(p))
+            || (!marked && OPERATORS_REGIONS.contains(&region))
+            || NEVER_PREFIXES.iter().any(|p| id.starts_with(p))
             || id.starts_with(WINDOW_CONTROLS)
             || id.is_empty()
             || (guarded && id == "dialog-confirm")
@@ -493,7 +609,25 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
         }
         let area = area(observation, control);
         let label = control["label"].as_str().unwrap_or_default().to_string();
-        if role == "field" {
+        if role == "field" && region == "conversation" {
+            // The composer: requests of the fixed classes.
+            if control["focused"] == true {
+                focused = Some((region.to_string(), area.clone(), label.clone()));
+            }
+            for request in Request::ALL {
+                list.push(Candidate {
+                    action: json!({ "kind": "fill", "control": id, "text": request.text(&names) }),
+                    key: format!("{screen}|{region}|{id}|fill|{}", request.name()),
+                    about: format!(
+                        "write the {} request into the Conversation's “{label}”",
+                        request.name()
+                    ),
+                    area: area.clone(),
+                    label: label.clone(),
+                    field: true,
+                });
+            }
+        } else if role == "field" {
             if control["focused"] == true {
                 focused = Some((region.to_string(), area.clone(), label.clone()));
             }
@@ -516,8 +650,9 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
         } else {
             let key = format!("{screen}|{region}|{id}|click");
             let about = format!("click the {role} “{label}” ({area})");
-            let (key, about) = if id == "dialog-confirm" {
-                with_inputs(key, about)
+            let submits = id == "dialog-confirm" || (region == "conversation" && id == "send");
+            let (key, about) = if submits {
+                with_inputs(region, key, about)
             } else {
                 (key, about)
             };
@@ -536,7 +671,8 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
             let id = command["id"].as_str().unwrap_or_default();
             if command["available"] == false
                 || command["operatorOnly"] == true
-                || OPERATORS_COMMANDS.contains(&id)
+                || (!marked && OPERATORS_COMMANDS.contains(&id))
+                || CHECKS_COMMANDS.contains(&id)
                 || id.is_empty()
             {
                 continue;
@@ -556,6 +692,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
         && !guarded
     {
         let (key, about) = with_inputs(
+            &region,
             format!("{screen}|{region}|enter|key"),
             format!("press Enter in the field “{label}” ({area})"),
         );
@@ -756,7 +893,7 @@ pub struct Chosen {
 
 const INSTRUCTIONS: &str = "An explorer tests the Agentique application by operating it toward a goal, to find problems. Choose its next action among the options; each is valid on this screen and safe in this test instance. Prefer behaviour not covered before, toward the areas the goal names; do not repeat the last actions; leave a dialog or panel once its behaviour is covered.";
 
-const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains";
+const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text; for the Conversation, the request to send), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains, and replyContains (text the Assistant's reply will hold)";
 
 /// The typed question for the next action: the best `n` of the rules'
 /// order as options `a1`, `a2`, …
@@ -828,7 +965,18 @@ fn read_answer(
     let expect = match &answer["expect"] {
         Value::Null => None,
         expect => {
-            crate::control::expectation(expect).map_err(|e| format!("the expectation: {e}"))?;
+            // Its part about the reply is the explorer's own; the rest is
+            // in the grammar of observation criteria.
+            if !expect[findings::REPLY].is_string() && expect.get(findings::REPLY).is_some() {
+                return Err(format!("the expectation: `{}` is text", findings::REPLY));
+            }
+            if let Some(rest) = findings::deterministic(expect) {
+                crate::control::expectation(&rest).map_err(|e| format!("the expectation: {e}"))?;
+            } else if expect.get(findings::REPLY).is_none() {
+                return Err(
+                    "the expectation: an observation criterion must expect something".into(),
+                );
+            }
             Some(expect.clone())
         }
     };
@@ -1070,6 +1218,10 @@ pub struct Run {
     pub usd: f64,
     pub unpriced: u32,
     pub notes: Vec<String>,
+    /// Conditions of the environment the run met, such as the Assistant
+    /// needing a key: never findings.
+    #[serde(default)]
+    pub conditions: Vec<String>,
     /// Why it ended.
     pub ended: String,
     pub seconds: f64,
@@ -1112,6 +1264,9 @@ struct Explorer<'a> {
     /// checked here at all.
     undo_checked: BTreeSet<String>,
     undo_unavailable: bool,
+    /// What the explorer expected of a request it sent: checked when its
+    /// turn has ended (on the wait for it), not while it runs.
+    pending_expect: Option<Value>,
     reported: BTreeSet<String>,
     restarts: usize,
     started: Instant,
@@ -1154,6 +1309,7 @@ pub fn explore(
             usd: 0.0,
             unpriced: 0,
             notes: Vec::new(),
+            conditions: Vec::new(),
             ended: String::new(),
             seconds: 0.0,
         },
@@ -1163,6 +1319,7 @@ pub fn explore(
         avoid: BTreeSet::new(),
         undo_checked: BTreeSet::new(),
         undo_unavailable: false,
+        pending_expect: None,
         reported: BTreeSet::new(),
         restarts: 0,
         started: Instant::now(),
@@ -1199,6 +1356,10 @@ impl Explorer<'_> {
                 return Err("the spend budget was used".into());
             }
             self.step()?;
+        }
+        // A request sent last: its turn ends (and is checked) within the run.
+        if findings::turn_running(&self.now) {
+            self.await_turn()?;
         }
         Ok(())
     }
@@ -1244,12 +1405,17 @@ impl Explorer<'_> {
         Ok(())
     }
 
-    /// The areas an observation shows.
+    /// The areas an observation shows, and the conditions it reports.
     fn seen(&mut self, observation: &Value) {
         for control in observation["controls"].as_array().into_iter().flatten() {
             if control["hidden"] != true {
                 self.run.areas.insert(area(observation, control));
             }
+        }
+        if let Some(condition) = findings::needs_key(observation)
+            && !self.run.conditions.contains(&condition)
+        {
+            self.run.conditions.push(condition);
         }
     }
 
@@ -1320,6 +1486,11 @@ impl Explorer<'_> {
         if self.now["dialog"].is_string() && self.now["dialog"] != self.expected_dialog {
             return self.cancel_dialog();
         }
+        // A turn of the Assistant runs (a request was sent): its end is
+        // waited for before anything else.
+        if findings::turn_running(&self.now) {
+            return self.await_turn();
+        }
         let mut candidates = candidates(&self.now, self.folder.as_deref());
         candidates.retain(|c| !self.avoid.contains(&c.key));
         if candidates.is_empty() {
@@ -1353,11 +1524,16 @@ impl Explorer<'_> {
         let mut key = candidate.key.clone();
         if let Some(text) = &chosen.input {
             action["text"] = json!(text);
-            let class = Input::of(text, existing_name(&self.now).as_deref());
+            // A request for the Conversation's composer, an input for any
+            // other field.
+            let class = if candidate.area == "conversation" {
+                Request::of(text, &existing_names(&self.now))
+            } else {
+                Input::of(text, existing_name(&self.now).as_deref()).name()
+            };
             key = format!(
-                "{}|{}",
+                "{}|{class}",
                 key.rsplit_once('|').map(|(k, _)| k).unwrap_or(&key),
-                class.name()
             );
         }
         let before = self.knowledge.count(&key);
@@ -1448,12 +1624,22 @@ impl Explorer<'_> {
                 "ok"
             };
             let took = answer["tookMs"].as_u64();
-            self.record(&step, chosen, outcome, error, took);
             *self.run.covered.entry(step.key.clone()).or_default() += 1;
             self.since.push(step.clone());
             let Some(after) = self.observe()? else {
+                self.record(&step, chosen, outcome, error, took);
                 return Ok(());
             };
+            // A request sent: what the explorer expected of it is checked
+            // when its turn has ended, on the wait for it.
+            let mut step = step;
+            if findings::turn_running(&after) && step.expect.is_some() {
+                self.pending_expect = step.expect.take();
+                if let Some(last) = self.since.last_mut() {
+                    last.expect = None;
+                }
+            }
+            self.record(&step, chosen, outcome, error, took);
             let failed = findings::failures(&Outcome {
                 before: &self.now,
                 step: Some(&step),
@@ -1462,10 +1648,12 @@ impl Explorer<'_> {
             });
             let steps = self.since.clone();
             self.report(failed, &steps);
+            self.note_reply(&step, &after);
             let before = std::mem::replace(&mut self.now, after);
             self.expected_dialog = self.now["dialog"].clone();
             if answer["ok"] != false
                 && !self.undo_unavailable
+                && !findings::turn_running(&self.now)
                 && findings::changed_model(&before, &self.now)
                 && self.undo_checked.insert(step.key.clone())
             {
@@ -1505,6 +1693,112 @@ impl Explorer<'_> {
                 }
                 Ok(())
             }
+        }
+    }
+
+    /// Waits for the running turn to end, through the control interface's
+    /// `wait` (until the Assistant and every job are idle), within
+    /// [`findings::TURN_BUDGET_MS`]. A turn past its budget is a finding,
+    /// and Stop must then end it within [`findings::STOP_BUDGET_MS`]; one
+    /// that will not stop leaves a fresh start.
+    fn await_turn(&mut self) -> Result<(), String> {
+        let screen = screen_of(&self.now);
+        let wait = |label: &str, ms: u64| Step {
+            action: json!({ "kind": "wait", "until": { "idle": true }, "timeoutMs": ms }),
+            key: format!("{screen}|conversation|turn|wait"),
+            screen: screen.clone(),
+            label: label.into(),
+            expect: None,
+            by: "wait".into(),
+        };
+        let mut turn = wait("the turn", findings::TURN_BUDGET_MS);
+        turn.expect = self.pending_expect.take();
+        let ended = self.act_and_check(turn, "wait for the turn to end")?;
+        if ended != Some(false) {
+            return Ok(());
+        }
+        let stop = self.now["controls"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|c| c["region"] == "conversation" && c["id"] == "stop" && c["enabled"] != false);
+        if stop {
+            let step = Step {
+                action: json!({ "kind": "click", "control": "stop" }),
+                key: format!("{screen}|conversation|stop|click"),
+                screen: screen.clone(),
+                label: "Stop".into(),
+                expect: None,
+                by: "check".into(),
+            };
+            if self.act_and_check(step, "stop a turn past its budget")? == Some(true) {
+                let stopped = self.act_and_check(
+                    wait("the stop", findings::STOP_BUDGET_MS),
+                    "wait for Stop to end the turn",
+                )?;
+                if stopped != Some(false) {
+                    return Ok(());
+                }
+            }
+        }
+        self.recover("restarted", "a turn of the Assistant would not end".into());
+        self.start(true)
+    }
+
+    /// Takes a step the explorer did not choose (a wait, Stop) and checks
+    /// what it did: whether it was carried out, `None` when the instance
+    /// ended (and was started again).
+    fn act_and_check(&mut self, step: Step, why: &str) -> Result<Option<bool>, String> {
+        let act = Act {
+            agent: AGENT,
+            goal: &self.plan.goal,
+            why,
+            observed: self.now["screenRevision"].as_u64().unwrap_or_default(),
+            action: &step.action,
+        };
+        let answer = match self.instance.act(&act) {
+            Ok(answer) => answer,
+            Err(error) => {
+                self.record(&step, None, "ended", error.clone(), None);
+                self.since.push(step);
+                self.ended(&error)?;
+                return Ok(None);
+            }
+        };
+        let ok = answer["ok"] != false;
+        let error = answer["error"].as_str().unwrap_or_default().to_string();
+        self.record(&step, None, if ok { "ok" } else { "failed" }, error, None);
+        self.since.push(step.clone());
+        let Some(after) = self.observe()? else {
+            return Ok(None);
+        };
+        let failed = findings::failures(&Outcome {
+            before: &self.now,
+            step: Some(&step),
+            answer: Some(&answer),
+            after: &after,
+        });
+        let steps = self.since.clone();
+        self.report(failed, &steps);
+        self.note_reply(&step, &after);
+        self.expected_dialog = after["dialog"].clone();
+        self.now = after;
+        Ok(Some(ok))
+    }
+
+    /// What the explorer expected the Assistant's reply to say, checked
+    /// after `step`: recorded, never a finding (a reply varies between
+    /// runs).
+    fn note_reply(&mut self, step: &Step, after: &Value) {
+        if let Some(Err(problem)) = step
+            .expect
+            .as_ref()
+            .and_then(|e| findings::reply_holds(after, e))
+        {
+            self.run.notes.push(format!(
+                "after {}: {problem} (a reply varies between runs: recorded, not a finding)",
+                describe(&step.action)
+            ));
         }
     }
 
@@ -1612,6 +1906,10 @@ impl Explorer<'_> {
             "panels": now["panels"],
             "selection": now["selection"],
             "status": now["status"].as_str().unwrap_or_default().chars().take(200).collect::<String>(),
+            "conversation": {
+                "running": findings::turn_running(now),
+                "lastReply": now["conversation"]["lastReply"].as_str().unwrap_or_default().chars().take(300).collect::<String>(),
+            },
             "lastActions": last,
         })
     }
@@ -1679,7 +1977,7 @@ mod tests {
             "selection": ["Shop::Store"], "status": "",
             "cards": [{ "element": "Shop::'Cache'", "category": "part" }],
             "controls": [
-                { "id": "Message", "label": "Message", "role": "field", "region": "conversation" },
+                { "id": "Message", "label": "Message", "role": "field", "region": "conversation", "operatorOnly": true },
                 { "id": "History", "label": "History", "role": "tab", "region": "inspector", "selected": true },
                 { "id": "checkpoint", "label": "Checkpoint…", "role": "button", "region": "inspector" },
                 { "id": "show-changes", "label": "Show changes", "role": "button", "region": "inspector", "enabled": false },
@@ -1743,6 +2041,63 @@ mod tests {
                 "{left_out}"
             );
         }
+    }
+
+    #[test]
+    fn without_marks_the_operators_own_is_known_by_its_place() {
+        // A Studio that marks nothing: Settings, the Conversation and the
+        // Operator's commands are left out by where they are.
+        let mut o = observation();
+        for list in ["controls", "commands"] {
+            for c in o[list].as_array_mut().unwrap() {
+                c.as_object_mut().unwrap().remove("operatorOnly");
+            }
+        }
+        o["commands"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({ "id": "theme", "label": "Switch light or dark theme" }));
+        let list = candidates(&o, None);
+        assert!(!list.iter().any(|c| c.action["control"] == "Message"));
+        assert!(!list.iter().any(|c| c.action["id"] == "theme"));
+        // Marked: the marks decide, the Conversation's composer included.
+        o["controls"][0]["operatorOnly"] = json!(false);
+        let list = candidates(&o, None);
+        assert!(list.iter().any(|c| c.action["control"] == "Message"));
+        // Undo and redo stay the undo check's.
+        assert!(!list.iter().any(|c| c.action["id"] == "undo"));
+    }
+
+    #[test]
+    fn the_composer_takes_requests_and_sending_names_the_request() {
+        let mut o = observation();
+        o["cards"] = json!([{ "element": "Shop::'Cache'" }, { "element": "Shop::Store" }]);
+        o["controls"] = json!([
+            { "id": "Message", "label": "Message", "role": "field", "region": "conversation", "value": "Add a part named Probe to the model.", "focused": true, "operatorOnly": false },
+            { "id": "send", "label": "Send", "role": "button", "region": "conversation", "operatorOnly": false },
+            { "id": "History", "label": "History", "role": "tab", "region": "inspector" }
+        ]);
+        let list = candidates(&o, None);
+        let fills: Vec<&str> = list
+            .iter()
+            .filter(|c| c.action["control"] == "Message")
+            .map(|c| c.key.as_str())
+            .collect();
+        assert_eq!(fills.len(), Request::ALL.len());
+        assert!(fills.contains(&"surface|conversation|Message|fill|add-part"));
+        let connect = list
+            .iter()
+            .find(|c| c.key.ends_with("|fill|connect"))
+            .unwrap();
+        assert_eq!(
+            connect.action["text"], "Connect Cache to Store.",
+            "two names in view"
+        );
+        let keys: Vec<&str> = list.iter().map(|c| c.key.as_str()).collect();
+        assert!(keys.contains(&"surface|conversation|send|click|Message=add-part"));
+        assert!(keys.contains(&"surface|conversation|enter|key|Message=add-part"));
+        assert_eq!(Request::of("Tell me a joke", &[]), "written");
+        assert_eq!(Request::of("   ", &[]), "whitespace");
     }
 
     #[test]

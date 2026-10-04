@@ -36,7 +36,7 @@ use std::path::{Path, PathBuf};
 mod common;
 mod standin;
 use common::outside_the_repository;
-use standin::{Defects, StandIn};
+use standin::{Chat, Defects, StandIn, Turn};
 
 /// A model that reads the prompt's options before it answers.
 type Reads = Box<dyn Fn(&str) -> String>;
@@ -809,6 +809,207 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
     let ways = knowledge.ways();
     assert_eq!(ways[&Way::Rules].runs, 1);
     assert_eq!(ways[&Way::Rules].findings, 1);
+}
+
+// The Conversation, where a test instance offers it to agents.
+
+fn chatting(offered: bool, key: bool, turn: Turn) -> StandIn {
+    let mut studio = StandIn::new(Defects::default());
+    studio.chat = Some(Chat { offered, key, turn });
+    studio
+}
+
+/// Whether a step sent the composer's request (Enter in it, or Send).
+fn sends(t: &explore::Taken) -> bool {
+    t.step.key.contains("|conversation|")
+        && (t.step.action["keys"] == "enter" || t.step.action["control"] == "send")
+}
+
+/// The first of a few seeds whose run `met` what a test needs, with its
+/// stand-in.
+fn seeking(offered: bool, key: bool, turn: Turn, met: fn(&Run) -> bool) -> (StandIn, Run) {
+    for seed in 1..=8 {
+        let mut studio = chatting(offered, key, turn);
+        let run = by_rules(&mut studio, seed, 80);
+        if met(&run) {
+            return (studio, run);
+        }
+    }
+    panic!("no seed met it");
+}
+
+/// A request ran: its turn was waited for.
+fn waited(run: &Run) -> bool {
+    run.steps.iter().any(|t| t.step.by == "wait")
+}
+
+#[test]
+fn the_composer_is_used_only_where_the_conversation_is_offered() {
+    // The Operator's: never touched, whichever way the run goes.
+    for seed in 1..=4 {
+        let mut studio = chatting(false, true, Turn::Ends);
+        let run = by_rules(&mut studio, seed, 60);
+        assert!(run.findings.is_empty(), "{:#?}", run.findings);
+        assert!(
+            !studio
+                .log
+                .iter()
+                .any(|l| l.contains("Message") || l.contains("\"send\"")),
+            "{:?}",
+            studio.log
+        );
+    }
+    // Offered: requests of the fixed classes are written and sent, each
+    // turn is waited for, and coverage names the request.
+    let (studio, run) = seeking(true, true, Turn::Ends, waited);
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    let written: Vec<&str> = run
+        .steps
+        .iter()
+        .filter(|t| t.step.action["control"] == "Message")
+        .map(|t| t.step.key.rsplit('|').next().unwrap())
+        .collect();
+    assert!(!written.is_empty());
+    for class in &written {
+        assert!(
+            explore::Request::ALL.iter().any(|r| r.name() == *class),
+            "{class}"
+        );
+    }
+    let sent = run.steps.iter().filter(|t| sends(t)).count();
+    assert!(
+        run.steps
+            .iter()
+            .any(|t| t.step.key.contains("Message=") && sends(t)),
+        "sending names what is sent"
+    );
+    let waits = run.steps.iter().filter(|t| t.step.by == "wait").count();
+    assert!(
+        waits >= 1 && waits <= sent,
+        "{waits} waits for {sent} sends"
+    );
+    assert!(studio.log.iter().any(|l| l.contains("\"wait\"")));
+}
+
+#[test]
+fn a_turn_that_never_ends_is_a_finding_and_stop_must_end_it() {
+    let (mut studio, run) = seeking(true, true, Turn::Never, waited);
+    assert_eq!(
+        checks(&run),
+        BTreeSet::from([Check::TurnEnds]),
+        "{:#?}",
+        run.findings
+    );
+    // Stop was pressed and ended it.
+    assert!(
+        run.steps
+            .iter()
+            .any(|t| t.step.action["control"] == "stop" && t.step.by == "check")
+    );
+    let mut finding = run.findings[0].clone();
+    assert!(finding.message.contains("180000 ms"), "{}", finding.message);
+    findings::reproduce(&mut studio, &mut finding, 8);
+    assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
+    assert!(finding.note.contains("Assistant"), "{}", finding.note);
+    // A turn that Stop does not end either: both, and a fresh start.
+    let (_, run) = seeking(true, true, Turn::NeverStops, waited);
+    assert_eq!(
+        checks(&run),
+        BTreeSet::from([Check::TurnEnds, Check::TurnStops]),
+        "{:#?}",
+        run.findings
+    );
+    assert!(run.recoveries.iter().any(|r| r.kind == "restarted"));
+}
+
+#[test]
+fn an_assistant_without_a_key_is_a_condition_of_the_run_not_a_finding() {
+    let (_, run) = seeking(true, false, Turn::Ends, |r| !r.conditions.is_empty());
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    assert_eq!(run.conditions.len(), 1, "{:?}", run.conditions);
+    assert!(
+        run.conditions[0].contains("needs a key"),
+        "{:?}",
+        run.conditions
+    );
+    // Nothing ran, so nothing was waited for.
+    assert!(!run.steps.iter().any(|t| t.step.by == "wait"));
+}
+
+#[test]
+fn an_expectation_about_the_reply_is_recorded_never_a_finding() {
+    // The model writes a request, sends it, and expects words in the reply
+    // and a new part in view: the reply's part is a note; the rest is
+    // checked.
+    let answers = Scripted {
+        reads: Some(Box::new(|prompt: &str| {
+            if let Some(id) = option(prompt, "“Send”") {
+                format!(
+                    r#"{{"choice": "{id}", "expect": {{"replyContains": "Gauge was added", "anyLabelContains": "Gauge"}}}}"#
+                )
+            } else {
+                let id = option(prompt, "into the Conversation").unwrap();
+                format!(r#"{{"choice": "{id}", "input": "Add a part named Gauge to the model."}}"#)
+            }
+        })),
+        ..Scripted::default()
+    };
+    let mut studio = chatting(true, true, Turn::Ends);
+    let run = explore_with(
+        &mut studio,
+        &plan(Way::Model, 1, 3),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let typed = &run.steps[0].step;
+    assert!(typed.key.ends_with("|fill|written"), "{}", typed.key);
+    // Sending started the turn; its end was waited for, and what was
+    // expected of it was checked then, on the wait: the part the Assistant
+    // added is a label in view (an outline row).
+    assert!(sends(&run.steps[1]), "{:?}", run.steps[1].step);
+    assert_eq!(run.steps[1].step.expect, None);
+    assert_eq!(run.steps[2].step.by, "wait");
+    assert!(run.steps[2].step.expect.is_some());
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    // The reply did not say what was expected: recorded as a note.
+    assert!(
+        run.notes
+            .iter()
+            .any(|n| n.contains("Gauge was added") && n.contains("not a finding")),
+        "{:?}",
+        run.notes
+    );
+    // What can be checked deterministically and fails is a finding on the
+    // wait for the turn; its replay sends the same request and re-checks it
+    // there, and says the reply's wording is not re-checked.
+    let answers = Scripted {
+        reads: Some(Box::new(|prompt: &str| {
+            if let Some(id) = option(prompt, "“Send”") {
+                format!(r#"{{"choice": "{id}", "expect": {{"anyLabelContains": "Gauge2"}}}}"#)
+            } else {
+                let id = option(prompt, "into the Conversation").unwrap();
+                format!(r#"{{"choice": "{id}", "input": "Add a part named Gauge to the model."}}"#)
+            }
+        })),
+        ..Scripted::default()
+    };
+    let mut studio = chatting(true, true, Turn::Ends);
+    let run = explore_with(
+        &mut studio,
+        &plan(Way::Model, 1, 2),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    assert_eq!(checks(&run), BTreeSet::from([Check::Expectation]));
+    let mut finding = run.findings[0].clone();
+    assert_eq!(finding.steps.last().unwrap().by, "wait");
+    findings::reproduce(&mut studio, &mut finding, 4);
+    assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
+    assert!(
+        finding.note.contains("never the reply's wording"),
+        "{}",
+        finding.note
+    );
 }
 
 // The fixed exploration tasks and the live measurement.

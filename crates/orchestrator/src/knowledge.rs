@@ -383,6 +383,7 @@ mod tests {
             usd: 0.0,
             unpriced: 0,
             notes: Vec::new(),
+            conditions: Vec::new(),
             ended: String::new(),
             seconds: 3.0,
         }

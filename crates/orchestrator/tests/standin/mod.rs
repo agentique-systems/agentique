@@ -31,6 +31,38 @@ pub struct Defects {
     pub refuses_offered: bool,
 }
 
+/// The Conversation, where a test instance offers it to agents.
+#[derive(Clone, Copy, Debug)]
+pub struct Chat {
+    /// Agents may use the composer (a test instance); otherwise it is the
+    /// Operator's, and marked so.
+    pub offered: bool,
+    /// The Assistant has a key; without one a request only says so.
+    pub key: bool,
+    pub turn: Turn,
+}
+
+/// How a turn of the stand-in Assistant goes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Turn {
+    /// It answers (and adds the part a request names).
+    Ends,
+    /// It never ends; Stop ends it.
+    Never,
+    /// It never ends, and Stop does not end it either.
+    NeverStops,
+}
+
+#[derive(Clone, Debug, Default)]
+struct Talk {
+    composer: String,
+    focused: bool,
+    running: bool,
+    request: String,
+    reply: Option<String>,
+    key_missing: Option<String>,
+}
+
 #[derive(Clone, Debug)]
 struct Screen {
     panel: &'static str,
@@ -45,6 +77,7 @@ struct Screen {
     status: String,
     selection: Vec<String>,
     view: &'static str,
+    talk: Talk,
 }
 
 impl Screen {
@@ -62,6 +95,7 @@ impl Screen {
             status: "Ready".into(),
             selection: Vec::new(),
             view: "architecture",
+            talk: Talk::default(),
         }
     }
 }
@@ -77,6 +111,8 @@ pub struct StandIn {
     pub dialog_at_start: bool,
     /// Times the screen changes by itself just before an action.
     pub drift: u32,
+    /// The Conversation; without it, its composer is the Operator's.
+    pub chat: Option<Chat>,
     pub starts: u32,
     /// Every action asked for, with its agent.
     pub log: Vec<String>,
@@ -93,6 +129,7 @@ impl StandIn {
             digest: true,
             dialog_at_start: false,
             drift: 0,
+            chat: None,
             starts: 0,
             log: Vec::new(),
             flaky_fired: false,
@@ -104,8 +141,11 @@ impl StandIn {
     fn controls(&self) -> Vec<Value> {
         let s = &self.s;
         let button = |id: &str, label: &str, region: &str| json!({ "id": id, "label": label, "role": "button", "region": region });
+        let offered = self.chat.is_some_and(|c| c.offered);
+        let talk = &s.talk;
         let mut list = vec![
-            json!({ "id": "Message", "label": "Message", "role": "field", "region": "conversation", "value": "" }),
+            json!({ "id": "Message", "label": "Message", "role": "field", "region": "conversation", "value": talk.composer, "focused": talk.focused, "operatorOnly": !offered }),
+            json!({ "id": "send", "label": "Send", "role": "button", "region": "conversation", "enabled": !talk.composer.trim().is_empty() && !talk.running, "operatorOnly": !offered }),
             json!({ "id": "Inspector", "label": "Inspector", "role": "tab", "region": "inspector", "selected": s.panel == "inspector" }),
             json!({ "id": "History", "label": "History", "role": "tab", "region": "inspector", "selected": s.panel == "history" }),
         ];
@@ -138,6 +178,9 @@ impl StandIn {
             json!({ "id": "lock-it", "label": "Lock", "role": "button", "region": "title", "operatorOnly": true }),
             button("window-close", "Close", "title"),
         ]);
+        if talk.running {
+            list.push(json!({ "id": "stop", "label": "Stop", "role": "button", "region": "conversation", "operatorOnly": !offered }));
+        }
         if s.dialog {
             list.extend([
                 json!({ "id": "create-dialog", "label": "Create part", "role": "dialog", "region": "dialog" }),
@@ -203,6 +246,51 @@ impl StandIn {
         }
     }
 
+    /// Sends the composer's request: a turn starts, unless there is nothing
+    /// to send or no key.
+    fn send(&mut self) {
+        let text = self.s.talk.composer.trim().to_string();
+        self.s.talk.composer.clear();
+        if text.is_empty() {
+            self.s.status = "Nothing to send".into();
+            return;
+        }
+        if !self.chat.is_some_and(|c| c.key) {
+            self.s.talk.key_missing =
+                Some("Settings › Providers: the Assistant needs a key".into());
+            return;
+        }
+        self.s.talk.running = true;
+        self.s.talk.request = text;
+    }
+
+    /// Waits until the Assistant is idle: a turn that ends ends now (and
+    /// adds the part its request names); one that never ends times out.
+    fn wait(&mut self) -> Value {
+        if !self.s.talk.running {
+            return self.ok("wait", 0);
+        }
+        if self.chat.is_some_and(|c| c.turn != Turn::Ends) {
+            return Self::refuse(
+                "the wait timed out (screen surface, dialog none, status “Working”)",
+            );
+        }
+        self.s.talk.running = false;
+        let request = self.s.talk.request.clone();
+        if let Some(name) = request
+            .strip_prefix("Add a part named ")
+            .and_then(|rest| rest.split_whitespace().next())
+            && !self.s.elements.iter().any(|e| e == name)
+        {
+            self.s.undo.push(self.s.elements.clone());
+            self.s.redo.clear();
+            self.s.elements.push(name.to_string());
+            self.s.revision += 1;
+        }
+        self.s.talk.reply = Some(format!("Done: {request}"));
+        self.ok("wait", 0)
+    }
+
     fn command(&mut self, id: &str) -> Value {
         match id {
             "undo" | "redo" if self.undo_refused => {
@@ -252,8 +340,9 @@ impl StandIn {
             )));
         };
         if control["operatorOnly"] == true {
-            return Ok(Self::refuse("refused: locking is the Operator's own"));
+            return Ok(Self::refuse("refused: it is the Operator's own"));
         }
+        self.s.talk.focused = false;
         let label = control["label"].as_str().unwrap_or_default().to_string();
         if self.s.dialog && control["region"] != "dialog" {
             // Behind the dialog: the click lands on its backdrop.
@@ -302,6 +391,13 @@ impl StandIn {
                 return Ok(Self::refuse(&format!("`{label}` is disabled now")));
             }
             "sync" => self.s.status = "Synced".into(),
+            "send" => self.send(),
+            "stop" => {
+                if self.chat.is_some_and(|c| c.turn != Turn::NeverStops) {
+                    self.s.talk.running = false;
+                    self.s.talk.reply = Some("Stopped.".into());
+                }
+            }
             element if self.s.elements.iter().any(|e| e == element) => {
                 self.s.selection = vec![element.to_string()];
                 self.moved();
@@ -336,13 +432,19 @@ impl Instance for StandIn {
             "palette": null,
             "selection": s.selection,
             "status": s.status,
+            "conversation": {
+                "running": s.talk.running,
+                "lastReply": s.talk.reply,
+                "keyMissing": s.talk.key_missing,
+                "notices": s.talk.key_missing.iter().collect::<Vec<_>>(),
+            },
             "controls": self.controls(),
             "commands": [
                 { "id": "graph", "label": "Graph view" },
                 { "id": "architecture", "label": "Architecture view" },
                 { "id": "undo", "label": "Undo", "available": !s.undo.is_empty() },
                 { "id": "redo", "label": "Redo", "available": !s.redo.is_empty() },
-                { "id": "lock", "label": "Lock or unlock" },
+                { "id": "lock", "label": "Lock or unlock", "operatorOnly": true },
             ],
             "cards": s.elements.iter().map(|e| json!({ "element": format!("Shop::{e}"), "category": "part" })).collect::<Vec<_>>(),
         }))
@@ -365,6 +467,14 @@ impl Instance for StandIn {
         let action = act.action;
         match action["kind"].as_str().unwrap_or_default() {
             "click" => self.click(action["control"].as_str().unwrap_or_default()),
+            "fill" if action["control"] == "Message" => {
+                if !self.chat.is_some_and(|c| c.offered) {
+                    return Ok(Self::refuse("refused: the Conversation is the Operator's"));
+                }
+                self.s.talk.composer = action["text"].as_str().unwrap_or_default().to_string();
+                self.s.talk.focused = true;
+                Ok(self.ok("fill", 150))
+            }
             "fill" => {
                 let id = action["control"].as_str().unwrap_or_default();
                 if !(self.s.dialog && id == "Name") {
@@ -384,10 +494,12 @@ impl Instance for StandIn {
                         self.moved();
                     }
                     "enter" if self.s.dialog && self.s.focused => self.confirm(),
+                    "enter" if self.s.talk.focused => self.send(),
                     _ => {}
                 }
                 Ok(self.ok("key", 60))
             }
+            "wait" => Ok(self.wait()),
             "command" => Ok(self.command(action["id"].as_str().unwrap_or_default())),
             other => Ok(Self::refuse(&format!("there is no action `{other}`"))),
         }

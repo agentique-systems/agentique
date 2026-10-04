@@ -29,6 +29,21 @@ pub const ACTION_BUDGET_MS: u64 = 2000;
 /// 300-character fill takes about 9 s in a debug build, 30 ms a keystroke.)
 pub const TYPED_CHARACTER_MS: u64 = 100;
 
+/// How long a turn of the Assistant may take after a request: a request of
+/// the fixed set needs a few tool calls; three minutes is far past what any
+/// of them takes, and keeps a turn that never ends from using up a run.
+pub const TURN_BUDGET_MS: u64 = 180_000;
+
+/// How long Stop may take to end a running turn: it cancels the model's
+/// stream and the turn's tool call, which takes a moment, not ten seconds.
+pub const STOP_BUDGET_MS: u64 = 10_000;
+
+/// The part of an explorer's expectation about the Assistant's reply. A
+/// model writes its reply differently from run to run, so this part is
+/// checked and recorded, never a finding (and not part of the criteria's
+/// grammar, `control::expectation`).
+pub const REPLY: &str = "replyContains";
+
 /// What a status line says when a program fault reaches it, rather than a
 /// message written for the Operator (lowercase).
 const INTERNAL_ERRORS: [&str; 7] = [
@@ -70,6 +85,10 @@ pub enum Check {
     NoInternalError,
     /// What the explorer expected before acting holds after it.
     Expectation,
+    /// A turn of the Assistant ends within [`TURN_BUDGET_MS`].
+    TurnEnds,
+    /// Stop ends a running turn within [`STOP_BUDGET_MS`].
+    TurnStops,
 }
 
 impl Check {
@@ -83,6 +102,8 @@ impl Check {
             Check::ActionTime => "action-time",
             Check::NoInternalError => "no-internal-error",
             Check::Expectation => "expectation",
+            Check::TurnEnds => "turn-ends",
+            Check::TurnStops => "turn-stops",
         }
     }
 }
@@ -274,6 +295,64 @@ fn unreadable(control: &Value) -> bool {
                 .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_'))
 }
 
+/// The Conversation's notices (the observation's `conversation.notices`,
+/// as text or `{ text }`, and its `error`).
+pub fn notices(observation: &Value) -> Vec<String> {
+    let conversation = &observation["conversation"];
+    conversation["notices"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|n| n.as_str().or_else(|| n["text"].as_str()))
+        .chain(conversation["error"].as_str())
+        .map(str::to_string)
+        .collect()
+}
+
+/// Whether a turn of the Assistant is running.
+pub fn turn_running(observation: &Value) -> bool {
+    let conversation = &observation["conversation"];
+    conversation["running"] == true || conversation["turn"]["running"] == true
+}
+
+/// An environment condition the observation shows: the Assistant needs a
+/// key. A condition of the run, never a finding.
+pub fn needs_key(observation: &Value) -> Option<String> {
+    let missing = &observation["conversation"]["keyMissing"];
+    if let Some(text) = missing.as_str() {
+        return Some(format!("the Assistant needs a key: {text}"));
+    }
+    if !missing.is_null() {
+        return Some("the Assistant needs a key".into());
+    }
+    notices(observation).into_iter().find(|n| {
+        let n = n.to_lowercase();
+        n.contains("key") && (n.contains("need") || n.contains("missing") || n.contains("no "))
+    })
+}
+
+/// An expectation without its part about the reply: what can be checked
+/// deterministically, if anything is left.
+pub fn deterministic(expect: &Value) -> Option<Value> {
+    let mut rest = expect.as_object()?.clone();
+    rest.remove(REPLY);
+    (!rest.is_empty()).then_some(Value::Object(rest))
+}
+
+/// Whether the reply says what the expectation's reply part asks, when it
+/// has one.
+pub fn reply_holds(observation: &Value, expect: &Value) -> Option<Result<(), String>> {
+    let text = expect[REPLY].as_str()?;
+    let reply = observation["conversation"]["lastReply"]
+        .as_str()
+        .unwrap_or_default();
+    Some(if reply.contains(text) {
+        Ok(())
+    } else {
+        Err(format!("the reply does not say “{text}”"))
+    })
+}
+
 /// What one action did, as the checks read it.
 pub struct Outcome<'a> {
     /// The observation the action rested on.
@@ -353,23 +432,52 @@ pub fn failures(outcome: &Outcome) -> Vec<Failed> {
             });
         }
     }
-    // The status line reports no internal error.
-    let status = after["status"].as_str().unwrap_or_default();
-    if INTERNAL_ERRORS
-        .iter()
-        .any(|e| status.to_lowercase().contains(e))
+    // Neither the status line nor a notice of the Conversation reports an
+    // internal error.
+    let status = after["status"].as_str().unwrap_or_default().to_string();
+    for (place, text) in std::iter::once(("the status line", status))
+        .chain(notices(after).into_iter().map(|n| ("a notice", n)))
     {
-        failed.push(Failed {
-            check: Check::NoInternalError,
-            control: target.clone(),
-            message: format!("the status line reports an internal error: {status}"),
-            evidence: json!({ "status": status }),
-        });
+        if INTERNAL_ERRORS
+            .iter()
+            .any(|e| text.to_lowercase().contains(e))
+        {
+            failed.push(Failed {
+                check: Check::NoInternalError,
+                control: target.clone(),
+                message: format!("{place} reports an internal error: {text}"),
+                evidence: json!({ "text": text }),
+            });
+        }
     }
     let (Some(step), Some(answer)) = (outcome.step, outcome.answer) else {
         return failed;
     };
     let before = outcome.before;
+    // A turn that did not end in its budget, or a Stop that did not end it.
+    if step.action["kind"] == "wait"
+        && answer["ok"] == false
+        && answer["error"]
+            .as_str()
+            .is_some_and(|e| e.contains("timed out"))
+    {
+        let stop = step.label == "the stop";
+        failed.push(Failed {
+            check: if stop {
+                Check::TurnStops
+            } else {
+                Check::TurnEnds
+            },
+            control: "conversation".into(),
+            message: if stop {
+                format!("Stop did not end the turn within {STOP_BUDGET_MS} ms")
+            } else {
+                format!("the turn did not end within {TURN_BUDGET_MS} ms")
+            },
+            evidence: json!({ "answer": answer, "conversation": after["conversation"] }),
+        });
+        return failed;
+    }
     if answer["ok"] == false {
         // Offered, enabled, and refused as gone or disabled while the screen
         // stayed the same and still offers it.
@@ -430,9 +538,9 @@ pub fn failures(outcome: &Outcome) -> Vec<Failed> {
             evidence: json!({ "dialog": after["dialog"], "status": after["status"] }),
         });
     }
-    // What the explorer expected.
-    if let Some(expect) = &step.expect
-        && let Err(problem) = crate::control::holds(after, expect)
+    // What the explorer expected (its part about the reply aside).
+    if let Some(expect) = step.expect.as_ref().and_then(deterministic)
+        && let Err(problem) = crate::control::holds(after, &expect)
     {
         failed.push(Failed {
             check: Check::Expectation,
@@ -761,11 +869,11 @@ pub fn reproduce(instance: &mut dyn Instance, finding: &mut Finding, replays: us
     finding.replays.extend([first, second]);
     if reproduced {
         finding.state = State::Reproduced;
-        finding.note = String::new();
+        finding.note = asks_the_assistant(finding);
         reduce(instance, finding, replays.saturating_sub(2));
     } else {
         finding.state = State::NotReproduced;
-        finding.note = finding
+        let replays: String = finding
             .replays
             .iter()
             .rev()
@@ -786,6 +894,29 @@ pub fn reproduce(instance: &mut dyn Instance, finding: &mut Finding, replays: us
             })
             .collect::<Vec<_>>()
             .join("; ");
+        let model = asks_the_assistant(finding);
+        finding.note = if model.is_empty() {
+            replays
+        } else {
+            format!("{replays}. {model}")
+        };
+    }
+}
+
+/// What a replay cannot promise when the steps ask the Assistant: its
+/// model answers differently from run to run.
+fn asks_the_assistant(finding: &Finding) -> String {
+    let asks = finding.steps.iter().any(|s| {
+        s.key.contains("|conversation|")
+            && (s.action["keys"] == "enter" || s.action["control"] == "send")
+    });
+    if asks {
+        format!(
+            "Its steps send requests to the Assistant, whose model answers differently from run to run: the replays repeat the same requests and re-check {} only, never the reply's wording",
+            finding.check.name()
+        )
+    } else {
+        String::new()
     }
 }
 
