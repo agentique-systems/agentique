@@ -10,6 +10,7 @@
 //! objective runs.
 
 use crate::decide::Decider;
+use crate::explore::Deciding;
 use crate::record::{Access, RoleModel};
 use agq_assistant::claude_agent::Login;
 use agq_providers::{Credential, KeyStatus, ModelRef, Provider, capabilities};
@@ -314,6 +315,28 @@ pub fn decider(models: &[RoleModel]) -> Result<Decider, String> {
     })
 }
 
+/// What an exploring objective's run decides with (W12.4's [`Deciding`]),
+/// from its recorded roles in one call: typed decisions by the [`decider`]
+/// of its `decisions` and `escalation` roles, the explorer's model and
+/// effort from its `explorer` role, and the escalation model and effort
+/// from its `escalation` role. `run` gets them for the run's length.
+pub fn with_deciding<T>(
+    models: &[RoleModel],
+    run: impl FnOnce(&Deciding) -> T,
+) -> Result<T, String> {
+    let decider = decider(models)?;
+    let explorer = for_role(models, "explorer")?;
+    let escalation = for_role(models, "escalation")?;
+    let deciding = Deciding {
+        answers: &decider,
+        explorer: explorer.model.clone(),
+        effort: explorer.effort.clone(),
+        escalation: escalation.model.clone(),
+        escalation_effort: escalation.effort.clone(),
+    };
+    Ok(run(&deciding))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -425,6 +448,39 @@ mod tests {
         assert_eq!(decider.jev_model, "jev-1.13.0");
         assert_eq!(decider.model.to_string(), "anthropic/claude-opus-5-5");
         assert_eq!(decider.effort.as_deref(), Some("high"));
+        // Exploration's deciding, from the explorer, decisions and
+        // escalation roles in one call (W12.5 passes the record's models).
+        let seen = with_deciding(&models, |deciding| {
+            (
+                deciding.answers.jev_model().to_string(),
+                deciding.explorer.to_string(),
+                deciding.effort.clone(),
+                deciding.escalation.to_string(),
+                deciding.escalation_effort.clone(),
+            )
+        })
+        .unwrap();
+        assert_eq!(
+            seen,
+            (
+                "typesafe/jev-1.13.0".to_string(),
+                "deepseek/deepseek-flash".to_string(),
+                Some("high".to_string()),
+                "anthropic/claude-opus-5-5".to_string(),
+                Some("high".to_string()),
+            )
+        );
+        // A record without the exploring roles cannot explore.
+        let sessions: Vec<RoleModel> = models
+            .iter()
+            .filter(|m| needed(&m.role, false))
+            .cloned()
+            .collect();
+        assert!(
+            with_deciding(&sessions, |_| ())
+                .unwrap_err()
+                .contains("no model was resolved")
+        );
     }
 
     /// The reference machine (C-54, 2026-10-04): the Operator's Claude

@@ -50,7 +50,9 @@ what to change.
   reason; every session of a role is built on it. An objective that does
   not explore needs only the lead, implementer, reviewer and evaluator; the
   others are recorded as without a model. `decider` builds typed decisions
-  from the `decisions` and `escalation` roles (W12.5 uses it).
+  from the `decisions` and `escalation` roles, and `with_deciding` gives
+  exploration its `Deciding` from those and the `explorer` role (W12.5 uses
+  them).
 - **Forge** (`forge`): `git` and `gh` as exact commands through Execution;
   never a force-push, never a push to the default branch.
 - **Builds** (`builds`) and **test instances** (`control`).

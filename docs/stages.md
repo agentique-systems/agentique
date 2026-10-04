@@ -1475,8 +1475,9 @@ budget applies to it; a dated Claude snapshot such as
 `claude-haiku-4-5-20251001` is priced as its model). `models::decider`
 builds typed decisions from the `decisions` and `escalation` roles (Jev's
 model, and the escalation model with its effort) instead of
-`Decider::default`; nothing calls it yet: W12.5's exploring objectives use
-it. A session gets exactly one credential; the companion holds the prompt
+`Decider::default`, and `models::with_deciding` gives W12.4's exploration
+its `Deciding` from the `explorer`, `decisions` and `escalation` roles in
+one call; nothing calls them yet: W12.5's exploring objectives use them. A session gets exactly one credential; the companion holds the prompt
 until the SDK has answered its start (within 60 s, else a runtime failure
 with its cause) and gives it only when both sides of the SDK's report are
 that credential: for a key, `apiKeySource` `ANTHROPIC_API_KEY` and no
