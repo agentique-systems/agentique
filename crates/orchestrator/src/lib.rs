@@ -16,14 +16,24 @@
 //! - [`control`]: test instances and the client of their control interface.
 //! - [`roles`]: what each agent is told and which tools it has.
 //! - [`decide`]: typed decisions in operation (System 1) with escalation.
+//! - [`explore`]: exploration of a test instance toward a goal (C-54).
+//! - [`findings`]: the checks exploration makes, and findings reproduced
+//!   and reduced by replaying them.
+//! - [`knowledge`]: the testing knowledge kept across runs.
+//! - [`observed`]: what exploration reads from a test instance, in one
+//!   place.
 //! - [`run`]: the driver.
 #![forbid(unsafe_code)]
 
 pub mod builds;
 pub mod control;
 pub mod decide;
+pub mod explore;
+pub mod findings;
 pub mod forge;
 pub mod gates;
+pub mod knowledge;
+pub mod observed;
 pub mod record;
 pub mod roles;
 pub mod run;

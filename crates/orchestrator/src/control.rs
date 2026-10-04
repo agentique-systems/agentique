@@ -86,6 +86,14 @@ impl Client {
         self.call(json!({ "op": "observe", "detail": if full { "full" } else { "summary" } }))
     }
 
+    /// How long an answer may take from now on (an explorer does not wait
+    /// ten minutes for a Studio that stopped answering).
+    pub fn answer_within(&mut self, within: Duration) -> Result<(), String> {
+        self.stream
+            .set_read_timeout(Some(within))
+            .map_err(|e| e.to_string())
+    }
+
     /// An action against the latest observation of this instance.
     pub fn act(&mut self, agent: &str, why: &str, action: Value) -> Result<Value, String> {
         let observed = self.observe(false)?;
@@ -137,7 +145,10 @@ impl TestInstance {
                 environment.push((name.to_string(), value));
             }
         }
+        // Its working folder is its own, so a relative path typed into one of
+        // its fields (a project folder, say) stays inside it.
         let child = Command::new(exe)
+            .current_dir(folder)
             .env_clear()
             .envs(environment)
             .arg("--no-restore")
@@ -159,6 +170,11 @@ impl TestInstance {
             folder: folder.to_path_buf(),
             endpoint,
         })
+    }
+
+    /// Whether its process still runs.
+    pub fn alive(&mut self) -> bool {
+        matches!(self.child.try_wait(), Ok(None))
     }
 
     /// Connects to it, waiting up to `within` for it to start; a test

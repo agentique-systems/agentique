@@ -1,0 +1,53 @@
+{
+ "about": "Exploration tasks (C-54, W12.4): fixed tasks on which the ways of deciding the explorer's next action are compared, each with its goal, the project it starts from (a folder of this repository whose model files are copied fresh for every start), its step budget and the Studio areas that count as progress for its goal (an area is reached when an observation shows a control in it: a panel in a column such as `history`, `library`, `requirements`, `scenarios`, `problems` or `run`, or a dialog as `dialog:<Kind>`). Tasks marked `tuning` may inform changes to how exploration chooses; those marked `held-out` judge such changes and are never tuned on or weakened to let a change pass (ROADMAP §4.16, testing knowledge).",
+ "tasks": [
+  {
+   "id": "t1",
+   "split": "tuning",
+   "goal": "Look through the model's history and record a checkpoint",
+   "start": "models/url-shortener",
+   "steps": 20,
+   "regions": ["history", "dialog:Checkpoint"]
+  },
+  {
+   "id": "t2",
+   "split": "tuning",
+   "goal": "Browse the Library's building blocks and narrow them by kind",
+   "start": "models/url-shortener",
+   "steps": 20,
+   "regions": ["library"]
+  },
+  {
+   "id": "t3",
+   "split": "tuning",
+   "goal": "Create a part and give it a name",
+   "start": "models/notifications",
+   "steps": 20,
+   "regions": ["dialog:Create"]
+  },
+  {
+   "id": "h1",
+   "split": "held-out",
+   "goal": "Look at the system's requirements and create a new requirement",
+   "start": "models/link-screening",
+   "steps": 20,
+   "regions": ["requirements", "dialog:Create"]
+  },
+  {
+   "id": "h2",
+   "split": "held-out",
+   "goal": "Explore the scenarios of the screening system and their runs",
+   "start": "models/link-screening",
+   "steps": 20,
+   "regions": ["scenarios", "run"]
+  },
+  {
+   "id": "h3",
+   "split": "held-out",
+   "goal": "Look at the problems the model has",
+   "start": "models/notifications",
+   "steps": 20,
+   "regions": ["problems"]
+  }
+ ]
+}

@@ -10,8 +10,13 @@
 //! reasoning model (System 2). A decision only chooses what to press: it
 //! never turns a failed check into a pass. The ways are compared live in
 //! `tests/decisions.rs` and `tests/workflow.rs`.
+//!
+//! Since C-54 the same typed question ([`Question`]: which of these options,
+//! with instructions, a state and what each option means) also chooses the
+//! explorer's next action (`explore`); [`Answers`] is where it is answered
+//! (Jev and the models through the providers, or a stand-in in tests).
 
-use agq_providers::jev::{Answer, DecisionRequest, Question, QuestionKind};
+use agq_providers::jev::{self, Answer, DecisionRequest, QuestionKind};
 use agq_providers::{
     AssistantPart, ChatRequest, Event, Message, ModelRef, Provider, Providers, UserPart,
 };
@@ -119,6 +124,151 @@ impl Situation {
             "controls": self.controls,
         })
     }
+
+    /// The typed question this dialog asks.
+    pub fn question(&self) -> Question {
+        Question {
+            instructions: INSTRUCTIONS.into(),
+            state: self.state(),
+            options: self.options(),
+        }
+    }
+}
+
+/// One typed question: which of these options, given the instructions and
+/// a state (a dialog in the way, or the explorer's next action).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Question {
+    pub instructions: String,
+    pub state: Value,
+    /// By id, each with what choosing it means.
+    pub options: BTreeMap<String, Option<String>>,
+}
+
+impl Question {
+    /// The question as a model reads it, ending with the JSON its answer
+    /// must be (`format`).
+    pub fn prompt(&self, format: &str) -> String {
+        let options: Vec<String> = self
+            .options
+            .iter()
+            .map(|(id, about)| format!("- {id}: {}", about.as_deref().unwrap_or_default()))
+            .collect();
+        format!(
+            "{}\n\nThe state:\n{}\n\nThe options:\n{}\n\nAnswer with JSON only: {format}",
+            self.instructions,
+            serde_json::to_string_pretty(&self.state).unwrap_or_default(),
+            options.join("\n")
+        )
+    }
+}
+
+/// The most a model may write in answer to one typed question (its
+/// reasoning and its one-line answer).
+pub const MODEL_OUTPUT_TOKENS: u64 = 8000;
+
+/// Where typed questions are answered: Jev and the models through the
+/// providers ([`Decider`]), or a stand-in in tests.
+pub trait Answers {
+    /// Jev's model, and the confidence at or above which its answer is
+    /// used.
+    fn jev_model(&self) -> ModelRef;
+    fn threshold(&self) -> f64;
+    /// Jev's choice among the question's options, with its confidence,
+    /// within its deadline.
+    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure>;
+    /// One call to `model`: what it said and what it cost (`None` when
+    /// unknown), or why it failed (a request that was sent may be billed,
+    /// so a failed call's cost is unknown). `stop` is asked while it is
+    /// waited for; a stopped call is cancelled and fails.
+    fn chat(
+        &self,
+        model: &ModelRef,
+        effort: Option<&str>,
+        prompt: &str,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<(String, Option<f64>), String>;
+}
+
+/// Reads what a model said into the option it chose and what else it said,
+/// or why the answer is not one the question allows.
+pub type Read<'a, T> = &'a dyn Fn(&str) -> Result<(String, T), String>;
+
+/// The answer a model gives to `question`, read by `read`. One more call
+/// when the answer cannot be read (the reasoning can run past the limit and
+/// leave no answer, or the answer is not one the question allows); both
+/// are counted.
+pub fn ask_model<T>(
+    answers: &dyn Answers,
+    model: &ModelRef,
+    effort: Option<&str>,
+    question: &Question,
+    format: &str,
+    read: Read<T>,
+    stop: &mut dyn FnMut() -> bool,
+) -> Result<(Decision, T), Failure> {
+    let started = Instant::now();
+    let prompt = question.prompt(format);
+    let mut usd = Some(0.0);
+    let mut problem = String::new();
+    for _ in 0..2 {
+        let (said, cost) = answers
+            .chat(model, effort, &prompt, stop)
+            .map_err(|error| Failure {
+                source: Source::Model,
+                error,
+                millis: started.elapsed().as_millis() as u64,
+                usd: None,
+            })?;
+        usd = usd.and_then(|total| Some(total + cost?));
+        match read(&said) {
+            Ok((choice, rest)) => {
+                let decision = Decision {
+                    choice,
+                    source: Source::Model,
+                    confidence: None,
+                    millis: started.elapsed().as_millis() as u64,
+                    usd,
+                    note: problem,
+                };
+                return Ok((decision, rest));
+            }
+            Err(error) => problem = error,
+        }
+    }
+    Err(Failure {
+        source: Source::Model,
+        error: problem,
+        millis: started.elapsed().as_millis() as u64,
+        usd,
+    })
+}
+
+/// The JSON object in a model's text that names a choice: every object that
+/// names one must name the same, and the first of them is the answer.
+pub fn answer_object(said: &str) -> Result<Value, String> {
+    let named: Vec<Value> = said
+        .char_indices()
+        .filter(|(_, c)| *c == '{')
+        .filter_map(|(at, _)| {
+            let value = serde_json::Deserializer::from_str(&said[at..])
+                .into_iter::<Value>()
+                .next()?
+                .ok()?;
+            value["choice"].is_string().then_some(value)
+        })
+        .collect();
+    let choices: BTreeSet<&str> = named.iter().filter_map(|v| v["choice"].as_str()).collect();
+    let mut choices = choices.into_iter();
+    let choice = choices
+        .next()
+        .ok_or("the model gave no JSON naming a choice")?;
+    if let Some(other) = choices.next() {
+        return Err(format!(
+            "the model named more than one choice (`{choice}`, `{other}`)"
+        ));
+    }
+    Ok(named[0].clone())
 }
 
 /// Who decided.
@@ -233,22 +383,26 @@ impl Default for Decider {
     }
 }
 
-impl Decider {
-    /// Jev alone: its choice, with its confidence.
-    pub fn jev(&self, situation: &Situation) -> Result<Decision, Failure> {
-        if let Some(only) = only_waiting(situation) {
-            return Ok(only);
-        }
+impl Answers for Decider {
+    fn jev_model(&self) -> ModelRef {
+        ModelRef::new(Provider::TypeSafe, &self.jev_model)
+    }
+
+    fn threshold(&self) -> f64 {
+        self.threshold
+    }
+
+    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
         let started = Instant::now();
         let request = DecisionRequest {
             model: self.jev_model.clone(),
-            state: situation.state(),
+            state: question.state.clone(),
             questions: BTreeMap::from([(
                 "next".to_string(),
-                Question {
-                    instructions: INSTRUCTIONS.into(),
+                jev::Question {
+                    instructions: question.instructions.clone(),
                     kind: QuestionKind::Choice {
-                        options: situation.options(),
+                        options: question.options.clone(),
                     },
                 },
             )]),
@@ -298,86 +452,82 @@ impl Decider {
         }
     }
 
+    fn chat(
+        &self,
+        model: &ModelRef,
+        effort: Option<&str>,
+        prompt: &str,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<(String, Option<f64>), String> {
+        let request = ChatRequest {
+            model: model.clone(),
+            effort: effort.map(str::to_string),
+            // Room for the model's reasoning before its one-line answer.
+            max_output_tokens: MODEL_OUTPUT_TOKENS,
+            system: "You choose one action for an agent operating an application. You answer with JSON only.".into(),
+            tools: Vec::new(),
+            messages: vec![Message::User(vec![UserPart::Text {
+                text: prompt.to_string(),
+            }])],
+        };
+        let mut handle = self.providers.chat(request);
+        let deadline = Instant::now() + Duration::from_secs(120);
+        let reply = loop {
+            match handle.next_event(Duration::from_millis(100)) {
+                Some(Event::Finished(Ok(reply))) => break reply,
+                Some(Event::Finished(Err(error))) => return Err(error.to_string()),
+                Some(_) => {}
+                None if Instant::now() >= deadline => {
+                    handle.cancel();
+                    return Err("the model did not answer in time".into());
+                }
+                None if stop() => {
+                    handle.cancel();
+                    return Err("stopped".into());
+                }
+                None => {}
+            }
+        };
+        let said: String = reply
+            .content
+            .iter()
+            .filter_map(|p| match p {
+                AssistantPart::Text { text } => Some(text.as_str()),
+                _ => None,
+            })
+            .collect();
+        Ok((said, reply.usage.cost_usd(model)))
+    }
+}
+
+/// The answer a dialog's question asks of a model.
+const CHOICE: &str = "{\"choice\": \"<one option id>\"}";
+
+impl Decider {
+    /// Jev alone: its choice, with its confidence.
+    pub fn jev(&self, situation: &Situation) -> Result<Decision, Failure> {
+        if let Some(only) = only_waiting(situation) {
+            return Ok(only);
+        }
+        self.ask_jev(&situation.question())
+    }
+
     /// The reasoning model alone.
     pub fn model(&self, situation: &Situation) -> Result<Decision, Failure> {
         if let Some(only) = only_waiting(situation) {
             return Ok(only);
         }
-        let started = Instant::now();
-        let options: Vec<String> = situation
-            .options()
-            .into_iter()
-            .map(|(id, about)| format!("- {id}: {}", about.unwrap_or_default()))
-            .collect();
-        let text = format!(
-            "{INSTRUCTIONS}\n\nThe state:\n{}\n\nThe options:\n{}\n\nAnswer with JSON only: {{\"choice\": \"<one option id>\"}}",
-            serde_json::to_string_pretty(&situation.state()).unwrap_or_default(),
-            options.join("\n")
-        );
-        // One more call when the answer cannot be read (the reasoning can
-        // run past the limit and leave no answer); both are counted.
-        let mut usd = Some(0.0);
-        let mut problem = String::new();
-        for _ in 0..2 {
-            let request = ChatRequest {
-                model: self.model.clone(),
-                effort: None,
-                // Room for the model's reasoning before its one-line answer.
-                max_output_tokens: 8000,
-                system: "You choose one action for an agent operating an application. You answer with JSON only.".into(),
-                tools: Vec::new(),
-                messages: vec![Message::User(vec![UserPart::Text { text: text.clone() }])],
-            };
-            let mut handle = self.providers.chat(request);
-            let deadline = Instant::now() + Duration::from_secs(120);
-            // A request that was sent may be billed: its cost is unknown.
-            let failed = |error: String| Failure {
-                source: Source::Model,
-                error,
-                millis: started.elapsed().as_millis() as u64,
-                usd: None,
-            };
-            let reply = loop {
-                match handle.next_event(Duration::from_millis(100)) {
-                    Some(Event::Finished(Ok(reply))) => break reply,
-                    Some(Event::Finished(Err(error))) => return Err(failed(error.to_string())),
-                    Some(_) => {}
-                    None if Instant::now() >= deadline => {
-                        handle.cancel();
-                        return Err(failed("the model did not answer in time".into()));
-                    }
-                    None => {}
-                }
-            };
-            usd = usd.and_then(|total| Some(total + reply.usage.cost_usd(&self.model)?));
-            let said: String = reply
-                .content
-                .iter()
-                .filter_map(|p| match p {
-                    AssistantPart::Text { text } => Some(text.as_str()),
-                    _ => None,
-                })
-                .collect();
-            match parse_choice(&said, situation) {
-                Ok(choice) => {
-                    return Ok(Decision {
-                        choice,
-                        source: Source::Model,
-                        confidence: None,
-                        millis: started.elapsed().as_millis() as u64,
-                        usd,
-                        note: problem,
-                    });
-                }
-                Err(error) => problem = error,
-            }
-        }
-        Err(Failure {
-            source: Source::Model,
-            error: problem,
-            millis: started.elapsed().as_millis() as u64,
-            usd,
-        })
+        let read = |said: &str| parse_choice(said, situation).map(|choice| (choice, ()));
+        ask_model(
+            self,
+            &self.model,
+            None,
+            &situation.question(),
+            CHOICE,
+            &read,
+            &mut || false,
+        )
+        .map(|(decision, ())| decision)
     }
 
     /// Known answers by rule; otherwise Jev, escalating to the model when
@@ -434,8 +584,10 @@ impl Decider {
     }
 }
 
-/// The ways of deciding compared in W11.6.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// The ways of deciding compared in W11.6. Exploration (C-54) decides its
+/// next action by `Rules`, `Jev`, `Model` or `Escalating` (`explore`); the
+/// cancelling rule is for dialogs in the way only.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Way {
     /// The forward rule: an empty field, else confirm.
@@ -572,26 +724,8 @@ pub fn clear_dialogs(
 /// The option the model's JSON names, if it is one of the options.
 fn parse_choice(said: &str, situation: &Situation) -> Result<String, String> {
     // Every JSON object in the text that names a choice: they must agree.
-    let named: BTreeSet<String> = said
-        .char_indices()
-        .filter(|(_, c)| *c == '{')
-        .filter_map(|(at, _)| {
-            let value = serde_json::Deserializer::from_str(&said[at..])
-                .into_iter::<Value>()
-                .next()?
-                .ok()?;
-            value["choice"].as_str().map(str::to_string)
-        })
-        .collect();
-    let mut named = named.into_iter();
-    let choice = named
-        .next()
-        .ok_or("the model gave no JSON naming a choice")?;
-    if let Some(other) = named.next() {
-        return Err(format!(
-            "the model named more than one choice (`{choice}`, `{other}`)"
-        ));
-    }
+    let answer = answer_object(said)?;
+    let choice = answer["choice"].as_str().unwrap_or_default().to_string();
     if choice == WAIT || situation.controls.iter().any(|c| c.id == choice) {
         Ok(choice)
     } else {
@@ -717,5 +851,104 @@ mod tests {
         assert_eq!(s.controls.len(), 2);
         assert!(s.options().contains_key(WAIT));
         assert!(Situation::from_observation("x", &json!({ "dialog": null })).is_none());
+    }
+
+    /// A stand-in model that answers from a list and keeps what it was asked.
+    struct Said(
+        std::cell::RefCell<Vec<String>>,
+        std::cell::RefCell<Vec<String>>,
+    );
+
+    impl Answers for Said {
+        fn jev_model(&self) -> ModelRef {
+            ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+        }
+        fn threshold(&self) -> f64 {
+            0.6
+        }
+        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+            unreachable!("no Jev here")
+        }
+        fn chat(
+            &self,
+            _: &ModelRef,
+            _: Option<&str>,
+            prompt: &str,
+            _: &mut dyn FnMut() -> bool,
+        ) -> Result<(String, Option<f64>), String> {
+            self.1.borrow_mut().push(prompt.to_string());
+            Ok((self.0.borrow_mut().remove(0), Some(0.01)))
+        }
+    }
+
+    #[test]
+    fn a_dialogs_question_reads_as_before_and_an_unreadable_answer_is_asked_again() {
+        let s = situation(None, "");
+        // The W11.6 prompt, word for word.
+        let options: Vec<String> = s
+            .options()
+            .into_iter()
+            .map(|(id, about)| format!("- {id}: {}", about.unwrap_or_default()))
+            .collect();
+        let before = format!(
+            "{INSTRUCTIONS}
+
+The state:
+{}
+
+The options:
+{}
+
+Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
+            serde_json::to_string_pretty(&s.state()).unwrap_or_default(),
+            options.join(
+                "
+"
+            )
+        );
+        assert_eq!(s.question().prompt(CHOICE), before);
+        let model = ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro");
+        let read = |said: &str| parse_choice(said, &s).map(|c| (c, ()));
+        let said = Said(
+            vec![
+                "thinking…".to_string(),
+                "{\"choice\": \"dialog-cancel\"}".into(),
+            ]
+            .into(),
+            Vec::new().into(),
+        );
+        let (decision, ()) = ask_model(
+            &said,
+            &model,
+            None,
+            &s.question(),
+            CHOICE,
+            &read,
+            &mut || false,
+        )
+        .unwrap();
+        assert_eq!(decision.choice, "dialog-cancel");
+        assert_eq!(decision.source, Source::Model);
+        assert_eq!(decision.usd, Some(0.02));
+        assert_eq!(decision.note, "the model gave no JSON naming a choice");
+        assert_eq!(said.1.borrow().len(), 2);
+        assert_eq!(said.1.borrow()[0], before);
+        // Two unreadable answers: a failure that keeps both calls' cost.
+        let said = Said(
+            vec!["?".to_string(), "{\"choice\": \"x\"}".into()].into(),
+            Vec::new().into(),
+        );
+        let failed = ask_model(
+            &said,
+            &model,
+            None,
+            &s.question(),
+            CHOICE,
+            &read,
+            &mut || false,
+        )
+        .unwrap_err();
+        assert_eq!(failed.usd, Some(0.02));
+        assert!(failed.error.contains("not an option"), "{}", failed.error);
     }
 }
