@@ -286,6 +286,7 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
         "a stale click",
     );
     assert_eq!(refused["ok"], false);
+    assert_eq!(refused["kind"], "stale", "{refused}");
     assert!(
         refused["error"].as_str().unwrap().starts_with("stale"),
         "{refused}"
@@ -437,6 +438,7 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
         "press something in Settings",
     );
     assert_eq!(refused["ok"], false, "{refused}");
+    assert_eq!(refused["kind"], "operator-own", "{refused}");
     assert!(
         refused["error"].as_str().unwrap().contains("Operator"),
         "{refused}"
@@ -639,6 +641,7 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
         "fit the view",
     );
     assert_eq!(intruder["ok"], false, "{intruder}");
+    assert_eq!(intruder["kind"], "held", "{intruder}");
     assert_eq!(
         intruder["error"],
         "refused: the window is in use by journey; act in your own test instance, or wait"
@@ -809,7 +812,7 @@ fn the_operator_watches_agents_act_at_the_observer_speed() {
     let (answer, _) = fill.join().unwrap();
     assert_eq!(
         answer,
-        json!({ "ok": false, "error": "refused: stopped by the Operator" })
+        json!({ "ok": false, "kind": "stopped", "error": "refused: stopped by the Operator" })
     );
     let stopped_at = typed(&mut studio);
     assert!(
@@ -881,11 +884,14 @@ fn an_agent_uses_the_conversation_in_a_test_instance() {
     assert_readable(&surface, "the Surface with the Conversation");
     let composer = control(&surface, "Message").expect("the composer");
     assert!(composer["operatorOnly"].is_null(), "{composer}");
+    let conversation = &surface["conversation"];
     assert!(
-        surface["conversation"]["notice"].is_string(),
-        "no key in a test instance: {}",
-        surface["conversation"]
+        conversation["keyMissing"].is_string(),
+        "no key in a test instance: {conversation}"
     );
+    assert!(conversation["notices"].is_array(), "{conversation}");
+    assert!(conversation["error"].is_null(), "{conversation}");
+    assert!(conversation["toolCalls"].is_array(), "{conversation}");
     // Typing into the composer appears character by character.
     let request = "Add a cache in front of the link store";
     let typing = studio.beside(studio.body(
@@ -927,12 +933,20 @@ fn an_agent_uses_the_conversation_in_a_test_instance() {
         "nothing was sent"
     );
     assert_eq!(after["conversation"]["running"], false);
-    let notice = after["conversation"]["notice"]
+    let notice = after["conversation"]["keyMissing"]
         .as_str()
         .unwrap_or_default()
         .to_string();
     assert!(notice.to_lowercase().contains("key"), "{notice}");
     eprintln!("the Conversation says: {notice}");
+    // Waiting for the Conversation's turn alone.
+    let waited = studio.act_as(
+        "explorer",
+        &after,
+        json!({ "kind": "wait", "until": { "conversationIdle": true }, "timeoutMs": 5000 }),
+        "wait for the reply",
+    );
+    assert_eq!(waited["ok"], true, "{waited}");
 
     // Undo is the agents' too in a test instance: a change and its undo
     // leave the model's text as it was.
@@ -983,6 +997,7 @@ fn an_agent_uses_the_conversation_in_a_test_instance() {
         "lock",
     );
     assert_eq!(locked["ok"], false, "{locked}");
+    assert_eq!(locked["kind"], "operator-own", "{locked}");
     let new = studio.act_as(
         "explorer",
         &now,

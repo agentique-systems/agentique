@@ -136,6 +136,63 @@ impl Speed {
     }
 }
 
+/// Why an action was not carried out, for clients to tell apart without
+/// reading the words: every refused action's answer carries its `kind`
+/// beside its `error`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Refusal {
+    /// The Operator's own (§3 roles).
+    OperatorOwn,
+    /// Observed in another instance, project, build or session, or on a
+    /// screen that changed since.
+    Stale,
+    /// The control is no longer on screen.
+    Gone,
+    Disabled,
+    /// The command is not available now (the observation says why).
+    Unavailable,
+    /// Another agent holds the window.
+    Held,
+    /// The Operator stopped agents (or the agent's own turn).
+    Stopped,
+    /// Nobody waits for the answer any more (it was held past its deadline).
+    Expired,
+    /// The request cannot be carried out as written: no such action,
+    /// operation, key, element or project, or not a field.
+    Invalid,
+    /// A wait whose condition did not come about in time.
+    Timeout,
+    /// It started, and a step could not be completed (the focus moved, the
+    /// project did not open, the control stayed out of view).
+    Failed,
+}
+
+impl Refusal {
+    pub fn name(self) -> &'static str {
+        match self {
+            Refusal::OperatorOwn => "operator-own",
+            Refusal::Stale => "stale",
+            Refusal::Gone => "gone",
+            Refusal::Disabled => "disabled",
+            Refusal::Unavailable => "unavailable",
+            Refusal::Held => "held",
+            Refusal::Stopped => "stopped",
+            Refusal::Expired => "expired",
+            Refusal::Invalid => "invalid",
+            Refusal::Timeout => "timeout",
+            Refusal::Failed => "failed",
+        }
+    }
+
+    /// The answer: not done, of this kind, and why.
+    pub fn answer(self, error: impl Into<String>) -> Value {
+        json!({ "ok": false, "kind": self.name(), "error": error.into() })
+    }
+}
+
+/// A step that could not be carried out, and why.
+type Failure = (Refusal, String);
+
 /// Who asked for an action, and for what: the agent, the reason it gave
 /// (its decision) and the goal it serves.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -331,6 +388,8 @@ pub struct Condition {
     pub status_contains: Option<String>,
     /// The Assistant and every job are idle.
     pub idle: bool,
+    /// The Conversation's turn alone is over (none is running).
+    pub conversation_idle: bool,
 }
 
 /// The control interface's state in the Studio.
@@ -543,7 +602,7 @@ impl ControlState {
         let mut kept = VecDeque::new();
         for request in self.waiting.drain(..) {
             if request.body["op"] == "act" && request.body["agent"] == agent {
-                request.reply.send(json!({ "ok": false, "error": why }));
+                request.reply.send(Refusal::Stopped.answer(why));
             } else {
                 kept.push_back(request);
             }
@@ -553,9 +612,7 @@ impl ControlState {
             self.waits.drain(..).partition(|w| w.who.agent == agent);
         self.waits = waits;
         for wait in cancelled {
-            wait.request
-                .reply
-                .send(json!({ "ok": false, "error": why }));
+            wait.request.reply.send(Refusal::Stopped.answer(why));
         }
         self.release(agent);
     }
@@ -1115,27 +1172,38 @@ fn turn_tools(panel: &crate::conversation::ConversationPanel) -> Value {
     }
 }
 
-/// What the Conversation says stands in the way: a missing key, or the
-/// latest notice since the last message (an error, a stop), or a file that
-/// could not be read or saved.
-fn notice(panel: &crate::conversation::ConversationPanel) -> Option<String> {
-    if let Some(missing) = &panel.key_missing {
-        return Some(bounded(missing, 300));
-    }
+/// The Conversation's notices since the last message (errors, a stop, a
+/// steering note): the last five, bounded.
+fn notices(panel: &crate::conversation::ConversationPanel) -> Vec<String> {
     let entries = &panel.conversation.entries;
     let since = entries
         .iter()
         .rposition(|e| matches!(e, agq_assistant::Entry::Operator { .. }))
         .map_or(0, |at| at + 1);
-    entries[since..]
+    let all: Vec<String> = entries[since..]
         .iter()
-        .rev()
-        .find_map(|e| match e {
+        .filter_map(|e| match e {
             agq_assistant::Entry::Notice { text } => Some(bounded(text, 300)),
             _ => None,
         })
-        .or_else(|| panel.read_error.as_deref().map(|e| bounded(e, 300)))
-        .or_else(|| panel.save_error.as_deref().map(|e| bounded(e, 300)))
+        .collect();
+    all[all.len().saturating_sub(5)..].to_vec()
+}
+
+/// Why the Conversation's last turn failed (its last notice), or why the
+/// conversation could not be read or saved; none when nothing went wrong.
+/// A missing key is `keyMissing`.
+fn conversation_error(panel: &crate::conversation::ConversationPanel) -> Option<String> {
+    if panel.can_retry()
+        && let Some(last) = notices(panel).pop()
+    {
+        return Some(last);
+    }
+    panel
+        .read_error
+        .as_deref()
+        .or(panel.save_error.as_deref())
+        .map(|e| bounded(e, 300))
 }
 
 /// The observation: what an agent needs to act in the Studio as it is now.
@@ -1259,7 +1327,8 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             // the way (no key, an error), so an agent that asked can tell
             // whether it was answered.
             "toolCalls": turn_tools(panel),
-            "notice": notice(panel),
+            "notices": notices(panel),
+            "error": conversation_error(panel),
             "keyMissing": panel.key_missing,
         },
         "task": studio.implementation.task.as_ref().map(|t| json!({
@@ -1338,6 +1407,7 @@ pub fn parse_action(body: &Value) -> Result<Action, String> {
                 enabled: until["enabled"] == true,
                 status_contains: until["statusContains"].as_str().map(str::to_string),
                 idle: until["idle"] == true,
+                conversation_idle: until["conversationIdle"] == true,
             };
             let ms = whole(&action["timeoutMs"]).unwrap_or(10_000).min(600_000);
             Ok(Action::Wait(condition, Duration::from_millis(ms)))
@@ -1451,6 +1521,9 @@ fn holds(studio: &Studio, condition: &Condition, agent: &str) -> bool {
     {
         return false;
     }
+    if condition.conversation_idle && studio.conversation.running() {
+        return false;
+    }
     if condition.idle
         && ((agent != "Assistant" && studio.conversation.running())
             || studio.runs.running()
@@ -1540,7 +1613,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
         studio.control.waiting = waiting.into();
         for request in expired {
             let who = Who::of(&request.body);
-            let answer = json!({ "ok": false, "error": "the request waited past its deadline (agents were paused) and was dropped; observe again" });
+            let answer = Refusal::Expired.answer("the request waited past its deadline (agents were paused) and was dropped; observe again");
             studio
                 .control
                 .ended(&who, "a request that waited too long", &answer);
@@ -1559,7 +1632,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                 let what = parse_action(&request.body)
                     .map(|action| describe(&action))
                     .unwrap_or_else(|_| "an action".into());
-                let answer = json!({ "ok": false, "error": "refused: stopped by the Operator" });
+                let answer = Refusal::Stopped.answer("refused: stopped by the Operator");
                 studio.control.ended(&who, &what, &answer);
                 request.reply.send(answer);
             }
@@ -1579,12 +1652,12 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                 studio.control.record(&wait.who, &wait.what, true, answer.clone());
                 wait.request.reply.send(answer);
             } else if now >= wait.until {
-                let answer = json!({ "ok": false, "error": format!(
+                let answer = Refusal::Timeout.answer(format!(
                     "the wait timed out (screen {}, dialog {}, status “{}”)",
                     screen(studio),
                     dialog_kind(studio).unwrap_or_else(|| "none".into()),
                     studio.status
-                )});
+                ));
                 studio.control.record(&wait.who, &wait.what, false, answer.clone());
                 wait.request.reply.send(answer);
             } else {
@@ -1622,7 +1695,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                     cx,
                 );
             }
-            let answer = json!({ "ok": false, "error": "refused: stopped by the Operator" });
+            let answer = Refusal::Stopped.answer("refused: stopped by the Operator");
             studio.update(cx, |studio, _| {
                 studio.control.acting = None;
                 studio.control.refused = None;
@@ -1653,7 +1726,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                 let summary = studio.update(cx, |studio, _| {
                     studio.control.acting = None;
                     let answer = match studio.control.refused.take() {
-                        Some(reason) => json!({ "ok": false, "error": format!("refused: {reason}") }),
+                        Some(reason) => Refusal::OperatorOwn.answer(format!("refused: {reason}")),
                         None => json!({
                             "ok": true,
                             "did": active.what,
@@ -1677,8 +1750,8 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                 let outcome = run_step(studio, step, &mut active, window, cx);
                 match outcome {
                     Ok(()) => studio.update(cx, |studio, _| studio.control.active = Some(active)),
-                    Err(error) => {
-                        let answer = json!({ "ok": false, "error": error });
+                    Err((kind, error)) => {
+                        let answer = kind.answer(error);
                         studio.update(cx, |studio, _| {
                             studio.control.acting = None;
                             studio.control.refused = None;
@@ -1751,10 +1824,10 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
         "release" => {
             let who = Who::of(body);
             match studio.control.holder() {
-                Some(holder) if holder != who.agent => json!({
-                    "ok": false,
-                    "error": format!("the window is held by {holder}, not by {}", who.agent),
-                }),
+                Some(holder) if holder != who.agent => Refusal::Held.answer(format!(
+                    "the window is held by {holder}, not by {}",
+                    who.agent
+                )),
                 _ => {
                     let released = studio.control.release(&who.agent);
                     if released {
@@ -1783,11 +1856,11 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
                 studio.stop_agents();
                 json!({ "ok": true, "gate": "stop" })
             }
-            _ => json!({ "ok": false, "error": "`mode` is pause, step, run or stop" }),
+            _ => Refusal::Invalid.answer("`mode` is pause, step, run or stop"),
         },
-        other => {
-            json!({ "ok": false, "error": format!("there is no operation `{other}`: hello, observe, act, release, events or gate") })
-        }
+        other => Refusal::Invalid.answer(format!(
+            "there is no operation `{other}`: hello, observe, act, release, events or gate"
+        )),
     }
 }
 
@@ -1811,17 +1884,15 @@ type Refused = Box<(Request, Value, Who, String)>;
 /// another holds the window.
 fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     let who = Who::of(&request.body);
-    let refuse = |request: Request, error: String, what: String| {
-        Err(Box::new((
-            request,
-            json!({ "ok": false, "error": error }),
-            who.clone(),
-            what,
-        )))
+    let refuse = |request: Request, (kind, error): Failure, what: String| {
+        Err(Box::new((request, kind.answer(error), who.clone(), what)))
     };
     let action = match parse_action(&request.body) {
         Ok(action) => action,
-        Err(error) => return refuse(request, error, "an action that could not be read".into()),
+        Err(error) => {
+            let what = "an action that could not be read".into();
+            return refuse(request, (Refusal::Invalid, error), what);
+        }
     };
     let what = describe(&action);
     // One agent at a time; the supervisor's own steps by rule and waiting
@@ -1836,21 +1907,26 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         let error = format!(
             "refused: the window is in use by {holder}; act in your own test instance, or wait"
         );
-        return refuse(request, error, what);
+        return refuse(request, (Refusal::Held, error), what);
     }
     if let Some(reason) = stale(studio, &request.body) {
-        return refuse(request, reason, what);
+        return refuse(request, (Refusal::Stale, reason), what);
     }
     let drawn = target::drawn();
     if let Some(reason) = operators_only(studio, &action, &drawn) {
-        return refuse(request, format!("refused: {reason}"), what);
+        let error = format!("refused: {reason}");
+        return refuse(request, (Refusal::OperatorOwn, error), what);
     }
-    let find = |name: &str| -> Result<&Drawn, String> {
+    let find = |name: &str| -> Result<&Drawn, Failure> {
         match control_named(&drawn, name) {
-            None => Err(format!(
-                "stale: no control `{name}` is on screen now; observe again"
+            None => Err((
+                Refusal::Gone,
+                format!("stale: no control `{name}` is on screen now; observe again"),
             )),
-            Some(d) if !d.control.enabled => Err(format!("`{}` is disabled now", d.control.label)),
+            Some(d) if !d.control.enabled => Err((
+                Refusal::Disabled,
+                format!("`{}` is disabled now", d.control.label),
+            )),
             Some(d) => Ok(d),
         }
     };
@@ -1859,11 +1935,8 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     match &action {
         Action::Command(id) => {
             if let Some(reason) = unavailable(*id, &studio.context()) {
-                return refuse(
-                    request,
-                    format!("`{}` is not available: {reason}", command_name(*id)),
-                    what,
-                );
+                let error = format!("`{}` is not available: {reason}", command_name(*id));
+                return refuse(request, (Refusal::Unavailable, error), what);
             }
             steps.push_back(Step::Command(*id));
         }
@@ -1872,7 +1945,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
                 marked = Some(d.shown.unwrap_or(d.clip));
                 steps.push_back(Step::Reveal(name.clone(), 6));
             }
-            Err(error) => return refuse(request, error, what),
+            Err(failure) => return refuse(request, failure, what),
         },
         Action::Fill(name, text) => match find(name) {
             Ok(d) if d.control.role != "field" => {
@@ -1880,29 +1953,26 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
                     "`{}` is a {}, not a field: click it instead",
                     d.control.label, d.control.role
                 );
-                return refuse(request, error, what);
+                return refuse(request, (Refusal::Invalid, error), what);
             }
             Ok(d) => {
                 marked = Some(d.shown.unwrap_or(d.clip));
                 steps.push_back(Step::Reveal(name.clone(), 6));
                 steps.push_back(Step::Fill(name.clone(), text.clone(), 10));
             }
-            Err(error) => return refuse(request, error, what),
+            Err(failure) => return refuse(request, failure, what),
         },
         Action::Scroll(name, dy) => match find(name) {
             Ok(d) => steps.push_back(Step::Scroll(d.shown.unwrap_or(d.clip).center(), *dy)),
-            Err(error) => return refuse(request, error, what),
+            Err(failure) => return refuse(request, failure, what),
         },
         Action::Key(keys) => {
             for key in keys {
                 if gpui::Keystroke::parse(key).is_err() {
-                    return refuse(
-                        request,
-                        format!(
-                            "`{key}` is not a key (GPUI syntax: ctrl-s, escape, enter, shift-1)"
-                        ),
-                        what,
+                    let error = format!(
+                        "`{key}` is not a key (GPUI syntax: ctrl-s, escape, enter, shift-1)"
                     );
+                    return refuse(request, (Refusal::Invalid, error), what);
                 }
             }
             steps.push_back(Step::Keys(keys.clone()));
@@ -1916,38 +1986,26 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             match id {
                 Some(id) => steps.push_back(Step::Select(id)),
                 None => {
-                    return refuse(
-                        request,
-                        format!("there is no element `{name}` in the open model"),
-                        what,
-                    );
+                    let error = format!("there is no element `{name}` in the open model");
+                    return refuse(request, (Refusal::Invalid, error), what);
                 }
             }
         }
         Action::OpenProject(folder) => {
             if who.agent == "Assistant" {
-                return refuse(
-                    request,
-                    "refused: opening another project ends your own turn; ask the Operator to open it".into(),
-                    what,
-                );
+                let error = "refused: opening another project ends your own turn; ask the Operator to open it".into();
+                return refuse(request, (Refusal::OperatorOwn, error), what);
             }
             if let Some(reason) = unavailable(CommandId::OpenProject, &studio.context()) {
-                return refuse(
-                    request,
-                    format!("a project cannot be opened now: {reason}"),
-                    what,
-                );
+                let error = format!("a project cannot be opened now: {reason}");
+                return refuse(request, (Refusal::Unavailable, error), what);
             }
             if !folder.join("model").is_dir() {
-                return refuse(
-                    request,
-                    format!(
-                        "{} is not an Agentique project (no model folder)",
-                        folder.display()
-                    ),
-                    what,
+                let error = format!(
+                    "{} is not an Agentique project (no model folder)",
+                    folder.display()
                 );
+                return refuse(request, (Refusal::Invalid, error), what);
             }
             steps.push_back(Step::Open(folder.clone()));
         }
@@ -2022,7 +2080,7 @@ fn run_step(
     active: &mut Active,
     window: &mut gpui::Window,
     cx: &mut gpui::App,
-) -> Result<(), String> {
+) -> Result<(), Failure> {
     // A dialog asking for the Operator's approval may have opened since the
     // action started: its own controls are not an agent's either.
     if matches!(
@@ -2035,8 +2093,9 @@ fn run_step(
             | Step::Char { .. }
     ) && let Some(kind) = approval(studio.read(cx))
     {
-        return Err(format!(
-            "refused: the {kind} dialog opened; it asks for the Operator's own approval"
+        return Err((
+            Refusal::OperatorOwn,
+            format!("refused: the {kind} dialog opened; it asks for the Operator's own approval"),
         ));
     }
     let agent = active.who.agent.clone();
@@ -2074,7 +2133,10 @@ fn carry_out(
     active: &mut Active,
     window: &mut gpui::Window,
     cx: &mut gpui::App,
-) -> Result<(), String> {
+) -> Result<(), Failure> {
+    let press = |key: &str, window: &mut gpui::Window, cx: &mut gpui::App| {
+        input::press(key, window, cx).map_err(|error| (Refusal::Invalid, error))
+    };
     use crate::workspace::StudioExt;
     let drawn_effect = |studio: &gpui::Entity<Studio>, cx: &mut gpui::App, effect: Effect| {
         studio.update(cx, |studio, _| studio.control.effects.push(effect))
@@ -2097,7 +2159,7 @@ fn carry_out(
         Step::Release(at) => input::click(at, false, window, cx),
         Step::Keys(keys) => {
             for key in keys {
-                input::press(&key, window, cx)?;
+                press(&key, window, cx)?;
             }
         }
         Step::Scroll(at, dy) => {
@@ -2127,16 +2189,16 @@ fn carry_out(
                 .map(|p| p.folder().to_path_buf())
                 != Some(folder.clone())
             {
-                return Err(format!(
-                    "the project did not open: {}",
-                    studio.read(cx).status
+                return Err((
+                    Refusal::Failed,
+                    format!("the project did not open: {}", studio.read(cx).status),
                 ));
             }
         }
         Step::Reveal(name, tries) => {
             let drawn = target::drawn();
             let Some(d) = control_named(&drawn, &name) else {
-                return Err(format!("`{name}` is no longer on screen"));
+                return Err((Refusal::Gone, format!("`{name}` is no longer on screen")));
             };
             match d.shown {
                 Some(shown) => {
@@ -2184,8 +2246,11 @@ fn carry_out(
                     active.steps.push_front(Step::Reveal(name, tries - 1));
                 }
                 None => {
-                    return Err(format!(
-                        "`{name}` stays outside the visible part of its panel; scroll it into view"
+                    return Err((
+                        Refusal::Failed,
+                        format!(
+                            "`{name}` stays outside the visible part of its panel; scroll it into view"
+                        ),
                     ));
                 }
             }
@@ -2199,8 +2264,9 @@ fn carry_out(
             });
             let Some(field) = field else {
                 if tries == 0 {
-                    return Err(format!(
-                        "`{name}` did not take the focus, so nothing was typed"
+                    return Err((
+                        Refusal::Failed,
+                        format!("`{name}` did not take the focus, so nothing was typed"),
                     ));
                 }
                 window.refresh();
@@ -2208,8 +2274,8 @@ fn carry_out(
                 return Ok(());
             };
             let (id, region) = (field.control.id.to_string(), field.region);
-            input::press("ctrl-a", window, cx)?;
-            input::press("backspace", window, cx)?;
+            press("ctrl-a", window, cx)?;
+            press("backspace", window, cx)?;
             type_into(&id, &text, active, window, cx);
             let agent = active.who.agent.clone();
             studio.update(cx, |studio, _| {
@@ -2219,13 +2285,21 @@ fn carry_out(
         Step::Type(text) => {
             let drawn = target::drawn();
             let Some(field) = drawn.iter().rev().find(|d| d.control.focused) else {
-                return Err("no field has the focus, so nothing was typed".into());
+                return Err((
+                    Refusal::Failed,
+                    "no field has the focus, so nothing was typed".into(),
+                ));
             };
-            if field.control.role != "field" || operators_region(studio.read(cx), field.region) {
-                return Err(format!(
+            if field.control.role != "field" {
+                let error = format!("`{}` is not a field", field.control.label);
+                return Err((Refusal::Invalid, error));
+            }
+            if operators_region(studio.read(cx), field.region) {
+                let error = format!(
                     "`{}` is not a field an agent may type into",
                     field.control.label
-                ));
+                );
+                return Err((Refusal::OperatorOwn, error));
             }
             let id = field.control.id.to_string();
             let region = field.region;
@@ -2247,13 +2321,16 @@ fn carry_out(
                     .iter()
                     .filter(|s| matches!(s, Step::Char { .. }))
                     .count();
-                return Err(format!(
-                    "the focus left `{field}` while typing, so the last {left} character(s) were not typed"
+                return Err((
+                    Refusal::Failed,
+                    format!(
+                        "the focus left `{field}` while typing, so the last {left} character(s) were not typed"
+                    ),
                 ));
             };
             let bounds = d.shown.unwrap_or(d.bounds);
             if c == '\n' {
-                input::press("enter", window, cx)?;
+                press("enter", window, cx)?;
             } else {
                 input::type_char(c, window, cx);
             }
@@ -2718,6 +2795,48 @@ mod tests {
         );
     }
 
+    /// Every refused action says its kind beside its words, so clients do
+    /// not depend on the wording.
+    #[test]
+    fn a_refused_action_says_its_kind() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("refusal-kinds");
+        let kind = |app: &mut Studio, agent: &str, action: Value, stale: bool| {
+            let mut request = act(app, agent, action, true);
+            if stale {
+                request.body["observed"] = json!(9999);
+            }
+            let refused = start(app, request).expect_err("refused");
+            app.control.active = None;
+            refused.1["kind"].as_str().unwrap_or_default().to_string()
+        };
+        let command = |id: &str| json!({ "kind": "command", "id": id });
+        assert_eq!(
+            kind(&mut app, "a", json!({ "kind": "teleport" }), false),
+            "invalid"
+        );
+        assert_eq!(kind(&mut app, "a", command("fit"), true), "stale");
+        assert_eq!(kind(&mut app, "a", command("lock"), false), "operator-own");
+        assert_eq!(
+            kind(&mut app, "a", command("zoom-to-selection"), false),
+            "unavailable"
+        );
+        assert_eq!(
+            kind(
+                &mut app,
+                "a",
+                json!({ "kind": "click", "control": "nowhere" }),
+                false
+            ),
+            "gone"
+        );
+        let fit = act(&app, "a", command("fit"), true);
+        assert!(start(&mut app, fit).is_ok());
+        app.control.active = None;
+        assert_eq!(kind(&mut app, "b", command("fit"), false), "held");
+        assert_eq!(Refusal::Stopped.answer("x")["kind"], "stopped");
+        assert_eq!(Refusal::Expired.answer("x")["ok"], false);
+    }
+
     #[test]
     fn stop_is_the_operators_and_lasts_until_resume() {
         let (mut app, _folder) = crate::edit::app_tests::studio("stop-agents");
@@ -2988,14 +3107,10 @@ mod tests {
         assert!(tools[1]["error"].as_str().unwrap().chars().count() <= 161);
         assert_eq!(tools.as_array().unwrap().len(), 2, "only the last turn's");
         assert_eq!(
-            notice(panel).as_deref(),
-            Some("The provider refused the request: rate limited")
+            notices(panel),
+            vec!["The provider refused the request: rate limited".to_string()]
         );
-        app.conversation.key_missing = Some("Add a DeepSeek key in Settings".into());
-        assert_eq!(
-            notice(&app.conversation).as_deref(),
-            Some("Add a DeepSeek key in Settings")
-        );
+        assert_eq!(conversation_error(panel), None, "no turn failed");
     }
 
     #[test]
