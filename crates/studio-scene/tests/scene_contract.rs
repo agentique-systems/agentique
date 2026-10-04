@@ -288,6 +288,39 @@ fn collapsed_container_shows_external_port_connections_on_its_boundary() {
 }
 
 #[test]
+fn collapsed_container_hides_internal_relationships_but_keeps_self_loops() {
+    let mut input = fixtures::architecture();
+    let named = |name: &str| input.nodes.iter().find(|n| n.name == name).unwrap();
+    let service = named("UrlShortenerService").id;
+    let shortener = named("shortener").id;
+    // A self-loop on a card that is itself shown stays visible.
+    input.edges.push(fixtures::edge(
+        "self-loop",
+        EdgeKind::Connection,
+        card(shortener.raw()),
+        card(shortener.raw()),
+    ));
+    let mut options = SceneOptions::default();
+    options.collapsed.insert(service);
+    let scene = Scene::build(&input, &options, None).unwrap();
+    let labels: Vec<&str> = scene
+        .edges
+        .iter()
+        .map(|edge| edge.semantic.label.as_str())
+        .collect();
+    for hidden in ["storage", "clickReporting", "statsQuery"] {
+        assert!(
+            !labels.iter().any(|label| label.starts_with(hidden)),
+            "internal relationship {hidden} must stay hidden when its container collapses"
+        );
+    }
+    assert!(
+        labels.contains(&"self-loop"),
+        "a genuine self-loop on a visible card must still be drawn"
+    );
+}
+
+#[test]
 fn diff_does_not_union_old_absolute_container_positions() {
     let (_, changed) = grid_change();
     let before = Scene::build(&changed, &SceneOptions::default(), None).unwrap();
