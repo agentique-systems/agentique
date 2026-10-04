@@ -140,17 +140,28 @@ impl Driver {
             .any(|d| d["name"] == crate::roles::SUBMIT_PROPOSAL);
         // A child left running (the parent was interrupted with it) goes
         // on first; its result then waits for the lead.
-        let running: Vec<String> = self
+        let running: Vec<(String, String)> = self
             .objective
             .directives
             .iter()
             .filter(|d| d.status == DirectiveStatus::Running)
             .filter_map(|d| match &d.recipient {
-                Recipient::Child(id) => Some(id.clone()),
+                Recipient::Child(child) => Some((d.id.clone(), child.clone())),
                 Recipient::Role(_) => None,
             })
             .collect();
-        for child in running {
+        for (directive, child) in running {
+            if self.setup.store.load(&child).is_err() {
+                // Recorded, but its objective was never made (Agentique
+                // ended in between): it did not start.
+                self.objective.settle(
+                    &directive,
+                    DirectiveStatus::Failed,
+                    Some("its child objective was never started".into()),
+                );
+                self.save();
+                continue;
+            }
             self.run_child(&child)?;
         }
         let mut brief = brief;
@@ -188,6 +199,9 @@ impl Driver {
             };
             delegated += 1;
             self.delegate(asked)?;
+            if self.controls.stopped() {
+                return Err("stopped".into());
+            }
             brief = if delegated >= DELEGATIONS {
                 format!(
                     "The child you delegated has ended (its result is below). You have delegated {DELEGATIONS} children in this turn, the most: go on without delegating again."
