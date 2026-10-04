@@ -39,6 +39,16 @@ what to change.
 - **Roles** (`roles`): lead, implementer, reviewer and evaluator, each its
   own Claude Agent runtime session with its instructions, tools and
   permission policy, and one tool to hand its result over.
+- **Models per role** (`models`, C-54): each role's model (the four above,
+  the explorer, escalation and typed decisions), resolved by the Studio
+  from Settings › Agents and the credentials before an objective starts: its
+  own model when its provider has a credential Agentique may use for that
+  kind of role (a session may use an API key or the Claude subscription
+  token; a direct call needs a key), otherwise its fallback with the reason,
+  otherwise the objective does not start. The record keeps each role's
+  model, effort, credential kind and source, who pays and any fallback's
+  reason; every session of a role is built on it, and typed decisions take
+  their models from the `decisions` and `escalation` roles (`decider`).
 - **Forge** (`forge`): `git` and `gh` as exact commands through Execution;
   never a force-push, never a push to the default branch.
 - **Builds** (`builds`) and **test instances** (`control`).
@@ -55,7 +65,8 @@ what to change.
   objectives' records) keeps coverage, findings and runs across runs.
 
 Budgets (spend in USD at the models' prices, usage without a price at a
-high one; improvements, attempts per cycle, hours worked) and the Operator's
+high one, kept by role and by model within it; improvements, attempts per
+cycle, hours worked) and the Operator's
 Pause, Step, Resume, Stop and messages apply while an agent works. Commands
 an implementer runs are not confined (they run with the Operator's rights,
 as any build does); the gates check what reaches the change, and GitHub's

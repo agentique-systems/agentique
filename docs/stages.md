@@ -1247,7 +1247,7 @@ exercised by a test.
 
 | Capability (Claude Code CLI) | Before | Now |
 |---|---|---|
-| Coding and reasoning model | Anthropic models with an Anthropic key only | Anthropic, or DeepSeek's Anthropic-compatible endpoint (`deepseek-v4-pro`, `deepseek-flash` for small tasks) with the DeepSeek key: *live* on `deepseek-v4-pro`; Anthropic not tried (no key) |
+| Coding and reasoning model | Anthropic models with an Anthropic key only | Anthropic, or DeepSeek's Anthropic-compatible endpoint (`deepseek-v4-pro`, `deepseek-flash` for small tasks) with the DeepSeek key: *live* on `deepseek-v4-pro`; Anthropic with an API key not tried (no key); since W12.3 Anthropic also on the Operator's Claude subscription token: *live* on `claude-sonnet-5-5` (2026-10-04) |
 | File search, read, edit, write | Off | The SDK's own tools in the repository, held to the policy's folders, judged on the real path (links, junctions, short names) and refusing stream or trailing-dot names; model files, agent configuration, `.git` and the links' protected paths refused with the reason; key files hidden at any depth (also as the SDK's own Read deny rules for its search): *live* (edit made, model-file edit refused naming `apply_changes`) |
 | Commands (Bash, PowerShell) | Off | On with trusted-local execution; standard refusals (force-push, push to `main`, merging, repository changes on GitHub, global git configuration, key files, writing model files; in the Operator's working copy, discarding work); not confined to a folder: *live* (a `node` command), refusals *tested* in Rust and the companion |
 | Builds and tests | Only through a task worker's allowed programs | Through commands as above (Cargo, Python, Node with the Operator's toolchains and home folder): *configured*; exercised in W11.5's cycles |
@@ -1265,7 +1265,7 @@ exercised by a test.
 | Permissions | `dontAsk`, Agentique's tools only | The policy's hook allows, refuses, or asks; a question goes to the Operator as a card with Allow / Don't allow and is recorded; objectives refuse instead of asking: *tested* |
 | Web fetch and search | Off | Fetch when the project allows the network; search only where the endpoint offers it (Anthropic; DeepSeek ignores server tools): *configured* |
 | Steering | Stop only | Queued messages ("Add" while it works), Pause before the next tool call, Step, Resume, Stop: *tested* (stand-in and companion) |
-| Keys | The Anthropic key in the companion's environment | The model's key only, kept out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`, measured with and without on 2026-10-03) |
+| Keys | The Anthropic key in the companion's environment | The model's key only, kept out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`, measured with and without on 2026-10-03). Since W12.3: exactly one credential (an API key, or the Claude subscription token with no key beside it), checked against what the SDK reports before the first prompt reaches the model, and a session that would use another (such as this computer's claude.ai login) stops: *tested* (stand-ins), *live* on DeepSeek's key and on the token, whose session's command saw neither the token nor a key (2026-10-04) |
 | Cost | The SDK's estimate | From the usage of every model a turn used (subagents, compaction and small tasks included), each result's own share, each model at its own dated price (an unknown model at the turn's): *tested* |
 
 
@@ -1429,13 +1429,70 @@ Read against the code before any change (file:line on that commit):
   crates, 12 parts, 31 dependencies); the companion's 31 tests pass (Node
   22.11). The workspace's Rust checks passed in CI on `388b5dba`.
 
+**W12.3 Models per role and credentials** (built on `stage12/models`, not
+yet merged). Settings › Agents names, for the lead, implementer, reviewer,
+evaluator, explorer, escalation and typed decisions, a model from the
+capability table (`agents.<role>.model`), its effort among the levels that
+model offers, and a fallback with its effort; the defaults are C-54's
+(`settings.rs`, `AGENTS`). The Assistant keeps `assistant.provider`,
+`assistant.model` and `assistant.effort`; its Anthropic default is now
+`claude-sonnet-5-5`, and Settings show its route and why when it is not the
+configured one. `agq_orchestrator::models::resolve` takes each role to its
+own model when its provider has a credential Agentique may use for that
+kind of role, else its fallback with the reason, else names the role and
+what is missing, and the objective does not start. Anthropic has two
+credentials (the Operator's decision, 2026-10-04): an API key, billed per
+token, and the Operator's own Claude subscription token from
+`claude setup-token` (`CLAUDE_CODE_OAUTH_TOKEN`, or the Credential Manager
+entry `agentique:anthropic-subscription` set in Settings › Providers ›
+Anthropic), within the plan's limits. The token works only in the Claude
+Agent runtime: the session roles use it (preferred when both exist,
+`providers.anthropic.credential`), while roles that call their model
+directly (escalation, the explorer) and Agentique's own loop need a key and
+otherwise fall back with that reason. On the reference machine the defaults
+resolve as configured: lead and reviewer on Opus 5.5 and implementer and
+evaluator on Sonnet 5.5 through the subscription, the explorer on
+`deepseek-flash`, decisions on Jev, and escalation on `deepseek-v4-pro`
+because Opus 5.5 there would need an API key. The objective records each
+role's model, effort, credential kind and source, who pays and any
+fallback's reason (`objective.json` stays format 1: optional fields, read by
+the previous build's reader as a test shows); a continued objective keeps
+them, and a credential that is gone stops the session instead of moving it
+to another. The Orchestrator's runtime factory builds every session of a
+role on its record; spend is kept by role and by model within it, so SDK
+subagents' models show (usage on the subscription is priced at API rates,
+shown as API-equivalent, and the USD budget applies to it); typed decisions
+take Jev's model and the escalation model with its effort from the
+`decisions` and `escalation` roles (`models::decider`). A session gets
+exactly one credential; the companion holds the prompt until the SDK has
+answered its start and gives it only when the SDK reports that credential
+(`apiKeySource` `ANTHROPIC_API_KEY` for a key; `tokenSource`
+`CLAUDE_CODE_OAUTH_TOKEN` on `firstParty` for the token), checks the init
+message again, reports the source in `init`, ends a session at a Claude
+plan's usage limit without moving to a key, and passes a spend ceiling
+(`maxBudgetUsd`, what is left of the budget) on Anthropic's own API. SDK
+subagents stay on the session's endpoint and credential: on DeepSeek's
+endpoint every alias names its models, on Anthropic's API they use Claude
+models through the same credential, and their usage shows under the role.
+`main.ts --login` runs the SDK's Claude Code binary's `claude auth status`
+with the Operator's configuration and keeps only `loggedIn`, `authMethod`,
+`apiProvider` and `subscriptionType`; Settings say the claude.ai login is
+not used and why. Prices: `claude-opus-5-5` cache reads $0.20 (were
+$0.40), `claude-sonnet-5-5` added; Opus 5.5 defaults to effort medium,
+Sonnet 5.5 to high. Measured live on 2026-10-04: the probe reported
+`claude.ai` (Max); a session on DeepSeek's endpoint (`deepseek-v4-pro`,
+effort max) passed the check with `ANTHROPIC_API_KEY`; a development
+session on `claude-sonnet-5-5` on the subscription token passed it with
+`CLAUDE_CODE_OAUTH_TOKEN` (`firstParty`), and its Bash command saw neither
+the token nor a key. Anthropic with an API key is not tried (no key).
+
 **Work items**
 
 | Item | Pull request | State |
 |---|---|---|
 | W12.1 Direction and self-model | #108 | C-54, Scenario K, §4.16, Stage 12, the decision log naming the locked parts before they change; the self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`, `Assistant`, `Providers`, the objective and control items) and four requirements (`FindingsReproduce`, `DefectShownBefore`, `ChildWorkBounded`, `OnlyGivenCredentials`); identities reconciled by `Project::open` (only new elements got ids) |
 | W12.2 Control interface, complete and observable | — | Not started |
-| W12.3 Models per role and credentials | — | Not started |
+| W12.3 Models per role and credentials | — | Built on `stage12/models` (not merged): Settings › Agents, each role resolved and recorded before an objective starts, its sessions on its own model, effort and credential, spend by role and model, typed decisions from the `escalation` and `decisions` roles; the Claude subscription token as Anthropic's second credential; the companion's credential check and `claude auth status` probe; Claude 5.5 prices |
 | W12.4 Exploration and testing knowledge | #112 | Built, not yet in cycles (W12.5): `explore` (the explorer's run behind an `Instance` boundary: a test instance started fresh from a copy of the start project inside its own folder, or a stand-in; the actions valid there that the observation offers to agents, fields with fixed input classes and the Conversation's composer with fixed request classes; the rules, Jev among the rules' best eight, the explorer's model with its answer checked, or Jev escalating; recovery from stale refusals, dialogs in the way, dead ends, exits and hangs), `findings` (the checks `answers`, `offered-acts`, `readable-labels`, `undo-restores`, `dialogs-close`, `action-time`, `no-internal-error`, `turn-ends`, `turn-stops` and the explorer's `expectation`; identities normalised; `replay`, `reproduce` by two replays, `reduce` within a bound) and `knowledge` (`testing/<project>/knowledge.json`, format 1, atomic, bounded); `decide` asks one typed question for dialogs and exploration, the dialog decisions unchanged; fixed exploration tasks, tuning and held-out (`tests/fixtures/exploration.json`); measured live, preliminary (below) |
 | W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | — | Not started |
 | W12.6 The Conversation as the one window: threads, directives, delegation | — | Not started; the Operator clarified on 2026-10-04 that the Conversation is the one window for intent, agent communication and steering, with the Objectives panel a dashboard of the same records (ROADMAP §4.16, §7.6) |

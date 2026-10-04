@@ -46,6 +46,14 @@ hand-written Claude client still uses the network directly until W5.7.
   `claude` for Anthropic until W5.7). A provider's reasoning is stored as a
   `reasoning` block naming its provider and model, and sent back only to it.
 - `claude`: the hand-written Claude API client (retired in W5.7).
+- `claude_agent`: the Claude Agent runtime (the SDK's loop in the
+  `claude-agent/` companion). A session gets exactly one credential
+  (`Access`): an API key, or the Operator's Claude subscription token
+  (C-54, Anthropic's API only); the companion stops a session whose SDK
+  reports another before its first model call, and `Effective` carries the
+  source the SDK reported. `login` says whether this computer has a Claude
+  login (never used); a session on Anthropic's API may carry a spend
+  ceiling.
 - `skills`: the system prompt, compiled in from `skills/*.md`.
 - `conversation`: the per-project Conversation in conversation format 2
   (below): provider-neutral entries, each reply with the model that wrote it,
@@ -131,7 +139,7 @@ Until Settings exists (W5.8), `ModelChoice::from_env` picks the model:
 |---|---|---|
 | `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY` | none | Provider keys. Without any, the Conversation says so; the Surface works by hand as always. |
 | `AGENTIQUE_PROVIDER` | the first provider with a key: Anthropic, DeepSeek, OpenAI, OpenRouter | `anthropic`, `deepseek`, `openai` or `openrouter`. |
-| `AGENTIQUE_MODEL` | the provider's default (`claude-opus-5`, `deepseek-flash`, ...) | The model id. An unknown or unavailable model is named in the error. |
+| `AGENTIQUE_MODEL` | the provider's default (`claude-sonnet-5-5` since C-54, `deepseek-flash`, ...) | The model id. An unknown or unavailable model is named in the error. |
 | `AGENTIQUE_EFFORT` | the model's default (`high`) | An effort level the model offers (`deepseek-flash`: `low`, `high`, `max`; Claude: `low` to `max`); another value falls back to the default. |
 
 With only `DEEPSEEK_API_KEY` set, the Assistant runs on `deepseek-flash` at
