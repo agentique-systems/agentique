@@ -1861,9 +1861,13 @@ the rest not merged; nothing here says the Operator accepted anything).
   first (`Check::severity`: exit, hang, internal error; a refused offered
   action; an expectation, undo or a dialog; a label; slowness), each
   replayed twice and reduced within six replays; the knowledge keeps what
-  became of each. Nothing reproduced explores again from another start and
-  way, within the cycle's attempts; two explorations in a row with nothing
-  new reproduced end the objective as "Nothing new reproduced", an outcome.
+  became of each. Nothing new reproduced offers again a reproduced finding
+  the knowledge keeps that no cycle fixed and the objective tried fewer than
+  twice; with none, it explores again from another start and way, within
+  the cycle's attempts; two explorations in a row with nothing new
+  reproduced, and no such finding left, end the objective as "Nothing new
+  reproduced", an outcome. A finding records the build the Orchestrator
+  explored; a child objective explores its parent's base build.
 - **Propose:** the lead's brief lists the cycle's reproduced findings (`f1`,
   `f2`, …: check, steps, reduced steps, evidence, build) and the testing
   knowledge in short; `submit_proposal` names the one it fixes (`finding`,
@@ -1873,27 +1877,40 @@ the rest not merged; nothing here says the Operator accepted anything).
   judgment or finding is refused and asked again; an observation criterion
   may name a stated condition.
 - **Evidence on the base** (`run/evidence.rs`, requirement
-  `DefectShownBefore`), once per cycle: the replay on the base build (its
-  reproduction in the cycle is reused; otherwise it runs again there);
-  command criteria on the base checkout with the change's new and changed
-  test files brought over, evidence only when a test ran and failed (a
-  compile or load error, no test, a timeout or a run that did not finish is
-  `no evidence`, with the reason); observation criteria in test instances of
-  the base build; a judgment is no evidence. The gate "the criteria show the
-  defect on the base" needs one with evidence and none passing; it replaces
-  "the criteria fail before the change".
+  `DefectShownBefore`): the replay on the base build (its reproduction is
+  reused only when the finding's own build is the base build; otherwise it
+  runs again there, from the base's start project); command criteria in a
+  checkout of the base of their own with the checked commit's new and
+  changed test files brought over, evidence only when a test ran and an
+  assertion failed (a compile or load error, an error that is no assertion,
+  no test, a timeout or a run that did not finish is `no evidence`, with the
+  reason); observation criteria in test instances of the base build, where
+  only the criterion's own expectation failing is evidence (a setup action
+  refused, a broken connection, a way not cleared or an instance that did
+  not start is no evidence); a judgment, or a base that does not build, is
+  no evidence. The test files are recorded with their blob ids
+  (`Cycle.evidence`), and an attempt whose test files differ has its test
+  runs on the base made again. The gate "the criteria show the defect on
+  the base" counts only the frozen criteria and the replay, needs one with
+  evidence and none passing, names the commit whose test files the evidence
+  was made with, and fails unless they are the checked commit's own; it
+  replaces "the criteria fail before the change".
 - **Evaluate** whenever a criterion is behavioural, the cycle has a replay,
-  or the diff touches the Studio's code (the part `Studio`'s crate links,
-  outside tests; `gates::user_facing`): the replay must pass on the
-  change's build; a user-facing change also gets a 10-step exploration by
-  the rules from the URL shortener toward the areas it touched, where an
-  invariant failure the knowledge did not hold before fails it; observation
-  criteria share one instance unless they name a condition. Instances of the
-  change get no credential and `--assistant-stand-in` once the Studio
-  supports it (flags are read from the build's `--help`, so an older build
-  starts without the ones it does not know). A user-facing change whose
-  frozen criteria have no behavioural one stops the cycle (a later attempt
-  cannot add one).
+  or the diff touches the Studio's code (the part `Studio`'s crate links on
+  the base or in the change, outside tests; `gates::user_facing`): the
+  replay must pass on the change's build, started from the base's start
+  project; a user-facing change also gets a 10-step exploration by the
+  rules from the base's URL shortener toward the areas it touched, where an
+  invariant failure the knowledge did not hold before fails it, and "the
+  user-facing change was evaluated" passes only if one of its behavioural
+  outcomes ran there; observation criteria share one instance unless they
+  name a condition. The change's build is unreviewed: it starts only as a
+  test instance with `--assistant-stand-in` and no credential; a build
+  without those flags is not started (its criteria are not run, no pass).
+  Flags are read from the build's `--help`, run with only what a process
+  needs in its environment and ended after 20 s; a merged build without the
+  newer flags still starts. A user-facing change whose frozen criteria have
+  no behavioural one stops the cycle (a later attempt cannot add one).
 - **Failure identity** (`Outcome::failure`): a judgment by its criterion and
   verdict (`Outcome.judged`); a reviewer's request for changes is the
   failure `review`; numbers and long hexadecimal ids normalised.
@@ -1902,21 +1919,30 @@ the rest not merged; nothing here says the Operator accepted anything).
   `--recovered-from` it) and `with an objective` (a finished objective with
   its thread beside the instance's session, as W12.6 shows one).
 - **Continuing and durable:** `Objective.interrupted` marks an objective
-  interrupted because the Operator closed Agentique (it waits for
-  Continue; an older record's note counts too); one that was running when
-  its Studio ended otherwise, started again supervised or with
-  `--recovered-from`, goes on by itself and says so in its thread, as after
-  an adoption; `Objective.resumes` counts resumes without progress, and two
-  stop it (`Objective::on_start`). Pause is kept in the record and holds
-  across restarts. Exploring objectives default to three cycles
+  interrupted because the Operator closed Agentique: the run's every save
+  after the interruption says so, and the Studio marks the record itself as
+  it closes, under the record's lock (`Store::mark_interrupted`); it waits
+  for Continue. One handed over to an adopted build (its continuation), or
+  running when the launcher started the last known good build after one
+  that did not start (`--recovered-from`), goes on by itself and says so in
+  its thread; a plain start under the launcher (`--supervised`) is no
+  recovery, and neither is the launcher's restart of a build that crashed
+  after it settled, which passes no flag (the launcher is unchanged under
+  C-54): such an objective waits for Continue. `Objective.resumes` counts
+  resumes without progress, and two stop it (`Objective::on_start`, which
+  reads only typed fields). Pause is kept in the record and holds across
+  restarts. Exploring objectives default to three cycles
   (`Budgets::exploring`, which the start form of W12.6 uses).
 - **Budgets:** `Budgets.steps` (an exploration's actions, 20 by default)
   and `Budgets.calls` (model calls per session role; `DEFAULT_CALLS` keeps
   80, 160, 60 and 80), checked by `Budgets::check`.
 - **Bounds:** a cycle that ends removes its worktrees and folders but, when
   it failed or was interrupted, its `work` worktree, of which the three most
-  recent across objectives are kept; then `git worktree prune`. A merge
-  passes `--delete-branch` and the local branch is deleted. One build at a
+  recent across objectives are kept; each is removed by its name (never a
+  repository-wide prune, which would touch the Operator's own). The `work`
+  worktree goes before the merge, which passes `--delete-branch`; the local
+  branch is deleted if the host's merge did not, and the thread says what
+  became of the branch here and on the host (`git ls-remote`). One build at a
   time: `builds::lock` (the builds folder's `build.lock`), taken by release
   builds (Settings › Builds and the Orchestrator) and debug builds. Test
   instances' folders are removed after use.
@@ -1927,8 +1953,11 @@ the rest not merged; nothing here says the Operator accepted anything).
 - The lead's `delegate` tool (`{ instruction, focus?, usd, steps }`), in
   planning and in Propose of an objective that explores, checked by the
   Orchestrator (`run/children.rs`, requirement `ChildWorkBounded`): a budget
-  above nothing and within what is left, steps within the parent's, at most
-  two deep, one child at a time, three per turn. A refused one is recorded as
+  above nothing and within what is left once the lead's own spend in its
+  session is counted, steps within the parent's, six minutes of the time
+  budget left at least, at most two deep, one child at a time, three in a
+  turn of the lead and five in a cycle; the objective's budgets are checked
+  again after each child. A refused one is recorded as
   a refused directive with the reason and shown at once; an accepted one is
   recorded as the lead's directive to the child (with its budgets and
   permissions: explore only, no push, merge or adopt), the child objective
@@ -1938,8 +1967,9 @@ the rest not merged; nothing here says the Operator accepted anything).
   objective id, `Event::Changed` for its record): it plans, explores and
   reproduces, then ends with its result (findings, coverage, spend), which
   is recorded on the directive, in its thread and in the parent's as a
-  result `to` the lead. Its spend is added to the parent's; its reproduced
-  findings join the parent's cycle. A child interrupted with its parent goes
+  result `to` the lead. Its spend is added to the parent's, once: the
+  directive keeps what was counted (`Directive.counted`), so after a restart
+  only the rest is added; its reproduced findings join the parent's cycle. A child interrupted with its parent goes
   on first when the parent does. `Command::StopChild(id)` stops one child
   (also one about to start): its directive ends as stopped with "stopped by
   the Operator", and the lead goes on with that; Stop stops the children
@@ -1966,19 +1996,29 @@ Checked for W12.5 and the delegation backend (2026-10-04):
   end the objective; a delegation over budget is refused and recorded, one
   within it runs as a child whose result reaches the lead and whose spend
   counts in the parent's; a child stopped alone; messages to the
-  implementer at work and to the lead. Four runs in a row passed. Unit
-  tests: stated conditions, flag probing, failure identity, evidence on the
-  base, user-facing files by the links, the build lock, `Objective::on_start`,
-  the record of an exploring cycle read by the previous build.
+  implementer at work and to the lead; after the independent review of
+  PR #115: a test weakened in the repair has its evidence made again and
+  fails the gate; a fourth delegation in a turn is refused; a child's spend
+  before a restart is counted once; a known finding left unfixed is offered
+  again and replayed on the new base. Unit tests: stated conditions, flag
+  probing, an unreviewed build without the flags not started, failure
+  identity, evidence on the base (assertions only; an observation's own
+  expectation only; only the frozen criteria count), user-facing files by
+  both links, "evaluated" only when something ran, the build lock,
+  `Objective::on_start` on typed fields and `Store::mark_interrupted`, the
+  delegation bounds, the record of an exploring cycle read by the previous
+  build.
 - **Exercised live** (a debug Studio built from this branch; windows, no
   key, no model): test instances start as test instances at `instant`; the
   `recovered` one's status names the build that did not start; the `with an
   objective` one has the objective in its app data; an 8-step exploration by
-  the rules runs in a live instance; every instance folder is removed. This
-  found that an exploration given no spend budget stopped before its first
-  step, which the rules' exploration of a change had; fixed.
+  the rules runs in a live instance; every instance folder is removed; this
+  Studio has no `--assistant-stand-in` yet, so it is not started unreviewed.
+  This found that an exploration given no spend budget stopped before its
+  first step, which the rules' exploration of a change had; fixed.
 - **Not tried:** a whole exploring cycle on the real Studio with real
-  models, a pull request, merge and branch deletion through GitHub, an
+  models, a pull request, merge and branch deletion through GitHub (the
+  worktree removed before the merge, the host's `--delete-branch`), an
   adoption that goes on to explore the adopted build, the Studio's own
   start-up decision on a real restart (unit-tested only), and the explorer's
   key in a test instance (no exploring roles with keys were used).

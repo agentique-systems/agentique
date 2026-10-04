@@ -806,6 +806,48 @@
       "kind": "test",
       "path": "crates/orchestrator/tests/exploring.rs",
       "symbol": "a_child_stopped_alone_lets_its_parent_go_on"
+    },
+    {
+      "element": 1407,
+      "name": "AgentiqueArchitecture::FindingsReproduce",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "a_known_finding_left_unfixed_is_offered_again"
+    },
+    {
+      "element": 1410,
+      "name": "AgentiqueArchitecture::DefectShownBefore",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "a_test_weakened_in_the_repair_has_its_evidence_made_again_and_fails"
+    },
+    {
+      "element": 1410,
+      "name": "AgentiqueArchitecture::DefectShownBefore",
+      "kind": "test",
+      "path": "crates/orchestrator/src/run/evidence.rs",
+      "symbol": "only_an_observations_own_expectation_failing_on_the_base_is_evidence"
+    },
+    {
+      "element": 1413,
+      "name": "AgentiqueArchitecture::ChildWorkBounded",
+      "kind": "test",
+      "path": "crates/orchestrator/src/run/children.rs",
+      "symbol": "delegation_is_refused_beyond_its_bounds"
+    },
+    {
+      "element": 1413,
+      "name": "AgentiqueArchitecture::ChildWorkBounded",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "a_fourth_delegation_in_a_turn_is_refused"
+    },
+    {
+      "element": 1413,
+      "name": "AgentiqueArchitecture::ChildWorkBounded",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "a_childs_spend_before_a_restart_is_counted_once"
     }
   ],
   "protected": [
