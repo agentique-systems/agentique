@@ -112,6 +112,21 @@ pub enum Check {
 }
 
 impl Check {
+    /// How severe a failure of it is, most severe first (C-54: a cycle
+    /// reproduces the most severe of what it found): the instance exits,
+    /// hangs or reports an internal error; an action it offered is refused;
+    /// the explorer's expectation or the application's own behaviour fails
+    /// (undo, a dialog that does not close); a label; something slow.
+    pub fn severity(self) -> u8 {
+        match self {
+            Check::Answers | Check::TurnEnds | Check::TurnStops | Check::NoInternalError => 0,
+            Check::OfferedActs => 1,
+            Check::Expectation | Check::UndoRestores | Check::DialogsClose => 2,
+            Check::ReadableLabels => 3,
+            Check::ActionTime => 4,
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             Check::Answers => "answers",

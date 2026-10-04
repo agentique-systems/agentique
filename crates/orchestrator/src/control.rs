@@ -3,13 +3,23 @@
 //! control endpoint, and its evaluator (and the Orchestrator's own
 //! assertions) operate it through observations and actions, as an agent
 //! operates the running Studio. The instance and its process tree end with
-//! the value.
+//! the value, and its folder is removed.
+//!
+//! Since C-54 a test instance starts as one (`--test-instance`: agents may
+//! operate its Conversation and undo), at the observer speed it is given
+//! (`--control-speed`), with its Assistant on the scripted stand-in
+//! (`--assistant-stand-in`) when the build is unreviewed, or with the
+//! explorer's provider key in its environment when it is a merged build
+//! that explores; and in a stated condition when a criterion asks
+//! ([`CONDITIONS`]). A flag the build does not know (an older build) is not
+//! passed: what it supports is read from its `--help`.
 
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// How long one request may take (a wait may last up to ten minutes).
@@ -108,6 +118,184 @@ impl Client {
     }
 }
 
+/// The conditions a test instance can be started in (C-54, ROADMAP §4.16),
+/// so criteria about such states are testable: `recovered` (its builds
+/// registry holds a build that did not start, and it starts as the launcher
+/// starts the last known good build after it, `--recovered-from`) and `with
+/// an objective` (a recorded objective and its thread in its app data,
+/// which the Studio shows at start).
+pub const CONDITIONS: [&str; 2] = ["recovered", "with an objective"];
+
+/// The build a `recovered` test instance was started after.
+pub const FAILED_BUILD: &str = "000000000000-0000000000";
+
+/// The provider key a test instance's Assistant may use, and its model.
+#[derive(Clone, Debug)]
+pub struct InstanceKey {
+    pub model: agq_providers::ModelRef,
+    pub secret: Arc<agq_providers::Secret>,
+}
+
+/// How a test instance starts besides its data and project (C-54).
+#[derive(Clone, Debug, Default)]
+pub struct Options {
+    /// Observer mode's speed (`instant`, `fast`, `observe`); `instant` when
+    /// none is given.
+    pub speed: Option<String>,
+    /// Its Assistant on the scripted stand-in (an unreviewed build's).
+    pub stand_in: bool,
+    /// A provider key for its Assistant, preset to that provider and model:
+    /// only for a merged build that explores.
+    pub key: Option<InstanceKey>,
+    /// A stated condition ([`CONDITIONS`]).
+    pub condition: Option<String>,
+}
+
+/// What a build's command line supports of what a test instance needs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Flags {
+    pub test_instance: bool,
+    pub control_speed: bool,
+    pub stand_in: bool,
+}
+
+impl Flags {
+    /// Read from `exe --help` (a build before C-54 knows none of them).
+    pub fn of(exe: &Path) -> Flags {
+        let help = Command::new(exe)
+            .arg("--help")
+            .stdin(Stdio::null())
+            .stderr(Stdio::null())
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+            .unwrap_or_default();
+        Flags {
+            test_instance: help.contains("--test-instance"),
+            control_speed: help.contains("--control-speed"),
+            stand_in: help.contains("--assistant-stand-in"),
+        }
+    }
+}
+
+/// Prepares `folder` (a test instance's, before it starts) for a stated
+/// condition, and returns the arguments it starts with for it.
+pub fn prepare(folder: &Path, condition: &str) -> Result<Vec<String>, String> {
+    match condition {
+        "recovered" => {
+            let builds = folder.join("builds");
+            std::fs::create_dir_all(&builds).map_err(|e| e.to_string())?;
+            let mut registry = agq_launcher::Registry::load(&builds)?;
+            registry.add(agq_launcher::Entry {
+                id: FAILED_BUILD.into(),
+                created: agq_launcher::now(),
+                commit: String::new(),
+                state: agq_launcher::State::Failed {
+                    reason: "it did not report ready within 60 s".into(),
+                },
+            });
+            registry.save(&builds)?;
+            Ok(vec!["--recovered-from".into(), FAILED_BUILD.into()])
+        }
+        "with an objective" => {
+            seed_objective(&folder.join("session").join("objectives"))?;
+            Ok(Vec::new())
+        }
+        other => Err(format!(
+            "`{other}` is not a condition a test instance starts in ({})",
+            CONDITIONS.join(", ")
+        )),
+    }
+}
+
+/// A recorded objective with its thread, in the objectives folder `at`: a
+/// finished one, so the instance shows it and its thread at start and
+/// nothing goes on by itself.
+pub fn seed_objective(at: &Path) -> Result<crate::record::Objective, String> {
+    use crate::record::{DirectiveStatus, Recipient, Scope, State, Store};
+    use crate::thread::{Author, Kind, ThreadEntry};
+    let store = Store::new(at);
+    let mut objective = store.create(
+        "Find and fix problems in the Library panel",
+        Path::new("."),
+        "main",
+        crate::record::Budgets::default(),
+        crate::record::Permissions::default(),
+    )?;
+    let lead = Author::agent(
+        "lead",
+        Some(agq_providers::ModelRef::new(
+            agq_providers::Provider::DeepSeek,
+            "deepseek-v4-pro",
+        )),
+    );
+    let implementer = Author::agent(
+        "implementer",
+        Some(agq_providers::ModelRef::new(
+            agq_providers::Provider::DeepSeek,
+            "deepseek-flash",
+        )),
+    );
+    let id = objective.direct(
+        "lead",
+        Recipient::Role("implementer".into()),
+        Scope {
+            instruction: "Implement the frozen proposal “Label the Library's kind filter”".into(),
+            focus: None,
+            budgets: None,
+            permissions: None,
+        },
+        Some("cycle-1/proposal".into()),
+    );
+    objective.settle(&id, DirectiveStatus::Done, Some("approved".into()));
+    objective.cycles.push(crate::record::Cycle::new(1));
+    if let Some(cycle) = objective.cycle_mut() {
+        cycle.phase = crate::record::Phase::Done;
+    }
+    objective.state = State::Done;
+    objective.note = Some("1 cycle(s) done, 0 adopted.".into());
+    store.save(&objective)?;
+    let post = |entry: ThreadEntry| store.append_thread(&objective.id, entry);
+    post(ThreadEntry::new(
+        Kind::Human,
+        Author::Operator,
+        objective.intent.clone(),
+    ))?;
+    post(ThreadEntry::event("Cycle 1: Proposing an improvement"))?;
+    post(
+        ThreadEntry::new(
+            Kind::Directive,
+            lead,
+            "Proposes: Label the Library's kind filter",
+        )
+        .with_details("Title: Label the Library's kind filter\nAcceptance criteria (frozen):\n- c1 — the filter has a readable label")
+        .for_directive(Some(&id)),
+    )?;
+    let step = post(
+        ThreadEntry::new(
+            Kind::Event,
+            implementer.clone(),
+            "Starts its session on deepseek-flash · DeepSeek",
+        )
+        .for_directive(Some(&id)),
+    )?;
+    let mut edit = ThreadEntry::new(
+        Kind::Activity,
+        implementer.clone(),
+        "Edit crates/studio-native/src/panels/library.rs",
+    )
+    .with_details("- .placeholder(\"kind\")\n+ .placeholder(\"Filter by kind\")")
+    .for_directive(Some(&id));
+    edit.under = Some(step.seq);
+    post(edit)?;
+    post(
+        ThreadEntry::new(Kind::Result, implementer, "Submits the implementation")
+            .with_details("Labelled the filter; added a test.")
+            .for_directive(Some(&id)),
+    )?;
+    post(ThreadEntry::event("Cycle 1: Done"))?;
+    Ok(objective)
+}
+
 /// A running test instance: a Studio executable with its own session and
 /// app data, its builds folder and its control endpoint.
 pub struct TestInstance {
@@ -119,16 +307,45 @@ pub struct TestInstance {
 impl TestInstance {
     /// Starts `exe` with its data in `folder` (made fresh), opening
     /// `project`, with Agentique's repository at `repository` (a checkout of
-    /// the commit, never the Operator's).
+    /// the commit, never the Operator's), as a test instance at `instant`
+    /// speed with no key and its own Assistant as the build has it.
     pub fn start(
         exe: &Path,
         folder: &Path,
         project: &Path,
         repository: &Path,
     ) -> Result<TestInstance, String> {
+        TestInstance::start_with(exe, folder, project, repository, &Options::default())
+    }
+
+    /// [`TestInstance::start`] with `options`.
+    pub fn start_with(
+        exe: &Path,
+        folder: &Path,
+        project: &Path,
+        repository: &Path,
+        options: &Options,
+    ) -> Result<TestInstance, String> {
         let _ = std::fs::remove_dir_all(folder);
         std::fs::create_dir_all(folder).map_err(|e| e.to_string())?;
         let endpoint = folder.join("control.json");
+        let flags = Flags::of(exe);
+        let mut arguments = Vec::new();
+        if flags.test_instance {
+            arguments.push("--test-instance".to_string());
+        }
+        if flags.control_speed {
+            arguments.push("--control-speed".into());
+            arguments.push(options.speed.clone().unwrap_or_else(|| "instant".into()));
+        }
+        if options.stand_in && flags.stand_in {
+            arguments.push("--assistant-stand-in".into());
+        }
+        if let Some(condition) = &options.condition {
+            arguments.extend(prepare(folder, condition)?);
+        }
+        let session = folder.join("session");
+        std::fs::create_dir_all(&session).map_err(|e| e.to_string())?;
         let errors = std::fs::File::create(folder.join("errors.log"))
             .map(Stdio::from)
             .unwrap_or_else(|_| Stdio::null());
@@ -145,6 +362,24 @@ impl TestInstance {
                 environment.push((name.to_string(), value));
             }
         }
+        // A merged build that explores: its Assistant on the explorer's
+        // provider and model, with that key in its environment only (a test
+        // instance reads keys from nowhere else).
+        if let Some(key) = &options.key {
+            environment.push((
+                key.model.provider.key_variable().to_string(),
+                key.secret.expose().to_string(),
+            ));
+            let settings = json!({
+                "format": 1,
+                "assistant.provider": key.model.provider.id(),
+                "assistant.model": key.model.model,
+            });
+            agq_launcher::write_atomically(
+                &session.join("settings.json"),
+                settings.to_string().as_bytes(),
+            )?;
+        }
         // Its working folder is its own, so a relative path typed into one of
         // its fields (a project folder, say) stays inside it.
         let child = Command::new(exe)
@@ -153,11 +388,12 @@ impl TestInstance {
             .envs(environment)
             .arg("--no-restore")
             .arg("--session")
-            .arg(folder.join("session").join("studio-session.json"))
+            .arg(session.join("studio-session.json"))
             .arg("--control")
             .arg(&endpoint)
             .arg("--project")
             .arg(project)
+            .args(&arguments)
             .env("AGENTIQUE_BUILDS", folder.join("builds"))
             .env("AGENTIQUE_REPOSITORY", repository)
             .stdin(Stdio::null())
@@ -207,6 +443,18 @@ impl TestInstance {
 impl Drop for TestInstance {
     fn drop(&mut self) {
         agq_execution::process::kill_tree(&mut self.child);
+        remove_folder(&self.folder);
+    }
+}
+
+/// Removes a test instance's folder after use, trying again for a moment
+/// while the system releases its files.
+pub fn remove_folder(folder: &Path) {
+    for _ in 0..20 {
+        if std::fs::remove_dir_all(folder).is_ok() || !folder.exists() {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(100));
     }
 }
 

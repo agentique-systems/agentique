@@ -47,6 +47,10 @@ pub struct RunRecord {
     pub way: Way,
     pub goal: String,
     pub build: String,
+    /// The commit the build was made from (C-54: the next run prefers what
+    /// changed since).
+    #[serde(default)]
+    pub commit: String,
     pub seed: u64,
     pub steps: u32,
     pub new_coverage: u32,
@@ -225,6 +229,16 @@ impl Knowledge {
             .collect()
     }
 
+    /// The commit of the last run that says which: what changed since is
+    /// what the next run prefers.
+    pub fn last_commit(&self) -> Option<&str> {
+        self.runs
+            .iter()
+            .rev()
+            .map(|r| r.commit.as_str())
+            .find(|c| !c.is_empty())
+    }
+
     /// The runs' results by way of deciding.
     pub fn ways(&self) -> BTreeMap<Way, WayResults> {
         let mut ways: BTreeMap<Way, WayResults> = BTreeMap::new();
@@ -281,6 +295,7 @@ impl Knowledge {
             way: run.plan.way,
             goal: run.plan.goal.clone(),
             build: run.build.clone(),
+            commit: run.commit.clone(),
             seed: run.plan.seed,
             steps: run.actions,
             new_coverage: run.new_coverage.len() as u32,

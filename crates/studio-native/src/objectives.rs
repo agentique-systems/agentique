@@ -19,7 +19,7 @@
 use crate::studio::{Dirty, Studio};
 use agq_assistant::claude_agent::{self, Installation};
 use agq_orchestrator::record::{
-    Access, Budgets, DirectiveStatus, Objective, Permissions, State, Store,
+    Access, Budgets, DirectiveStatus, Objective, Permissions, Resuming, State, Store,
 };
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
 use agq_orchestrator::thread::{self, Author, Kind, ThreadEntry};
@@ -494,6 +494,14 @@ impl Studio {
             checks,
             protected,
             running_build: self.running_build(),
+            // Exploration's test instances run at the Operator's speed, so
+            // they can watch (C-54).
+            speed: format!("{:?}", self.control_speed()).to_lowercase(),
+            // A merged build that explores may get the explorer's key (C-54).
+            credential: Box::new(|credential| {
+                agq_providers::runtime_credential(credential).ok().flatten()
+            }),
+            studios: Box::new(run::Live),
         })
     }
 
@@ -844,10 +852,9 @@ impl Studio {
                 .find(|o| o.active())
                 .or(roots.first())
                 .map(|o| (*o).clone());
-            if let Some(objective) = shown {
+            if let Some(mut objective) = shown {
                 let active = objective.active();
-                let continues = objective.continuation.is_some();
-                self.objectives.show(&store, objective, &all);
+                self.objectives.show(&store, objective.clone(), &all);
                 self.objectives.read_keys();
                 changed = true;
                 if active && self.args.test_instance {
@@ -855,15 +862,46 @@ impl Studio {
                         "A recorded objective: this test instance shows it and does not run it."
                             .into(),
                     );
-                } else if active && continues && !self.safe_mode {
-                    if let Err(problem) = self.continue_objective() {
-                        self.objectives.message =
-                            Some(format!("The objective could not continue: {problem}"));
-                    }
                 } else if active {
-                    self.objectives.message = Some(
-                        "An objective is not finished: Continue goes on from where it was.".into(),
-                    );
+                    // It goes on by itself after an adoption, or when the
+                    // launcher started the last known good build after one
+                    // that did not start (`--recovered-from`; a plain start
+                    // under the launcher, `--supervised`, is no recovery);
+                    // it waits after the Operator closed Agentique, and
+                    // otherwise; it stops after resuming twice without
+                    // getting further (C-54).
+                    let recovered = self.args.recovered_from.is_some();
+                    match objective.on_start(recovered) {
+                        Resuming::Continue(_) if self.safe_mode => {
+                            self.objectives.message = Some(
+                                "An objective is not finished: Continue goes on from where it was (not by itself in safe mode).".into(),
+                            );
+                        }
+                        Resuming::Continue(why) => {
+                            objective.resumes += 1;
+                            let _ = store.save(&objective);
+                            self.objectives.current = Some(objective);
+                            self.objective_note(Author::Agentique, why);
+                            if let Err(problem) = self.continue_objective() {
+                                self.objectives.message =
+                                    Some(format!("The objective could not continue: {problem}"));
+                                self.objective_note(
+                                    Author::Agentique,
+                                    format!("It could not go on: {problem}"),
+                                );
+                            }
+                        }
+                        Resuming::Wait(why) => self.objectives.message = Some(why),
+                        Resuming::Stop(why) => {
+                            objective.state = State::Failed;
+                            objective.note = Some(why.clone());
+                            objective.settle_running(DirectiveStatus::Failed, &why);
+                            let _ = store.save(&objective);
+                            self.objectives.current = Some(objective);
+                            self.objective_note(Author::Agentique, why.clone());
+                            self.objectives.message = Some(why);
+                        }
+                    }
                 }
             }
         }

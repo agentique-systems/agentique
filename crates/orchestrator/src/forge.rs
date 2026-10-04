@@ -341,6 +341,7 @@ pub fn merge(
             "merge",
             &n,
             "--squash",
+            "--delete-branch",
             "--match-head-commit",
             commit,
             "--subject",

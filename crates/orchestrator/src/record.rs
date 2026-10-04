@@ -300,6 +300,27 @@ impl Phase {
     }
 }
 
+/// The phases before Propose in a cycle that explores (C-54, ROADMAP §4.16):
+/// kept beside `phase`, which stays `propose` meanwhile, so the previous
+/// build reads the record (it would propose without exploring).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Exploring {
+    /// An explorer operates a test instance of the base build.
+    Explore,
+    /// The new findings are replayed from a fresh start and reduced.
+    Reproduce,
+}
+
+impl Exploring {
+    pub fn label(self) -> &'static str {
+        match self {
+            Exploring::Explore => "Exploring the running build",
+            Exploring::Reproduce => "Reproducing what it found",
+        }
+    }
+}
+
 /// How an acceptance criterion is checked.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
@@ -310,11 +331,15 @@ pub enum Check {
     /// What a test instance must show: every field of `expect` must hold in
     /// its observation (`screen`, `dialog`, `statusContains`,
     /// `selectionContains`, `control` with `labelContains`, `valueContains`,
-    /// `enabled`, and `anyLabelContains`; at least one, no others).
+    /// `enabled`, and `anyLabelContains`; at least one, no others). With a
+    /// `condition` (`control::CONDITIONS`), in a test instance of its own
+    /// started in that condition (C-54).
     Observation {
         #[serde(default)]
         setup: Vec<serde_json::Value>,
         expect: serde_json::Value,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        condition: Option<String>,
     },
     /// The evaluator's judgment, with the observations it rests on.
     Judgment,
@@ -349,6 +374,10 @@ pub struct Proposal {
     pub criteria: Vec<Criterion>,
     #[serde(default)]
     pub intended_test_changes: Vec<TestChange>,
+    /// The reproduced finding it fixes (its identity), whose replay the
+    /// Orchestrator adds as a frozen criterion (C-54).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finding: Option<String>,
 }
 
 /// One check's outcome.
@@ -356,15 +385,88 @@ pub struct Proposal {
 #[serde(rename_all = "camelCase")]
 pub struct Outcome {
     pub name: String,
-    /// `passed`, `failed`, `not run`.
+    /// `passed`, `failed`, `not run`; on the base, also `no evidence`.
     pub verdict: String,
     pub detail: String,
+    /// The evaluator's judgment: its failure is identified by its criterion
+    /// and verdict, never its wording (C-54).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub judged: bool,
 }
 
 impl Outcome {
+    pub fn new(name: impl Into<String>, verdict: &str, detail: impl Into<String>) -> Outcome {
+        Outcome {
+            name: name.into(),
+            verdict: verdict.to_string(),
+            detail: detail.into(),
+            judged: false,
+        }
+    }
+
     pub fn passed(&self) -> bool {
         self.verdict == "passed"
     }
+
+    /// What identifies its failure from one attempt to the next (C-54): a
+    /// judgment by its criterion and verdict, a reviewer's request for
+    /// changes as [`REVIEW`], anything else by its name and what its output
+    /// says failed (failing tests, errors), with what changes from run to run
+    /// (numbers, long hexadecimal ids) normalised.
+    pub fn failure(&self) -> String {
+        if self.judged {
+            return format!("{}: {}", self.name, self.verdict);
+        }
+        if self.name == REVIEW {
+            return REVIEW.into();
+        }
+        let mut said: Vec<String> = self
+            .detail
+            .lines()
+            .map(str::trim)
+            .filter(|l| {
+                l.contains("FAILED")
+                    || l.starts_with("error")
+                    || l.starts_with("---- ")
+                    || l.contains("panicked")
+                    || l.contains(" failed")
+            })
+            .map(normalised)
+            .collect();
+        said.sort();
+        said.dedup();
+        if said.is_empty() {
+            self.name.clone()
+        } else {
+            format!(
+                "{}: {}",
+                self.name,
+                said.join(" | ").chars().take(400).collect::<String>()
+            )
+        }
+    }
+}
+
+/// The outcome a reviewer's request for changes is recorded as.
+pub const REVIEW: &str = "review";
+
+/// A line of output without what changes from run to run: digits, and
+/// words of eight or more hexadecimal digits (commits, ids).
+fn normalised(line: &str) -> String {
+    line.split(' ')
+        .map(|word| {
+            let core = word.trim_matches(|c: char| !c.is_ascii_alphanumeric());
+            if core.len() >= 8
+                && core.chars().all(|c| c.is_ascii_hexdigit())
+                && core.chars().any(|c| c.is_ascii_alphabetic())
+            {
+                "<id>".to_string()
+            } else {
+                word.chars().filter(|c| !c.is_ascii_digit()).collect()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// One round of implementation and checking.
@@ -384,45 +486,14 @@ pub struct Attempt {
 
 impl Attempt {
     /// What failed, as a fingerprint: the same failures twice in a row mean
-    /// no progress. Each failure is its check and what its output says
-    /// failed (failing tests, errors), without numbers such as timings and
-    /// counts that change from run to run.
+    /// no progress. Each failure is identified as [`Outcome::failure`] says.
     pub fn failures(&self) -> Vec<String> {
         self.checks
             .iter()
             .chain(&self.criteria)
             .chain(&self.gates)
             .filter(|o| !o.passed())
-            .map(|o| {
-                let mut said: Vec<String> = o
-                    .detail
-                    .lines()
-                    .map(str::trim)
-                    .filter(|l| {
-                        l.contains("FAILED")
-                            || l.starts_with("error")
-                            || l.starts_with("---- ")
-                            || l.contains("panicked")
-                            || l.contains(" failed")
-                    })
-                    .map(|l| {
-                        l.chars()
-                            .filter(|c| !c.is_ascii_digit())
-                            .collect::<String>()
-                    })
-                    .collect();
-                said.sort();
-                said.dedup();
-                if said.is_empty() {
-                    o.name.clone()
-                } else {
-                    format!(
-                        "{}: {}",
-                        o.name,
-                        said.join(" | ").chars().take(400).collect::<String>()
-                    )
-                }
-            })
+            .map(Outcome::failure)
             .collect()
     }
 }
@@ -483,6 +554,65 @@ pub struct Cycle {
     /// The SDK session of each role, to resume after a restart.
     #[serde(default)]
     pub sessions: BTreeMap<String, String>,
+    /// Where an exploring cycle is before it proposes (C-54).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exploring: Option<Exploring>,
+    /// The build of its base: what it explored, and where its criteria are
+    /// checked before the change.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_build: Option<BaseBuild>,
+    /// Its explorations, in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub explorations: Vec<Exploration>,
+    /// What they found that was new, or that failed again after its fix,
+    /// with what became of each (reproduced or not, reduced).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub findings: Vec<crate::findings::Finding>,
+    /// The reproduced finding the proposal fixes, frozen with it: its replay
+    /// is the criterion [`REPLAY`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replay: Option<crate::findings::Finding>,
+}
+
+/// The criterion the Orchestrator adds for the finding a proposal fixes.
+pub const REPLAY: &str = "replay";
+
+/// The build a cycle's base runs as: the running build when it is of the
+/// base commit, else a debug build of the base checkout kept for the cycle.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseBuild {
+    /// The build's id, or `debug-<commit>`.
+    pub build: String,
+    pub exe: PathBuf,
+    pub commit: String,
+}
+
+/// One exploration of a cycle as its record keeps it (the run itself goes
+/// to the testing knowledge).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Exploration {
+    pub n: u32,
+    pub build: String,
+    /// The start project (`models/url-shortener`, `model`).
+    pub start: String,
+    pub way: crate::decide::Way,
+    pub seed: u64,
+    pub steps: u32,
+    /// Coverage keys the testing knowledge had not seen.
+    pub new_coverage: u32,
+    /// The identities of what it found that was new, and of fixed findings
+    /// that failed again when replayed first.
+    #[serde(default)]
+    pub found: Vec<String>,
+    #[serde(default)]
+    pub regressions: Vec<String>,
+    /// How many of them reproduced.
+    #[serde(default)]
+    pub reproduced: u32,
+    pub usd: f64,
+    pub ended: String,
 }
 
 impl Cycle {
@@ -506,12 +636,45 @@ impl Cycle {
             adopted: false,
             blocker: None,
             sessions: BTreeMap::new(),
+            exploring: None,
+            base_build: None,
+            explorations: Vec::new(),
+            findings: Vec::new(),
+            replay: None,
+        }
+    }
+
+    /// Where it is, in words.
+    pub fn label(&self) -> &'static str {
+        match (self.phase, self.exploring) {
+            (Phase::Propose, Some(exploring)) => exploring.label(),
+            (phase, _) => phase.label(),
         }
     }
 
     pub fn attempt(&self) -> Option<&Attempt> {
         self.attempts.last()
     }
+}
+
+/// How deep child objectives nest at most (C-54): the Operator's objective
+/// is 0 deep, its child 1, a child's child 2.
+pub const MAX_DEPTH: u8 = 2;
+
+/// Times in a row an objective resumes by itself without getting further
+/// before it stops (C-54: a resume that fails twice stops it).
+pub const RESUMES: u32 = 2;
+
+/// What a Studio that starts does with an objective that is not finished
+/// (C-54, ROADMAP §4.16 "Durable, continuing work").
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Resuming {
+    /// It goes on by itself, saying why in its thread.
+    Continue(String),
+    /// It waits for the Operator's Continue, saying why.
+    Wait(String),
+    /// It stops with its record: resumed twice without getting further.
+    Stop(String),
 }
 
 /// An agent role of an objective: who wrote a directive, who asked for a
@@ -643,6 +806,27 @@ pub struct Objective {
     /// The directives of its agents, in the order they were made.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub directives: Vec<Directive>,
+    /// It was interrupted because the Operator closed Agentique, so it waits
+    /// for their Continue (C-54); one that was running when its Studio ended
+    /// otherwise goes on by itself after a recovered crash.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub interrupted: bool,
+    /// Times in a row it was resumed by itself without getting further: a
+    /// resume that fails twice stops it.
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub resumes: u32,
+    /// The last of the Operator's messages for the lead (thread entries to
+    /// `lead`) given to it: the later ones go to its next turn.
+    #[serde(default, skip_serializing_if = "is_zero_u64")]
+    pub delivered: u64,
+}
+
+fn is_zero_u32(value: &u32) -> bool {
+    *value == 0
+}
+
+fn is_zero_u64(value: &u64) -> bool {
+    *value == 0
 }
 
 fn is_false(value: &bool) -> bool {
@@ -725,6 +909,43 @@ impl Objective {
         }
     }
 
+    /// What a Studio that starts does with it while it is not finished:
+    /// one handed over to an adopted build, or running when its Studio
+    /// ended unexpectedly and the launcher started one again (`recovered`),
+    /// goes on by itself; one interrupted because the Operator closed
+    /// Agentique waits for their Continue, as does any other; and one that
+    /// resumed by itself twice without getting further stops.
+    pub fn on_start(&self, recovered: bool) -> Resuming {
+        let by_itself = if self.continuation.is_some() {
+            Some("Going on in the adopted build")
+        } else if self.interrupted
+            || self
+                .note
+                .as_deref()
+                .is_some_and(|n| n.starts_with("Interrupted when Agentique closed"))
+        {
+            return Resuming::Wait(
+                "Interrupted when Agentique closed: Continue goes on from where it was.".into(),
+            );
+        } else if recovered {
+            Some(
+                "Agentique ended unexpectedly while it ran, and started again: going on from where it was",
+            )
+        } else {
+            None
+        };
+        match by_itself {
+            Some(_) if self.resumes >= RESUMES => Resuming::Stop(format!(
+                "It resumed by itself {} times without getting further, so it stops here.",
+                self.resumes
+            )),
+            Some(why) => Resuming::Continue(why.into()),
+            None => Resuming::Wait(
+                "An objective is not finished: Continue goes on from where it was.".into(),
+            ),
+        }
+    }
+
     /// The latest directive for `role` that is still running.
     pub fn running_for(&self, role: &str) -> Option<&Directive> {
         self.directives.iter().rev().find(|d| {
@@ -795,6 +1016,9 @@ impl Store {
             depth: 0,
             requested_by: None,
             directives: Vec::new(),
+            interrupted: false,
+            resumes: 0,
+            delivered: 0,
         };
         self.save(&objective)?;
         Ok(objective)
@@ -836,9 +1060,12 @@ impl Store {
         all
     }
 
-    /// The objective still going, if any (one at a time).
+    /// The Operator's objective still going, if any (one at a time); a
+    /// child goes on inside its parent's run.
     pub fn active(&self) -> Option<Objective> {
-        self.list().into_iter().find(Objective::active)
+        self.list()
+            .into_iter()
+            .find(|o| o.active() && o.parent.is_none())
     }
 
     /// Whether every objective's record can be read by this build: the
@@ -1081,6 +1308,9 @@ mod tests {
             depth: 0,
             requested_by: None,
             directives: Vec::new(),
+            interrupted: false,
+            resumes: 0,
+            delivered: 0,
         };
         objective.spent.add(
             "lead",
@@ -1307,6 +1537,41 @@ mod tests {
         assert_eq!(read, plain);
     }
 
+    /// Durable work (C-54): after an adoption or a recovered crash it goes
+    /// on by itself; interrupted by the Operator closing Agentique, or after
+    /// an ordinary start, it waits for Continue; resumed twice without
+    /// getting further, it stops.
+    #[test]
+    fn an_unfinished_objective_goes_on_by_itself_only_when_it_should() {
+        let mut objective = with_models();
+        assert!(matches!(objective.on_start(false), Resuming::Wait(_)));
+        assert!(matches!(objective.on_start(true), Resuming::Continue(_)));
+        objective.interrupted = true;
+        assert!(matches!(objective.on_start(true), Resuming::Wait(why) if why.contains("closed")));
+        objective.interrupted = false;
+        objective.continuation = Some(Continuation {
+            cycle: 1,
+            build: "b2".into(),
+            at: "t".into(),
+        });
+        assert!(
+            matches!(objective.on_start(false), Resuming::Continue(why) if why.contains("adopted"))
+        );
+        objective.resumes = RESUMES;
+        assert!(matches!(objective.on_start(false), Resuming::Stop(_)));
+        // A child goes on inside its parent's run, never on its own.
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path());
+        let mut child = with_models();
+        child.id = "objective-1-c1".into();
+        child.parent = Some("objective-1".into());
+        child.created = "2026-10-05T00:00:00Z".into();
+        store.save(&child).unwrap();
+        assert!(store.active().is_none());
+        store.save(&with_models()).unwrap();
+        assert_eq!(store.active().unwrap().id, "objective-1");
+    }
+
     #[test]
     fn budgets_are_checked_before_an_objective_starts() {
         assert!(Budgets::default().check().is_ok());
@@ -1330,6 +1595,7 @@ mod tests {
                 name: "cargo test".into(),
                 verdict: "failed".into(),
                 detail: detail.into(),
+                judged: false,
             }],
             ..Attempt::default()
         };

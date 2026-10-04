@@ -1,7 +1,10 @@
 //! The gates a cycle's change passes before it is merged (C-53, ROADMAP
 //! §4.16), besides the required checks and the review: §4.15's integration
-//! checks on every path the change touches, the baseline guard, and no
-//! configured key in it. Each ends with an explicit outcome.
+//! checks on every path the change touches, the baseline guard, no
+//! configured key in it, and since C-54 the defect shown on the base by at
+//! least one criterion with evidence while none passes there
+//! ([`defect_shown`]), and user-facing code ([`user_facing`]) evaluated with
+//! a behavioural criterion. Each ends with an explicit outcome.
 
 use crate::record::{Outcome, Proposal, Review};
 use agq_execution::git::{FileChange, Patch};
@@ -43,14 +46,90 @@ fn outcome(name: &str, problems: Vec<String>) -> Outcome {
             name: name.into(),
             verdict: "passed".into(),
             detail: String::new(),
+            judged: false,
         }
     } else {
         Outcome {
             name: name.into(),
             verdict: "failed".into(),
             detail: problems.join("\n"),
+            judged: false,
         }
     }
+}
+
+/// The part whose code is user-facing (C-54): a change to it is evaluated
+/// in a test instance whatever its other criteria.
+pub const USER_FACING: &str = "AgentiqueArchitecture::Studio";
+
+/// Whether `path` is a test's: in a `tests` folder, a test file of Node or
+/// Python, or a Rust file of tests.
+pub fn test_path(path: &str) -> bool {
+    let path = path.replace('\\', "/");
+    let name = path.rsplit('/').next().unwrap_or(&path);
+    path.split('/')
+        .any(|part| part == "tests" || part == "test")
+        || name.contains(".test.")
+        || name.starts_with("test_")
+        || name == "tests.rs"
+        || name.ends_with("_tests.rs")
+}
+
+/// The files of `changed` that are user-facing code: the code of the part
+/// [`USER_FACING`] by its crate links in `links` (the text of
+/// `model/links.json`), outside tests.
+pub fn user_facing(changed: &[String], links: &str) -> Vec<String> {
+    let parsed: serde_json::Value = serde_json::from_str(links).unwrap_or_default();
+    let roots: Vec<String> = parsed["links"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|l| l["name"] == USER_FACING && l["kind"] == "crate")
+        .filter_map(|l| l["path"].as_str().map(str::to_string))
+        .collect();
+    changed
+        .iter()
+        .filter(|f| roots.iter().any(|r| under(f, r)) && !test_path(f))
+        .cloned()
+        .collect()
+}
+
+/// The criteria's outcomes on the base show the defect (C-54, requirement
+/// `DefectShownBefore`): none passed there, and at least one failed there
+/// with evidence (a replay or observation that failed on the base build, or
+/// a test run that compiled, ran a test and failed). An outcome of `no
+/// evidence` (no test ran, it did not compile, it timed out, it was not
+/// run, a judgment) shows nothing, and is named with its reason.
+pub fn defect_shown(before: &[Outcome]) -> Outcome {
+    let name = "the criteria show the defect on the base";
+    let passed: Vec<&str> = before
+        .iter()
+        .filter(|o| o.passed())
+        .map(|o| o.name.as_str())
+        .collect();
+    let mut problems = Vec::new();
+    if !passed.is_empty() {
+        problems.push(format!(
+            "{} already pass on the base, so they do not show the change",
+            passed.join(", ")
+        ));
+    }
+    if !before.iter().any(|o| o.verdict == "failed") {
+        let why: Vec<String> = before
+            .iter()
+            .filter(|o| !o.passed())
+            .map(|o| format!("{}: {}", o.name, o.detail))
+            .collect();
+        problems.push(format!(
+            "no criterion fails on the base with evidence{}",
+            if why.is_empty() {
+                String::new()
+            } else {
+                format!(" ({})", why.join("; "))
+            }
+        ));
+    }
+    outcome(name, problems)
 }
 
 /// Whether `path` is `pattern` or inside it (a plain path prefix, as the
@@ -287,6 +366,74 @@ pub fn listed_test_changes(patch: &Patch) -> Vec<String> {
 }
 
 #[cfg(test)]
+mod evidence_tests {
+    use super::*;
+
+    fn on_base(name: &str, verdict: &str, detail: &str) -> Outcome {
+        Outcome::new(name, verdict, detail)
+    }
+
+    /// `DefectShownBefore`: one criterion failing on the base with evidence
+    /// is needed, and none may pass there; no evidence shows nothing.
+    #[test]
+    fn the_defect_is_shown_on_the_base_only_with_evidence() {
+        let shown = defect_shown(&[
+            on_base("replay", "failed", "the replay failed on the base build"),
+            on_base("c1", "no evidence", "it did not compile"),
+        ]);
+        assert!(shown.passed(), "{}", shown.detail);
+        let none = defect_shown(&[
+            on_base("c1", "no evidence", "it ran no test"),
+            on_base("c2", "no evidence", "it did not compile"),
+            on_base("c3", "not run", "a judgment is no evidence"),
+        ]);
+        assert!(!none.passed());
+        assert!(
+            none.detail.contains("c1: it ran no test") && none.detail.contains("did not compile"),
+            "{}",
+            none.detail
+        );
+        let passing = defect_shown(&[
+            on_base("c1", "failed", "1 test failed"),
+            on_base("c2", "passed", ""),
+        ]);
+        assert!(!passing.passed());
+        assert!(passing.detail.contains("c2 already pass"));
+        assert!(!defect_shown(&[]).passed(), "no criterion, no evidence");
+    }
+
+    #[test]
+    fn user_facing_code_is_the_studios_by_its_links_outside_tests() {
+        let links = r#"{"format":1,"links":[
+            {"element":932,"name":"AgentiqueArchitecture::Studio","kind":"crate","path":"crates/studio-native"},
+            {"element":932,"name":"AgentiqueArchitecture::Studio","kind":"crate","path":"crates/studio-scene"},
+            {"element":1379,"name":"AgentiqueArchitecture::Orchestrator","kind":"crate","path":"crates/orchestrator"}
+        ]}"#;
+        let changed: Vec<String> = [
+            "crates/studio-native/src/panels/library.rs",
+            "crates/studio-native/tests/journeys.rs",
+            "crates/studio-scene/src/lib.rs",
+            "crates/orchestrator/src/run.rs",
+            "crates/studio-native-extra/src/x.rs",
+            "claude-agent/test/policy.test.ts",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        assert_eq!(
+            user_facing(&changed, links),
+            vec![
+                "crates/studio-native/src/panels/library.rs".to_string(),
+                "crates/studio-scene/src/lib.rs".to_string()
+            ]
+        );
+        assert!(user_facing(&changed, "not json").is_empty());
+        assert!(test_path("crates/x/tests/a.rs") && test_path("tools/test_check.py"));
+        assert!(!test_path("crates/x/src/testing.rs"));
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::record::TestChange;
@@ -316,6 +463,7 @@ mod tests {
                     why: "z".into(),
                 })
                 .collect(),
+            finding: None,
         }
     }
 
