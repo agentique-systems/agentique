@@ -105,7 +105,10 @@ impl Knowledge {
     /// A project's folder as a folder name: its own name in lowercase
     /// letters, digits and hyphens, and eight hexadecimal digits of its
     /// full path (as the system resolves it), so two projects with one name
-    /// keep apart.
+    /// keep apart. `repository` must be the project's own folder (the
+    /// objective's repository, which W12.5 passes), never a cycle's
+    /// worktree or checkout: those change from cycle to cycle, and the
+    /// knowledge would start empty each time.
     pub fn key(repository: &Path) -> String {
         let full = repository
             .canonicalize()

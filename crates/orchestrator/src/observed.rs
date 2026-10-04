@@ -16,34 +16,52 @@ pub const STOP: &str = "stop";
 pub const CONFIRM: &str = "dialog-confirm";
 pub const CANCEL: &str = "dialog-cancel";
 
-/// How an instance refused an action.
+/// How an instance refused an action, or how it failed: the control
+/// interface's refusal `kind` (W12.2), one name each.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Refusal {
-    /// It was carried out (or failed partway: not a refusal).
+    /// It was carried out (or failed partway without saying how).
     None,
-    /// The screen changed since the observation it rested on.
+    /// `stale`: the screen changed since the observation it rested on.
     Stale,
-    /// Its control is gone or disabled, or its command unavailable.
+    /// `gone`, `disabled`, `unavailable`: its control is gone or disabled,
+    /// or its command unavailable.
     Gone,
-    /// The Operator's own, by rule.
+    /// `operator-own`: the Operator's own, by rule.
     Rule,
-    /// Refused for another reason.
+    /// `held`: another agent holds the window.
+    Held,
+    /// `stopped`: the Operator pressed Stop in that window.
+    Stopped,
+    /// `expired`, `timeout`: it was not carried out in time.
+    Timeout,
+    /// `invalid`: the action itself was malformed (the explorer's fault).
+    Invalid,
+    /// `failed`: the Studio's handler failed.
+    Failed,
+    /// Refused for a reason no kind names.
     Other,
 }
 
-/// How `answer` refused its action: by its `kind` when it says, otherwise by
-/// the words its error starts with.
+/// How `answer` refused its action: by its `kind`, or, when it has none or
+/// one not known here, by the words its error starts with.
 pub fn refusal(answer: &Value) -> Refusal {
     if answer["ok"] != false {
         return Refusal::None;
     }
-    if let Some(kind) = answer["kind"].as_str() {
-        return match kind {
-            "stale" => Refusal::Stale,
-            "gone" | "disabled" | "unavailable" => Refusal::Gone,
-            "operator" | "operatorOnly" | "operator-only" | "rule" => Refusal::Rule,
-            _ => Refusal::Other,
-        };
+    let by_kind = match answer["kind"].as_str() {
+        Some("operator-own") => Some(Refusal::Rule),
+        Some("stale") => Some(Refusal::Stale),
+        Some("gone" | "disabled" | "unavailable") => Some(Refusal::Gone),
+        Some("held") => Some(Refusal::Held),
+        Some("stopped") => Some(Refusal::Stopped),
+        Some("expired" | "timeout") => Some(Refusal::Timeout),
+        Some("invalid") => Some(Refusal::Invalid),
+        Some("failed") => Some(Refusal::Failed),
+        _ => None,
+    };
+    if let Some(refusal) = by_kind {
+        return refusal;
     }
     let error = answer["error"].as_str().unwrap_or_default();
     if error.starts_with("stale: no control")
@@ -141,6 +159,24 @@ mod tests {
 
     #[test]
     fn a_refusal_is_read_by_its_kind_and_otherwise_by_its_words() {
+        let kind = |kind: &str| refusal(&json!({ "ok": false, "kind": kind, "error": "x" }));
+        for (name, read) in [
+            ("operator-own", Refusal::Rule),
+            ("stale", Refusal::Stale),
+            ("gone", Refusal::Gone),
+            ("disabled", Refusal::Gone),
+            ("unavailable", Refusal::Gone),
+            ("held", Refusal::Held),
+            ("stopped", Refusal::Stopped),
+            ("expired", Refusal::Timeout),
+            ("timeout", Refusal::Timeout),
+            ("invalid", Refusal::Invalid),
+            ("failed", Refusal::Failed),
+        ] {
+            assert_eq!(kind(name), read, "{name}");
+        }
+        // No synonyms: an unknown kind falls back to the words.
+        assert_eq!(kind("operator"), Refusal::Other);
         let answer = |error: &str| json!({ "ok": false, "error": error });
         assert_eq!(refusal(&json!({ "ok": true })), Refusal::None);
         assert_eq!(
@@ -157,8 +193,5 @@ mod tests {
             Refusal::Rule
         );
         assert_eq!(refusal(&answer("the project did not open")), Refusal::Other);
-        // The kind decides over the words.
-        let kinded = json!({ "ok": false, "kind": "operator", "error": "stale: whatever" });
-        assert_eq!(refusal(&kinded), Refusal::Rule);
     }
 }

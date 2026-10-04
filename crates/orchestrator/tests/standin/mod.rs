@@ -124,6 +124,8 @@ pub struct StandIn {
     pub chat: Option<Chat>,
     /// Typing takes 30 ms a character, as in a debug build.
     pub slow_typing: bool,
+    /// The observation shows what the Assistant spent (`conversation.usd`).
+    pub spend_shown: bool,
     pub starts: u32,
     /// Every action asked for, with its agent.
     pub log: Vec<String>,
@@ -144,6 +146,7 @@ impl StandIn {
             drift: 0,
             chat: None,
             slow_typing: false,
+            spend_shown: true,
             starts: 0,
             log: Vec::new(),
             flaky_fired: false,
@@ -473,7 +476,7 @@ impl Instance for StandIn {
                 "lastReply": s.talk.reply,
                 "keyMissing": s.talk.key_missing,
                 "notices": s.talk.key_missing.iter().collect::<Vec<_>>(),
-                "usd": s.talk.usd,
+                "usd": if self.spend_shown { json!(s.talk.usd) } else { Value::Null },
             },
             "controls": self.controls(),
             "commands": [

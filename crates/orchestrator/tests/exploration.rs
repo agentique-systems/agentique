@@ -1243,6 +1243,160 @@ fn a_decision_of_unknown_cost_counts_at_the_most_it_could_have_cost() {
     assert!(run.actions < 10, "{}", run.actions);
 }
 
+/// The stand-in, answering an action on `control` with a refusal of `kind`
+/// the first `times` times it is asked (across fresh starts).
+struct Kinded {
+    inner: StandIn,
+    control: &'static str,
+    kind: &'static str,
+    times: u32,
+}
+
+impl Instance for Kinded {
+    fn observe(&mut self) -> Result<Value, String> {
+        self.inner.observe()
+    }
+    fn act(&mut self, act: &explore::Act) -> Result<Value, String> {
+        if act.action["control"] == self.control && self.times > 0 {
+            self.times -= 1;
+            return Ok(
+                json!({ "ok": false, "kind": self.kind, "error": format!("{}: as planted", self.kind) }),
+            );
+        }
+        self.inner.act(act)
+    }
+    fn restart(&mut self, stop: &mut dyn FnMut() -> bool) -> Result<(), String> {
+        self.inner.restart(stop)
+    }
+    fn alive(&mut self) -> bool {
+        self.inner.alive()
+    }
+    fn folder(&self) -> Option<PathBuf> {
+        None
+    }
+}
+
+/// A run whose first action is “Sync”, answered with `kind` `times` times.
+fn with_kind(kind: &'static str, times: u32) -> (Kinded, Run) {
+    let mut kinded = Kinded {
+        inner: StandIn::new(Defects::default()),
+        control: "sync",
+        kind,
+        times,
+    };
+    let mut sync = plan(Way::Rules, 1, 12);
+    sync.goal = "Sync the model".into();
+    let run = explore_with(
+        &mut kinded,
+        &sync,
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    );
+    assert_eq!(run.steps[0].step.target(), "sync", "{kind}");
+    (kinded, run)
+}
+
+fn synced(kinded: &Kinded) -> bool {
+    kinded.inner.log.iter().any(|l| l.contains("\"sync\""))
+}
+
+#[test]
+fn each_refusal_kind_is_handled_as_it_means() {
+    // operator-own: by rule; never a finding, never again.
+    let (_, run) = with_kind("operator-own", 99);
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    assert_eq!(run.unwanted.refused, 1);
+    // stale: observed again and tried once more.
+    let (kinded, run) = with_kind("stale", 1);
+    assert!(run.findings.is_empty());
+    assert_eq!(run.unwanted.stale, 1);
+    assert!(synced(&kinded));
+    // gone, disabled, unavailable, while the same screen still offers it.
+    for kind in ["gone", "disabled", "unavailable"] {
+        let (_, run) = with_kind(kind, 99);
+        assert_eq!(checks(&run), BTreeSet::from([Check::OfferedActs]), "{kind}");
+        assert_eq!(run.findings.len(), 1, "{kind}");
+    }
+    // held: another agent's window, waited for; never a finding.
+    let (kinded, run) = with_kind("held", 2);
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    assert!(synced(&kinded));
+    // stopped: the Operator stopped that window; the run ends.
+    let (_, run) = with_kind("stopped", 1);
+    assert_eq!((run.ended.as_str(), run.actions), ("stopped", 1));
+    // expired, timeout: not carried out in time.
+    for kind in ["expired", "timeout"] {
+        let (_, run) = with_kind(kind, 99);
+        assert_eq!(checks(&run), BTreeSet::from([Check::ActionTime]), "{kind}");
+    }
+    // invalid: the explorer's own fault; unwanted, never a finding.
+    let (_, run) = with_kind("invalid", 99);
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    assert_eq!(run.unwanted.invalid, 1);
+    // failed: the handler failed; a finding that must reproduce.
+    let (mut kinded, run) = with_kind("failed", 99);
+    assert_eq!(checks(&run), BTreeSet::from([Check::OfferedActs]));
+    let mut finding = run.findings[0].clone();
+    assert!(
+        finding.message.contains("handler failed"),
+        "{}",
+        finding.message
+    );
+    findings::reproduce(&mut kinded, &mut finding, 4, &mut || false);
+    assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
+    // Once it stops failing, its replay passes.
+    kinded.times = 0;
+    assert!(findings::replay(&mut kinded, &finding, &mut || false).passed());
+}
+
+#[test]
+fn a_stop_while_deciding_takes_no_more_action() {
+    struct Stopped;
+    impl explore::Supervisor for Stopped {
+        fn go_on(&mut self) -> bool {
+            true
+        }
+        fn stopped(&mut self) -> bool {
+            true
+        }
+    }
+    let mut studio = StandIn::new(Defects::default());
+    let run = explore::explore(
+        &mut studio,
+        &plan(Way::Rules, 1, 10),
+        &deciding(&Scripted::default()),
+        &Knowledge::new("stand-in"),
+        &mut Stopped,
+    );
+    assert_eq!(run.ended, "stopped");
+    assert!(
+        !studio.log.iter().any(|l| l.starts_with("explorer")),
+        "{:?}",
+        studio.log
+    );
+}
+
+#[test]
+fn no_request_is_sent_where_the_assistants_spend_cannot_be_seen() {
+    let mut studio = chatting(true, true, Turn::Ends);
+    studio.spend_shown = false;
+    let run = by_rules(&mut studio, 1, 60);
+    assert!(run.findings.is_empty());
+    assert!(
+        !studio
+            .log
+            .iter()
+            .any(|l| l.contains("Message") || l.contains("\"send\"")),
+        "{:?}",
+        studio.log
+    );
+    assert!(
+        run.notes.iter().any(|n| n.contains("conversation.usd")),
+        "{:?}",
+        run.notes
+    );
+}
+
 // The fixed exploration tasks and the live measurement.
 
 struct Task {

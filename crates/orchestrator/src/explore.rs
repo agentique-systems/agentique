@@ -1363,11 +1363,14 @@ pub struct Unwanted {
     pub stale: u32,
     /// Ended the instance (it exited or stopped answering).
     pub ended: u32,
+    /// Refused as malformed: the explorer's own fault, never the Studio's.
+    #[serde(default)]
+    pub invalid: u32,
 }
 
 impl Unwanted {
     pub fn total(&self) -> u32 {
-        self.refused + self.stale + self.ended
+        self.refused + self.stale + self.ended + self.invalid
     }
 }
 
@@ -1728,7 +1731,16 @@ impl Explorer<'_> {
         }
         let mut candidates = candidates(&self.now, self.folder.as_deref());
         candidates.retain(|c| !self.avoid.contains(&c.key));
-        if !self.plan.conversation {
+        // Requests to the instance's Assistant only where the run may send
+        // them and the observation shows what the Assistant spends (so its
+        // spend counts toward the budget); otherwise none is sent.
+        if !self.plan.conversation || observed::assistant_spend(&self.now).is_none() {
+            if self.plan.conversation {
+                let note = "no request was sent: the observation does not show what the instance's Assistant spends (`conversation.usd`)".to_string();
+                if !self.run.notes.contains(&note) {
+                    self.run.notes.push(note);
+                }
+            }
             candidates.retain(|c| c.area != "conversation");
         }
         if candidates.is_empty() {
@@ -1760,6 +1772,11 @@ impl Explorer<'_> {
         self.run.usd += chosen.counted;
         if chosen.decision.usd.is_none() {
             self.run.unpriced += 1;
+        }
+        // A stop, or the time budget, that came while the decision was made
+        // takes no more action.
+        if halted(self.supervisor, self.started, self.plan.seconds) {
+            return Err(self.why_halted());
         }
         let candidate = candidates[index].clone();
         let mut action = candidate.action.clone();
@@ -1796,6 +1813,7 @@ impl Explorer<'_> {
     /// Acts, checks what the action did, and records it.
     fn take(&mut self, step: Step, chosen: Option<Chosen>, why: &str) -> Result<(), String> {
         let mut retried = false;
+        let mut held = 0;
         loop {
             let act = Act {
                 agent: AGENT,
@@ -1815,12 +1833,45 @@ impl Explorer<'_> {
             };
             let error = answer["error"].as_str().unwrap_or_default().to_string();
             let refusal = observed::refusal(&answer);
-            if refusal == Refusal::Rule {
-                // The Operator's own, by rule: never a finding, never again.
-                self.run.unwanted.refused += 1;
-                self.avoid.insert(step.key.clone());
-                self.record(&step, chosen, "refused", error, None);
-                return Ok(());
+            match refusal {
+                Refusal::Rule => {
+                    // The Operator's own, by rule: never a finding, never
+                    // again.
+                    self.run.unwanted.refused += 1;
+                    self.avoid.insert(step.key.clone());
+                    self.record(&step, chosen, "refused", error, None);
+                    return Ok(());
+                }
+                Refusal::Held => {
+                    // Another agent holds the window: waited for a little,
+                    // never a finding.
+                    if held < findings::HELD_TRIES
+                        && !halted(self.supervisor, self.started, self.plan.seconds)
+                    {
+                        held += 1;
+                        std::thread::sleep(findings::HELD_WAIT);
+                        if let Some(now) = self.observe()? {
+                            self.now = now;
+                        }
+                        continue;
+                    }
+                    self.record(&step, chosen, "held", error, None);
+                    return Ok(());
+                }
+                Refusal::Stopped => {
+                    // The Operator pressed Stop in that window.
+                    self.record(&step, chosen, "stopped", error, None);
+                    return Err("stopped".into());
+                }
+                Refusal::Invalid => {
+                    // The explorer's own malformed action: unwanted, never
+                    // the Studio's finding, never again.
+                    self.run.unwanted.invalid += 1;
+                    self.avoid.insert(step.key.clone());
+                    self.record(&step, chosen, "invalid", error, None);
+                    return Ok(());
+                }
+                _ => {}
             }
             if matches!(refusal, Refusal::Stale | Refusal::Gone) {
                 let Some(after) = self.observe()? else {
@@ -1858,13 +1909,19 @@ impl Explorer<'_> {
                 retried = true;
                 continue;
             }
-            // Carried out (or failed partway, which may have done part of
-            // it): a step a replay takes again.
+            // Carried out (or failed partway, or its handler failed, or it
+            // was not carried out in time, any of which may have done part
+            // of it): a step a replay takes again. A handler that failed or
+            // an action out of time is a finding (`failures`), not tried
+            // again in this run.
             let outcome = if answer["ok"] == false {
                 "failed"
             } else {
                 "ok"
             };
+            if matches!(refusal, Refusal::Failed | Refusal::Timeout) {
+                self.avoid.insert(step.key.clone());
+            }
             if outcome == "ok" {
                 self.escapes = 0;
             }

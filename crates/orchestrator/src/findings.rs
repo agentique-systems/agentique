@@ -45,6 +45,13 @@ pub const STOP_BUDGET_MS: u64 = 10_000;
 /// How often a turn is observed while it runs.
 const TURN_POLL: Duration = Duration::from_millis(250);
 
+/// How long an action refused as `held` (another agent holds the window)
+/// waits before it is asked again, and how often: an agent releases a
+/// window it is done with, and an idle one is released after 30 s, so a
+/// few short waits are enough for the usual case; never a finding.
+pub const HELD_WAIT: Duration = Duration::from_millis(500);
+pub const HELD_TRIES: usize = 4;
+
 /// The part of an explorer's expectation about the Assistant's reply. A
 /// model writes its reply differently from run to run, so this part is
 /// checked and recorded, never a finding (and not part of the criteria's
@@ -503,21 +510,40 @@ pub fn failures(outcome: &Outcome) -> Vec<Failed> {
             });
         }
     } else if answer["ok"] == false {
-        // Offered, enabled, and refused as gone or disabled while the screen
-        // stayed the same and still offers it.
-        if observed::refusal(answer) == Refusal::Gone
-            && after["screenRevision"] == before["screenRevision"]
-            && offered(after, &step.action).is_ok()
-        {
-            failed.push(Failed {
+        let error = answer["error"].as_str().unwrap_or_default();
+        match observed::refusal(answer) {
+            // Offered, enabled, and refused as gone or disabled while the
+            // screen stayed the same and still offers it.
+            Refusal::Gone
+                if after["screenRevision"] == before["screenRevision"]
+                    && offered(after, &step.action).is_ok() =>
+            {
+                failed.push(Failed {
+                    check: Check::OfferedActs,
+                    control: target.clone(),
+                    message: format!("offered and enabled, but refused: {error}"),
+                    evidence: json!({ "answer": answer, "screenRevision": after["screenRevision"] }),
+                });
+            }
+            // Offered, and its handler failed.
+            Refusal::Failed => failed.push(Failed {
                 check: Check::OfferedActs,
                 control: target.clone(),
+                message: format!("offered, but its handler failed: {error}"),
+                evidence: json!({ "answer": answer }),
+            }),
+            // Not carried out in time.
+            Refusal::Timeout => failed.push(Failed {
+                check: Check::ActionTime,
+                control: target.clone(),
                 message: format!(
-                    "offered and enabled, but refused: {}",
-                    answer["error"].as_str().unwrap_or_default()
+                    "{} was not carried out in time ({})",
+                    step.action["kind"].as_str().unwrap_or_default(),
+                    answer["kind"].as_str().unwrap_or("timeout")
                 ),
-                evidence: json!({ "answer": answer, "screenRevision": after["screenRevision"] }),
-            });
+                evidence: json!({ "answer": answer }),
+            }),
+            _ => {}
         }
         return failed;
     } else {
@@ -911,8 +937,9 @@ fn replay_steps(
         }
         let mut answer = None;
         // Re-based on a fresh observation; a stale refusal is observed
-        // again once.
-        for _ in 0..2 {
+        // again once; a window another agent holds is waited for a little.
+        let (mut stale, mut held) = (0, 0);
+        while answer.is_none() {
             if let Err(reason) = offered(&now, &step.action) {
                 return diverged(at, reason);
             }
@@ -923,19 +950,26 @@ fn replay_steps(
                 observed: now["screenRevision"].as_u64().unwrap_or_default(),
                 action: &step.action,
             };
-            match instance.act(&act) {
+            let said = match instance.act(&act) {
                 Err(error) => return gone(at, error),
-                Ok(said) if observed::refusal(&said) == Refusal::Stale => {
-                    now = match instance.observe() {
-                        Ok(now) => now,
-                        Err(error) => return gone(at, error),
-                    };
+                Ok(said) => said,
+            };
+            match observed::refusal(&said) {
+                Refusal::Stale if stale < 1 => stale += 1,
+                Refusal::Held if held < HELD_TRIES && !stop() => {
+                    held += 1;
+                    std::thread::sleep(HELD_WAIT);
                 }
-                Ok(said) => {
+                Refusal::Stopped => return diverged(at, "stopped".into()),
+                _ => {
                     answer = Some(said);
-                    break;
+                    continue;
                 }
             }
+            now = match instance.observe() {
+                Ok(now) => now,
+                Err(error) => return gone(at, error),
+            };
         }
         let Some(answer) = answer else {
             return diverged(at, "the screen kept changing".into());
@@ -943,7 +977,7 @@ fn replay_steps(
         let expected_refusal = last && finding.check == Check::OfferedActs;
         if matches!(
             observed::refusal(&answer),
-            Refusal::Stale | Refusal::Gone | Refusal::Rule
+            Refusal::Stale | Refusal::Gone | Refusal::Rule | Refusal::Held | Refusal::Invalid
         ) && !expected_refusal
         {
             return diverged(at, answer["error"].as_str().unwrap_or_default().to_string());
