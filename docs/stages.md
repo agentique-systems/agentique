@@ -2089,7 +2089,7 @@ it). Read against the code and the model before any change:
 | W13.3 Requirement constraints and evidence | #121 | In review (below) |
 | W13.4 The self-model | #118 | Merged (below); the purpose's subrequirements follow W13.3 |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
-| W13.6 A second system | — | In progress (`stage13/drone`) |
+| W13.6 A second system | — | In review (below) |
 | W13.7 Proof | — | Not started |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
@@ -2284,3 +2284,42 @@ a real model calling `check_requirements`. Limits: no units; package-level
 constants are not read; scenario runs still work attribute values out
 differently (deviation 23); a change to the code alone reaches the ladder
 when the model, the links, the kept results or the checks next change.
+
+**W13.6 A second system** (`stage13/drone`; nothing here says the Operator
+accepted anything). `models/inspection-charging/InspectionCharging.sysml`:
+an inspection drone and its charging station, after the Operator's guide
+"SysML v2: From Syntax to Systems" (its Aster example), as text like the
+other examples. Its documentation states the boundary (the drone's mass by
+assembly, the station's charger and authorisation service, the charging
+contact; not flight dynamics, electrical protection, current, heat, weather
+or regulation), the units (grams, joules, watts, milliseconds; deviation 14)
+and that nothing in it verifies a physical drone or charger. Bounded
+questions and what answers them (`crates/simulation/tests/inspection_charging.rs`,
+11 tests, all passing on the branch):
+
+- *Composition and sharing.* The flight computer's `ref part :>> supply =
+  bus;` refers to the drone's one bus; written as a composite part bound
+  to the bus it is reported (`wrong-value`, a phantom second bus).
+- *Calculation on the modelled configuration.* `LaunchMassLimit` (assumed
+  `limit > 0`, required `aircraft.mass <= limit`) holds for the survey drone
+  at 5900 g of 7000 g (the bus counted once; a copy would make 6050 g), is
+  violated by the upgraded drone at 7150 g, which still meets the ferry
+  limit of 8000 g: one drone definition in two configurations, one
+  requirement definition in two usages. `BoundedWait` holds at home
+  (500 ms × 2) and in the field (2000 ms × 3, exactly 6000 ms), and one more
+  attempt in the field is caught (8000 ms).
+- *Behaviour in model execution.* The charger energises only after the
+  permit is accepted; a refused permit leaves it off; a lost answer is
+  asked again after the charger's timeout; two lost answers end a home
+  station's attempt unenergised, while the field station, the same charger
+  definition configured for a slow link, energises on its third attempt; a
+  plausible wrong design (energise first, ask afterwards) fails the
+  refused-permit scenario's check. Runs are deterministic.
+- *Kept apart.* The behavioural requirement `EnergizeOnlyWhenAuthorized` is
+  informal: not calculated, never shown as holding on its `satisfy`; six
+  scenarios verify it.
+
+Not verified: the model in the Studio by eye; units (a number is in the
+unit its documentation states). Before this stage the same model text had
+five unsupported constructs (`ref part`, `assume`, `require`) and nothing
+of its mass or wait could be calculated.
