@@ -306,3 +306,31 @@ fn the_assistant_proposes_an_objective_and_starts_nothing() {
         tools::carry_out_headless(state.tree(), &StudioRequest::ProposeObjective(expected));
     assert!(headless.unwrap_err().contains("nothing started"));
 }
+
+/// C-55: an element without a name (here a connection) is changed or
+/// deleted by the name the tools show it under.
+#[test]
+fn an_unnamed_connection_is_deleted_by_its_shown_name() {
+    let mut state = screening();
+    let shown = "UrlShortener::UrlShortenerService::(connect api.storage to store.links)";
+    assert!(
+        written(&state).contains("connect api.storage to store.links;"),
+        "the fixture has the connection"
+    );
+    apply(
+        &mut state,
+        json!({ "description": "Remove the storage connection", "operations": [
+            { "op": "delete", "element": shown }
+        ]}),
+    );
+    assert!(!written(&state).contains("connect api.storage to store.links;"));
+    let gone = prepare(
+        &state,
+        APPLY_CHANGES,
+        json!({ "description": "x", "operations": [{ "op": "delete", "element": shown }] }),
+    );
+    assert!(
+        matches!(gone, Prepared::Invalid(ref m) if m.contains("there is no element")),
+        "{gone:?}"
+    );
+}
