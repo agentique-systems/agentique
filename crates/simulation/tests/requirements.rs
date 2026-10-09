@@ -93,7 +93,7 @@ fn a_configuration_within_the_limit_holds_and_one_over_it_is_violated() {
         hauler.reason,
         "the required constraint `s.mass <= limit` is false (s.mass = 7400, limit = 7000)"
     );
-    let text = hauler.describe(&tree);
+    let text = hauler.describe();
     assert!(
         text.starts_with("violated: the required constraint `s.mass <= limit` is false"),
         "{text}"
@@ -310,5 +310,63 @@ fn a_part_with_several_instances_is_not_read_through() {
             .contains("`d.rotors` has the multiplicity [4]"),
         "{}",
         all[0].reason
+    );
+}
+
+#[test]
+fn a_specialised_definition_and_a_usage_add_to_the_inherited_constraints() {
+    let tree = model(
+        "    requirement def LightAndSmall :> MassLimit {
+        require constraint { s.battery.mass <= 3000 }
+    }
+    requirement scoutSmall : LightAndSmall {
+        attribute :>> limit = 7000;
+        require constraint airframeShare { s.airframe.mass < s.battery.mass }
+    }
+    satisfy scoutSmall by scout;",
+    );
+    let all = evaluate_all(&tree);
+    let small = of(&tree, &all, "scoutSmall");
+    assert_eq!(small.status, Status::Holds, "{}", small.reason);
+    let texts: Vec<&str> = small.required.iter().map(|r| r.text.as_str()).collect();
+    assert_eq!(
+        texts,
+        [
+            "s.mass <= limit",
+            "s.battery.mass <= 3000",
+            "s.airframe.mass < s.battery.mass"
+        ],
+        "the most general definition's first, the usage's own last"
+    );
+    assert_eq!(small.assumptions.len(), 1, "inherited from MassLimit");
+}
+
+#[test]
+fn a_subrequirement_can_bind_its_own_subject_to_a_part_of_the_containers() {
+    let tree = model(
+        "    requirement def BatteryLimit {
+        subject b : Battery;
+        require constraint { b.mass <= 3200 }
+    }
+    requirement def Parts {
+        subject d : Drone;
+        requirement batteryOk : BatteryLimit { subject b = d.battery; }
+    }
+    requirement scoutParts : Parts;
+    requirement haulerParts : Parts;
+    satisfy scoutParts by scout;
+    satisfy haulerParts by hauler;",
+    );
+    let all = evaluate_all(&tree);
+    let scout = of(&tree, &all, "scoutParts");
+    assert_eq!(scout.status, Status::Holds, "{}", scout.reason);
+    let sub = scout.required[0].subrequirement.as_ref().unwrap();
+    assert_eq!(sub.subject, "d.battery");
+    let hauler = of(&tree, &all, "haulerParts");
+    assert_eq!(hauler.status, Status::Violated);
+    assert!(
+        hauler.reason.contains("(b.mass = 3400)"),
+        "{}",
+        hauler.reason
     );
 }

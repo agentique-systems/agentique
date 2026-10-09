@@ -145,6 +145,8 @@ fn value_label(e: &agq_language::Element) -> Option<&'static str> {
         ElementKind::Attribute | ElementKind::Reference => "Value",
         ElementKind::Send => "Sends",
         ElementKind::AssertConstraint => "Check",
+        ElementKind::AssumeConstraint => "Assumes",
+        ElementKind::RequireConstraint => "Requires",
         ElementKind::Accept if e.after => "After (ms)",
         _ => return None,
     })

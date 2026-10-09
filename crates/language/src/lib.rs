@@ -11,8 +11,9 @@
 //! - [`validate`] reports everything wrong with a tree as [`Diagnostic`]s:
 //!   syntax errors, unsupported constructs, unresolved, ambiguous or removed
 //!   targets, wrong kinds of type, bad redefinitions, connections whose ends
-//!   do not fit, parts that contain themselves, and requirements satisfied by
-//!   the wrong kind of subject.
+//!   do not fit, parts that contain themselves, requirements satisfied by
+//!   the wrong kind of subject, and assumed or required constraints outside
+//!   a requirement.
 //! - [`writable`] checks that an element built or changed in code can be
 //!   printed and read back as the same element.
 //! - [`Semantics`] answers questions with the same lookup and rules as

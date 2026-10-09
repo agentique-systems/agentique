@@ -439,60 +439,40 @@ fn evidence(
     if !matches!(kind, ElementKind::Requirement | ElementKind::RequirementDef) {
         return None;
     }
-    let rows = studio.read(cx).verifying_scenarios(element);
-    Some(
-        div()
-            .flex()
-            .flex_col()
-            .gap(r(2.0))
-            .child(super::group("Evidence", Some(rows.len()), cx))
-            .when(rows.is_empty(), |this| {
-                this.child(
+    // The requirement's whole ladder (C-55), as the Requirements panel and
+    // the Assistant's `check_requirements` read it.
+    let ladder = studio.read(cx).requirement_ladder(element)?;
+    let section = div()
+        .flex()
+        .flex_col()
+        .gap(r(4.0))
+        .child(super::group("Evidence", None, cx));
+    if ladder.definition {
+        return Some(
+            section
+                .child(
                     div()
                         .text_size(r(theme::text::SM))
                         .text_color(theme.text_muted)
-                        .child("No scenario verifies this yet. A satisfied requirement is not a verified one."),
+                        .child("A definition: its usages are satisfied, calculated and verified."),
                 )
-            })
-            .children(rows.into_iter().enumerate().map(|(index, row)| {
-                let entity = studio.clone();
-                let id = row.id;
-                div()
-                    .id(("evidence", index))
-                    .px(r(6.0))
-                    .mx(r(-6.0))
-                    .py(r(5.0))
-                    .flex()
-                    .flex_col()
-                    .gap(r(4.0))
-                    .rounded(r(crate::tokens::radius::CONTROL))
-                    .cursor_pointer()
-                    .hover(|style| style.bg(theme.hover))
-                    .on_click(move |_: &ClickEvent, _, cx| {
-                        entity.act(cx, |studio| studio.select_scenario(id))
-                    })
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap(r(6.0))
-                            .child(icon(IconName::Scenario).size(13.0).color(theme.text_muted))
-                            .child(div().text_size(r(theme::text::SM)).child(row.name.clone())),
-                    )
-                    .child(
-                        div()
-                            .flex()
-                            .flex_wrap()
-                            .gap(r(4.0))
-                            .when(row.latest.is_empty(), |this| {
-                                this.child(ui::Badge::new("not run"))
-                            })
-                            .children(row.latest.iter().map(|(mode, s, current)| {
-                                let (label, tone) = super::scenarios::result_chip(*mode, s.status, s.all_passed, *current);
-                                ui::Badge::new(label).tone(tone)
-                            })),
-                    )
-            }))
+                .into_any_element(),
+        );
+    }
+    let standing = ladder.standing();
+    Some(
+        section
+            .child(
+                div().flex().child(
+                    ui::Chip::new(standing.label()).tone(crate::requirements::tone(standing)),
+                ),
+            )
+            .child(super::requirements::ladder(
+                &ladder,
+                "inspector",
+                studio,
+                cx,
+            ))
             .into_any_element(),
     )
 }

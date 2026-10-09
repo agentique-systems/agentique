@@ -682,6 +682,7 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
         StudioRequest::CheckRequirements { requirement } => {
             let ladders = agq_implementation::requirements::ladders(
                 tree,
+                &agq_language::validate(tree),
                 &agq_implementation::Links::default(),
                 &[],
                 None,

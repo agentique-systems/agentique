@@ -192,8 +192,11 @@ pub struct Studio {
     pub problems: BTreeMap<ElementId, Vec<String>>,
     /// Definitions a type can be chosen from, for the current model.
     pub type_options: Option<(u64, TypeOptions)>,
-    /// The Requirements Panel's rows, for the current model.
+    /// The Requirements Panel's rows, for the current model, kept results
+    /// and checks.
     pub requirement_rows: Option<(u64, Vec<crate::requirements::Row>)>,
+    /// Requirements whose evidence is shown in full in the panel.
+    pub requirements_open: BTreeSet<ElementId>,
     pub timing: FrameTiming,
     /// Frames the Surface has drawn.
     pub frame_number: u64,
@@ -315,6 +318,7 @@ impl Studio {
             problems: BTreeMap::new(),
             type_options: None,
             requirement_rows: None,
+            requirements_open: BTreeSet::new(),
             timing: FrameTiming::default(),
             frame_number: 0,
             session,

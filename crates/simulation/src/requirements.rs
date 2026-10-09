@@ -120,6 +120,19 @@ pub struct Evaluation {
 
 /// Every `satisfy` of the model evaluated, in document order.
 pub fn evaluate_all(tree: &Tree) -> Vec<Evaluation> {
+    let any = tree
+        .walk()
+        .into_iter()
+        .any(|id| tree[id].kind == ElementKind::Satisfy);
+    if !any {
+        return Vec::new();
+    }
+    evaluate_satisfies(tree, &validate(tree))
+}
+
+/// [`evaluate_all`] with the model's diagnostics already worked out (the
+/// System State keeps them).
+pub fn evaluate_satisfies(tree: &Tree, diagnostics: &[Diagnostic]) -> Vec<Evaluation> {
     let satisfies: Vec<ElementId> = tree
         .walk()
         .into_iter()
@@ -128,11 +141,10 @@ pub fn evaluate_all(tree: &Tree) -> Vec<Evaluation> {
     if satisfies.is_empty() {
         return Vec::new();
     }
-    let diagnostics = validate(tree);
     let semantics = Semantics::new(tree);
     satisfies
         .into_iter()
-        .map(|satisfy| evaluate_with(tree, &semantics, &diagnostics, satisfy))
+        .map(|satisfy| evaluate_with(tree, &semantics, diagnostics, satisfy))
         .collect()
 }
 
@@ -160,9 +172,9 @@ impl Evaluation {
 
     /// The evaluation in words: the conclusion, then each constraint with
     /// its values, subrequirements indented, and the model slice's digest.
-    pub fn describe(&self, tree: &Tree) -> String {
+    pub fn describe(&self) -> String {
         let mut lines = Vec::new();
-        self.lines(tree, 0, &mut lines);
+        self.lines(0, &mut lines);
         lines.push(format!(
             "  It read the model slice with digest {}.",
             short_digest(&self.digest)
@@ -170,7 +182,7 @@ impl Evaluation {
         lines.join("\n")
     }
 
-    fn lines(&self, tree: &Tree, depth: usize, out: &mut Vec<String>) {
+    fn lines(&self, depth: usize, out: &mut Vec<String>) {
         let indent = "  ".repeat(depth);
         out.push(format!(
             "{indent}{}: {} (subject `{}`).",
@@ -181,7 +193,7 @@ impl Evaluation {
         for result in self.assumptions.iter().chain(&self.required) {
             out.push(format!("{indent}  {}", result.line()));
             if let Some(sub) = &result.subrequirement {
-                sub.lines(tree, depth + 2, out);
+                sub.lines(depth + 2, out);
             }
         }
     }
@@ -355,8 +367,11 @@ struct Config<'a> {
     semantics: &'a Semantics<'a>,
     nodes: Vec<Node>,
     /// `(node, slot)` to its value; `None` while it is being worked out.
-    memo: RefCell<HashMap<(usize, usize), Option<Result<Value, String>>>>,
+    memo: RefCell<HashMap<(usize, usize), Memo>>,
 }
+
+/// A value worked out once: `None` while it is being worked out.
+type Memo = Option<Result<Value, String>>;
 
 /// What a path read from a node found.
 enum Found {
@@ -574,7 +589,7 @@ struct Context<'c, 'a> {
     subject: Result<usize, String>,
     subject_aliases: Vec<ElementId>,
     attributes: Vec<Slot>,
-    memo: RefCell<HashMap<usize, Option<Result<Value, String>>>>,
+    memo: RefCell<HashMap<usize, Memo>>,
     /// Names read and their values, for the constraint being evaluated.
     reads: RefCell<Vec<(String, Value)>>,
     parent: Option<&'c Context<'c, 'a>>,

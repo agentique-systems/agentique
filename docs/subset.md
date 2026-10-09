@@ -24,6 +24,8 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 | `connection def` / `connection` | `end part` / `end port` / `end item` ends; `connect a.b to c.d`; bare `connect a to b;` |
 | `interface def` / `interface` | Port ends (`end port p : P;` or `end p : P;`); `connect a.b to c.d` |
 | `requirement def` / `requirement` | `subject s : T;`, `doc` as the requirement text |
+| `assume constraint [name] { e }`, `require constraint [name] { e }` *(C-55)* | In a requirement def or requirement: its assumptions and required constraints, on the subject's features (`s.mass`) and the requirement's own and inherited attributes. Without an expression (only a `doc`) a constraint is informal; with nothing inside it is written `require constraint name;` |
+| Subrequirements *(C-55)* | A `requirement` usage inside a requirement def or requirement: required with its container, its subject bound to the container's unless it declares and binds its own (`subject engine = vehicle.engine;`) |
 | `satisfy R by x;` | `assert satisfy` is accepted; the `assert` is implied |
 | Specialisation `:>` / `specializes` | Definitions of a compatible kind |
 | Typing `:` / `defined by` / `typed by` | One or more types |
@@ -52,17 +54,18 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 | Connections | Binary; plain feature chains as ends; `end` features need a kind keyword (`end part a`) outside interface defs | Scenario A needs no n-ary or named ends |
 | Connections through a reference *(C-55)* | Validation decides whether a connection through a reference passes items inward where the connection is written, by what the reference is bound to there | A usage that binds the reference to a part inside the connection's owner (`part fc : FlightComputer { part local : PowerBus; ref part :>> supply = local; }`) makes the run link inward, where validation checked the definition's connection as facing: the binding a usage gives is not known where the definition is checked |
 | Feature chains | Connection ends and `satisfy ... by`; steps after the first are simple names; typing, subsetting or redefining by a chain is unsupported | Enough for `a.b.c` |
-| Requirements | Subject, doc text, attributes, satisfy | Constraints need expressions |
+| Requirements | Subject, doc text, attributes (a usage redefines its definition's, `attribute :>> limit = 7000;`), assumed and required constraints, subrequirements, satisfy | `assume x;` / `require x;` naming a constraint declared elsewhere, `satisfy requirement` declarations, actors, stakeholders, frames and concerns are not supported |
+| Requirement evaluation *(C-55)* | Each `satisfy r by x` binds `r`'s subject to `x` and calculates `r` on the modelled configuration of `x` (its parts and attribute values as written, a usage's redefinitions winning, attribute expressions such as roll-ups worked out through feature chains); no behaviour runs and no time passes. If every assumption is true, every required constraint and subrequirement must be: **holds**, **violated** (naming the constraint and its values), **assumptions not met**, or **not evaluable** (an informal constraint, a value the model does not determine, a part with a multiplicity other than one, a name that is not the subject or an attribute, problems in the slice it reads), with the values used and the model slice's digest | A calculation on the model, not a test of a built system; deviation 19 |
 | Standard library | `ScalarValues`, built in; plus Agentique's own `Agents` and `Scenarios` (deviations 12 and 13) | No runtime bundle (R-4); grows by need |
 
 ## Deliberately excluded (for now)
 
 | Construct | Reason |
 |---|---|
-| `action def`, `state def`, `calc`, `constraint def` and `constraint` usages outside checks, `use case`, `analysis`, `verification` usages, `perform`, `exhibit` of a state defined elsewhere, `parallel` states | Not needed by Scenario I; each adds semantics to run and check |
+| `action def`, `state def`, `calc`, `constraint def` and `constraint` usages outside checks and requirements, `use case`, `analysis`, `verification` usages, `perform`, `exhibit` of a state defined elsewhere, `parallel` states | Not needed by Scenario I; each adds semantics to run and check |
 | `accept at`, `accept when`, `send ... to`, `terminate`, `merge`, `decide`, `fork`, `join`, `while`, `for`, `loop` | Not needed by Scenario I |
 | `flow`, `message`, named `succession`, `bind`, `allocation` | Added when a scenario needs them |
-| `require` / `assume` constraints, `actor`, `stakeholder`, `frame`, `concern` | Need constraint expressions |
+| `require x;` / `assume x;` naming a constraint declared elsewhere, `actor`, `stakeholder`, `frame`, `concern` | Constraints are written in place; the others are added when a scenario needs them |
 | `occurrence`, `individual`, `snapshot`, `timeslice`, `event` | Time and individuals are not modelled |
 | `ref` with kinds other than `part` and `item` (`ref port`, `ref attribute`, `ref action`, ...), `::>` reference subsetting, `=>` crossing, `derived`, `constant`, `variation` / `variant` | Not needed; each adds semantics to check (attributes and directed features are referential anyway) |
 | Initial / default values `:=`, `default` | Need expressions |
@@ -101,6 +104,7 @@ Diagnostic codes reported by `validate`:
 | `wrong-value` | Also: a value that is not one of its enum def's values, or a literal for an enum-typed feature; a value of an enum def with a type or value |
 | `wrong-value` | Also (C-55): a referential part whose value is not a feature chain naming a part usage of every type the referential usage has, or that leads back to itself (`a = a`, `a = b; b = a`); a `ref item` whose value is a literal, a name of anything but a part or item usage of its types, or `new T(...)` of another type (any other expression is a value); a binding that changes the binding of a feature it redefines (for references, and for composite parts and items); a composite part or item bound to a part or item usage, by the part the binding reaches: a composite part of another owner, which the standard forbids (SysML 7.6.3), or anything else, such as a part of the same owner (deviation 19); also through a `ref` or keyword-less redefinition of a composite part |
 | `misplaced-behaviour` | A state, transition, action node or check outside the place it belongs (an exhibit state in a part; states and transitions in a state machine; `entry`/`exit` in a state; checks in a scenario) |
+| `misplaced-constraint` | An `assume constraint` or `require constraint` outside a requirement def or requirement *(C-55)* |
 | `initial-state` | A state machine with states and no `entry; then S;`, or with several |
 | `incompatible-send` | `send` of an item through a port with no `out` item of that type (seen from a scenario, which stands outside its subject: no `in` item) |
 | `incompatible-trigger` | `accept` of an item through a port with no `in` item of that type (from a scenario: no `out` item) |

@@ -18,8 +18,8 @@
 use crate::CheckReport;
 use crate::checks::CheckKind;
 use crate::links::{LinkKind, Links};
-use agq_language::{ElementId, ElementKind, Role, Tree, printed_reference};
-use agq_simulation::requirements::{Evaluation, Status, evaluate_all};
+use agq_language::{Diagnostic, ElementId, ElementKind, Role, Tree, printed_reference};
+use agq_simulation::requirements::{Evaluation, Status, evaluate_satisfies};
 use agq_simulation::{Mode, RunStatus, Verdict};
 
 /// The newest result of a scenario in one mode.
@@ -87,8 +87,9 @@ pub struct Declared {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Calculated {
     pub evaluation: Evaluation,
-    /// For a subrequirement: the satisfied requirement it was evaluated in.
-    pub within: Option<ElementId>,
+    /// For a subrequirement: the satisfied requirement it was evaluated in,
+    /// and its qualified name.
+    pub within: Option<(ElementId, String)>,
 }
 
 /// A scenario that verifies the requirement and its newest results.
@@ -202,7 +203,7 @@ impl Ladder {
 
     /// The ladder in words, each rung on its own lines, for the Assistant
     /// (and anyone reading text).
-    pub fn describe(&self, tree: &Tree) -> String {
+    pub fn describe(&self) -> String {
         let mut lines = Vec::new();
         if self.definition {
             lines.push(format!(
@@ -241,13 +242,10 @@ impl Ladder {
                     .into(),
             );
             for calculated in &self.calculated {
-                if let Some(within) = calculated.within {
-                    lines.push(format!(
-                        "    within {} (a subrequirement):",
-                        tree.qualified_name(within)
-                    ));
+                if let Some((_, within)) = &calculated.within {
+                    lines.push(format!("    within {within} (a subrequirement):"));
                 }
-                for line in calculated.evaluation.describe(tree).lines() {
+                for line in calculated.evaluation.describe().lines() {
                     lines.push(format!("    {line}"));
                 }
             }
@@ -358,15 +356,17 @@ pub fn headline(ladders: &[Ladder]) -> String {
 }
 
 /// The ladder of every requirement (definitions too, marked), in document
-/// order. `runs` are the kept scenario results the caller knows;
+/// order. `diagnostics` are the model's (`agq_language::validate`, or the
+/// System State's); `runs` the kept scenario results the caller knows;
 /// `report` the newest implementation checks and whether they are current.
 pub fn ladders(
     tree: &Tree,
+    diagnostics: &[Diagnostic],
     links: &Links,
     runs: &[ScenarioRuns],
     report: Option<(&CheckReport, bool)>,
 ) -> Vec<Ladder> {
-    let evaluations = evaluate_all(tree);
+    let evaluations = evaluate_satisfies(tree, diagnostics);
     let satisfies: Vec<agq_language::ElementId> = tree
         .walk()
         .into_iter()
@@ -397,7 +397,12 @@ pub fn ladders(
                 if found.requirement == id {
                     calculated.push(Calculated {
                         evaluation: found.clone(),
-                        within: (depth > 0).then_some(evaluation.requirement),
+                        within: (depth > 0).then(|| {
+                            (
+                                evaluation.requirement,
+                                tree.qualified_name(evaluation.requirement),
+                            )
+                        }),
                     });
                 }
             }
@@ -490,7 +495,7 @@ pub fn describe(tree: &Tree, ladders: &[Ladder], only: Option<ElementId>) -> Str
         .iter()
         .filter(|l| only.is_none_or(|id| l.requirement == id))
     {
-        lines.push(ladder.describe(tree));
+        lines.push(ladder.describe());
     }
     lines.join("\n\n")
 }
@@ -554,7 +559,7 @@ mod tests {
             scenario,
             results: vec![passed.clone()],
         }];
-        let ladders = ladders(&tree, &Links::default(), &runs, None);
+        let ladders = ladders(&tree, &[], &Links::default(), &runs, None);
         assert_eq!(standing(&ladders, &tree, "lightMass"), Standing::Holds);
         assert_eq!(standing(&ladders, &tree, "heavyMass"), Standing::Violated);
         assert_eq!(
@@ -579,14 +584,14 @@ mod tests {
                 ..passed
             }],
         }];
-        let again = super::ladders(&tree, &Links::default(), &outdated, None);
+        let again = super::ladders(&tree, &[], &Links::default(), &outdated, None);
         assert_eq!(standing(&again, &tree, "verifiedMass"), Standing::Nothing);
     }
 
     #[test]
     fn the_words_keep_declared_and_calculated_apart() {
         let tree = tree();
-        let ladders = ladders(&tree, &Links::default(), &[], None);
+        let ladders = ladders(&tree, &[], &Links::default(), &[], None);
         let heavy = tree.find("D::heavyMass").unwrap();
         let text = describe(&tree, &ladders, Some(heavy));
         assert!(

@@ -1048,6 +1048,11 @@ impl Studio {
                     None => ToolResult::error("Only a part def or a part can be explained."),
                 });
             }
+            StudioRequest::CheckRequirements { requirement } => {
+                let _ = reply.send(ToolResult::answer(agq_assistant::tools::cap(
+                    self.check_requirements(requirement),
+                )));
+            }
             StudioRequest::ReadCodeLinks { element } => {
                 let _ = reply.send(match self.describe_links(element) {
                     Ok(text) => ToolResult::answer(text),
@@ -1576,25 +1581,6 @@ impl Studio {
             Some(_) => Ok(()),
             None => Err(self.status.clone()),
         }
-    }
-
-    /// The scenarios that verify `requirement`, with their newest results.
-    pub fn verifying_scenarios(&self, requirement: ElementId) -> Vec<ScenarioRow> {
-        let Some(tree) = self.project.as_ref().map(|p| p.state().tree()) else {
-            return Vec::new();
-        };
-        let verifies = |scenario: ElementId| {
-            tree[scenario].children().iter().any(|objective| {
-                tree[*objective].kind == ElementKind::Objective
-                    && tree[*objective].children().iter().any(|v| {
-                        tree[*v].target.as_ref().and_then(|t| t.target()) == Some(requirement)
-                    })
-            })
-        };
-        self.scenario_rows_now()
-            .into_iter()
-            .filter(|row| verifies(row.id))
-            .collect()
     }
 }
 
