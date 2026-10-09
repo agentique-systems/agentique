@@ -395,6 +395,18 @@ impl<'a> Checker<'a> {
                     misplaced(self, "a check (`assert constraint`) belongs in a scenario");
                 }
             }
+            ElementKind::AssumeConstraint | ElementKind::RequireConstraint => {
+                if !matches!(
+                    owner_kind,
+                    Some(ElementKind::RequirementDef | ElementKind::Requirement)
+                ) {
+                    let message = format!(
+                        "`{}` belongs in a requirement def or a requirement",
+                        kind.keyword()
+                    );
+                    self.report(id, "misplaced-constraint", message);
+                }
+            }
             ElementKind::Assign => {
                 self.check_step_place(id);
                 if let Some(target) = element.target.clone()

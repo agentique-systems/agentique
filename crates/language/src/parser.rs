@@ -371,7 +371,22 @@ impl<'a> Parser<'a> {
             "package" => self.package()?,
             "import" => self.import()?,
             "doc" => self.doc()?,
-            "assert" if self.peek_text(1) == "constraint" => self.assert_constraint()?,
+            "assert" if self.peek_text(1) == "constraint" => {
+                self.constraint(ElementKind::AssertConstraint)?
+            }
+            "assume" if self.peek_text(1) == "constraint" => {
+                self.constraint(ElementKind::AssumeConstraint)?
+            }
+            "require" if self.peek_text(1) == "constraint" => {
+                self.constraint(ElementKind::RequireConstraint)?
+            }
+            "assume" | "require" => {
+                return self.unsupported(format!(
+                    "`{}` naming a constraint declared elsewhere (write `{} constraint {{ ... }}`)",
+                    self.peek_text(0),
+                    self.peek_text(0)
+                ));
+            }
             "assert" | "satisfy" => self.satisfy()?,
             "dependency" => self.dependency()?,
             "exhibit" => self.exhibit()?,
@@ -1212,14 +1227,23 @@ impl<'a> Parser<'a> {
         Ok(Node { element, children })
     }
 
-    /// `assert constraint [name] { [doc] expression }`
-    fn assert_constraint(&mut self) -> Result<Node> {
+    /// `assert constraint [name] { [doc] expression }`, and in a requirement
+    /// `assume constraint` / `require constraint`, whose expression may be
+    /// left out (an informal constraint, said by its doc), as may the body.
+    fn constraint(&mut self, kind: ElementKind) -> Result<Node> {
         self.bump();
         self.bump();
-        let mut element = Element::new(ElementKind::AssertConstraint);
+        let mut element = Element::new(kind);
         element.name = self.name();
         if matches!(self.peek_text(0), ":" | ":>" | ":>>" | "[" | "=") {
             return self.unsupported("a typed constraint");
+        }
+        let informal = kind != ElementKind::AssertConstraint;
+        if informal && self.eat(";") {
+            return Ok(Node {
+                element,
+                children: Vec::new(),
+            });
         }
         self.expect("{")?;
         let mut children = Vec::new();
@@ -1243,8 +1267,10 @@ impl<'a> Parser<'a> {
                 _ => break,
             }
         }
-        element.expression = Some(self.expression()?);
-        self.expect("}")?;
+        if !(informal && self.eat("}")) {
+            element.expression = Some(self.expression()?);
+            self.expect("}")?;
+        }
         Ok(Node { element, children })
     }
 
