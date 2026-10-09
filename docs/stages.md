@@ -2085,10 +2085,12 @@ it). Read against the code and the model before any change:
 | Item | Pull request | State |
 |---|---|---|
 | W13.1 Direction | #117 | In review |
-| W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
+| W13.2 Referential usages | #119 | Merged (below) |
 | W13.3 Requirement constraints and evidence | — | In progress |
 | W13.4 The self-model | — | In progress (`stage13/self-model`) |
 | W13.5 Alignment in the loop | — | In review (`stage13/alignment`, below) |
+| W13.4 The self-model | — | First part in review (below); the purpose's subrequirements and the test instance as a reference follow W13.2 and W13.3 |
+| W13.5 Alignment in the loop | — | In progress |
 | W13.6 A second system | — | Not started |
 | W13.7 Proof | — | Not started |
 
@@ -2174,3 +2176,40 @@ passed, 0 failed, 4 ignored; workspace clippy, fmt and the architecture
 check passed. Not verified: live models; the approved baseline against
 GitHub (tested with local bare remotes); reversing a disposition by an
 Operator command (not built).
+
+**W13.4, first part** (`stage13/self-model`, made through `apply_changes`;
+nothing here says the Operator accepted anything).
+
+- *The autonomous lifecycle, modelled and run.* The Orchestrator is its
+  deterministic `Cycle` and its role agents; the Cycle's 23 transitions
+  decide each next phase from recorded results (explore and reproduce,
+  propose with evidence, implement, check, review, merge, build, adopt,
+  continue; delegation within the depth limit; repair within the attempt
+  budget; the purpose gate), reusing a task's contracts (`JobPort`,
+  `Brief`, `WorkDone`, `CheckRequest`) and the launcher's (`LaunchPort`).
+  Seven scenarios run in model execution with the agents stood in: an
+  objective that adopts and explores again by itself, a proposal without
+  evidence refused, a failing check repaired, a reviewer rejecting twice, a
+  change to the governing text refused despite approval, a build that does
+  not start recovered, and delegation beyond the depth refused. They check
+  the model's account of the lifecycle; the code is checked by the tests
+  the Cycle's transitions are linked to (`tests/cycle.rs`,
+  `tests/exploring.rs`, `gates.rs`, `run/children.rs`, `run/evidence.rs`,
+  the launcher's `tests/supervise.rs`). Before: the Orchestrator had ports
+  and a contract, no behaviour, and the model said it drove its own Studio.
+- *One mechanism where the code has one.* The Studio's state machine had a
+  second lock question, confirmation and two states for the Assistant's
+  changes (14 states, 29 transitions); it now remembers who asked
+  (`requester`) and has one change path and lock question for every actor
+  (12 states, 27 transitions). The five scenarios of edits and Assistant
+  actions pass unchanged, the question naming the Assistant when it asked.
+- *Tools.* `apply_changes` gains an effect of several steps, a composite
+  action created with its steps, and `set` moving a transition between
+  states; with the lookup of unnamed elements (W13.1) an agent can now write
+  and generalise behaviour while transitions keep their identities. Before,
+  a transition could have one `send` or `assign` only.
+- *Traceability.* A dogfood test checks every implementation link: the
+  element exists under that name, the path exists, the function is defined
+  there. It found three stale links on `main` (a test moved to the
+  Orchestrator in W11.5, a test renamed in W12.5, a TypeScript function the
+  check first missed), fixed.
