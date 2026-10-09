@@ -27,6 +27,10 @@ pub enum StudioRequest {
     ReadCodeLinks { element: Option<ElementId> },
     /// A part explained from the model and its links.
     Explain { element: ElementId },
+    /// What supports each requirement (or one), the claims kept apart
+    /// (C-55): declared, calculated from the model, verified by scenarios
+    /// with their kept results, tested in code.
+    CheckRequirements { requirement: Option<ElementId> },
     /// Run the implementation checks and answer when they end.
     CheckImplementation,
     /// Ask the Operator to start an implementation task; answer when the
@@ -587,6 +591,24 @@ pub(super) fn studio_request(
             }
             StudioRequest::Explain { element }
         }
+        super::CHECK_REQUIREMENTS => {
+            let requirement = optional_str(input, "requirement")?
+                .map(|name| find(tree, name))
+                .transpose()?;
+            if let Some(id) = requirement
+                && !matches!(
+                    tree[id].kind,
+                    ElementKind::Requirement | ElementKind::RequirementDef
+                )
+            {
+                return Err(format!(
+                    "`{}` is a {}; check_requirements reads a requirement or requirement def",
+                    tree.qualified_name(id),
+                    tree[id].kind.keyword()
+                ));
+            }
+            StudioRequest::CheckRequirements { requirement }
+        }
         super::READ_CODE_LINKS => StudioRequest::ReadCodeLinks {
             element: optional_str(input, "element")?
                 .map(|name| find(tree, name))
@@ -655,6 +677,22 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
         )
         .map(|r| r.describe(tree))
         .ok_or_else(|| "Only a part def or a part can be explained.".into()),
+        // No results or links are kept here: the ladder says so rather than
+        // reading them as not run or not linked.
+        StudioRequest::CheckRequirements { requirement } => {
+            let ladders = agq_implementation::requirements::ladders(
+                tree,
+                &agq_language::validate(tree),
+                None,
+                None,
+                None,
+            );
+            Ok(agq_implementation::requirements::describe(
+                tree,
+                &ladders,
+                *requirement,
+            ))
+        }
         StudioRequest::CheckImplementation => Err("Not run: there is no code here.".into()),
         StudioRequest::Implement { .. } => Err("Not started: there is no code folder here.".into()),
         StudioRequest::ProposeObjective(_) => {

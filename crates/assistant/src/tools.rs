@@ -45,6 +45,7 @@ pub const STOP_RUN: &str = "stop_run";
 pub const READ_RUN: &str = "read_run";
 pub const READ_CODE_LINKS: &str = "read_code_links";
 pub const EXPLAIN_ELEMENT: &str = "explain_element";
+pub const CHECK_REQUIREMENTS: &str = "check_requirements";
 pub const CHECK_IMPLEMENTATION: &str = "check_implementation";
 pub const PROPOSE_IMPLEMENTATION: &str = "propose_implementation";
 pub const PROPOSE_OBJECTIVE: &str = "propose_objective";
@@ -96,6 +97,9 @@ const KINDS: &[ElementKind] = &[
     ElementKind::Requirement,
     ElementKind::Subject,
     ElementKind::Satisfy,
+    // Requirement constraints (C-55).
+    ElementKind::AssumeConstraint,
+    ElementKind::RequireConstraint,
     ElementKind::EnumDef,
     ElementKind::Enum,
     // Behaviour and scenarios (C-50).
@@ -172,6 +176,7 @@ pub fn read_only(name: &str) -> bool {
             | "read_run"
             | "read_code_links"
             | "explain_element"
+            | "check_requirements"
             | "search_library"
             | "read_library_block"
             | "list_files"
@@ -205,7 +210,7 @@ pub fn definitions() -> Value {
         "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
         "requirement": name("create satisfy: the requirement being satisfied."),
         "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\"."),
-        "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; ref or attribute: a value that is not a plain literal, e.g. \"service.screening\"; ref part: the part it refers to, e.g. \"bus\"."),
+        "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; assume or require constraint (in a requirement def or requirement): the condition on the subject and the requirement's attributes, e.g. \"s.mass <= limit\" (leave it out and give `doc` for an informal constraint); ref or attribute: a value that is not a plain literal, e.g. \"service.screening\" or a roll-up \"frame.mass + battery.mass\"; ref part: the part it refers to, e.g. \"bus\"."),
         "via": name("create send or accept: the port, as a feature chain from the scenario or the part, e.g. \"service.shorten\"."),
         "after": { "type": "boolean", "description": "create accept: wait for the time in `expression` to pass instead of for an item." },
         "steps": {
@@ -363,6 +368,15 @@ pub fn definitions() -> Value {
                 "type": "object",
                 "properties": { "element": name("Qualified name of a part def or part.") },
                 "required": ["element"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": CHECK_REQUIREMENTS,
+            "description": "What supports each requirement, with the claims kept apart, strongest first: declared (satisfy relationships: a claim, not evidence), calculated from the model (its assume and require constraints evaluated on the modelled configuration of each satisfying feature, with the values used: holds, violated, assumptions not met, or not evaluable and why; an analysis of the model, not a test of a built system), scenarios that verify it with their newest result and whether it is current, and the linked tests' last outcome. Never report a requirement as met on a declaration alone.",
+            "input_schema": {
+                "type": "object",
+                "properties": { "requirement": name("Optional qualified name of one requirement (usage or def); without it, every requirement with a headline.") },
                 "additionalProperties": false
             }
         },
@@ -541,6 +555,7 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
         | READ_RUN
         | READ_CODE_LINKS
         | EXPLAIN_ELEMENT
+        | CHECK_REQUIREMENTS
         | CHECK_IMPLEMENTATION
         | PROPOSE_IMPLEMENTATION
         | PROPOSE_OBJECTIVE
@@ -1003,6 +1018,17 @@ fn outline_line(
             );
         }
         ElementKind::SyntaxError => return "text that could not be read".to_string(),
+        ElementKind::AssumeConstraint | ElementKind::RequireConstraint => {
+            let what = match &element.expression {
+                Some(expression) => agq_language::print_expression(tree, id, expression),
+                None => "informal, see its doc".to_string(),
+            };
+            let keyword = element.kind.keyword();
+            return match &element.name {
+                Some(name) => format!("{name} ({keyword}: {what})"),
+                None => format!("{keyword}: {what}"),
+            };
+        }
         _ => {}
     }
     let name = tree.effective_name(id).unwrap_or("(unnamed)");

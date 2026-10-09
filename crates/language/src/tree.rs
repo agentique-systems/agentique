@@ -107,6 +107,13 @@ pub enum ElementKind {
     Verify,
     /// `assert constraint name { expression }`: a check.
     AssertConstraint,
+    /// `assume constraint [name] { expression }` in a requirement: an
+    /// assumption. Without an expression (only a `doc`) it is informal.
+    AssumeConstraint,
+    /// `require constraint [name] { expression }` in a requirement: a
+    /// required constraint. Without an expression (only a `doc`) it is
+    /// informal.
+    RequireConstraint,
     /// A construct outside the subset, kept as verbatim text (`text`) and
     /// reported as unsupported. `note` names the construct.
     Unsupported,
@@ -156,6 +163,8 @@ impl ElementKind {
             Objective => "objective",
             Verify => "verify",
             AssertConstraint => "assert constraint",
+            AssumeConstraint => "assume constraint",
+            RequireConstraint => "require constraint",
             Unsupported => "unsupported",
             SyntaxError => "syntax error",
         }
@@ -195,8 +204,9 @@ impl ElementKind {
     }
 
     /// Behaviour and scenario steps (C-50): states, transitions and action
-    /// nodes. They own members and are looked up by name like usages, but
-    /// have no types of their own, except that an accepted payload is typed.
+    /// nodes; and constraints: checks, assumptions and required constraints.
+    /// They own members and are looked up by name like usages, but have no
+    /// types of their own, except that an accepted payload is typed.
     pub fn is_behavior(self) -> bool {
         use ElementKind::*;
         matches!(
@@ -212,6 +222,16 @@ impl ElementKind {
                 | Objective
                 | Verify
                 | AssertConstraint
+                | AssumeConstraint
+                | RequireConstraint
+        )
+    }
+
+    /// The assumed and required constraints of a requirement.
+    pub fn is_requirement_constraint(self) -> bool {
+        matches!(
+            self,
+            ElementKind::AssumeConstraint | ElementKind::RequireConstraint
         )
     }
 

@@ -127,13 +127,14 @@ impl Printer<'_> {
             ElementKind::Comment => return print_comment("", e.text.as_deref(), &indent, out),
             _ => {}
         }
+        // `then private assert constraint ...`: `then` leads a step.
+        if then {
+            out.push_str("then ");
+        }
         match e.visibility {
             Visibility::Public => {}
             Visibility::Private => out.push_str("private "),
             Visibility::Protected => out.push_str("protected "),
-        }
-        if then {
-            out.push_str("then ");
         }
         if let Some(which) = e.state_action {
             out.push_str(which.keyword());
@@ -151,7 +152,9 @@ impl Printer<'_> {
                 out.push('\n');
                 return;
             }
-            ElementKind::AssertConstraint => return self.assert_constraint(id, level, out),
+            ElementKind::AssertConstraint
+            | ElementKind::AssumeConstraint
+            | ElementKind::RequireConstraint => return self.constraint(id, level, out),
             _ => {}
         }
         out.push_str(&self.header(id));
@@ -440,15 +443,20 @@ impl Printer<'_> {
         }
     }
 
-    /// `assert constraint [name] { [doc] expression }`
-    fn assert_constraint(&self, id: ElementId, level: usize, out: &mut String) {
+    /// `assert constraint [name] { [doc] expression }`; also `assume` and
+    /// `require`, written `require constraint [name];` with nothing inside.
+    fn constraint(&self, id: ElementId, level: usize, out: &mut String) {
         let e = &self.model.tree[id];
-        out.push_str("assert constraint ");
+        out.push_str(e.kind.keyword());
         if let Some(name) = &e.name {
-            let _ = write_name(out, name);
             out.push(' ');
+            let _ = write_name(out, name);
         }
-        out.push_str("{\n");
+        if e.expression.is_none() && e.children().is_empty() {
+            out.push_str(";\n");
+            return;
+        }
+        out.push_str(" {\n");
         self.members(e.children(), level + 1, Some(e.kind), out);
         let inner = "    ".repeat(level + 1);
         if let Some(expression) = &e.expression {

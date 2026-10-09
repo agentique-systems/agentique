@@ -2003,6 +2003,50 @@ impl<'a> Compiler<'a> {
     }
 }
 
+/// Expressions and feature values compiled outside a scenario, the way a
+/// run compiles them, for analyses of a modelled configuration (requirement
+/// evaluation, C-55).
+pub(crate) struct ExpressionCompiler<'a> {
+    compiler: Compiler<'a>,
+}
+
+impl<'a> ExpressionCompiler<'a> {
+    pub(crate) fn new(tree: &'a Tree, semantics: &'a Semantics<'a>) -> Self {
+        let mut compiler = Compiler {
+            tree,
+            semantics,
+            types: Types::default(),
+            library: Library::default(),
+            blockers: Vec::new(),
+            names: BTreeMap::new(),
+            refs: Vec::new(),
+            deferred: Vec::new(),
+            refs_bound: false,
+        };
+        compiler.scalars();
+        ExpressionCompiler { compiler }
+    }
+
+    /// An expression written in `holder`, its names resolved once.
+    pub(crate) fn expr(
+        &mut self,
+        holder: ElementId,
+        expression: &Expression,
+    ) -> Result<Expr, String> {
+        self.compiler.expr(holder, expression)
+    }
+
+    /// The value a feature has in its text: a literal or an expression.
+    pub(crate) fn value_of(&mut self, feature: ElementId) -> Result<Option<Expr>, String> {
+        self.compiler.value_of(feature)
+    }
+
+    /// A feature and every feature it redefines, transitively.
+    pub(crate) fn aliases(&self, feature: ElementId) -> Vec<ElementId> {
+        self.compiler.aliases(feature)
+    }
+}
+
 /// The instance a path of part features leads to from `from`.
 pub(crate) fn find_instance(system: &System, from: usize, features: &[ElementId]) -> Option<usize> {
     let mut current = from;

@@ -7,7 +7,8 @@ use crate::{
     ui::{self, ActiveTheme, Button, IconName, Tone, icon, r, theme},
     workspace::StudioExt,
 };
-use agq_simulation::{Mode, RunStatus};
+use agq_implementation::requirements::ScenarioResult;
+use agq_simulation::{Mode, RunStatus, store::RunSummary};
 use gpui::{
     ClickEvent, Context, Entity, InteractiveElement, IntoElement, ParentElement, Render,
     SharedString, StatefulInteractiveElement, Styled, Subscription, Window, div,
@@ -37,25 +38,26 @@ impl ScenariosView {
     }
 }
 
-/// The short word and tone for a mode's newest result.
-pub fn result_chip(
-    mode: Mode,
-    status: RunStatus,
-    all_passed: bool,
-    current: bool,
-) -> (String, Tone) {
+/// The short word and tone for a mode's newest result, classified as the
+/// Requirements panel's evidence ladder classifies it (C-55): failed only
+/// on a failed check or a stop the model's own behaviour caused; a run
+/// with no checks, undecided checks or another stop is inconclusive.
+pub fn result_chip(mode: Mode, summary: &RunSummary, current: bool) -> (String, Tone) {
     let short = short_mode(mode);
-    if !current {
-        return (format!("{short} · outdated"), Tone::Neutral);
+    if current {
+        match summary.status {
+            RunStatus::Blocked => return (format!("{short} · cannot start"), Tone::Warning),
+            RunStatus::Cancelled => return (format!("{short} · cancelled"), Tone::Neutral),
+            _ => {}
+        }
     }
-    match status {
-        RunStatus::Walkthrough => (format!("{short} · shown"), Tone::Neutral),
-        RunStatus::Blocked => (format!("{short} · cannot start"), Tone::Warning),
-        RunStatus::Cancelled => (format!("{short} · cancelled"), Tone::Neutral),
-        RunStatus::Stopped => (format!("{short} · stopped"), Tone::Danger),
-        RunStatus::Completed if all_passed => (format!("{short} · passed"), Tone::Success),
-        RunStatus::Completed => (format!("{short} · failed"), Tone::Danger),
-    }
+    crate::requirements::result_chip(&ScenarioResult {
+        mode,
+        status: summary.status,
+        tally: summary.tally.clone(),
+        stop: summary.stop,
+        current,
+    })
 }
 
 /// A mode in one word, for chips.
@@ -172,9 +174,7 @@ impl ScenariosView {
                             let summary: Vec<String> = row
                                 .latest
                                 .iter()
-                                .map(|(mode, s, current)| {
-                                    result_chip(*mode, s.status, s.all_passed, *current).0
-                                })
+                                .map(|(mode, s, current)| result_chip(*mode, s, *current).0)
                                 .collect();
                             let name = SharedString::from(format!(
                                 "{}, subject {}{}",
@@ -281,12 +281,8 @@ impl ScenariosView {
                                                 })
                                                 .children(row.latest.iter().map(
                                                     |(mode, s, current)| {
-                                                        let (label, tone) = result_chip(
-                                                            *mode,
-                                                            s.status,
-                                                            s.all_passed,
-                                                            *current,
-                                                        );
+                                                        let (label, tone) =
+                                                            result_chip(*mode, s, *current);
                                                         ui::Badge::new(label).tone(tone)
                                                     },
                                                 )),

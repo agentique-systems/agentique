@@ -82,13 +82,23 @@ impl Field {
                             | Accept
                             | Objective
                             | AssertConstraint
+                            | AssumeConstraint
+                            | RequireConstraint
                     )
             }
             Field::Visibility => {
                 plain
                     || matches!(
                         kind,
-                        Package | Import | Satisfy | Dependency | State | Transition
+                        Package
+                            | Import
+                            | Satisfy
+                            | Dependency
+                            | State
+                            | Transition
+                            | AssertConstraint
+                            | AssumeConstraint
+                            | RequireConstraint
                     )
             }
             Field::Abstract | Field::Specializes => plain,
@@ -107,7 +117,16 @@ impl Field {
             Field::Text => matches!(kind, Doc | Comment),
             Field::Members => kind.is_namespace() || matches!(kind, Satisfy | Dependency),
             Field::Expression => {
-                kind.is_usage() || matches!(kind, Send | Assign | If | Accept | AssertConstraint)
+                kind.is_usage()
+                    || matches!(
+                        kind,
+                        Send | Assign
+                            | If
+                            | Accept
+                            | AssertConstraint
+                            | AssumeConstraint
+                            | RequireConstraint
+                    )
             }
             Field::Guard => kind == Transition,
             Field::Via => matches!(kind, Send | Accept),
@@ -342,7 +361,9 @@ fn place(tree: &Tree, id: ElementId, e: &Element, owner: ElementId) -> Result<()
                 );
             }
         }
-        AssertConstraint if !matches!(e.kind, Doc | Comment) => {
+        AssertConstraint | AssumeConstraint | RequireConstraint
+            if !matches!(e.kind, Doc | Comment) =>
+        {
             return Err("a constraint's members are its doc and comments".into());
         }
         _ => {}

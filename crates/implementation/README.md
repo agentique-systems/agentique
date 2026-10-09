@@ -42,6 +42,16 @@ writes code.
   (`Verification::verdict`, the one summary `agq_simulation::summary`). It
   records the task commit and model digest it checked, so it is outdated as
   soon as either changes.
+- **Requirements** (`requirements`, C-55): each requirement's evidence kept
+  apart, as the Requirements panel, the Inspector and `check_requirements`
+  read it: declared (`satisfy`, a claim), calculated from the model
+  (Simulation's evaluation), scenarios that verify it with their newest
+  results and freshness (only a failed check or a stop by the model's own
+  behaviour is a failure; anything undecided is inconclusive; an
+  implementation run is current only while the code is what it ran), and
+  its linked tests' last outcome; a headline that counts what each
+  requirement usage stands on, strongest first, subrequirements with their
+  container.
 - **`CheckReport`** keeps a round of checks with the commit, the working
   tree's digest and the model digest the links reach, so freshness can be
   computed.

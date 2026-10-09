@@ -2087,7 +2087,7 @@ it). Read against the code and the model before any change:
 | W13.1 Direction | #117 | Merged |
 | W13.2 Referential usages | #119 | Merged (below) |
 | W13.3 Requirement constraints and evidence | #121 | In review (below) |
-| W13.4 The self-model | #118 | In review (below); the purpose's subrequirements follow W13.3 |
+| W13.4 The self-model | #118 | Merged (below); the purpose's subrequirements follow W13.3 |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | — | In progress (`stage13/drone`) |
 | W13.7 Proof | — | Not started |
@@ -2239,3 +2239,48 @@ nothing here says the Operator accepted anything).
   element exists under that name, the path exists, the function is defined
   there. It found two stale links on `main` (a test moved to the
   Orchestrator in W11.5, a test renamed in W12.5), fixed.
+
+**W13.3 Requirement constraints and evidence** (`stage13/requirements`;
+nothing here says the Operator accepted anything). Before: requirements had
+a subject, doc text, attributes and `satisfy`; the Requirements panel
+headlined "N of M satisfied" from declarations. Now: assumed and required
+constraints (formal or informal, private if wanted) and subrequirements on
+the whole path (language, System State, `apply_changes`, `read_model`),
+their evaluation on the modelled configuration of each satisfying feature
+(`agq-simulation`, `requirements`: built in the part or part def the
+satisfy is written in, members counted whatever their visibility, roll-ups
+through feature chains, a `ref part` being the part it refers to (counted
+once; unbound: not determined), values worked out once with cycle detection, a
+redefinition in a usage winning over its definition; a subrequirement whose
+assumptions are not met does not apply; problems in the slice read, parts
+or a satisfying feature with a multiplicity other than one, informal or
+undetermined values, ambiguous subrequirement names, a subject bound twice
+and a requirement that contains itself give "not evaluable", never a pass;
+deviations 21 to 23), and the evidence ladder (`agq-implementation`,
+`requirements`): declared, calculated, scenarios with their freshness (an
+implementation run current only while the code is what it ran; only a
+failed check or a stop by the model's own behaviour is a failure, anything
+undecided inconclusive), linked tests. The panel's headline counts the
+standings of requirement usages, subrequirements with their container ("1
+violated by calculation · 1 holds by calculation · 1 holds for some
+calculations · 1 only declared · 1 with no evidence (of 5)"), each row
+opens its ladder, the Inspector shows the same, and the button says
+"Declare satisfied by …". The Assistant's `check_requirements` answers the
+ladder as text and, headless, says that kept results and links are not
+available. Tested: language, System State, simulation (a mass budget that
+holds, is violated with its values, has assumptions not met, is informal or
+undetermined; violated, private, ambiguous, non-applying, self-containing
+and mistyped subrequirements; contexts and their digest; cycles, division
+by zero, enums), assistant, implementation (stopped and empty runs, mixed
+calculations) and Studio (a stale implementation pass) tests, and a shared
+`ref part` bus counted once: on `main` at `b033dc4f` (the branch's head
+before the last change), `cargo test --workspace` 918 passed, 0 failed, 25
+ignored; workspace clippy, fmt and the architecture check pass. The
+Scenarios panel's chips now classify a result as the ladder does (a run
+with no or undecided checks is inconclusive, not failed): the Studio's
+tests 187 passed after that change. Not verified: the panel by eye, the
+reference run (with the final proof),
+a real model calling `check_requirements`. Limits: no units; package-level
+constants are not read; scenario runs still work attribute values out
+differently (deviation 23); a change to the code alone reaches the ladder
+when the model, the links, the kept results or the checks next change.

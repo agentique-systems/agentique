@@ -16,6 +16,9 @@
 //!   provenance; [`digest`] and [`freshness`] say whether a result is still
 //!   current; [`store`] keeps results in the app's per-project data.
 //! - [`runner`]: a run on a background thread that can be cancelled.
+//! - [`requirements`]: requirement evaluation (C-55): a requirement's
+//!   assumed and required constraints calculated on the modelled
+//!   configuration of what satisfies it; nothing runs.
 //!
 //! Nothing here changes the System State, and nothing here derives
 //! behaviour from a name, an icon or documentation.
@@ -26,6 +29,7 @@ pub mod compile;
 pub mod digest;
 pub mod engine;
 pub mod eval;
+pub mod requirements;
 pub mod result;
 pub mod runner;
 pub mod script;

@@ -76,8 +76,20 @@ store.save(&result)?;                                        // app data, never 
   or a live result also the binding and, for a replay, the recordings. One
   without a binding, made before bindings were recorded, is never current.
 - **`runner::BackgroundRun`** runs on its own thread; the Studio polls it.
+- **`requirements`** (C-55) evaluates each `satisfy r by x`: the subject of
+  `r` is bound to `x`, and `r`'s assumed and required constraints and
+  subrequirements are calculated on the configuration the model gives `x`
+  (its parts and attribute values, a usage's redefinitions winning, roll-ups
+  through feature chains), with no behaviour and no time; members count
+  whatever their visibility. Holds, violated, assumptions not met (a
+  subrequirement whose assumptions are not met does not apply), or not
+  evaluable (an informal constraint, a value the model does not determine,
+  an unsupported construct, a requirement that contains itself, problems in
+  the slice read), with the values used and the slice's digest; computed
+  when asked, nothing stored (deviations 21 to 23).
 
 Tests: `model.rs` (the retrying dispatcher of `models/notifications`),
 `agents.rs` (the link screening of `models/link-screening`), `identity.rs`
 (bindings, keys, legacy recordings, deadlines, accounting, freshness, what
-an older build reads), `store.rs`.
+an older build reads), `store.rs`, `requirements.rs` (a mass budget: holds,
+violated, assumptions not met, not evaluable, subrequirements, reuse).
