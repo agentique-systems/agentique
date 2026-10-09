@@ -378,12 +378,12 @@ impl<'p> Engine<'p> {
                 Some(usage),
                 format!("`{}` cannot run: {why}", self.instance(instance).path),
             )),
-            // A referential part bound to nothing, with no stand-in (C-55).
+            // A referential part that is not bound, with no stand-in (C-55).
             Behaviour::Unbound => Err(self.stop(
                 StopReason::MissingStandIn,
                 Some(usage),
                 format!(
-                    "`{}` refers to nothing in this configuration, so {value} sent to it through `{}` reaches nothing; bind it (`= ...`) or stand it in",
+                    "`{}` is not bound: the part it refers to is not identified in this model, so {value} sent to it through `{}` reaches no part; bind it (`= ...`) or stand it in",
                     self.instance(instance).path,
                     p.name
                 ),
@@ -1544,11 +1544,11 @@ impl<'p> Engine<'p> {
     }
 }
 
-/// Why nothing can be read from or set in a referential part that refers
-/// to nothing (C-55).
+/// Why nothing can be read from or set in a referential part that is not
+/// bound (C-55).
 fn unbound(instance: &Instance) -> String {
     format!(
-        "`{}` refers to nothing in this configuration; bind it (`= ...`) or stand it in",
+        "`{}` is not bound: the part it refers to is not identified in this model; bind it (`= ...`) or stand it in",
         instance.path
     )
 }

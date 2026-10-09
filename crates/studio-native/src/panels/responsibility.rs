@@ -69,9 +69,9 @@ pub fn section(studio: &Entity<Studio>, element: ElementId, cx: &App) -> Option<
             ui::Banner::new(
                 Tone::Info,
                 format!(
-                    "Refers to {}: `{}` does not contain it. What follows describes its type, {}.",
-                    usage.target_text(),
+                    "`{}` is a referential part and does not contain what it refers to; it {}. What follows describes its type, {}.",
                     usage.name,
+                    usage.target_text(),
                     about.name
                 ),
             )
@@ -94,7 +94,7 @@ pub fn section(studio: &Entity<Studio>, element: ElementId, cx: &App) -> Option<
                         referential
                             .refers_to
                             .as_deref()
-                            .unwrap_or("nothing in this configuration")
+                            .unwrap_or("not bound (not identified in this model)")
                     ))
                     .into_any_element(),
             );

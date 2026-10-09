@@ -7,6 +7,16 @@ use agq_simulation::digest::model_digest;
 use agq_simulation::{
     Answers, EventKind, Mode, Request, RunResult, RunStatus, StopReason, Verdict, compile, run,
 };
+
+/// What keeps the system of `scenario` from running, in words.
+fn blockers(tree: &Tree, scenario: &str) -> Vec<String> {
+    let id = tree.find(scenario).unwrap();
+    let program = compile(tree, id).unwrap_or_else(|b| panic!("blocked: {b:?}"));
+    match program.system {
+        Ok(_) => Vec::new(),
+        Err(blockers) => blockers.into_iter().map(|b| b.message).collect(),
+    }
+}
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
@@ -95,6 +105,39 @@ const DRONE: &str = "package Drones {
         connect pilot to flightComputer.control;
     }
 
+    part def Power {
+        part bus : PowerBus;
+    }
+
+    part def Quadcopter {
+        port motors : PowerPort;
+        port pilot : ControlPort;
+        part power : Power;
+        ref part mainBus : PowerBus = power.bus;
+        part flightComputer : FlightComputer {
+            :>> supply = mainBus;
+        }
+        connect motors to mainBus.main;
+        connect pilot to flightComputer.control;
+    }
+
+    part def Hexacopter :> Quadcopter {
+        ref part :>> mainBus[1];
+    }
+
+    part def Meter {
+        ref part supply : PowerBus;
+        exhibit state metering {
+            entry assign supply.total := 1;
+            then on;
+            state on;
+        }
+    }
+
+    part def Gauge {
+        part meter : Meter;
+    }
+
     verification def OneSharedBus {
         subject drone : Drone;
         send new Load(watts = 100) via drone.motors;
@@ -107,6 +150,42 @@ const DRONE: &str = "package Drones {
         then assert constraint oneMachine {
             drone.bus.requests == 2 and drone.flightComputer.supply.requests == 2 and drone.flightComputer.supply.total == 120
         }
+    }
+
+    verification def QuadSharesItsBus {
+        subject quad : Quadcopter;
+        send new Load(watts = 100) via quad.motors;
+        then accept a : Ack via quad.motors;
+        then send new Command(watts = 20) via quad.pilot;
+        then accept d : Done via quad.pilot;
+        then assert constraint sharedTotal {
+            a.total == 100 and d.total == 120
+        }
+        then assert constraint oneMachine {
+            quad.power.bus.requests == 2 and quad.mainBus.requests == 2 and quad.flightComputer.supply.total == 120
+        }
+    }
+
+    verification def HexKeepsTheBinding {
+        subject hex : Hexacopter;
+        send new Load(watts = 100) via hex.motors;
+        then accept a : Ack via hex.motors;
+        then send new Command(watts = 20) via hex.pilot;
+        then accept d : Done via hex.pilot;
+        then assert constraint sharedTotal {
+            a.total == 100 and d.total == 120 and hex.power.bus.requests == 2
+        }
+    }
+
+    verification def ReadsWhatIsNotBound {
+        subject glider : Glider;
+        assert constraint supplyIsEmpty {
+            glider.flightComputer.supply.total == 0
+        }
+    }
+
+    verification def MetersWhatIsNotBound {
+        subject gauge : Gauge;
     }
 
     verification def GlidesWithoutPower {
@@ -235,7 +314,7 @@ fn a_message_into_an_unbound_reference_stops_the_run_with_the_reason() {
     assert_eq!(stop.reason, StopReason::MissingStandIn, "{stop:?}");
     assert_eq!(
         stop.message,
-        "`glider.flightComputer.supply` refers to nothing in this configuration, so Load(watts = 20) sent to it through `aux` reaches nothing; bind it (`= ...`) or stand it in"
+        "`glider.flightComputer.supply` is not bound: the part it refers to is not identified in this model, so Load(watts = 20) sent to it through `aux` reaches no part; bind it (`= ...`) or stand it in"
     );
     let supply = tree.find("Drones::FlightComputer::supply").unwrap();
     assert_eq!(stop.element, Some(supply.raw()));
@@ -288,5 +367,163 @@ fn a_stand_in_for_a_bound_reference_answers_for_the_part_it_refers_to() {
     assert_eq!(
         texts(&result, EventKind::StandIn),
         ["Stand-in `bus` answers for `drone.bus` (call 1)"]
+    );
+}
+
+#[test]
+fn a_keyword_less_binding_through_another_reference_reaches_the_same_bus() {
+    // `mainBus = power.bus`, and the flight computer's `:>> supply = mainBus;`:
+    // both lead to the one bus inside the power unit, and the motors' port
+    // passes items inward to it through `mainBus`.
+    let tree = load(DRONE);
+    let result = run_model(&tree, "Drones::QuadSharesItsBus");
+    assert_eq!(result.status, RunStatus::Completed, "{:#?}", result.stop);
+    assert!(result.all_passed(), "{:?}", verdicts(&result));
+    let received = texts(&result, EventKind::Received);
+    assert!(
+        received
+            .iter()
+            .any(|t| t.starts_with("`quad.power.bus` received") && t.contains("through `main`")),
+        "{received:?}"
+    );
+    assert!(
+        received
+            .iter()
+            .any(|t| t.starts_with("`quad.power.bus` received") && t.contains("through `aux`")),
+        "{received:?}"
+    );
+}
+
+#[test]
+fn a_redefinition_without_a_value_keeps_the_binding() {
+    let tree = load(DRONE);
+    let result = run_model(&tree, "Drones::HexKeepsTheBinding");
+    assert_eq!(result.status, RunStatus::Completed, "{:#?}", result.stop);
+    assert!(result.all_passed(), "{:?}", verdicts(&result));
+}
+
+#[test]
+fn a_bound_reference_with_features_of_its_own_does_not_run() {
+    let text = DRONE.replace(
+        "    part def Hexacopter :> Quadcopter {
+        ref part :>> mainBus[1];
+    }",
+        "    part def Hexacopter :> Quadcopter {
+        ref part :>> mainBus {
+            attribute spare : Natural;
+        }
+    }",
+    );
+    let tree = load(&text);
+    assert_eq!(
+        blockers(&tree, "Drones::HexKeepsTheBinding"),
+        [
+            "`hex.mainBus` refers to `power.bus` and declares `spare` of its own; what it refers to has that part's features, so declare them there"
+        ]
+    );
+}
+
+#[test]
+fn a_ref_item_is_a_value_and_cannot_refer_to_a_part() {
+    let text = DRONE.replace(
+        "    part def Gauge {
+        part meter : Meter;
+    }",
+        "    part def Gauge {
+        part meter : Meter;
+    }
+
+    part def Tank :> Load;
+
+    part def Carrier {
+        part tank : Tank;
+        ref item cargo : Load = tank;
+    }
+
+    verification def Carries {
+        subject carrier : Carrier;
+    }",
+    );
+    let tree = load(&text);
+    assert_eq!(validate(&tree), []);
+    assert_eq!(
+        blockers(&tree, "Drones::Carries"),
+        [
+            "`carrier.cargo` is a `ref item`, a value in runs; it cannot refer to the part `tank`, which runs as an instance"
+        ]
+    );
+}
+
+#[test]
+fn a_binding_that_leads_to_no_running_part_does_not_run() {
+    // `spare` has no instance (multiplicity 0): a reference bound to it
+    // never reaches one, and the run says so instead of guessing.
+    let text = DRONE.replace(
+        "    part def Gauge {
+        part meter : Meter;
+    }",
+        "    part def Gauge {
+        part meter : Meter;
+        part spare : PowerBus[0];
+        ref part backup : PowerBus = spare;
+    }",
+    );
+    let tree = load(&text);
+    assert_eq!(validate(&tree), []);
+    assert_eq!(
+        blockers(&tree, "Drones::MetersWhatIsNotBound"),
+        [
+            "`gauge.backup` is bound to `spare`, which does not lead to a part that runs in this configuration"
+        ]
+    );
+}
+
+#[test]
+fn reading_or_setting_what_an_unbound_reference_refers_to_says_why_not() {
+    let tree = load(DRONE);
+    // A check reading through it cannot be evaluated.
+    let result = run_model(&tree, "Drones::ReadsWhatIsNotBound");
+    assert_eq!(result.status, RunStatus::Completed, "{:#?}", result.stop);
+    assert_eq!(result.checks[0].verdict, Verdict::Inconclusive);
+    assert!(
+        result.checks[0].message.contains(
+            "`glider.flightComputer.supply` is not bound: the part it refers to is not identified in this model; bind it (`= ...`) or stand it in"
+        ),
+        "{}",
+        result.checks[0].message
+    );
+    // A part's behaviour setting an attribute through it stops the run.
+    let result = run_model(&tree, "Drones::MetersWhatIsNotBound");
+    assert_eq!(result.status, RunStatus::Stopped);
+    let stop = result.stop.unwrap();
+    assert_eq!(stop.reason, StopReason::EvaluationError);
+    assert_eq!(
+        stop.message,
+        "`supply.total`: `gauge.meter.supply` is not bound: the part it refers to is not identified in this model; bind it (`= ...`) or stand it in"
+    );
+}
+
+#[test]
+fn bindings_to_themselves_keep_the_scenario_from_starting() {
+    let text = DRONE.replace(
+        "    part def Gauge {
+        part meter : Meter;
+    }",
+        "    part def Gauge {
+        part meter : Meter;
+        ref part a : PowerBus = b;
+        ref part b : PowerBus = a;
+    }",
+    );
+    let tree = load(&text);
+    let id = tree.find("Drones::MetersWhatIsNotBound").unwrap();
+    let blockers = compile(&tree, id).expect_err("does not start");
+    let messages: Vec<&str> = blockers.iter().map(|b| b.message.as_str()).collect();
+    assert_eq!(
+        messages,
+        [
+            "`a` and `b` are bound to each other, so neither refers to a part (wrong-value)",
+            "`b` and `a` are bound to each other, so neither refers to a part (wrong-value)",
+        ]
     );
 }

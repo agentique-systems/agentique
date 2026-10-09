@@ -26,28 +26,29 @@ pub struct ContractPort {
 pub struct Referential {
     pub feature: ElementId,
     pub name: String,
-    /// The part it refers to, as written (`bus`), or `None` when it refers
-    /// to nothing in this configuration.
+    /// The part it refers to, as written where it is bound (`bus`: its own
+    /// value, or that of the feature it redefines), or `None` when it is not
+    /// bound: the part it refers to is not identified in this model.
     pub refers_to: Option<String>,
 }
 
 impl Referential {
-    fn of(tree: &Tree, feature: ElementId) -> Referential {
+    fn of(tree: &Tree, semantics: &Semantics, feature: ElementId) -> Referential {
         Referential {
             feature,
             name: tree.effective_name(feature).unwrap_or("?").to_string(),
-            refers_to: tree[feature]
-                .expression
-                .as_ref()
-                .map(|value| print_expression(tree, feature, value)),
+            refers_to: semantics.value_holder(feature).and_then(|holder| {
+                let value = tree.get(holder)?.expression.as_ref()?;
+                Some(print_expression(tree, holder, value))
+            }),
         }
     }
 
-    /// `bus`, or that it refers to nothing.
+    /// `refers to `bus``, or that it is not bound.
     pub fn target_text(&self) -> String {
         match &self.refers_to {
-            Some(target) => format!("`{target}`"),
-            None => "nothing in this configuration".into(),
+            Some(target) => format!("refers to `{target}`"),
+            None => "is not bound: the part it refers to is not identified in this model".into(),
         }
     }
 }
@@ -137,7 +138,7 @@ pub fn responsibility(
     for feature in tree[definition].children() {
         let feature = *feature;
         if semantics.referential(feature) == Some(true) {
-            refers.push(Referential::of(tree, feature));
+            refers.push(Referential::of(tree, &semantics, feature));
             continue;
         }
         match tree[feature].kind {
@@ -288,7 +289,7 @@ pub fn responsibility(
         owns,
         refers,
         usage: (semantics.referential(element) == Some(true))
-            .then(|| Referential::of(tree, element)),
+            .then(|| Referential::of(tree, &semantics, element)),
         contract,
         depends_on,
         used_by,
@@ -322,7 +323,7 @@ impl Responsibility {
         )];
         if let Some(usage) = &self.usage {
             lines.push(format!(
-                "`{}` is a referential part: it refers to {} and does not contain it; what follows describes its type, {}.",
+                "`{}` is a referential part and does not contain what it refers to; it {}. What follows describes its type, {}.",
                 usage.name,
                 usage.target_text(),
                 self.name
@@ -355,7 +356,7 @@ impl Responsibility {
                 "What it refers to (not owned): {}.",
                 self.refers
                     .iter()
-                    .map(|r| format!("{} refers to {}", r.name, r.target_text()))
+                    .map(|r| format!("{} {}", r.name, r.target_text()))
                     .collect::<Vec<_>>()
                     .join("; ")
             ));
@@ -532,7 +533,7 @@ mod tests {
         let text = r.describe(&tree);
         assert!(
             text.contains(
-                "What it refers to (not owned): supply refers to nothing in this configuration; reserve refers to nothing in this configuration."
+                "What it refers to (not owned): supply is not bound: the part it refers to is not identified in this model; reserve is not bound: the part it refers to is not identified in this model."
             ),
             "{text}"
         );
@@ -543,7 +544,7 @@ mod tests {
         let text = r.describe(&tree);
         assert!(
             text.contains(
-                "`supply` is a referential part: it refers to `bus` and does not contain it; what follows describes its type, PowerBus."
+                "`supply` is a referential part and does not contain what it refers to; it refers to `bus`. What follows describes its type, PowerBus."
             ),
             "{text}"
         );
@@ -553,10 +554,22 @@ mod tests {
             .describe(&tree);
         assert!(
             text.contains(
-                "`spare` is a referential part: it refers to nothing in this configuration"
+                "`spare` is a referential part and does not contain what it refers to; it is not bound: the part it refers to is not identified in this model."
             ),
             "{text}"
         );
+        // A redefinition without a value keeps the binding it redefines.
+        let tree = parse(&[Source::new(
+            "M.sysml",
+            "package M {
+                part def PowerBus;
+                part def Drone { part bus : PowerBus; ref part main : PowerBus = bus; }
+                part def Big :> Drone { ref part :>> main[1]; }
+            }",
+        )]);
+        let main = tree.find("M::Big::main").unwrap();
+        let r = responsibility(&tree, &Links::default(), &[], main).unwrap();
+        assert_eq!(r.usage.map(|u| u.refers_to), Some(Some("bus".to_string())));
         // A composite part is explained as before.
         let bus = tree.find("M::Drone::bus").unwrap();
         let r = responsibility(&tree, &Links::default(), &[], bus).unwrap();

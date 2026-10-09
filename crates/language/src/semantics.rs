@@ -120,11 +120,12 @@ impl<'a> Semantics<'a> {
     }
 
     /// Whether a part or item usage refers to its value instead of
-    /// containing it: `Some(true)` for `ref part` / `ref item`, and for a
-    /// usage without a kind keyword that gives an inherited part or item
-    /// usage a value (`:>> supply = bus;`, referential by definition);
+    /// containing it (SysML 7.6.3): `Some(true)` when it is referential
+    /// itself (`ref`, no kind keyword, directed, an `end`, or owned by a
+    /// package) and so is every part or item usage it redefines, directly
+    /// or indirectly (a redefinition has the values of what it redefines);
     /// `Some(false)` for a composite part or item; `None` for anything
-    /// else. The rule `validate` checks bindings by (`wrong-value`).
+    /// else ([`Semantics::part_kind`]). The rule `validate` checks by.
     pub fn referential(&self, feature: ElementId) -> Option<bool> {
         if !self.checker.model.exists(feature) {
             return None;
@@ -132,6 +133,25 @@ impl<'a> Semantics<'a> {
         self.checker
             .part_binding(feature)
             .map(|(referential, _)| referential)
+    }
+
+    /// `Part` or `Item` for a part or item usage, or for a usage without a
+    /// kind keyword that redefines one; `None` for anything else.
+    pub fn part_kind(&self, feature: ElementId) -> Option<ElementKind> {
+        if !self.checker.model.exists(feature) {
+            return None;
+        }
+        self.checker.part_kind(feature)
+    }
+
+    /// The usage whose value `feature` has: itself when it has a value,
+    /// else the nearest feature it redefines that has one. For a reference,
+    /// the value is the part it is bound to; `None` means it is not bound.
+    pub fn value_holder(&self, feature: ElementId) -> Option<ElementId> {
+        if !self.checker.model.exists(feature) {
+            return None;
+        }
+        self.checker.value_holder(feature)
     }
 
     /// The directed features of a port as seen from outside it, with its

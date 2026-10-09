@@ -126,9 +126,60 @@ fn ref_is_only_for_part_and_item_usages() {
 }
 
 #[test]
+fn the_usage_prefix_is_written_in_the_standard_order() {
+    // Direction, then `abstract`, then `ref` right before the kind keyword
+    // (SysML 8.2.2.6.2); other orders are read and written that way.
+    let tree = load(
+        "package P {
+             item def Fuel;
+             port def Feed { abstract in ref item a : Fuel; in abstract item b : Fuel; abstract out item c : Fuel; }
+         }",
+    );
+    assert_eq!(codes(&tree), []);
+    let printed = &print(&tree)[0].text;
+    for line in [
+        "        in abstract ref item a : Fuel;\n",
+        "        in abstract item b : Fuel;\n",
+        "        out abstract item c : Fuel;\n",
+    ] {
+        assert!(printed.contains(line), "{line:?} in\n{printed}");
+    }
+    round_trips(&tree);
+    // `ref` after another prefix keyword is a syntax error, not a construct
+    // outside the subset.
+    let tree = load(
+        "package P {
+             part def A;
+             part def D { ref abstract part x : A; ref in item y : A; ref end part z : A; }
+         }",
+    );
+    let messages: Vec<(&str, String)> = validate(&tree)
+        .into_iter()
+        .map(|d| (d.code, d.message))
+        .collect();
+    assert_eq!(
+        messages,
+        [
+            (
+                "syntax",
+                "`ref` comes after `abstract`, right before `part` or `item`".to_string()
+            ),
+            (
+                "syntax",
+                "`ref` comes after `in`, right before `part` or `item`".to_string()
+            ),
+            (
+                "syntax",
+                "an `end` feature is always referential; write it without `ref`".to_string()
+            ),
+        ]
+    );
+}
+
+#[test]
 fn a_shared_part_is_composite_once_and_referred_to_elsewhere() {
     expect(DRONE, &[]);
-    // A usage without a kind keyword redefining a part is referential too.
+    // A usage without a kind keyword redefining a reference binds it too.
     expect(
         "package P {
              part def PowerBus;
@@ -140,9 +191,22 @@ fn a_shared_part_is_composite_once_and_referred_to_elsewhere() {
          }",
         &[],
     );
-    // Unbound: it refers to nothing yet, which is valid.
+    // Not bound: the part it refers to is not identified, which is valid.
     expect(
         "package P { part def B; part def C { ref part b : B; ref item i : B[0..1]; } }",
+        &[],
+    );
+    // Directed and end usages, and usages owned by a package, are always
+    // referential (SysML `validateUsageIsReferential`): bound to a usage,
+    // they refer to it.
+    expect(
+        "package P {
+             item def Fuel;
+             part def B;
+             part def Tank { item stock : Fuel; in item intake : Fuel = stock; }
+             part a : B;
+             part c : B = a;
+         }",
         &[],
     );
 }
@@ -163,19 +227,40 @@ fn a_composite_part_bound_to_another_part_is_reported() {
                      part :>> supply = bus;
                      ref part :>> spare = bus;
                  }
+                 part other : FlightComputer { :>> spare = bus; }
              }
          }",
         &[
             ("P::Drone::backup", "wrong-value"),
             ("P::Drone::copy", "wrong-value"),
             ("P::Drone::flightComputer::supply", "wrong-value"),
+            ("P::Drone::flightComputer::spare", "wrong-value"),
+            ("P::Drone::other::spare", "wrong-value"),
         ],
     );
-    let tree = load("package P { part def B; part def S { part b : B; part c : B = b; } }");
-    let message = validate(&tree).remove(0).message;
+    let message = |text: &str| validate(&load(text)).remove(0).message;
+    // Of the same owner: stricter than the standard (deviation 19).
     assert_eq!(
-        message,
-        "a composite part cannot be bound to another part: it would be owned twice; make it `ref part` to share it"
+        message("package P { part def B; part def S { part b : B; part c : B = b; } }"),
+        "`b` is a part of the same owner: bound to it, this composite part would be that part under a second name; declare it `ref part` (deviation 19)"
+    );
+    // Of another owner: the standard forbids it (7.6.3).
+    assert_eq!(
+        message(
+            "package P { part def B; part def Power { part bus : B; } part def S { part power : Power; part c : B = power.bus; } }"
+        ),
+        "a composite part's value cannot be a part of another owner (SysML 7.6.3); declare it `ref part` to refer to `power.bus`"
+    );
+    // Written `ref`, but it redefines a composite part: composite too.
+    assert_eq!(
+        message(
+            "package P {
+                 part def B;
+                 part def FlightComputer { part spare : B[0..1]; }
+                 part def Drone { part bus : B; part fc : FlightComputer { ref part :>> spare = bus; } }
+             }"
+        ),
+        "`spare` is composite in `FlightComputer`; declare it `ref part` there"
     );
 }
 
@@ -197,11 +282,15 @@ fn what_a_ref_part_refers_to_must_be_a_part_of_its_types() {
                  part tank : Tank;
                  attribute volts : Natural = 5;
                  part fine : FlightComputer { ref part :>> supply = bus; }
+                 part shortcut : FlightComputer { :>> supply = bus; }
                  part wrongType : FlightComputer { ref part :>> supply = battery; }
                  part shorthand : FlightComputer { :>> supply = battery; }
+                 ref part viaShortcut : PowerBus = shortcut.supply;
                  ref part toAttribute : PowerBus = volts;
                  ref part toItem : Fuel = fuel;
                  ref item itemToPart : Fuel = tank;
+                 ref item madeFuel : Fuel = new Fuel();
+                 ref item madeWrong : Fuel = new Battery();
                  ref part literal : PowerBus = 5;
                  ref part made : PowerBus = new PowerBus();
                  ref part untyped = bus;
@@ -213,28 +302,104 @@ fn what_a_ref_part_refers_to_must_be_a_part_of_its_types() {
             ("P::Drone::toAttribute", "wrong-value"),
             ("P::Drone::toItem", "wrong-type"),
             ("P::Drone::toItem", "wrong-value"),
+            ("P::Drone::madeWrong", "wrong-value"),
             ("P::Drone::literal", "wrong-value"),
-            ("P::Drone::made", "wrong-value"),
+            ("P::Drone::made", "unsupported"),
         ],
     );
-    let tree = load(
-        "package P {
-             part def PowerBus;
-             part def Battery;
-             part def Drone { part battery : Battery; ref part supply : PowerBus = battery; }
-         }",
-    );
-    let message = validate(&tree).remove(0).message;
+    let message = |text: &str| validate(&load(text)).remove(0).message;
     assert_eq!(
-        message,
+        message(
+            "package P {
+                 part def PowerBus;
+                 part def Battery;
+                 part def Drone { part battery : Battery; ref part supply : PowerBus = battery; }
+             }"
+        ),
         "`battery` (Battery) cannot be what this part refers to: it is not a PowerBus"
+    );
+    assert_eq!(
+        message("package P { part def B; part def D { ref part b : B = 5; } }"),
+        "`5` is a data value; a referential part refers to a part usage, such as `= bus` or `= power.bus`"
     );
 }
 
 #[test]
-fn a_port_connected_through_a_reference_faces_the_part_referred_to() {
-    // `draw` passes items on to a part inside (same directions), but faces
-    // the bus it refers to (mirrored directions).
+fn a_reference_bound_to_itself_refers_to_no_part() {
+    expect(
+        "package P {
+             part def B;
+             part def S {
+                 part real : B;
+                 ref part a : B = a;
+                 ref part x : B = y;
+                 ref part y : B = x;
+                 ref part z : B = w;
+                 ref part w : B = real;
+             }
+         }",
+        &[
+            ("P::S::a", "wrong-value"),
+            ("P::S::x", "wrong-value"),
+            ("P::S::y", "wrong-value"),
+        ],
+    );
+    let messages: Vec<String> = validate(&load(
+        "package P { part def B; part def S { ref part a : B = a; ref part x : B = y; ref part y : B = x; } }",
+    ))
+    .into_iter()
+    .map(|d| d.message)
+    .collect();
+    assert_eq!(
+        messages,
+        [
+            "`a` is bound to itself, so it refers to no part",
+            "`x` and `y` are bound to each other, so neither refers to a part",
+            "`y` and `x` are bound to each other, so neither refers to a part",
+        ]
+    );
+}
+
+#[test]
+fn a_binding_is_kept_and_never_changed_in_a_redefinition() {
+    expect(
+        "package P {
+             part def B;
+             part def S { part bus : B; part other : B; ref part main : B = bus; }
+             part def Keeps :> S { ref part :>> main[1]; }
+             part def Rebinds :> S { ref part :>> main = other; }
+             part def Contains :> S { part :>> main; }
+         }",
+        &[
+            ("P::Rebinds::main", "wrong-value"),
+            ("P::Contains::main", "wrong-value"),
+        ],
+    );
+    let messages: Vec<String> = validate(&load(
+        "package P {
+             part def B;
+             part def S { part bus : B; part other : B; ref part main : B = bus; }
+             part def Rebinds :> S { ref part :>> main = other; }
+             part def Contains :> S { part :>> main; }
+         }",
+    ))
+    .into_iter()
+    .map(|d| d.message)
+    .collect();
+    assert_eq!(
+        messages,
+        [
+            "`main` is already bound where it is declared (in `P::S`); a redefinition cannot bind it again (KerML `validateFeatureValueOverriding`)",
+            "it redefines `main`, which is bound to `bus`: as a composite part it would hold that part as its own; declare it `ref part`",
+        ]
+    );
+}
+
+#[test]
+fn a_port_connected_through_a_reference_faces_or_passes_inward_by_its_binding() {
+    // Unbound, or bound outside: the part referred to is not inside, so
+    // `draw` faces it (mirrored directions), while it passes items on to a
+    // part inside (same directions).
     expect(
         "package P {
              item def Load;
@@ -250,6 +415,25 @@ fn a_port_connected_through_a_reference_faces_the_part_referred_to() {
              }
          }",
         &[("P::Computer::toInner", "incompatible-ends")],
+    );
+    // Bound to a part inside the connection's owner: inside, so the
+    // owner's port passes items on to it (same directions).
+    expect(
+        "package P {
+             item def Load;
+             port def Power { in item load : Load; }
+             part def Bus { port p : Power; }
+             part def Computer { ref part supply : Bus; }
+             part def Drone {
+                 port feed : Power;
+                 port socket : ~Power;
+                 part bus : Bus;
+                 part computer : Computer { ref part :>> supply = bus; }
+                 connection inward connect feed to computer.supply.p;
+                 connection mirrored connect socket to computer.supply.p;
+             }
+         }",
+        &[("P::Drone::mirrored", "incompatible-ends")],
     );
 }
 
@@ -281,6 +465,29 @@ fn a_part_def_may_refer_to_its_own_kind_but_not_contain_it() {
              part def Chain :> Node { part :>> next : Chain; }
          }",
         &[("P::Chain", "composition-cycle")],
+    );
+    // A `ref` (or keyword-less) redefinition of a composite part is
+    // composite too: it has the values of what it redefines.
+    expect(
+        "package P {
+             part def Node { part next : Node[0..1]; }
+             part def Chain :> Node { ref part :>> next : Chain[1]; }
+             part def Ring :> Node { :>> next : Ring[1]; }
+         }",
+        &[
+            ("P::Chain", "composition-cycle"),
+            ("P::Ring", "composition-cycle"),
+        ],
+    );
+    let tree = load(
+        "package P {
+             part def Node { part next : Node[0..1]; }
+             part def Chain :> Node { ref part :>> next : Chain[1]; }
+         }",
+    );
+    assert_eq!(
+        validate(&tree).remove(0).message,
+        "it contains itself through the required part `P::Chain::next` (it redefines the composite `P::Node::next`, so it is composite too); give that part a lower bound of 0"
     );
 }
 

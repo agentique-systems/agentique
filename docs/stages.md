@@ -2103,28 +2103,40 @@ without a window"); the tools now also address an element without a name by
 the name they show it under (`Owner::(connect a to b)`), so agents can change
 or delete connections and `satisfy` relationships.
 
-**W13.2 Referential usages** (`stage13/ref-parts`; nothing here says the
-Operator accepted anything). `ref part` and `ref item` on the whole path:
-the language core (a `referential` flag; parse, print, link, the validity
-rules above and deviation 19), the System State (`Property::Referential`),
-the Library (copies keep the flag), the Assistant (`apply_changes` `"ref"`,
-`read_model` and `inspect_behaviour` say what a reference refers to),
-`explain_element` and the Inspector ("Refers to …", a Usage switch between
-composite and reference, Owns marking references), the Surface (a dashed
-card edge, no new colour), and model execution (a bound reference is the
-instance it refers to; an unbound one has only its ports, and a message
-reaching it stops the run with `missing-stand-in` unless a stand-in answers).
-Tested: language (9 tests: round trips, the shared bus, a wrong type, a
-composite bound to another part, a system referring to its own kind while
-the composite version is a composition cycle, identities through print and
-reload, ends facing through a reference), System State (2), Assistant (1),
-explain (1), simulation (6: both paths reach the one bus, which counts both
-messages on one machine; an unbound reference compiles, stops a message,
-is answered by a stand-in), scene (1). Workspace on the branch's base: 826
+**W13.2 Referential usages** (`stage13/ref-parts`, PR #119; nothing here
+says the Operator accepted anything). `ref part` and `ref item` on the whole
+path: the language core (a `referential` flag; parse, print in the standard
+prefix order, link, the validity rules above and deviation 19), the System
+State (`Property::Referential`), the Library (copies keep the flag; no value
+or override is given through a reference), the Assistant (`apply_changes`
+`"ref"`, `read_model` and `inspect_behaviour` say what a reference refers
+to or that it is not bound), `explain_element` and the Inspector ("Refers
+to …", a Usage switch between composite and reference, fixed for directed,
+`end` and package-level usages, Owns marking references), the Surface (a
+dashed card edge, no new colour), and model execution (a bound reference is
+the instance it refers to; one not bound has only its ports, and a message
+reaching it stops the run with `missing-stand-in` unless a stand-in
+answers). One rule decides what is referential everywhere: a usage
+referential itself (`ref`, no kind keyword, directed, `end`, or owned by a
+package) whose redefined part and item usages are all referential, since a
+redefinition has the values of what it redefines. After an independent
+standards review: a `ref` redefinition of a composite part is composite;
+an inherited binding is kept and never changed in a redefinition; self and
+mutual bindings, and `ref part … = new T()` (unsupported), are reported;
+whether a connection passes items inward is decided by what a reference is
+bound to. Tested: language (11 tests), System State (2), Library (1),
+Assistant (1), explain (1), simulation (13: both paths reach the one bus,
+`= power.bus` and a keyword-less binding through another reference, an
+inherited binding, a reference with features of its own, a `ref item` to a
+part, a binding that reaches no running part, reading and setting through a
+reference not bound, a message into one, a stand-in answering for one or for
+a bound reference, bindings to themselves), scene (1). Workspace: 838
 passed, 25 ignored; CPU-side budgets in release passed (scene build at 10k
-1.82 s, an edit to the Surface at 10k 78.6 ms). Not verified: the Studio
-visually (no window was opened), the reference run, replay and live modes
-with references. Limits: the Library's block summary counts a reference as
-contained; a part's own state machine sends only through its own ports;
-`bind` stays unsupported; a reference with a multiplicity above 1 binds one
-instance.
+1.78 s, an edit to the Surface at 10k 75.9 ms, a System State edit at 10k
+45.4 ms). Not verified: the Studio visually (no window was opened), the
+reference run, replay and live modes with references. Limits: the Library's
+block summary counts a reference as contained; a part's own state machine
+sends only through its own ports; `bind` stays unsupported; a reference with
+a multiplicity above 1 binds one instance; attributes may still override a
+value given where they are declared (only bindings of references are
+refused).

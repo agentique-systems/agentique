@@ -955,7 +955,7 @@ fn a_referential_part_is_created_bound_read_and_explained() {
         "{outline}"
     );
     assert!(
-        outline.contains("backup (ref part : LinkStore, refers to nothing yet)"),
+        outline.contains("backup (ref part : LinkStore, not bound)"),
         "{outline}"
     );
     assert!(outline.contains("store (part : LinkStore)"), "{outline}");
@@ -986,7 +986,7 @@ fn a_referential_part_is_created_bound_read_and_explained() {
     );
     assert!(
         behaviour.contains(
-            "- backup : LinkStore (ref part: refers to nothing in this configuration, does not contain it)"
+            "- backup : LinkStore (ref part: not bound; the part it refers to is not identified in this model)"
         ),
         "{behaviour}"
     );
@@ -1003,7 +1003,9 @@ fn a_referential_part_is_created_bound_read_and_explained() {
     let event = state.apply(change(prepared)).expect("applies");
     let result = tools::describe_event(&state, &event);
     assert!(
-        result.contains("make it `ref part` to share it [wrong-value]"),
+        result.contains(
+            "this composite part would be that part under a second name; declare it `ref part` (deviation 19) [wrong-value]"
+        ),
         "{result}"
     );
     // `ref` is a part's or an item's.

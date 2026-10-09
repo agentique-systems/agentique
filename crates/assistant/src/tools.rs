@@ -195,7 +195,7 @@ pub fn definitions() -> Value {
         "multiplicity": name("create, set: e.g. \"1\", \"0..1\", \"1..*\", \"*\"."),
         "direction": { "type": "string", "enum": ["in", "out", "inout"], "description": "create, set: direction of an item or port feature." },
         "end": { "type": "boolean", "description": "create: true for an end of an interface or connection def, e.g. a port `client` with type \"~LinkStorePort\" becomes `end port client : ~LinkStorePort;`." },
-        "ref": { "type": "boolean", "description": "create, set (part or item): true for a referential usage, `ref part`: it refers to a part that exists elsewhere instead of containing one, so nothing is copied; give the part it refers to as `expression`, e.g. \"bus\" or \"power.bus\" (without one it refers to nothing yet). false (the default) makes it composite: contained, and existing only with its owner. Share one part between several users with one composite part and `ref` parts bound to it, never a second composite part." },
+        "ref": { "type": "boolean", "description": "create, set (part or item): true for a referential usage, `ref part`: it refers to a part that exists elsewhere instead of containing one, so nothing is copied; give the part it refers to as `expression`, e.g. \"bus\" or \"power.bus\" (without one it is not bound: the part it refers to is not identified in this model). false (the default) makes it composite: contained, and existing only with its owner. A redefinition of a composite part stays composite, whatever it says: declare the inherited one `ref`. Share one part between several users with one composite part and `ref` parts bound to it, never a second composite part." },
         "value": { "type": ["string", "number", "boolean"], "description": "create, set: the value of an attribute." },
         "doc": name("create, set: documentation in plain words."),
         "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\"."),
@@ -924,6 +924,7 @@ fn outline(state: &SystemState) -> String {
         "Outline (indented by owner; read an element by qualified name for its full text):"
             .to_string(),
     ];
+    let semantics = agq_language::Semantics::new(tree);
     let mut stack: Vec<(ElementId, usize)> = tree.roots().map(|root| (root, 0)).collect();
     stack.reverse();
     while let Some((id, depth)) = stack.pop() {
@@ -934,7 +935,11 @@ fn outline(state: &SystemState) -> String {
         ) {
             continue;
         }
-        let mut line = format!("{}{}", "  ".repeat(depth), outline_line(tree, id, element));
+        let mut line = format!(
+            "{}{}",
+            "  ".repeat(depth),
+            outline_line(tree, &semantics, id, element)
+        );
         if state.locks().contains(&id) {
             line.push_str(" [locked]");
         }
@@ -952,7 +957,12 @@ fn outline(state: &SystemState) -> String {
 }
 
 /// One element in the outline: `name (kind : Type [m] :> General, a.b to c.d)`.
-fn outline_line(tree: &Tree, id: ElementId, element: &Element) -> String {
+fn outline_line(
+    tree: &Tree,
+    semantics: &agq_language::Semantics,
+    id: ElementId,
+    element: &Element,
+) -> String {
     let names = |references: &[Reference]| {
         references
             .iter()
@@ -1010,13 +1020,23 @@ fn outline_line(tree: &Tree, id: ElementId, element: &Element) -> String {
         detail.push_str(&format!(" = {value}"));
     }
     if element.referential {
-        // What it refers to: a part that exists elsewhere, never a copy.
-        match &element.expression {
-            Some(value) => detail.push_str(&format!(
-                " = {}",
-                agq_language::print_expression(tree, id, value)
-            )),
-            None => detail.push_str(", refers to nothing yet"),
+        // What it refers to: a part that exists elsewhere, never a copy;
+        // its own value, or the one of the feature it redefines.
+        let holder = semantics.value_holder(id);
+        match holder.and_then(|h| Some((h, tree.get(h)?.expression.as_ref()?))) {
+            Some((holder, value)) => {
+                detail.push_str(&format!(
+                    " = {}",
+                    agq_language::print_expression(tree, holder, value)
+                ));
+                if holder != id {
+                    detail.push_str(", bound where it is declared");
+                }
+            }
+            None => detail.push_str(", not bound"),
+        }
+        if semantics.referential(id) == Some(false) {
+            detail.push_str(", composite: it redefines a composite part");
         }
     }
     if element.ends.len() == 2 {

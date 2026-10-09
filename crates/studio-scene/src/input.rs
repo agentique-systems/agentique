@@ -185,22 +185,8 @@ fn direction(direction: Option<Direction>) -> PortDirection {
     }
 }
 
-/// `: T [1] = 5` or `:> General`, as written; for a referential part, also
-/// what it refers to.
-pub fn detail(element: &Element) -> String {
-    let mut out = declared(element);
-    // What a referential part refers to, or that it refers to nothing.
-    if element.referential {
-        match &element.expression {
-            Some(value) => out.push_str(&format!(" = {value}")),
-            None => out.push_str(" · refers to nothing"),
-        }
-    }
-    out.trim().to_string()
-}
-
 /// `: T [1] = 5` or `:> General`, as written.
-fn declared(element: &Element) -> String {
+pub fn detail(element: &Element) -> String {
     let mut out = String::new();
     let list = |references: &[Reference]| {
         references
@@ -235,7 +221,27 @@ fn declared(element: &Element) -> String {
     out.trim().to_string()
 }
 
-/// The keyword a card or line shows: `ref part` for a referential part.
+/// What a part or item written `ref` refers to, by the language's rule:
+/// ` = bus` (its own value, or that of the feature it redefines), ` · not
+/// bound` (the part it refers to is not identified in this model), or that
+/// it is composite after all because it redefines a composite part.
+fn binding(tree: &Tree, semantics: &agq_language::Semantics, id: ElementId) -> String {
+    if !tree[id].referential {
+        return String::new();
+    }
+    if semantics.referential(id) == Some(false) {
+        return " · composite: it redefines a composite part".into();
+    }
+    let value = semantics
+        .value_holder(id)
+        .and_then(|holder| tree.get(holder)?.expression.as_ref());
+    match value {
+        Some(value) => format!(" = {value}"),
+        None => " · not bound".into(),
+    }
+}
+
+/// The keyword a card or line shows: `ref part` for a part written `ref`.
 fn keyword(element: &Element) -> &'static str {
     match (element.referential, element.kind) {
         (true, ElementKind::Part) => "ref part",
@@ -412,7 +418,9 @@ impl SceneInput {
             } else {
                 NodeOrigin::Own
             };
-            let mut shown_detail = detail(element);
+            let mut shown_detail = format!("{}{}", detail(element), binding(tree, &semantics, id))
+                .trim()
+                .to_string();
             if origin == NodeOrigin::Override {
                 // Its type is the redefined feature's unless it gives one.
                 if element.typed_by.is_empty()
@@ -422,7 +430,7 @@ impl SceneInput {
                         .and_then(Reference::target)
                         .and_then(|t| tree.get(t))
                 {
-                    let inherited = declared(redefined);
+                    let inherited = detail(redefined);
                     shown_detail = format!("{inherited} {shown_detail}").trim().to_string();
                 }
                 shown_detail = format!("{shown_detail} · override")
@@ -434,7 +442,7 @@ impl SceneInput {
                 id,
                 kind: category(element.kind).expect("shown elements have a category"),
                 keyword: keyword(element),
-                referential: element.referential,
+                referential: element.referential && semantics.referential(id) == Some(true),
                 name: name(id),
                 detail: shown_detail,
                 origin,
@@ -463,10 +471,11 @@ impl SceneInput {
                         InputFeature {
                             id: c,
                             text: format!(
-                                "{direction}{} {} {}",
+                                "{direction}{} {} {}{}",
                                 keyword(feature),
                                 name(c),
-                                detail(feature)
+                                detail(feature),
+                                binding(tree, &semantics, c)
                             )
                             .trim_end()
                             .to_string(),
@@ -783,7 +792,7 @@ mod tests {
         let unbound = card(tree.find("P::Computer::supply").unwrap());
         assert!(unbound.referential);
         assert_eq!(unbound.keyword, "ref part");
-        assert_eq!(unbound.detail, ": Bus · refers to nothing");
+        assert_eq!(unbound.detail, ": Bus · not bound");
         let bound = card(tree.find("P::Drone::computer::supply").unwrap());
         assert!(bound.referential);
         assert_eq!(bound.detail, ": Bus = bus · override");
@@ -793,7 +802,28 @@ mod tests {
         let computer = card(tree.find("P::Computer").unwrap());
         assert_eq!(
             computer.features[0].text,
-            "ref item reserve : Fuel · refers to nothing"
+            "ref item reserve : Fuel · not bound"
+        );
+        // A redefinition without a value keeps the binding; one written
+        // `ref` over a composite part is composite, and not drawn as a
+        // reference.
+        let tree = fixtures::tree(
+            "package P {
+    part def Bus;
+    part def Drone { part bus : Bus; ref part main : Bus = bus; part spare : Bus[0..1]; }
+    part def Big :> Drone { ref part :>> main[1]; ref part :>> spare = bus; }
+}",
+        );
+        let input = SceneInput::from_tree(&tree, &BTreeSet::new(), &BTreeMap::new(), 1);
+        let card = |id| input.nodes.iter().find(|n| n.id == id).unwrap();
+        let main = card(tree.find("P::Big::main").unwrap());
+        assert!(main.referential);
+        assert_eq!(main.detail, ": Bus [1] = bus · override");
+        let spare = card(tree.find("P::Big::spare").unwrap());
+        assert!(!spare.referential);
+        assert_eq!(
+            spare.detail,
+            ": Bus [0..1] · composite: it redefines a composite part · override"
         );
     }
 

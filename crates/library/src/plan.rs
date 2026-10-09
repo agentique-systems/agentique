@@ -340,14 +340,19 @@ impl Library {
                                 }
                             ))
                         })?;
-                    let (kind, referential) = semantics
+                    let kind = semantics
                         .element(feature)
-                        .map(|e| (e.kind, e.referential))
-                        .unwrap_or((ElementKind::Attribute, false));
+                        .map(|e| e.kind)
+                        .unwrap_or(ElementKind::Attribute);
                     if last && kind != ElementKind::Attribute {
                         return Err(invalid(format!(
                             "`{path_name}` is a {}, not an attribute; only attributes take values",
                             kind.keyword()
+                        )));
+                    }
+                    if !last && semantics.referential(feature) == Some(true) {
+                        return Err(invalid(format!(
+                            "`{path_name}` goes through `{step}`, which refers to a part that exists elsewhere; give that part's attributes their values where it is declared"
                         )));
                     }
                     path.push(feature);
@@ -357,9 +362,6 @@ impl Library {
                             container = *id;
                         } else {
                             let mut redefinition = Element::new(kind);
-                            // A redefinition keeps what the feature is:
-                            // composite, or referential (`ref part`).
-                            redefinition.referential = referential;
                             redefinition.redefines = vec![Reference::to(target, step)];
                             let id = ElementId::from_raw(base_id + creations.len() as u64);
                             creations.push(Creation {
@@ -648,6 +650,11 @@ impl Library {
                 .ok_or_else(|| invalid("the feature to override does not exist"))?;
             let name = tree.effective_name(feature).unwrap_or_default().to_string();
             names.push(name.clone());
+            if !last && semantics.referential(feature) == Some(true) {
+                return Err(invalid(format!(
+                    "`{name}` refers to a part that exists elsewhere; override its features where that part is declared"
+                )));
+            }
             if exists {
                 if let Some(existing) = redefinition_in(tree, &semantics, container, feature) {
                     if last {

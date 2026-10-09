@@ -437,15 +437,21 @@ pub(super) fn inspect_behaviour(tree: &Tree, input: &Value) -> Result<String, St
             if semantics.referential(part) == Some(true) {
                 // It refers to a part that exists elsewhere: not contained,
                 // so what is inside belongs to that part.
-                let value = element
-                    .expression
-                    .as_ref()
-                    .filter(|_| tree.contains(part))
-                    .map(|x| format!("`{}`", agq_language::print_expression(tree, part, x)))
-                    .unwrap_or_else(|| "nothing in this configuration".into());
-                parts.push(format!(
-                    "- {path}{typed} (ref part: refers to {value}, does not contain it)"
-                ));
+                let value = semantics
+                    .value_holder(part)
+                    .filter(|holder| tree.contains(*holder))
+                    .and_then(|holder| {
+                        let x = tree[holder].expression.as_ref()?;
+                        Some(agq_language::print_expression(tree, holder, x))
+                    });
+                parts.push(match value {
+                    Some(value) => format!(
+                        "- {path}{typed} (ref part: refers to `{value}`, does not contain it)"
+                    ),
+                    None => format!(
+                        "- {path}{typed} (ref part: not bound; the part it refers to is not identified in this model)"
+                    ),
+                });
                 continue;
             }
             parts.push(format!("- {path}{typed}"));

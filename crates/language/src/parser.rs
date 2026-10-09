@@ -514,6 +514,30 @@ impl<'a> Parser<'a> {
                 // `ref part x` / `ref item x`: a referential usage. `ref x`
                 // (no kind keyword) is a reference usage, read below.
                 "ref" if matches!(self.peek_text(1), "part" | "item") => element.referential = true,
+                // `ref` comes right before the kind keyword (8.2.2.6.2).
+                "ref"
+                    if matches!(
+                        self.peek_text(1),
+                        "abstract"
+                            | "in"
+                            | "out"
+                            | "inout"
+                            | "end"
+                            | "derived"
+                            | "constant"
+                            | "variation"
+                    ) =>
+                {
+                    let message = match self.peek_text(1) {
+                        "end" => {
+                            "an `end` feature is always referential; write it without `ref`".into()
+                        }
+                        next => {
+                            format!("`ref` comes after `{next}`, right before `part` or `item`")
+                        }
+                    };
+                    return Err((Failure::Syntax(message), self.pos));
+                }
                 "#" => return self.unsupported("metadata `#`"),
                 _ => break,
             }

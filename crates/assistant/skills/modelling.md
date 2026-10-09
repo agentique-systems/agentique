@@ -26,8 +26,11 @@ checked, and it is reported as a problem; do not write it.
   `ref part :>> supply = bus;` (with `apply_changes`: `"ref": true` and
   `"expression": "bus"`). Share one part between several users this way:
   one composite part and `ref` parts bound to it, never a second composite
-  part bound to the first (that is reported). A `ref part` may refer to a
-  part of its own owner's kind; a composite part may not contain one.
+  part bound to the first (that is reported). A redefinition shares the
+  values of what it redefines: to bind a role in a usage, declare it `ref`
+  in the definition too; `ref part :>> x` over a composite `x` is still
+  composite. A `ref part` may refer to a part of its own owner's kind; a
+  composite part may not contain one.
 
 ## Items and ports
 

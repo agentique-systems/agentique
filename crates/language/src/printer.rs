@@ -275,12 +275,14 @@ impl Printer<'_> {
             }
             _ => {}
         }
+        // The order of SysML's usage prefix: direction, `abstract`, then
+        // `ref` right before the kind keyword (8.2.2.6.2).
         let mut parts: Vec<String> = Vec::new();
-        if e.is_abstract {
-            parts.push("abstract".into());
-        }
         if let Some(direction) = e.direction {
             parts.push(direction.keyword().into());
+        }
+        if e.is_abstract {
+            parts.push("abstract".into());
         }
         if e.is_end {
             parts.push("end".into());
