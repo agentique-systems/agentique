@@ -974,6 +974,41 @@
       "kind": "test",
       "path": "crates/orchestrator/tests/cycle.rs",
       "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
+    },
+    {
+      "element": 2346,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::plan",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "the_lead_delegates_a_child_within_its_budget_and_gets_its_result"
+    },
+    {
+      "element": 2376,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::planned",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it"
+    },
+    {
+      "element": 2366,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::propose",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
+    },
+    {
+      "element": 2411,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::proposed",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
+    },
+    {
+      "element": 2425,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::check",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
     }
   ],
   "protected": [
