@@ -2255,7 +2255,8 @@ the whole path (language, System State, `apply_changes`, `read_model`),
 their evaluation on the modelled configuration of each satisfying feature
 (`agq-simulation`, `requirements`: built in the part or part def the
 satisfy is written in, members counted whatever their visibility, roll-ups
-through feature chains, values worked out once with cycle detection, a
+through feature chains, a `ref part` being the part it refers to (counted
+once; unbound: not determined), values worked out once with cycle detection, a
 redefinition in a usage winning over its definition; a subrequirement whose
 assumptions are not met does not apply; problems in the slice read, parts
 or a satisfying feature with a multiplicity other than one, informal or
@@ -2277,9 +2278,10 @@ holds, is violated with its values, has assumptions not met, is informal or
 undetermined; violated, private, ambiguous, non-applying, self-containing
 and mistyped subrequirements; contexts and their digest; cycles, division
 by zero, enums), assistant, implementation (stopped and empty runs, mixed
-calculations) and Studio (a stale implementation pass) tests: the core
-crates 364 passed, the Studio 186 passed, the dogfood test and the
-architecture check pass. Not verified: the panel by eye, the reference run,
+calculations) and Studio (a stale implementation pass) tests, and a shared
+`ref part` bus counted once: after rebasing on `main` at `09af2b80`,
+`cargo test --workspace` 913 passed, 0 failed, 25 ignored (the Studio 186,
+the dogfood test 3); workspace clippy, fmt and the architecture check pass. Not verified: the panel by eye, the reference run,
 a real model calling `check_requirements`. Limits: no units; package-level
 constants are not read; scenario runs still work attribute values out
 differently (deviation 23); a change to the code alone reaches the ladder

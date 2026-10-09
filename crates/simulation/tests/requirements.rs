@@ -677,3 +677,71 @@ fn the_satisfying_feature_is_one_part_and_the_subject_is_bound_once() {
     );
     assert_eq!(bound[1].status, Status::Holds, "{}", bound[1].reason);
 }
+
+#[test]
+fn a_referential_part_is_the_part_it_refers_to_and_counts_once() {
+    // The shared-bus pattern (C-55): the flight computer refers to the
+    // drone's bus instead of containing a bus of its own.
+    let tree = model(
+        "    part def PowerBus { attribute mass : Real; }
+    part def Controller {
+        ref part supply : PowerBus;
+        attribute mass : Real = 50;
+    }
+    part def BusDrone {
+        part airframe : Airframe;
+        part bus : PowerBus { attribute :>> mass = 300; }
+        part flightComputer : Controller { ref part :>> supply = bus; }
+        attribute mass : Real = airframe.mass + bus.mass + flightComputer.mass;
+    }
+    part def LooseDrone {
+        part bus : PowerBus { attribute :>> mass = 300; }
+        part flightComputer : Controller;
+    }
+    part busDrone : BusDrone { part :>> airframe { attribute :>> mass = 1000; } }
+    part loose : LooseDrone;
+    requirement def SharedBus {
+        subject d : BusDrone;
+        attribute limit : Real;
+        require constraint { d.mass <= limit }
+        require constraint { d.flightComputer.supply.mass == d.bus.mass }
+    }
+    requirement def Supplied {
+        subject d : LooseDrone;
+        require constraint { d.flightComputer.supply.mass > 0 }
+    }
+    requirement busMass : SharedBus { attribute :>> limit = 1400; }
+    requirement looseSupply : Supplied;
+    satisfy busMass by busDrone;
+    satisfy looseSupply by loose;",
+    );
+    let all = evaluate_all(&tree);
+    let shared = of(&tree, &all, "busMass");
+    assert_eq!(shared.status, Status::Holds, "{}", shared.reason);
+    // The bus counts once: 1000 + 300 + 50.
+    assert_eq!(
+        shared.required[0].values[0],
+        ("d.mass".to_string(), "1350".to_string())
+    );
+    assert_eq!(
+        shared.required[1].values,
+        [
+            (
+                "d.flightComputer.supply.mass".to_string(),
+                "300".to_string()
+            ),
+            ("d.bus.mass".to_string(), "300".to_string())
+        ],
+        "the reference reads the bus itself"
+    );
+    // A reference bound to nothing: what it refers to is not determined.
+    let loose = of(&tree, &all, "looseSupply");
+    assert_eq!(loose.status, Status::NotEvaluable);
+    assert!(
+        loose.reason.contains(
+            "`loose.flightComputer.supply` is a reference bound to nothing in this configuration, so what it refers to is not determined"
+        ),
+        "{}",
+        loose.reason
+    );
+}

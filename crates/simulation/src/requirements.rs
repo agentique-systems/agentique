@@ -332,6 +332,7 @@ fn evaluate_with(
         semantics,
         nodes: Vec::new(),
         memo: RefCell::default(),
+        refs: Vec::new(),
     };
     let (start, path) = match context {
         Some(owner) => (config.build(&mut compiler, owner, None, 0), &steps[..]),
@@ -345,6 +346,7 @@ fn evaluate_with(
             (config.build(&mut compiler, steps[0], None, 0), &steps[1..])
         }
     };
+    config.bind_refs();
     let node = match config.node_at(start, path) {
         Ok(node) => node,
         Err(why) => return unevaluated(requirement, why),
@@ -488,6 +490,19 @@ struct Config<'a> {
     nodes: Vec<Node>,
     /// `(node, slot)` to its value; `None` while it is being worked out.
     memo: RefCell<HashMap<(usize, usize), Memo>>,
+    /// Referential parts met while building, bound once every node exists.
+    refs: Vec<PendingRef>,
+}
+
+/// A referential part (`ref part supply : PowerBus = bus;`) of a node,
+/// waiting to be bound: it is the part its value leads to, never a part of
+/// its own (C-55, as model execution runs it).
+struct PendingRef {
+    owner: usize,
+    aliases: Vec<ElementId>,
+    path: String,
+    /// The value's feature chain and its text, or why it leads nowhere.
+    value: Result<(Vec<ElementId>, String), String>,
 }
 
 /// A value worked out once: `None` while it is being worked out.
@@ -538,6 +553,15 @@ impl Config<'_> {
             };
             let feature_path = format!("{path}.{name}");
             match member.kind {
+                ElementKind::Part if self.semantics.referential(member.id) == Some(true) => {
+                    let value = self.reference_value(&member, &feature_path);
+                    self.refs.push(PendingRef {
+                        owner: index,
+                        aliases: member.aliases,
+                        path: feature_path,
+                        value,
+                    });
+                }
                 ElementKind::Part => {
                     let multiplicity = multiplicity(self.semantics, &member.aliases);
                     if multiplicity.is_some_and(|m| m.upper == Some(0)) {
@@ -569,6 +593,109 @@ impl Config<'_> {
             }
         }
         index
+    }
+
+    /// What a referential part's value leads to: its own value or that of
+    /// the nearest feature it redefines, a feature chain naming a part.
+    fn reference_value(
+        &self,
+        member: &Member,
+        path: &str,
+    ) -> Result<(Vec<ElementId>, String), String> {
+        if let Some(why) = multiplicity_problem(path, multiplicity(self.semantics, &member.aliases))
+        {
+            return Err(why);
+        }
+        let Some(holder) = self.semantics.value_holder(member.id) else {
+            return Err(format!(
+                "`{path}` is a reference bound to nothing in this configuration, so what it refers to is not determined"
+            ));
+        };
+        let Some(Expression::Name(reference)) = self
+            .semantics
+            .element(holder)
+            .and_then(|e| e.expression.clone())
+        else {
+            return Err(format!(
+                "`{path}` is a reference whose value is not a feature chain naming a part"
+            ));
+        };
+        // What it refers to has that part's features; its own would be
+        // a second, different description of the same part.
+        let own = member.aliases.iter().any(|a| {
+            self.semantics.element(*a).is_some_and(|e| {
+                e.children().iter().any(|c| {
+                    self.semantics
+                        .element(*c)
+                        .is_some_and(|c| !matches!(c.kind, ElementKind::Doc | ElementKind::Comment))
+                })
+            })
+        });
+        if own {
+            return Err(format!(
+                "`{path}` refers to `{reference}` and declares features of its own; what it refers to has that part's features"
+            ));
+        }
+        let steps = self.semantics.steps(holder, Role::Value, &reference)?;
+        Ok((steps, reference.to_string()))
+    }
+
+    /// Binds each referential part to the node its value leads to, the
+    /// value's first feature looked up from the part's owner outward, as
+    /// its name is: the same node, so a shared part counts once. A value
+    /// through another reference waits for that one; one that leads
+    /// nowhere is not evaluable when read.
+    fn bind_refs(&mut self) {
+        let mut pending = std::mem::take(&mut self.refs);
+        loop {
+            let mut progress = false;
+            let mut waiting = Vec::new();
+            for r in pending {
+                let child = match &r.value {
+                    Err(why) => Some(Child::Unsupported(why.clone())),
+                    Ok((steps, _)) => self.resolve(r.owner, steps).map(Child::Node),
+                };
+                match child {
+                    Some(child) => {
+                        self.nodes[r.owner].children.push((r.aliases, child));
+                        progress = true;
+                    }
+                    None => waiting.push(r),
+                }
+            }
+            pending = waiting;
+            if !progress || pending.is_empty() {
+                break;
+            }
+        }
+        for r in pending {
+            let text = r.value.map(|(_, text)| text).unwrap_or_default();
+            let why = format!(
+                "`{}` is bound to `{text}`, which does not lead to a part in this configuration",
+                r.path
+            );
+            self.nodes[r.owner]
+                .children
+                .push((r.aliases, Child::Unsupported(why)));
+        }
+    }
+
+    /// The node a referential part's value leads to.
+    fn resolve(&self, owner: usize, steps: &[ElementId]) -> Option<usize> {
+        let first = steps.first()?;
+        let mut at = Some(owner);
+        while let Some(current) = at {
+            let node = &self.nodes[current];
+            if node
+                .children
+                .iter()
+                .any(|(aliases, _)| aliases.contains(first))
+            {
+                return self.node_at(current, steps).ok();
+            }
+            at = node.parent;
+        }
+        None
     }
 
     /// The node a path of part features leads to from `from`.

@@ -2019,6 +2019,9 @@ impl<'a> ExpressionCompiler<'a> {
             library: Library::default(),
             blockers: Vec::new(),
             names: BTreeMap::new(),
+            refs: Vec::new(),
+            deferred: Vec::new(),
+            refs_bound: false,
         };
         compiler.scalars();
         ExpressionCompiler { compiler }
