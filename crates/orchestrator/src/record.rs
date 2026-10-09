@@ -1836,6 +1836,7 @@ mod tests {
             cycle: 1,
             role: "lead".into(),
             at: "t".into(),
+            build: None,
         });
         cycle.findings.push(finding);
         let text = serde_json::to_string_pretty(&objective).unwrap();

@@ -56,8 +56,33 @@ pub fn origin_url(repository: &Path) -> Option<String> {
         Duration::from_secs(60),
     )
     .ok()
-    .map(|found| found.stdout.trim().to_string())
+    .map(|found| without_credentials(found.stdout.trim()))
     .filter(|url| !url.is_empty())
+}
+
+/// `url` without the user and password a URL with a scheme may carry
+/// (`https://user:token@host/…`, `https://token@host/…`), so no token is
+/// recorded or printed; git asks its credential helper instead. An `ssh://`
+/// URL keeps its user (which names no secret) but never a password; an
+/// address without a scheme (`git@host:owner/repo`, a path) is kept.
+pub fn without_credentials(url: &str) -> String {
+    let Some((scheme, rest)) = url.split_once("://") else {
+        return url.to_string();
+    };
+    let (authority, path) = match rest.find('/') {
+        Some(at) => rest.split_at(at),
+        None => (rest, ""),
+    };
+    let Some((user, host)) = authority.rsplit_once('@') else {
+        return url.to_string();
+    };
+    let kept = if scheme.eq_ignore_ascii_case("ssh") {
+        let name = user.split(':').next().unwrap_or_default();
+        format!("{name}@")
+    } else {
+        String::new()
+    };
+    format!("{scheme}://{kept}{host}{path}")
 }
 
 /// A new commit holding `tree`, on `parent`, with `message`.
@@ -417,4 +442,38 @@ pub fn follow(repository: &Path, base_branch: &str, merged: &str) -> Result<(), 
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::without_credentials;
+
+    /// C-55: the recorded `origin` never holds a token.
+    #[test]
+    fn a_remotes_credentials_are_never_recorded() {
+        for (given, kept) in [
+            (
+                "https://x-access-token:ghp_0123456789abcdef@github.com/o/r.git",
+                "https://github.com/o/r.git",
+            ),
+            (
+                "https://ghp_0123456789abcdef@github.com/o/r.git",
+                "https://github.com/o/r.git",
+            ),
+            (
+                "ssh://git:secret@github.com/o/r.git",
+                "ssh://git@github.com/o/r.git",
+            ),
+            (
+                "ssh://git@github.com/o/r.git",
+                "ssh://git@github.com/o/r.git",
+            ),
+            ("https://github.com/o/r.git", "https://github.com/o/r.git"),
+            ("git@github.com:o/r.git", "git@github.com:o/r.git"),
+            ("C:/work/origin.git", "C:/work/origin.git"),
+            ("file:///C:/work/origin.git", "file:///C:/work/origin.git"),
+        ] {
+            assert_eq!(without_credentials(given), kept, "{given}");
+        }
+    }
 }

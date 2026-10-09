@@ -624,6 +624,7 @@ pub fn read_disposition(
             cycle,
             role: Role::Lead.name().to_string(),
             at: agq_launcher::now(),
+            build: None,
         },
     ))
 }
@@ -864,6 +865,7 @@ mod tests {
             cycle: 1,
             role: "lead".into(),
             at: "t".into(),
+            build: None,
         }
     }
 

@@ -77,9 +77,13 @@ what to change.
   declare it, whatever the objective names; a failure goes to repair like
   any gate's. Models, links and their presence are read by the commits'
   trees through a clean checkout made for it, never through the checkout
-  the checks ran in. Worktree sessions are refused `git tag`, changes to
-  the remotes, git aliases given on the command line, and releases or tags
-  on the host; `gh` needs the network.
+  the checks ran in. The `origin` URL is recorded without credentials.
+  Worktree sessions are refused `git tag` and changes to the remotes; every
+  session (the Operator's Conversation too) is refused git aliases and
+  includes given on the command line or in the environment, releases, tag
+  refs and GraphQL mutations on the host, and `gh` without the network.
+  These rules cannot close every way: the approved baseline's real
+  protection is a tag ruleset on the host, recommended to the Operator.
 - **Dispositions** (`findings`, `knowledge`; C-55): the lead judges a
   reproduced finding with `adjudicate_finding` (a defect, a wrong
   expectation, an ambiguous requirement or an unreliable reproduction),
@@ -89,8 +93,9 @@ what to change.
   chosen to fix, and once a proposal fixing it is accepted it cannot be
   judged otherwise; a wrong expectation is not offered again (found again,
   it is not new); an unreliable reproduction is not offered again until it
-  is found on a later build; an ambiguous requirement is a question for the
-  Operator, not reproduced again in later cycles. When every finding is
+  is found on another build than the one it was judged on; an ambiguous
+  requirement is a question for the Operator, not reproduced again in
+  later cycles. When every finding is
   judged other than a defect, the cycle ends with nothing to fix. The
   reviewer is told how the finding a change fixes was judged.
 - **Models per role** (`models`, C-54): each role's model (the four above,

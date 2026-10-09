@@ -290,6 +290,10 @@ pub struct Disposition {
     /// The role that recorded it (`lead`).
     pub role: String,
     pub at: String,
+    /// The build the finding was judged on (an unreliable reproduction is
+    /// offered again when it is found on another).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build: Option<String>,
 }
 
 impl Disposition {

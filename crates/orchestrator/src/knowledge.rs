@@ -310,12 +310,13 @@ impl Knowledge {
                         run.build
                     );
                 }
-                // Judged an unreliable reproduction, and found again on a
-                // later build: offered again, to be reproduced there.
+                // Judged an unreliable reproduction, and found again on
+                // another build than the one it was judged on: offered
+                // again, to be reproduced there.
                 Some(known) if Knowledge::found_again(known, &run.build) => {
                     known.disposition = None;
                     known.note = format!(
-                        "found again in build {} after it was judged an unreliable reproduction: offered again",
+                        "found again in build {}, another than it was judged an unreliable reproduction on: offered again",
                         run.build
                     );
                 }
@@ -480,18 +481,19 @@ impl Knowledge {
     }
 
     /// Whether `known`, judged an unreliable reproduction, is found again in
-    /// `build`, a later one than it was found in: then it is new again.
+    /// `build`, another build than the one it was judged on (or, for a
+    /// judgment that does not say, found on): then it is new again.
     fn found_again(known: &Finding, build: &str) -> bool {
-        known
-            .disposition
-            .as_ref()
-            .is_some_and(|d| d.kind == DispositionKind::UnreliableReproduction)
-            && known.build != build
+        known.disposition.as_ref().is_some_and(|d| {
+            d.kind == DispositionKind::UnreliableReproduction
+                && d.build.as_deref().unwrap_or(&known.build) != build
+        })
     }
 
     /// The findings of `found` (in `build`) already adjudicated, with their
     /// dispositions: found again, they are not new (but for an unreliable
-    /// reproduction found on a later build, which is).
+    /// reproduction found on another build than the one it was judged on,
+    /// which is).
     pub fn already_adjudicated<'a>(
         &'a self,
         found: &'a [Finding],
@@ -782,6 +784,7 @@ mod tests {
             cycle: 2,
             role: "lead".into(),
             at: "2026-10-09T10:00:00Z".into(),
+            build: None,
         }
     }
 
@@ -895,10 +898,10 @@ mod tests {
     }
 
     /// C-55: an unreliable reproduction found again in the build it was
-    /// found in stays set aside; found on a later build, it is new again
+    /// judged on stays set aside; found on another build, it is new again
     /// and offered.
     #[test]
-    fn an_unreliable_reproduction_found_on_a_later_build_is_offered_again() {
+    fn an_unreliable_reproduction_found_on_another_build_is_offered_again() {
         let mut k = Knowledge::new("p");
         let mut flaky = finding(1, State::Open);
         flaky.set_state(State::Reproduced, "");
@@ -909,7 +912,7 @@ mod tests {
         assert!(k.new_findings(&found, "b1").is_empty());
         assert_eq!(k.already_adjudicated(&found, "b1").len(), 1);
         assert!(k.offered(std::slice::from_ref(&flaky)).is_empty());
-        // A later build: new, not already adjudicated, and once the run is
+        // Another build: new, not already adjudicated, and once the run is
         // added, no longer set aside.
         assert_eq!(k.new_findings(&found, "b2").len(), 1);
         assert!(k.already_adjudicated(&found, "b2").is_empty());
@@ -924,6 +927,22 @@ mod tests {
             k.findings[0].note
         );
         assert_eq!(k.offered(std::slice::from_ref(&flaky)).len(), 1);
+        // Judged on another build than it was first found on (`b4`): the
+        // build it was judged on counts.
+        let mut later = Knowledge::new("p");
+        let mut other = finding(2, State::Open);
+        other.set_state(State::Reproduced, "");
+        later.add_run(&run(&[], vec![other.clone()]));
+        later.adjudicate(
+            &other,
+            Disposition {
+                build: Some("b4".into()),
+                ..disposed(DispositionKind::UnreliableReproduction)
+            },
+        );
+        let again = vec![finding(2, State::Open)];
+        assert!(later.new_findings(&again, "b4").is_empty(), "judged there");
+        assert_eq!(later.new_findings(&again, "b1").len(), 1, "another build");
     }
 
     /// C-55: an older copy of a finding's disposition never replaces a

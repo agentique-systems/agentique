@@ -1332,7 +1332,7 @@ impl Driver {
                         &objective_id,
                         cycle_n,
                     );
-                    let (identity, disposition) = match read {
+                    let (identity, mut disposition) = match read {
                         Ok(read) => read,
                         Err(problem) => {
                             return ToolResult::error(format!("Not recorded: {problem}."));
@@ -1352,6 +1352,8 @@ impl Driver {
                             "Not recorded: it is not one of this cycle's findings.",
                         );
                     };
+                    // Judged on the build this cycle reproduced it on.
+                    disposition.build = Some(finding.build.clone());
                     // In the testing knowledge at once: kept across
                     // objectives, whatever this session does next.
                     if let Err(error) = Knowledge::change(&knowledge_file, &knowledge_key, |k| {

@@ -155,11 +155,20 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
             r"\bgh(\.exe)?\s+(release\s+(create|delete|edit|upload)\b|api\b[^\n;&|]*\bgit/(refs|tags)\b)",
             "Releases and tags on GitHub are the Operator's (the approved baseline is a tag).",
         ),
-        // Git configuration given on the command line or in the
-        // environment can rename a subcommand (an alias) past these rules.
+        // A GraphQL mutation can create, move or delete a ref (a tag) as
+        // the REST calls above can.
         refused(
-            r"\bgit(\.exe)?\b[^\n;&|]*\s(-c\s*|--config-env(\s+|=))alias\.|\bGIT_CONFIG_(PARAMETERS|COUNT|KEY_\d+|VALUE_\d+)\b",
-            "A git alias given on the command line or in the environment is refused: run the git command itself.",
+            r"\bgh(\.exe)?\s+api\s+graphql\b[^\n]*\b(mutation|(create|update|delete)Refs?)\b",
+            "Changing GitHub through a GraphQL mutation is the Operator's (refs and tags among it).",
+        ),
+        // Git configuration given on the command line or in the
+        // environment can rename a subcommand (an alias) past these rules,
+        // or bring in other configuration (an include) that does. These
+        // rules cannot close every way: the approved baseline's real
+        // protection is a tag ruleset on the host, the Operator's.
+        refused(
+            r#"\bgit(\.exe)?\b[^\n;&|]*\s(-c\s*|--config-env(\s+|=))['"]?(alias\.|include\.path|includeif\.)|\bGIT_CONFIG_(PARAMETERS|COUNT|KEY_\d+|VALUE_\d+)\b|\bGIT_CONFIG_(GLOBAL|SYSTEM)\s*="#,
+            "A git alias or included configuration given on the command line or in the environment is refused: run the git command itself.",
         ),
         refused(
             &format!(r"{}[^\n;&|]*--(global|system)\b", git("config")),
@@ -757,6 +766,17 @@ mod tests {
             "gh api repos/o/r/git/refs -f ref=refs/tags/approved-baseline -f sha=abc",
             "gh release create approved-baseline --target main",
             "gh release delete v1 --cleanup-tag --yes",
+            // Quoted, and configuration brought in from elsewhere.
+            "git -c 'alias.t=tag' t -f approved-baseline",
+            "git -c \"alias.t=tag\" t approved-baseline",
+            "git -c include.path=../evil.cfg t approved-baseline",
+            "git -c 'includeIf.gitdir:/.path=../evil.cfg' t x",
+            "GIT_CONFIG_GLOBAL=../evil.cfg git t approved-baseline",
+            "$env:GIT_CONFIG_SYSTEM = 'C:/evil.cfg'; git t x",
+            // A GraphQL mutation, of a ref or of anything.
+            "gh api graphql -f query='mutation { createRef(input: {repositoryId: \"r\", name: \"refs/tags/x\", oid: \"a\"}) { ref { name } } }'",
+            "gh api graphql -f query='mutation($id: ID!) { updateRefs(input: {}) { clientMutationId } }'",
+            "gh api graphql -f query='mutation { addStar(input: {}) { clientMutationId } }'",
         ] {
             assert!(worktree(command).is_some(), "{command}");
         }
@@ -764,8 +784,10 @@ mod tests {
             "git remote -v",
             "git remote get-url origin",
             "git -c core.quotepath=off status",
+            "git -c 'user.name=x' commit -m y",
             "gh pr view 12",
             "gh api repos/o/r/pulls/12",
+            "gh api graphql -f query='query { viewer { login } }'",
         ] {
             assert!(worktree(command).is_none(), "{command}");
         }
