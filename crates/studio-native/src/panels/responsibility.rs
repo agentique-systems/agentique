@@ -62,6 +62,44 @@ pub fn section(studio: &Entity<Studio>, element: ElementId, cx: &App) -> Option<
             })
             .into_any_element(),
     );
+    // A referential part: it refers to a part that exists elsewhere, and
+    // what follows is about its type (C-55).
+    if let Some(usage) = &about.usage {
+        body.push(
+            ui::Banner::new(
+                Tone::Info,
+                format!(
+                    "Refers to {}: `{}` does not contain it. What follows describes its type, {}.",
+                    usage.target_text(),
+                    usage.name,
+                    about.name
+                ),
+            )
+            .into_any_element(),
+        );
+    }
+    if !about.refers.is_empty() {
+        body.push(
+            super::group("Refers to (not owned)", Some(about.refers.len()), cx).into_any_element(),
+        );
+        for referential in &about.refers {
+            body.push(
+                div()
+                    .font_family(theme::MONO)
+                    .text_size(r(theme::text::SM))
+                    .pb(r(4.0))
+                    .child(format!(
+                        "{} → {}",
+                        referential.name,
+                        referential
+                            .refers_to
+                            .as_deref()
+                            .unwrap_or("nothing in this configuration")
+                    ))
+                    .into_any_element(),
+            );
+        }
+    }
     if !about.owns.is_empty() {
         body.push(
             super::group("Information it owns", Some(about.owns.len()), cx).into_any_element(),

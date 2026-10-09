@@ -94,6 +94,10 @@ pub struct InputNode {
     /// A short mark of what the element is beyond its keyword, from the
     /// model: `agent · fast` for a part that specialises `Agents::Agent`.
     pub badge: Option<String>,
+    /// A referential part or item (`ref part`, C-55): it refers to a part
+    /// that exists elsewhere and is not contained by the card around it.
+    /// Its keyword says `ref part` and its edge is dashed (§8.5 rule 4).
+    pub referential: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -181,8 +185,22 @@ fn direction(direction: Option<Direction>) -> PortDirection {
     }
 }
 
-/// `: T [1] = 5` or `:> General`, as written.
+/// `: T [1] = 5` or `:> General`, as written; for a referential part, also
+/// what it refers to.
 pub fn detail(element: &Element) -> String {
+    let mut out = declared(element);
+    // What a referential part refers to, or that it refers to nothing.
+    if element.referential {
+        match &element.expression {
+            Some(value) => out.push_str(&format!(" = {value}")),
+            None => out.push_str(" · refers to nothing"),
+        }
+    }
+    out.trim().to_string()
+}
+
+/// `: T [1] = 5` or `:> General`, as written.
+fn declared(element: &Element) -> String {
     let mut out = String::new();
     let list = |references: &[Reference]| {
         references
@@ -215,6 +233,15 @@ pub fn detail(element: &Element) -> String {
         out.push_str(&format!(" = {value}"));
     }
     out.trim().to_string()
+}
+
+/// The keyword a card or line shows: `ref part` for a referential part.
+fn keyword(element: &Element) -> &'static str {
+    match (element.referential, element.kind) {
+        (true, ElementKind::Part) => "ref part",
+        (true, ElementKind::Item) => "ref item",
+        (_, kind) => kind.keyword(),
+    }
 }
 
 /// `agent · <mode>` for a part def that specialises `Agents::Agent`, or a
@@ -395,7 +422,7 @@ impl SceneInput {
                         .and_then(Reference::target)
                         .and_then(|t| tree.get(t))
                 {
-                    let inherited = detail(redefined);
+                    let inherited = declared(redefined);
                     shown_detail = format!("{inherited} {shown_detail}").trim().to_string();
                 }
                 shown_detail = format!("{shown_detail} · override")
@@ -406,7 +433,8 @@ impl SceneInput {
                 badge: agent_badge(tree, &semantics, agent, id),
                 id,
                 kind: category(element.kind).expect("shown elements have a category"),
-                keyword: element.kind.keyword(),
+                keyword: keyword(element),
+                referential: element.referential,
                 name: name(id),
                 detail: shown_detail,
                 origin,
@@ -436,7 +464,7 @@ impl SceneInput {
                             id: c,
                             text: format!(
                                 "{direction}{} {} {}",
-                                feature.kind.keyword(),
+                                keyword(feature),
                                 name(c),
                                 detail(feature)
                             )
@@ -735,6 +763,38 @@ mod tests {
         assert_eq!(badge("Checker").as_deref(), Some("agent · fast"));
         assert_eq!(badge("checker").as_deref(), Some("agent · fast"));
         assert_eq!(badge("plain"), None);
+    }
+
+    #[test]
+    fn a_referential_part_is_marked_and_says_what_it_refers_to() {
+        let tree = fixtures::tree(
+            "package P {
+    item def Fuel;
+    part def Bus;
+    part def Computer { ref part supply : Bus; ref item reserve : Fuel; }
+    part def Drone {
+        part bus : Bus;
+        part computer : Computer { ref part :>> supply = bus; }
+    }
+}",
+        );
+        let input = SceneInput::from_tree(&tree, &BTreeSet::new(), &BTreeMap::new(), 1);
+        let card = |id| input.nodes.iter().find(|n| n.id == id).unwrap();
+        let unbound = card(tree.find("P::Computer::supply").unwrap());
+        assert!(unbound.referential);
+        assert_eq!(unbound.keyword, "ref part");
+        assert_eq!(unbound.detail, ": Bus · refers to nothing");
+        let bound = card(tree.find("P::Drone::computer::supply").unwrap());
+        assert!(bound.referential);
+        assert_eq!(bound.detail, ": Bus = bus · override");
+        let bus = card(tree.find("P::Drone::bus").unwrap());
+        assert!(!bus.referential);
+        assert_eq!(bus.keyword, "part");
+        let computer = card(tree.find("P::Computer").unwrap());
+        assert_eq!(
+            computer.features[0].text,
+            "ref item reserve : Fuel · refers to nothing"
+        );
     }
 
     #[test]

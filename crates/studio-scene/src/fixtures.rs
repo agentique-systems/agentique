@@ -56,6 +56,7 @@ pub fn node(value: u64, name: &str, kind: NodeCategory, owner: Option<u64>) -> I
         lock: LockMark::None,
         problems: 0,
         badge: None,
+        referential: false,
     }
 }
 
