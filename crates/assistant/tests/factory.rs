@@ -492,3 +492,47 @@ fn a_transition_is_moved_between_states_by_set() {
         written(&state)
     );
 }
+
+/// An effect of several steps on a transition without a trigger (a
+/// completion transition is not in the subset, so it is reported, but the
+/// action and its steps are created in the right place).
+#[test]
+fn an_effect_list_without_a_trigger_keeps_its_steps_together() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Ack;
+    port def JobPort { out item ack : Ack; }
+    part def Worker {
+        port jobs : JobPort;
+        attribute count : ScalarValues::Integer = 0;
+        exhibit state working {
+            entry;
+            then idle;
+            state idle;
+        }
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    let before = state.tree().len();
+    apply(
+        &mut state,
+        json!({ "description": "A transition without a trigger", "operations": [
+            { "op": "create", "parent": "Jobs::Worker::working", "kind": "transition", "name": "tick", "from": "idle", "to": "idle", "effect": [
+                { "assign": "count", "value": "count + 1" },
+                { "send": "new Ack()", "via": "jobs" }
+            ] }
+        ]}),
+    );
+    // The transition, its action and the two steps.
+    assert_eq!(state.tree().len(), before + 4);
+    let text_now = written(&state);
+    assert!(
+        text_now.contains("assign count := count + 1;")
+            && text_now.contains("then send new Ack() via jobs;"),
+        "{text_now}"
+    );
+}

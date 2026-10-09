@@ -850,151 +850,130 @@
       "symbol": "a_childs_spend_before_a_restart_is_counted_once"
     },
     {
-      "element": 1881,
-      "name": "AgentiqueArchitecture::Cycle",
+      "element": 2291,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver",
       "kind": "symbol",
       "path": "crates/orchestrator/src/run.rs",
       "symbol": "start"
     },
     {
-      "element": 1860,
-      "name": "AgentiqueArchitecture::Explorer",
+      "element": 2273,
+      "name": "AgentiqueArchitecture::Orchestrator::Explorer",
       "kind": "symbol",
       "path": "crates/orchestrator/src/explore.rs",
       "symbol": "explore"
     },
     {
-      "element": 1866,
-      "name": "AgentiqueArchitecture::Lead",
+      "element": 2278,
+      "name": "AgentiqueArchitecture::Orchestrator::Lead",
       "kind": "symbol",
       "path": "crates/orchestrator/src/roles.rs",
       "symbol": "read_proposal"
     },
     {
-      "element": 1871,
-      "name": "AgentiqueArchitecture::Implementer",
+      "element": 2283,
+      "name": "AgentiqueArchitecture::Orchestrator::Implementer",
       "kind": "symbol",
       "path": "crates/orchestrator/src/roles.rs",
       "symbol": "instructions"
     },
     {
-      "element": 1876,
-      "name": "AgentiqueArchitecture::Reviewer",
+      "element": 2287,
+      "name": "AgentiqueArchitecture::Orchestrator::Reviewer",
       "kind": "symbol",
       "path": "crates/orchestrator/src/roles.rs",
       "symbol": "instructions"
     },
     {
-      "element": 1935,
-      "name": "AgentiqueArchitecture::Cycle::running::found",
-      "kind": "test",
-      "path": "crates/orchestrator/tests/exploring.rs",
-      "symbol": "an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it"
-    },
-    {
-      "element": 1941,
-      "name": "AgentiqueArchitecture::Cycle::running::nothingNew",
-      "kind": "test",
-      "path": "crates/orchestrator/tests/exploring.rs",
-      "symbol": "two_explorations_without_a_new_problem_end_the_objective"
-    },
-    {
-      "element": 1944,
-      "name": "AgentiqueArchitecture::Cycle::running::delegated",
+      "element": 2379,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::delegated",
       "kind": "test",
       "path": "crates/orchestrator/tests/exploring.rs",
       "symbol": "the_lead_delegates_a_child_within_its_budget_and_gets_its_result"
     },
     {
-      "element": 1949,
-      "name": "AgentiqueArchitecture::Cycle::running::delegationRefused",
+      "element": 2393,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::childReturns",
       "kind": "test",
-      "path": "crates/orchestrator/src/run/children.rs",
-      "symbol": "delegation_is_refused_beyond_its_bounds"
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "the_lead_delegates_a_child_within_its_budget_and_gets_its_result"
     },
     {
-      "element": 1949,
-      "name": "AgentiqueArchitecture::Cycle::running::delegationRefused",
+      "element": 2385,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::delegationRefused",
       "kind": "test",
       "path": "crates/orchestrator/tests/exploring.rs",
       "symbol": "a_fourth_delegation_in_a_turn_is_refused"
     },
     {
-      "element": 1954,
-      "name": "AgentiqueArchitecture::Cycle::running::proposed",
-      "kind": "symbol",
-      "path": "crates/orchestrator/src/roles.rs",
-      "symbol": "read_proposal"
+      "element": 2385,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::delegationRefused",
+      "kind": "test",
+      "path": "crates/orchestrator/src/run/children.rs",
+      "symbol": "delegation_is_refused_beyond_its_bounds"
     },
     {
-      "element": 1965,
-      "name": "AgentiqueArchitecture::Cycle::running::noEvidence",
+      "element": 2390,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::explored",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it"
+    },
+    {
+      "element": 2396,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::reproducedSome",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it"
+    },
+    {
+      "element": 2403,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::exploreAgain",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "two_explorations_without_a_new_problem_end_the_objective"
+    },
+    {
+      "element": 2408,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::nothingNew",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "two_explorations_without_a_new_problem_end_the_objective"
+    },
+    {
+      "element": 2428,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::toReview",
       "kind": "symbol",
       "path": "crates/orchestrator/src/gates.rs",
       "symbol": "defect_shown"
     },
     {
-      "element": 1965,
-      "name": "AgentiqueArchitecture::Cycle::running::noEvidence",
+      "element": 2428,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::toReview",
       "kind": "test",
       "path": "crates/orchestrator/src/gates.rs",
       "symbol": "the_defect_is_shown_on_the_base_only_with_evidence"
     },
     {
-      "element": 1965,
-      "name": "AgentiqueArchitecture::Cycle::running::noEvidence",
-      "kind": "test",
-      "path": "crates/orchestrator/src/run/evidence.rs",
-      "symbol": "a_run_on_the_base_is_evidence_only_when_a_test_failed_an_assertion"
-    },
-    {
-      "element": 1974,
-      "name": "AgentiqueArchitecture::Cycle::running::repair",
+      "element": 2431,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::repair",
       "kind": "test",
       "path": "crates/orchestrator/tests/cycle.rs",
       "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
     },
     {
-      "element": 1988,
-      "name": "AgentiqueArchitecture::Cycle::running::changesRequested",
+      "element": 2437,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::noProgress",
+      "kind": "test",
+      "path": "crates/orchestrator/src/record.rs",
+      "symbol": "the_same_failures_twice_are_the_same_fingerprint"
+    },
+    {
+      "element": 2443,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::notPermitted",
       "kind": "test",
       "path": "crates/orchestrator/tests/cycle.rs",
       "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
-    },
-    {
-      "element": 1982,
-      "name": "AgentiqueArchitecture::Cycle::running::approvedToMerge",
-      "kind": "symbol",
-      "path": "crates/orchestrator/src/gates.rs",
-      "symbol": "paths"
-    },
-    {
-      "element": 1982,
-      "name": "AgentiqueArchitecture::Cycle::running::approvedToMerge",
-      "kind": "test",
-      "path": "crates/orchestrator/src/gates.rs",
-      "symbol": "the_paths_a_change_may_not_touch_are_refused"
-    },
-    {
-      "element": 1982,
-      "name": "AgentiqueArchitecture::Cycle::running::approvedToMerge",
-      "kind": "test",
-      "path": "crates/orchestrator/src/gates.rs",
-      "symbol": "weakening_a_test_or_a_check_fails_unless_intended_and_accepted"
-    },
-    {
-      "element": 2007,
-      "name": "AgentiqueArchitecture::Cycle::running::continues",
-      "kind": "test",
-      "path": "crates/orchestrator/tests/cycle.rs",
-      "symbol": "an_interrupted_objective_continues_from_the_phase_it_reached"
-    },
-    {
-      "element": 2019,
-      "name": "AgentiqueArchitecture::Cycle::running::recovered",
-      "kind": "test",
-      "path": "crates/launcher/tests/supervise.rs",
-      "symbol": "a_handover_to_a_build_that_does_not_start_returns_to_the_last_known_good_one"
     }
   ],
   "protected": [

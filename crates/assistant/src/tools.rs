@@ -201,7 +201,7 @@ pub fn definitions() -> Value {
         "value": { "type": ["string", "number", "boolean"], "description": "create, set: the value of an attribute." },
         "doc": name("create, set: documentation in plain words."),
         "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\". create or set transition: the state it leaves (set needs `to` too)."),
-        "to": name("connect: the second end, e.g. \"store.links\". create or set transition: the state it enters."),
+        "to": name("connect: the second end, e.g. \"store.links\". create or set transition: the state it enters (set needs `from` too)."),
         "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
         "requirement": name("create satisfy: the requirement being satisfied."),
         "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\"."),
@@ -210,6 +210,7 @@ pub fn definitions() -> Value {
         "after": { "type": "boolean", "description": "create accept: wait for the time in `expression` to pass instead of for an item." },
         "steps": {
             "type": "array",
+            "minItems": 1,
             "description": "create action: its steps, run one after the other in the order given, each a `send` (with `via`) or an `assign` (with `value`); e.g. a new effect of a transition: {\"op\": \"create\", \"parent\": \"Shop::Worker::working::start\", \"kind\": \"action\", \"steps\": [{\"assign\": \"count\", \"value\": \"0\"}, {\"send\": \"new Ack(id = 1)\", \"via\": \"jobs\"}]} after deleting its old effect.",
             "items": {
                 "type": "object",
@@ -231,6 +232,7 @@ pub fn definitions() -> Value {
             "description": "create transition: what it does, a `send` (an expression, with `via`) or an `assign` (a feature and its new `value` expression); or a list of such steps, which run one after the other in the order given (a composite action), e.g. [{\"assign\": \"attempts\", \"value\": \"attempts + 1\"}, {\"send\": \"pending\", \"via\": \"authority\"}].",
             "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
             "additionalProperties": false,
+            "minItems": 1,
             "items": {
                 "type": "object",
                 "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },

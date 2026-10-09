@@ -2181,22 +2181,39 @@ Operator command (not built).
 nothing here says the Operator accepted anything).
 
 - *The autonomous lifecycle, modelled and run.* The Orchestrator is its
-  deterministic `Cycle` and its role agents; the Cycle's 23 transitions
-  decide each next phase from recorded results (explore and reproduce,
-  propose with evidence, implement, check, review, merge, build, adopt,
-  continue; delegation within the depth limit; repair within the attempt
-  budget; the purpose gate), reusing a task's contracts (`JobPort`,
-  `Brief`, `WorkDone`, `CheckRequest`) and the launcher's (`LaunchPort`).
-  Seven scenarios run in model execution with the agents stood in: an
-  objective that adopts and explores again by itself, a proposal without
-  evidence refused, a failing check repaired, a reviewer rejecting twice, a
-  change to the governing text refused despite approval, a build that does
-  not start recovered, and delegation beyond the depth refused. They check
-  the model's account of the lifecycle; the code is checked by the tests
-  the Cycle's transitions are linked to (`tests/cycle.rs`,
-  `tests/exploring.rs`, `gates.rs`, `run/children.rs`, `run/evidence.rs`,
-  the launcher's `tests/supervise.rs`). Before: the Orchestrator had ports
-  and a contract, no behaviour, and the model said it drove its own Studio.
+  deterministic `Driver` and its role agents, nested in it so its lock
+  covers them. The Driver's 33 transitions follow `run.rs`: the lead plans
+  (and may delegate, three children a turn) unless the objective is a child
+  at the maximum depth; the explorer's run reports what failed, and the
+  Driver's deterministic replays decide what reproduced; a child explores
+  once and returns; nothing reproduced explores again, and two empty
+  explorations in a row end the objective; a proposal whose names do not
+  resolve in the model is asked again; the checks on the commit decide the
+  evidence on the base and the gates (the purpose's among them, W13.5), a
+  failure going to repair and a round without fewer failures ending the
+  cycle; the reviewer's rejection goes to repair; merging needs the
+  permission, adopting too (a merge without it is done); a build that does
+  not take over ends the objective; after a cycle, done or failed, the next
+  starts while cycles are left. Folded, as its doc says: Evaluate into Check,
+  Try into the build's answer, the same failure twice into a round without
+  fewer failures. Ten scenarios run in model execution with the agents
+  stood in and the environment answering at the Orchestrator's boundary: an
+  objective that adopts and explores again until two empty explorations
+  end it; a failing check repaired; a round without fewer failures; no
+  defect shown on the base; a reviewer rejecting until the budget is used;
+  the governing text kept the Operator's; a merge without the permission to
+  adopt; a build that does not take over; a fourth delegation in a turn
+  refused; a child that explores once and returns. They check the model's
+  account; the code is checked by the tests linked to 11 of the 33
+  transitions (`tests/exploring.rs`, `tests/cycle.rs`, `gates.rs`,
+  `run/children.rs`, `record.rs`). No test exercises a rejected review, a
+  merge's repair, the Driver's record of a build that does not take over,
+  or the start and continuation of cycles, so those are not linked.
+- *Corrected after review.* The first version (an independent
+  architecture review asked for changes) had the lead declare its own
+  evidence and purpose verdicts, ended every failed cycle, linked tests that
+  did not exercise their transitions and left the new definitions outside
+  the lock; it was redone from the code.
 - *One mechanism where the code has one.* The Studio's state machine had a
   second lock question, confirmation and two states for the Assistant's
   changes (14 states, 29 transitions); it now remembers who asked
@@ -2210,6 +2227,5 @@ nothing here says the Operator accepted anything).
   a transition could have one `send` or `assign` only.
 - *Traceability.* A dogfood test checks every implementation link: the
   element exists under that name, the path exists, the function is defined
-  there. It found three stale links on `main` (a test moved to the
-  Orchestrator in W11.5, a test renamed in W12.5, a TypeScript function the
-  check first missed), fixed.
+  there. It found two stale links on `main` (a test moved to the
+  Orchestrator in W11.5, a test renamed in W12.5), fixed.
