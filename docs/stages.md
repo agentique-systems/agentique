@@ -2273,9 +2273,13 @@ undetermined; violated, private, ambiguous, non-applying, self-containing
 and mistyped subrequirements; contexts and their digest; cycles, division
 by zero, enums), assistant, implementation (stopped and empty runs, mixed
 calculations) and Studio (a stale implementation pass) tests, and a shared
-`ref part` bus counted once: after rebasing on `main` at `09af2b80`,
-`cargo test --workspace` 913 passed, 0 failed, 25 ignored (the Studio 186,
-the dogfood test 3); workspace clippy, fmt and the architecture check pass. Not verified: the panel by eye, the reference run,
+`ref part` bus counted once: on `main` at `b033dc4f` (the branch's head
+before the last change), `cargo test --workspace` 918 passed, 0 failed, 25
+ignored; workspace clippy, fmt and the architecture check pass. The
+Scenarios panel's chips now classify a result as the ladder does (a run
+with no or undecided checks is inconclusive, not failed): the Studio's
+tests 187 passed after that change. Not verified: the panel by eye, the
+reference run (with the final proof),
 a real model calling `check_requirements`. Limits: no units; package-level
 constants are not read; scenario runs still work attribute values out
 differently (deviation 23); a change to the code alone reaches the ladder
