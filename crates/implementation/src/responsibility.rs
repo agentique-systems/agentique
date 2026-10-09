@@ -6,7 +6,7 @@
 //! `explain_element` tool says it, from the same answer.
 
 use crate::links::{LinkKind, Links};
-use agq_language::{Direction, ElementId, ElementKind, Role, Semantics, Tree};
+use agq_language::{Direction, ElementId, ElementKind, Role, Semantics, Tree, print_expression};
 use agq_simulation::digest::closure;
 
 /// One port of the contract: its name and type, and what it carries in and
@@ -20,6 +20,38 @@ pub struct ContractPort {
     pub sends: Vec<String>,
 }
 
+/// A referential part or item (`ref part`, C-55): it refers to a part
+/// that exists elsewhere and does not contain it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Referential {
+    pub feature: ElementId,
+    pub name: String,
+    /// The part it refers to, as written (`bus`), or `None` when it refers
+    /// to nothing in this configuration.
+    pub refers_to: Option<String>,
+}
+
+impl Referential {
+    fn of(tree: &Tree, feature: ElementId) -> Referential {
+        Referential {
+            feature,
+            name: tree.effective_name(feature).unwrap_or("?").to_string(),
+            refers_to: tree[feature]
+                .expression
+                .as_ref()
+                .map(|value| print_expression(tree, feature, value)),
+        }
+    }
+
+    /// `bus`, or that it refers to nothing.
+    pub fn target_text(&self) -> String {
+        match &self.refers_to {
+            Some(target) => format!("`{target}`"),
+            None => "nothing in this configuration".into(),
+        }
+    }
+}
+
 /// Everything C1 asks about one part definition.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Responsibility {
@@ -30,6 +62,11 @@ pub struct Responsibility {
     pub purpose: String,
     /// What it owns as features: attributes and items, with their docs.
     pub owns: Vec<(String, String)>,
+    /// Its referential parts and items: what each refers to (not owned).
+    pub refers: Vec<Referential>,
+    /// When the element explained is itself a referential part: what it
+    /// refers to. The rest describes its type.
+    pub usage: Option<Referential>,
     pub contract: Vec<ContractPort>,
     pub depends_on: Vec<ElementId>,
     pub used_by: Vec<ElementId>,
@@ -95,9 +132,14 @@ pub fn responsibility(
     let name = |id: ElementId| tree.effective_name(id).unwrap_or("?").to_string();
     // Owned information and the contract.
     let mut owns = Vec::new();
+    let mut refers = Vec::new();
     let mut contract = Vec::new();
     for feature in tree[definition].children() {
         let feature = *feature;
+        if semantics.referential(feature) == Some(true) {
+            refers.push(Referential::of(tree, feature));
+            continue;
+        }
         match tree[feature].kind {
             ElementKind::Attribute | ElementKind::Item => {
                 owns.push((name(feature), doc_text(tree, feature)));
@@ -244,6 +286,9 @@ pub fn responsibility(
         name: name(definition),
         purpose: doc_text(tree, definition),
         owns,
+        refers,
+        usage: (semantics.referential(element) == Some(true))
+            .then(|| Referential::of(tree, element)),
         contract,
         depends_on,
         used_by,
@@ -275,6 +320,14 @@ impl Responsibility {
             self.name,
             tree.qualified_name(self.definition)
         )];
+        if let Some(usage) = &self.usage {
+            lines.push(format!(
+                "`{}` is a referential part: it refers to {} and does not contain it; what follows describes its type, {}.",
+                usage.name,
+                usage.target_text(),
+                self.name
+            ));
+        }
         lines.push(format!(
             "What it is and why: {}",
             if self.purpose.is_empty() {
@@ -293,6 +346,16 @@ impl Responsibility {
                     } else {
                         format!("{n} ({d})")
                     })
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            ));
+        }
+        if !self.refers.is_empty() {
+            lines.push(format!(
+                "What it refers to (not owned): {}.",
+                self.refers
+                    .iter()
+                    .map(|r| format!("{} refers to {}", r.name, r.target_text()))
                     .collect::<Vec<_>>()
                     .join("; ")
             ));
@@ -436,6 +499,68 @@ mod tests {
         assert!(text.contains("crate crates/queue"), "{text}");
         // Not a part: nothing to explain this way.
         assert!(responsibility(&tree, &links, &[], tree.find("M::Job").unwrap()).is_none());
+    }
+
+    #[test]
+    fn a_referential_part_is_explained_as_referring_not_containing() {
+        let tree = parse(&[Source::new(
+            "M.sysml",
+            "package M {
+                item def Fuel;
+                part def PowerBus { doc /* Carries power. */ }
+                part def FlightComputer {
+                    ref part supply : PowerBus;
+                    ref item reserve : Fuel[0..1];
+                    item log : Fuel;
+                }
+                part def Drone {
+                    part bus : PowerBus;
+                    part flightComputer : FlightComputer { ref part :>> supply = bus; }
+                    ref part spare : PowerBus;
+                }
+            }",
+        )]);
+        let computer = tree.find("M::FlightComputer").unwrap();
+        let r = responsibility(&tree, &Links::default(), &[], computer).unwrap();
+        assert_eq!(r.owns, vec![("log".into(), String::new())]);
+        let refers: Vec<(&str, Option<&str>)> = r
+            .refers
+            .iter()
+            .map(|r| (r.name.as_str(), r.refers_to.as_deref()))
+            .collect();
+        assert_eq!(refers, [("supply", None), ("reserve", None)]);
+        let text = r.describe(&tree);
+        assert!(
+            text.contains(
+                "What it refers to (not owned): supply refers to nothing in this configuration; reserve refers to nothing in this configuration."
+            ),
+            "{text}"
+        );
+        // The bound usage, explained by its type, says what it refers to.
+        let bound = tree.find("M::Drone::flightComputer::supply").unwrap();
+        let r = responsibility(&tree, &Links::default(), &[], bound).unwrap();
+        assert_eq!(r.definition, tree.find("M::PowerBus").unwrap());
+        let text = r.describe(&tree);
+        assert!(
+            text.contains(
+                "`supply` is a referential part: it refers to `bus` and does not contain it; what follows describes its type, PowerBus."
+            ),
+            "{text}"
+        );
+        let spare = tree.find("M::Drone::spare").unwrap();
+        let text = responsibility(&tree, &Links::default(), &[], spare)
+            .unwrap()
+            .describe(&tree);
+        assert!(
+            text.contains(
+                "`spare` is a referential part: it refers to nothing in this configuration"
+            ),
+            "{text}"
+        );
+        // A composite part is explained as before.
+        let bus = tree.find("M::Drone::bus").unwrap();
+        let r = responsibility(&tree, &Links::default(), &[], bus).unwrap();
+        assert_eq!(r.usage, None);
     }
 
     #[test]

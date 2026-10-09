@@ -241,6 +241,7 @@ pub(crate) fn difference_placed(
             e.visibility,
             e.is_abstract,
             e.is_end,
+            e.referential,
             e.direction,
             e.conjugated,
             e.multiplicity,

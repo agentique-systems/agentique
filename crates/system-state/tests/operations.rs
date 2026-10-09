@@ -1244,3 +1244,49 @@ fn ids_of_undone_elements_are_never_handed_out_again() {
     let third = state.apply(create("Third")).unwrap().created[0];
     assert!(third.raw() > second.raw() && third != first);
 }
+
+#[test]
+fn only_parts_and_items_can_be_referential() {
+    let mut state = state();
+    let store = id(&state, "Shop::System::store");
+    let order = id(&state, "Shop::OrderPort::order");
+    let port = id(&state, "Shop::Store::orders");
+    let set = |element, value| Operation::Set {
+        element,
+        property: Property::Referential(value),
+    };
+    state
+        .apply(operator(
+            "Refer to a store",
+            vec![set(store, true), set(order, true)],
+        ))
+        .unwrap();
+    let text = print(state.tree())[0].text.clone();
+    assert!(text.contains("ref part store : Store;"), "{text}");
+    assert!(text.contains("in ref item order : Order;"), "{text}");
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    assert_eq!(
+        state.apply(operator("Refer to a port", vec![set(port, true)])),
+        Err(Rejection::Invalid {
+            operation: 0,
+            reason: "`Shop::Store::orders`: a port has no `ref`".into()
+        })
+    );
+    // A new element keeps the flag it is created with.
+    let system = id(&state, "Shop::System");
+    let mut supply = Element::named(ElementKind::Part, "supply");
+    supply.referential = true;
+    let event = state
+        .apply(operator(
+            "Add a reference",
+            vec![Operation::Create {
+                parent: Parent::Element(system),
+                element: Box::new(supply),
+            }],
+        ))
+        .unwrap();
+    assert!(state.tree()[event.created[0]].referential);
+    state.undo().unwrap();
+    state.undo().unwrap();
+    assert!(!state.tree()[store].referential);
+}

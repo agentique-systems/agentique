@@ -340,10 +340,10 @@ impl Library {
                                 }
                             ))
                         })?;
-                    let kind = semantics
+                    let (kind, referential) = semantics
                         .element(feature)
-                        .map(|e| e.kind)
-                        .unwrap_or(ElementKind::Attribute);
+                        .map(|e| (e.kind, e.referential))
+                        .unwrap_or((ElementKind::Attribute, false));
                     if last && kind != ElementKind::Attribute {
                         return Err(invalid(format!(
                             "`{path_name}` is a {}, not an attribute; only attributes take values",
@@ -357,6 +357,9 @@ impl Library {
                             container = *id;
                         } else {
                             let mut redefinition = Element::new(kind);
+                            // A redefinition keeps what the feature is:
+                            // composite, or referential (`ref part`).
+                            redefinition.referential = referential;
                             redefinition.redefines = vec![Reference::to(target, step)];
                             let id = ElementId::from_raw(base_id + creations.len() as u64);
                             creations.push(Creation {
@@ -672,6 +675,7 @@ impl Library {
                 }
             }
             let mut redefinition = Element::new(feature_element.kind);
+            redefinition.referential = feature_element.referential;
             redefinition.redefines = vec![Reference::to(feature, &name)];
             if last {
                 match &what {
