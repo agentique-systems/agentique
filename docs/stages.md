@@ -2087,15 +2087,9 @@ it). Read against the code and the model before any change:
 | W13.1 Direction | #117 | Merged |
 | W13.2 Referential usages | #119 | Merged (below) |
 | W13.3 Requirement constraints and evidence | #121 | In review (below) |
-| W13.4 The self-model | #118 | In review (below); the purpose's subrequirements follow W13.3 |
+| W13.4 The self-model | #118 | Merged (below); the purpose's subrequirements follow W13.3 |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | — | In progress (`stage13/drone`) |
-| W13.1 Direction | #117 | In review |
-| W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
-| W13.3 Requirement constraints and evidence | — | In review (`stage13/requirements`, below) |
-| W13.4 The self-model | — | In progress (`stage13/self-model`) |
-| W13.5 Alignment in the loop | — | In review (`stage13/alignment`, below) |
-| W13.6 A second system | — | Not started |
 | W13.7 Proof | — | Not started |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
