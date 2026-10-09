@@ -2088,7 +2088,7 @@ it). Read against the code and the model before any change:
 | W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
 | W13.3 Requirement constraints and evidence | — | In progress |
 | W13.4 The self-model | — | In progress (`stage13/self-model`) |
-| W13.5 Alignment in the loop | — | In progress |
+| W13.5 Alignment in the loop | — | In review (`stage13/alignment`, below) |
 | W13.6 A second system | — | Not started |
 | W13.7 Proof | — | Not started |
 
@@ -2142,3 +2142,16 @@ sends only through its own ports; `bind` stays unsupported; a reference with
 a multiplicity above 1 binds one instance; attributes may still override a
 value given where they are declared (only bindings of references are
 refused).
+
+**W13.5 Alignment in the loop** (`stage13/alignment`; nothing here says the
+Operator accepted anything). As the §7.6 entry of 2026-10-10 describes:
+proposals name what they serve, benefit and cost, checked against the base's
+model; traceability and the cumulative change since the approved baseline
+for the reviewer, who answers both explicitly; the purpose gate; no tags in
+worktrees; dispositions of findings. Tested with the scripted stand-ins
+(`tests/traceability.rs` new, `tests/cycle.rs`, `tests/exploring.rs`, unit
+tests in `roles.rs`, `gates.rs`, `knowledge.rs`, `forge.rs`, and the
+assistant's `policy.rs`): agq-orchestrator and agq-assistant 239 passed, 0
+failed (after rebasing on `main` at `b6a7177c`). Not verified: live models;
+the approved baseline against GitHub (tested with a local bare `origin`; a
+tagged commit missing locally is recorded as a note, never fetched).
