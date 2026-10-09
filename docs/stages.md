@@ -2086,7 +2086,7 @@ it). Read against the code and the model before any change:
 |---|---|---|
 | W13.1 Direction | #117 | Merged |
 | W13.2 Referential usages | #119 | Merged (below) |
-| W13.3 Requirement constraints and evidence | #121 | In review (below) |
+| W13.3 Requirement constraints and evidence | #121 | Merged (below) |
 | W13.4 The self-model | #118 | Merged (below); the purpose's obligations in review (below) |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | — | In review (below) |
