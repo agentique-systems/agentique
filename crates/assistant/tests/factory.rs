@@ -536,3 +536,130 @@ fn an_effect_list_without_a_trigger_keeps_its_steps_together() {
         "{text_now}"
     );
 }
+
+/// A drone model with a mass roll-up, empty of requirements.
+fn drones() -> SystemState {
+    let text = "package Drones {
+    private import ScalarValues::*;
+    part def Battery { attribute mass : Real; }
+    part def Drone {
+        part battery : Battery;
+        attribute mass : Real = battery.mass + 1500;
+    }
+    part scout : Drone { part :>> battery { attribute :>> mass = 3000; } }
+    part hauler : Drone { part :>> battery { attribute :>> mass = 6000; } }
+}";
+    SystemState::new(parse(&[Source::new("Drones.sysml", text)]), BTreeSet::new())
+}
+
+#[test]
+fn the_assistant_writes_requirement_constraints_and_reads_what_supports_them() {
+    let mut state = drones();
+    apply(
+        &mut state,
+        json!({ "description": "A mass limit for the drones", "operations": [
+            { "op": "create", "parent": "Drones", "kind": "requirement def", "name": "MassLimit", "doc": "The drone's mass stays within the limit." },
+            { "op": "create", "parent": "Drones::MassLimit", "kind": "subject", "name": "s", "type": "Drone" },
+            { "op": "create", "parent": "Drones::MassLimit", "kind": "attribute", "name": "limit", "type": "Real" },
+            { "op": "create", "parent": "Drones::MassLimit", "kind": "assume constraint", "expression": "limit > 0" },
+            { "op": "create", "parent": "Drones::MassLimit", "kind": "require constraint", "expression": "s.mass <= limit" },
+            { "op": "create", "parent": "Drones::MassLimit", "kind": "require constraint", "name": "balanced", "doc": "The load is balanced." },
+            { "op": "create", "parent": "Drones", "kind": "requirement def", "name": "Strict" },
+            { "op": "create", "parent": "Drones::Strict", "kind": "subject", "name": "s", "type": "Drone" },
+            { "op": "create", "parent": "Drones::Strict", "kind": "attribute", "name": "limit", "type": "Real" },
+            { "op": "create", "parent": "Drones::Strict", "kind": "require constraint", "expression": "s.mass <= limit" },
+            { "op": "create", "parent": "Drones::Strict", "kind": "requirement", "name": "batteryShare", "doc": "The battery is at most 4000." },
+            { "op": "create", "parent": "Drones::Strict::batteryShare", "kind": "require constraint", "expression": "s.battery.mass <= 4000" },
+            { "op": "create", "parent": "Drones", "kind": "requirement", "name": "scoutMass", "type": "Strict", "features": { "limit": 5000 } },
+            { "op": "create", "parent": "Drones", "kind": "requirement", "name": "haulerMass", "type": "Strict", "features": { "limit": 5000 } },
+            { "op": "create", "parent": "Drones", "kind": "requirement", "name": "loose", "type": "MassLimit", "features": { "limit": 9000 } },
+            { "op": "create", "parent": "Drones", "kind": "satisfy", "requirement": "scoutMass", "by": "scout" },
+            { "op": "create", "parent": "Drones", "kind": "satisfy", "requirement": "haulerMass", "by": "hauler" },
+            { "op": "create", "parent": "Drones", "kind": "satisfy", "requirement": "loose", "by": "hauler" }
+        ]}),
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    let text_now = written(&state);
+    for line in [
+        "assume constraint {\n            limit > 0\n        }",
+        "require constraint {\n            s.mass <= limit\n        }",
+        "require constraint balanced {\n            doc /* The load is balanced. */\n        }",
+        "requirement scoutMass : Strict {\n        :>> limit = 5000;",
+    ] {
+        assert!(text_now.contains(line), "{line}\n{text_now}");
+    }
+    // The outline shows the constraints with what they say.
+    let outline = text(prepare(&state, tools::READ_MODEL, json!({})));
+    assert!(
+        outline.contains("require constraint: s.mass <= limit"),
+        "{outline}"
+    );
+    assert!(
+        outline.contains("balanced (require constraint: informal, see its doc)"),
+        "{outline}"
+    );
+
+    let check = |requirement: Option<&str>| {
+        let input = match requirement {
+            Some(name) => json!({ "requirement": name }),
+            None => json!({}),
+        };
+        match prepare(&state, tools::CHECK_REQUIREMENTS, input) {
+            Prepared::Studio(request) => tools::carry_out_headless(state.tree(), &request).unwrap(),
+            other => panic!("expected a Studio request, got {other:?}"),
+        }
+    };
+    let all = check(None);
+    assert!(
+        all.starts_with(
+            "Requirements: 1 violated by calculation · 1 holds by calculation · 1 only declared (of 3)."
+        ),
+        "{all}"
+    );
+    let scout = check(Some("Drones::scoutMass"));
+    assert!(
+        scout.starts_with("Drones::scoutMass: holds by calculation."),
+        "{scout}"
+    );
+    assert!(
+        scout.contains("Declared (a claim, not evidence): satisfy by scout."),
+        "{scout}"
+    );
+    assert!(
+        scout.contains("Calculated from the model (its constraints on the modelled configuration; not a test of a built system):"),
+        "{scout}"
+    );
+    assert!(scout.contains("s.mass = 4500, limit = 5000"), "{scout}");
+    assert!(scout.contains("Scenarios: none verifies it."), "{scout}");
+    let hauler = check(Some("Drones::haulerMass"));
+    assert!(
+        hauler.contains(
+            "the required constraint `s.mass <= limit` is false (s.mass = 7500, limit = 5000)"
+        ),
+        "{hauler}"
+    );
+    assert!(
+        hauler.contains("subrequirement `batteryShare`: false"),
+        "{hauler}"
+    );
+    // A declaration with an informal required constraint is only declared.
+    let loose = check(Some("Drones::loose"));
+    assert!(
+        loose.starts_with("Drones::loose: only declared."),
+        "{loose}"
+    );
+    assert!(
+        loose.contains("required constraint `balanced`: not evaluable: it is informal (\"The load is balanced.\")"),
+        "{loose}"
+    );
+    // A part is not a requirement.
+    match prepare(
+        &state,
+        tools::CHECK_REQUIREMENTS,
+        json!({ "requirement": "Drones::scout" }),
+    ) {
+        Prepared::Invalid(message) => assert!(message.contains("is a part"), "{message}"),
+        other => panic!("expected a refusal, got {other:?}"),
+    }
+    assert!(tools::read_only(tools::CHECK_REQUIREMENTS));
+}

@@ -28,7 +28,9 @@ hand-written Claude client still uses the network directly until W5.7.
   they verify, stand-ins and other redefined features, send, accept, time,
   checks, state machines with transitions); `inspect_behaviour` and
   `list_scenarios` read them; `run_scenario`, `stop_run`, `read_run`,
-  `read_code_links`, `check_implementation` and `propose_implementation`
+  `read_code_links`, `check_requirements` (C-55: what supports each
+  requirement, declared, calculated, verified and tested kept apart),
+  `check_implementation` and `propose_implementation`
   are carried out by the Studio with its own services (`Prepared::Studio`),
   and so is `propose_objective` (C-54): the Studio shows the Operator the
   objective's start form with the proposed intent, exploration and budgets;

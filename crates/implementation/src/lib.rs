@@ -15,6 +15,8 @@
 //!   Studio both run.
 //! - [`responsibility`]: a part as the Operator and the Assistant read it
 //!   (purpose, what it owns, contract, dependencies, code, checks, impact).
+//! - [`requirements`]: a requirement's evidence kept apart (C-55): declared,
+//!   calculated from the model, verified by scenarios, tested in code.
 //! - [`CheckReport`]: a set of check results with the code and model they
 //!   saw, kept with the run results in the app's data.
 //!
@@ -24,6 +26,7 @@
 pub mod checks;
 pub mod harness;
 pub mod links;
+pub mod requirements;
 pub mod responsibility;
 pub mod rust;
 pub mod task;

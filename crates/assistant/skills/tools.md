@@ -21,6 +21,7 @@
   - wiring: `{"op": "connect", "parent": "UrlShortener::UrlShortenerService", "kind": "interface", "name": "storage", "definition": "LinkStorage", "from": "api.storage", "to": "store.links"}`
   - subject: `{"op": "create", "parent": "UrlShortener::UniqueCodes", "kind": "subject", "name": "store", "type": "LinkStore"}`
   - satisfy: `{"op": "create", "parent": "UrlShortener", "kind": "satisfy", "requirement": "uniqueCodes", "by": "shortener.store"}`
+  - required constraint: `{"op": "create", "parent": "Drones::MassLimit", "kind": "require constraint", "expression": "s.mass <= limit"}`; an informal one has a `doc` and no expression
 - The Library of building blocks: `search_library` finds blocks by words,
   kind, scope or fit with a port (`fits_port`); `read_library_block`
   describes one in words (read it before you use it); `use_library_block`

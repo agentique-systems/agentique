@@ -70,11 +70,24 @@ checked, and it is reported as a problem; do not write it.
 - A `requirement` usage applies it to this system, with values:
   `requirement fastRedirect : FastRedirect { attribute :>> maxLatencyMs = 50; }`.
 - `satisfy fastRedirect by shortener.api;` names the feature that meets it; the
-  feature's type must fit the subject.
+  feature's type must fit the subject. A satisfy is a claim, not evidence.
+- Constraints make a requirement checkable: `assume constraint { maxLatencyMs > 0 }`
+  (when it applies) and `require constraint { api.latencyMs <= maxLatencyMs }`
+  (what must be true), written on the subject's features and the
+  requirement's attributes. Without an expression (only a `doc`) a
+  constraint is informal. A `requirement` nested in another is a
+  subrequirement, with the same subject unless it binds its own.
+- `check_requirements` says what supports each requirement, kept apart:
+  declared (satisfy), calculated from the model (the constraints on the
+  modelled configuration of the satisfying feature: holds, violated,
+  assumptions not met, not evaluable), scenarios that verify it, linked
+  tests. Report it as it says; a calculation is not a test of a built
+  system, and a declaration alone never means a requirement is met.
 
 ## Not in the subset
 
-Actions, states, calcs, constraints, use cases, flows, messages,
+Actions, states, calcs, constraints outside requirements and scenarios,
+use cases, flows, messages,
 successions, bindings, allocations, actors and stakeholders, enums,
 occurrences, `ref` with kinds other than `part` and `item`, default values
 (`:=`), expressions, `ordered`,
