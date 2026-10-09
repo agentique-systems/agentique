@@ -1009,6 +1009,55 @@
       "kind": "test",
       "path": "crates/orchestrator/tests/cycle.rs",
       "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
+    },
+    {
+      "element": 2417,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::proposalRefused",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_proposal_serving_a_part_is_refused"
+    },
+    {
+      "element": 2422,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::noProposal",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_proposal_serving_a_part_is_refused"
+    },
+    {
+      "element": 2431,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::repair",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_cycle_that_rewrites_the_purpose_is_not_merged_even_when_a_check_hides_the_model"
+    },
+    {
+      "element": 2437,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::noProgress",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/cycle.rs",
+      "symbol": "a_cycle_that_rewrites_the_purpose_is_not_merged_even_when_a_check_hides_the_model"
+    },
+    {
+      "element": 2428,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::toReview",
+      "kind": "symbol",
+      "path": "crates/orchestrator/src/gates.rs",
+      "symbol": "purpose"
+    },
+    {
+      "element": 2437,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::noProgress",
+      "kind": "test",
+      "path": "crates/orchestrator/src/gates.rs",
+      "symbol": "purpose_and_governance_fail_even_when_the_objective_names_them"
+    },
+    {
+      "element": 2806,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::nothingToFix",
+      "kind": "test",
+      "path": "crates/orchestrator/tests/exploring.rs",
+      "symbol": "a_finding_judged_a_wrong_expectation_is_not_fixed_nor_offered_again"
     }
   ],
   "protected": [
