@@ -1076,6 +1076,10 @@ package AgentiqueArchitecture {
         item def NothingToFix :> LeadAnswer {
             doc /* The lead judged every reproduced finding other than a defect (adjudicate_finding, C-55) and proposes nothing: the cycle is done with nothing to fix. */
         }
+        ref part testInstance : Agentique[0..1] {
+            doc /* The build under test, started as a test instance with its own app data: another occurrence of Agentique, which the explorer operates through its control interface. Referred to, not contained: a system that builds systems refers to them, itself included (C-55); containing it would be a composition cycle. */
+        }
+        connect explorer.app to testInstance.control;
     }
 
     part def Agentique {
@@ -1105,6 +1109,10 @@ package AgentiqueArchitecture {
         connect studio.launcher to launcher.launch;
         connect studio.objectives to orchestrator.objectives;
         connect orchestrator.observe to studio.control;
+        port control : ControlPort {
+            doc /* The product's control interface, through which agents of another Agentique (the Orchestrator of the build that started it as a test instance) operate it (C-53, C-54). */
+        }
+        connect control to studio.control;
     }
 
     dependency from Studio to SystemState;

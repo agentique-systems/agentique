@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "next": 2934,
+  "next": 2940,
   "elements": {
     "1000": "action AgentiqueArchitecture::Studio::working::assistantApplied::#1",
     "1001": "send AgentiqueArchitecture::Studio::working::assistantApplied::#1::#1",
@@ -1067,6 +1067,12 @@
     "2931": "send AgentiqueArchitecture::EveryFindingJudgedNotADefect::#6",
     "2932": "accept AgentiqueArchitecture::EveryFindingJudgedNotADefect::ended",
     "2933": "assert constraint AgentiqueArchitecture::EveryFindingJudgedNotADefect::endedAfterTwoEmptyExplorations",
+    "2934": "port AgentiqueArchitecture::Agentique::control",
+    "2935": "doc AgentiqueArchitecture::Agentique::control::#1",
+    "2936": "connection AgentiqueArchitecture::Agentique::#11",
+    "2937": "part AgentiqueArchitecture::Orchestrator::testInstance",
+    "2938": "doc AgentiqueArchitecture::Orchestrator::testInstance::#1",
+    "2939": "connection AgentiqueArchitecture::Orchestrator::#11",
     "673": "package AgentiqueArchitecture",
     "674": "doc AgentiqueArchitecture::#1",
     "675": "import AgentiqueArchitecture::#2",
