@@ -395,3 +395,56 @@ fn an_unnamed_connection_is_deleted_by_its_shown_name() {
         "{gone:?}"
     );
 }
+
+/// C-55: an existing transition gets a new effect of several steps (its old
+/// effect deleted, a composite action created in its place), so a
+/// transition keeps its identity when its behaviour is generalised.
+#[test]
+fn a_transition_keeps_its_identity_when_its_effect_is_replaced_by_several_steps() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Job { attribute size : ScalarValues::Integer; }
+    item def Ack { attribute size : ScalarValues::Integer; }
+    port def JobPort { in item job : Job; out item ack : Ack; }
+    part def Worker {
+        port jobs : JobPort;
+        attribute last : ScalarValues::Integer = 0;
+        exhibit state working {
+            entry;
+            then idle;
+            state idle;
+            transition acknowledge first idle accept job : Job via jobs do send new Ack(size = job.size) via jobs then idle;
+        }
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    let transition = state
+        .tree()
+        .find("Jobs::Worker::working::acknowledge")
+        .unwrap();
+    apply(
+        &mut state,
+        json!({ "description": "Remember the last size before acknowledging", "operations": [
+            { "op": "delete", "element": "Jobs::Worker::working::acknowledge::(send)" },
+            { "op": "create", "parent": "Jobs::Worker::working::acknowledge", "kind": "action", "steps": [
+                { "assign": "last", "value": "job.size" },
+                { "send": "new Ack(size = last)", "via": "jobs" }
+            ] }
+        ]}),
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    assert_eq!(
+        state.tree().find("Jobs::Worker::working::acknowledge"),
+        Some(transition)
+    );
+    let text_now = written(&state);
+    assert!(
+        text_now.contains("assign last := job.size;")
+            && text_now.contains("then send new Ack(size = last) via jobs;"),
+        "{text_now}"
+    );
+}

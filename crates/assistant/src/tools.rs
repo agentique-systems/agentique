@@ -106,6 +106,8 @@ const KINDS: &[ElementKind] = &[
     ElementKind::Accept,
     ElementKind::AssertConstraint,
     ElementKind::Reference,
+    // A composite action, such as a transition's effect of several steps (C-55).
+    ElementKind::Action,
 ];
 
 /// What the Studio should do with a tool call.
@@ -206,6 +208,15 @@ pub fn definitions() -> Value {
         "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; ref or attribute: a value that is not a plain literal, e.g. \"service.screening\"; ref part: the part it refers to, e.g. \"bus\"."),
         "via": name("create send or accept: the port, as a feature chain from the scenario or the part, e.g. \"service.shorten\"."),
         "after": { "type": "boolean", "description": "create accept: wait for the time in `expression` to pass instead of for an item." },
+        "steps": {
+            "type": "array",
+            "description": "create action: its steps, run one after the other in the order given, each a `send` (with `via`) or an `assign` (with `value`); e.g. a new effect of a transition: {\"op\": \"create\", \"parent\": \"Shop::Worker::working::start\", \"kind\": \"action\", \"steps\": [{\"assign\": \"count\", \"value\": \"0\"}, {\"send\": \"new Ack(id = 1)\", \"via\": \"jobs\"}]} after deleting its old effect.",
+            "items": {
+                "type": "object",
+                "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
+                "additionalProperties": false
+            }
+        },
         "guard": name("create or set transition: the condition, e.g. \"attempts < 3\"."),
         "exhibit": { "type": "boolean", "description": "create state: the state machine the owning part or part def exhibits (one per owner)." },
         "initial": name("create exhibited state: the state it enters first (created with `then`)."),

@@ -220,6 +220,16 @@ pub(super) fn members(
                 Some(effect) => out.push(create(inside, effect_step(effect)?)),
             }
         }
+        ElementKind::Action => {
+            let steps = match item.get("steps") {
+                None | Some(Value::Null) => Vec::new(),
+                Some(Value::Array(steps)) => steps.clone(),
+                Some(_) => return Err("`steps` must be a list".into()),
+            };
+            for step in &steps {
+                out.push(create(inside, effect_step(step)?));
+            }
+        }
         _ => {}
     }
     let _ = tree;
