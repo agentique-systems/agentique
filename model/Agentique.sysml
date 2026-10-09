@@ -1,33 +1,18 @@
 package AgentiqueArchitecture {
-    doc /* Agentique: a workspace where the Operator understands and deliberately
-         * changes a system through its architecture, while AI helps build and check
-         * its implementation (ROADMAP §1.5). This model is Agentique's own
-         * architecture, and the contract for its code (C-20): each part says what it
-         * is for, what it owns, its contract and what it must not do; the crates
-         * that implement it are its `Crate` parts; `dependency` lists every allowed
-         * use of one part by another; the scenarios at the end walk the three
-         * workflows of ROADMAP §2.8 C2 across the parts, with their failure paths.
-         * Inside: one System State per project, its history in git, the Library,
-         * scenarios and runs, implementation links and checks, controlled
-         * execution, the Assistant, the builds of Agentique itself, and the
-         * Operator's objectives, which the Orchestrator runs (C-53). Outside:
-         * a project's code and deployments, other people, and any sandbox the
-         * host does not have. The scenarios run in model execution: they check
-         * this model's account of the workflows, not the code; the code is checked
-         * by the tests linked to each step (model/links.json). */
+    doc /* Agentique's own architecture, and the contract for its code (C-20). Its purpose is ROADMAP §1.1's (C-55), held here as the requirement `purpose`. Each part says what it is for, what it owns, its contract and what it must not do; the crates that implement it are its `Crate` parts; `dependency` lists every allowed use of one part by another; requirements state the guarantees; the scenarios walk the workflows across the parts with their failure paths. Inside: one System State per project, its history in git, the Library, scenarios and runs, implementation links and checks, controlled execution, the Assistant, the builds of Agentique itself, and the Operator's objectives, which the Orchestrator runs (C-53). Outside: a project's code and deployments, other people, and any sandbox the host does not have. The scenarios run in model execution: they check this model's account of the workflows, not the code; the code is checked by the tests linked to each step (model/links.json). */
 
     private import ScalarValues::*;
 
     part def Crate {
         doc /* A Cargo package. A part usage typed by Crate and named after the package
-             * says that the crate implements the enclosing part. */
+             * says that the crate implements the enclosing part.
+             */
     }
-
-    // What the parts exchange.
 
     enum def Actor {
         doc /* Who made a change: the Operator, or the Assistant (its changes can be
-             * undone together). */
+             * undone together).
+             */
         enum operator;
         enum assistant;
     }
@@ -43,7 +28,8 @@ package AgentiqueArchitecture {
 
     enum def Tool {
         doc /* The kinds of the Assistant's tool calls that matter to the workflows:
-             * reading changes nothing; applying makes one System State change. */
+             * reading changes nothing; applying makes one System State change.
+             */
         enum readModel;
         enum applyChanges;
     }
@@ -56,7 +42,8 @@ package AgentiqueArchitecture {
 
     item def Edit {
         doc /* An Operator's edit on the Surface or in the Inspector, such as renaming a
-             * part. `locked` says whether it touches a locked element. */
+             * part. `locked` says whether it touches a locked element.
+             */
         attribute locked : Boolean;
     }
 
@@ -64,7 +51,8 @@ package AgentiqueArchitecture {
         doc /* One System State change: typed operations on elements by identity (create,
              * delete, rename, move, connect, set property, lock, unlock), by an actor,
              * against a base revision, with the locks the Operator confirmed. It
-             * applies completely or not at all, and is one undo step. */
+             * applies completely or not at all, and is one undo step.
+             */
         attribute madeBy : Actor;
         attribute touchesLock : Boolean;
         attribute confirmed : Boolean;
@@ -72,7 +60,8 @@ package AgentiqueArchitecture {
 
     item def Applied {
         doc /* The change event: the revision after the change, and what it created,
-             * changed and deleted. */
+             * changed and deleted.
+             */
         attribute revision : Natural;
     }
 
@@ -83,19 +72,22 @@ package AgentiqueArchitecture {
 
     item def Documents {
         doc /* The printed text of the documents a change touched, and the identity
-             * file, for History to save atomically. */
+             * file, for History to save atomically.
+             */
         attribute count : Natural;
     }
 
     item def Saved {
         doc /* Whether the save is durable (its journal written and the files in
-             * place). */
+             * place).
+             */
         attribute ok : Boolean;
     }
 
     item def Load {
         doc /* Read the model folder: after a crash, the save journal is finished or
-             * discarded first, so the model is the old one or the new one. */
+             * discarded first, so the model is the old one or the new one.
+             */
         attribute folder : String;
     }
 
@@ -116,7 +108,8 @@ package AgentiqueArchitecture {
 
     item def SurfaceUpdate {
         doc /* What the Surface and the Panels show after a change: the revision they
-             * now draw. */
+             * now draw.
+             */
         attribute revision : Natural;
     }
 
@@ -142,7 +135,8 @@ package AgentiqueArchitecture {
 
     item def ToolCall {
         doc /* A tool call from the Assistant's runtime, checked against its schema
-             * before the Studio carries it out. */
+             * before the Studio carries it out.
+             */
         attribute tool : Tool;
         attribute touchesLock : Boolean;
     }
@@ -159,7 +153,8 @@ package AgentiqueArchitecture {
 
     item def Report {
         doc /* The turn as the Conversation shows it: the reply, and whether the model
-             * changed (each change can be undone). */
+             * changed (each change can be undone).
+             */
         attribute changed : Boolean;
     }
 
@@ -167,7 +162,8 @@ package AgentiqueArchitecture {
         doc /* The Operator approves a task: its outcome, affected parts, protected
              * boundaries, permitted writes and acceptance criteria, and its required
              * checks, fixed from now on. `passing` says, for the walkthrough, how many
-             * of them the work will pass. */
+             * of them the work will pass.
+             */
         attribute required : Natural;
         attribute passing : Natural;
     }
@@ -185,7 +181,8 @@ package AgentiqueArchitecture {
     item def Brief {
         doc /* What the worker is given, taken from the model each time: the parts in
              * scope with their contracts, the scenarios, the protected paths and
-             * the rules. */
+             * the rules.
+             */
         attribute task : String;
     }
 
@@ -208,19 +205,22 @@ package AgentiqueArchitecture {
 
     item def Verification {
         doc /* The one summary: passed only when every required check passed and nothing
-             * else failed; it names the commit it checked. */
+             * else failed; it names the commit it checked.
+             */
         attribute passed : Boolean;
     }
 
     item def Review {
         doc /* The task for the Operator to review: the model changes and the code
-             * changes together, each required check with its outcome. */
+             * changes together, each required check with its outcome.
+             */
         attribute passed : Boolean;
     }
 
     item def IntegrateRequest {
         doc /* The Operator integrates the reviewed task, or, after seeing what was not
-             * verified, integrates it without a passing verification. */
+             * verified, integrates it without a passing verification.
+             */
         attribute withoutVerification : Boolean;
     }
 
@@ -231,13 +231,15 @@ package AgentiqueArchitecture {
 
     item def Integrated {
         doc /* The branch is at the task commit; nothing else in the working copy
-             * changed. */
+             * changed.
+             */
         attribute ok : Boolean;
     }
 
     item def BuildRequest {
         doc /* Build Agentique from the integrated commit into a versioned folder.
-             * `builds` says, for the walkthrough, whether it compiles. */
+             * `builds` says, for the walkthrough, whether it compiles.
+             */
         attribute builds : Boolean;
     }
 
@@ -248,13 +250,15 @@ package AgentiqueArchitecture {
 
     item def AdoptRequest {
         doc /* Use this build: the launcher starts it. `starts` says, for the
-             * walkthrough, whether it starts and reports ready. */
+             * walkthrough, whether it starts and reports ready.
+             */
         attribute starts : Boolean;
     }
 
     item def Running {
         doc /* Which build runs after adoption: the new one, or the last known good one
-             * when the new one did not start. */
+             * when the new one did not start.
+             */
         attribute build : Started;
     }
 
@@ -264,7 +268,8 @@ package AgentiqueArchitecture {
              * and the permissions it carries. `cycles` is its cycle budget; `explore`
              * says whether its cycles start by exploring the running application;
              * `depth` is 0 for the Operator's and one more than its parent's for a
-             * child (at most 2). */
+             * child (at most 2).
+             */
         attribute cycles : Natural;
         attribute explore : Boolean;
         attribute depth : Natural;
@@ -275,14 +280,16 @@ package AgentiqueArchitecture {
              * parent objective, scope and status; created only by a tool the
              * Orchestrator validates, shown in the objective's thread. `delegates`
              * says whether it starts a child objective, rather than handing work to
-             * another role within a cycle. */
+             * another role within a cycle.
+             */
         attribute delegates : Boolean;
     }
 
     item def CycleReport {
         doc /* One cycle's outcome as the Objectives panel shows it: the findings its
              * exploration reproduced (C-54), whether its change was merged and
-             * whether its build was adopted. */
+             * whether its build was adopted.
+             */
         attribute reproduced : Natural;
         attribute merged : Boolean;
         attribute adopted : Boolean;
@@ -290,29 +297,31 @@ package AgentiqueArchitecture {
 
     item def Observation {
         doc /* The Studio's visible state as text (C-53): its identity, screen, dialog,
-             * selection, controls and commands, at a revision. */
+             * selection, controls and commands, at a revision.
+             */
         attribute revision : Natural;
     }
 
     item def ControlAction {
         doc /* An agent's action on the Studio: a command, input on a control, or a
              * selection, naming the agent, the identity and revision it was observed
-             * against, and its goal and reason for observer mode (C-54). */
+             * against, and its goal and reason for observer mode (C-54).
+             */
         attribute observedAt : Natural;
     }
 
     item def ActionOutcome {
         doc /* Whether the action went through the Studio's own handlers, or was
-             * refused (stale, gone, disabled, paused) and why. */
+             * refused (stale, gone, disabled, paused) and why.
+             */
         attribute ok : Boolean;
     }
-
-    // The contracts: what goes in and out of each part's ports.
 
     port def OperatorPort {
         doc /* The Operator's side of the Studio: edits, undo and opening; messages to
              * the Assistant; tasks, builds and adoption; objectives and their cycles
-             * (C-53); and what the Studio shows. */
+             * (C-53); and what the Studio shows.
+             */
         in item edit : Edit;
         in item undo : Undo;
         in item reopen : Reopen;
@@ -336,7 +345,8 @@ package AgentiqueArchitecture {
 
     port def ChangePort {
         doc /* The System State's one change path: changes, undo and opening in; a
-             * change event or a refusal out. */
+             * change event or a refusal out.
+             */
         in item change : Change;
         in item undo : Undo;
         in item reopen : Reopen;
@@ -354,7 +364,8 @@ package AgentiqueArchitecture {
 
     port def TurnPort {
         doc /* The Assistant's turn: the Operator's message and tool results in; tool
-             * calls and the reply out. */
+             * calls and the reply out.
+             */
         in item intent : Intent;
         in item result : ToolResult;
         in item brief : Brief;
@@ -389,7 +400,8 @@ package AgentiqueArchitecture {
 
     port def ControlPort {
         doc /* The Studio's control interface (C-53): actions in; observations and the
-             * outcome of each action out. */
+             * outcome of each action out.
+             */
         in item request : ControlAction;
         out item observation : Observation;
         out item outcome : ActionOutcome;
@@ -397,23 +409,24 @@ package AgentiqueArchitecture {
 
     port def ObjectivePort {
         doc /* The Orchestrator's side: objectives in; directives and cycle reports out,
-             * for the objective's thread in the Conversation and the dashboard. */
+             * for the objective's thread in the Conversation and the dashboard.
+             */
         in item goal : ObjectiveRequest;
         out item directive : Directive;
         out item cycle : CycleReport;
     }
-
-    // The parts and the crates that implement them.
 
     part def LanguageCore {
         doc /* The KerML/SysML subset: one element tree, text parse and print, name
              * resolution, typing, specialisation, behaviour, expressions and
              * validation. Owns the meaning and validity of a model (it knows no UI,
              * storage or AI). Pure functions the System State, the Library and the
-             * runs call. Depends on no other part. Locked core (R-16). */
+             * runs call. Depends on no other part. Locked core (R-16).
+             */
         part 'agq-language' : Crate {
             doc /* The language core: the SysML subset as an element tree with parse,
-                 * print and validate (Stage 1, R-3 rebuild). */
+                 * print and validate (Stage 1, R-3 rebuild).
+                 */
         }
     }
 
@@ -424,13 +437,15 @@ package AgentiqueArchitecture {
              * (stale, locked, invalid) and leaves everything as it was; a change that
              * cannot be saved is undone and said; a well-formed change that makes the
              * model invalid is applied and its problems shown (R-18). It does not
-             * decide intent, and nothing else changes the model. Locked core (R-16). */
+             * decide intent, and nothing else changes the model. Locked core (R-16).
+             */
         part 'agq-system-state' : Crate;
         port changes : ChangePort;
         port storage : ~FolderPort;
         attribute revision : Natural = 0 {
             doc /* Counts changes since the project was opened; a change prepared against
-                 * an older revision is stale. */
+                 * an older revision is stale.
+                 */
         }
         exhibit state live {
             entry;
@@ -465,11 +480,13 @@ package AgentiqueArchitecture {
              * a save is durable before it is reported (journal, atomic renames); after
              * a crash the next open finishes or discards it, never mixing old and new;
              * a model file edited outside Agentique is never overwritten. Knows no
-             * SysML. The persistence format is locked core (R-16). */
+             * SysML. The persistence format is locked core (R-16).
+             */
         part 'agq-history' : Crate {
             doc /* The model folder of a project: atomic saves of the text files and the
                  * identity and lock file, commits, branches and reading any version,
-                 * through an embedded git (R-6). */
+                 * through an embedded git (R-6).
+                 */
         }
         port folder : FolderPort;
         exhibit state keeping {
@@ -487,7 +504,8 @@ package AgentiqueArchitecture {
              * Library), works out what a block needs, and plans its use, specialisation,
              * overrides and extraction as ordinary System State changes, the same for the
              * Studio and the Assistant. Owns the built-in blocks and My Library's file.
-             * Meaning and validity stay in LanguageCore; applying stays in SystemState. */
+             * Meaning and validity stay in LanguageCore; applying stays in SystemState.
+             */
         part 'agq-library' : Crate;
     }
 
@@ -512,7 +530,8 @@ package AgentiqueArchitecture {
              * objective starts (C-54).
              * Owns presentation (cameras, layouts, selection), the session, Settings,
              * the control interface's event trace and each project's app data
-             * (conversation, jobs, runs, required checks). */
+             * (conversation, jobs, runs, required checks).
+             */
         part 'agq-studio-native' : Crate;
         part 'agq-studio-scene' : Crate;
         port operator : OperatorPort;
@@ -549,7 +568,6 @@ package AgentiqueArchitecture {
             state integrating;
             state building;
             state adopting;
-            // An ordinary edit.
             transition edit first idle accept e : Edit via operator do send new Change(madeBy = Actor::operator, touchesLock = e.locked, confirmed = false) via edits then applying;
             transition shown first applying accept a : Applied via edits do send new SurfaceUpdate(revision = a.revision) via operator then idle;
             transition askLock first applying accept r : Refused via edits if r.reason == Refusal::locked do send new LockQuestion(madeBy = Actor::operator) via operator then asking;
@@ -558,7 +576,6 @@ package AgentiqueArchitecture {
             transition keptLocked first asking accept a : LockAnswer via operator if not a.allow do send new StatusMessage(reason = Refusal::locked) via operator then idle;
             transition undo first idle accept u : Undo via operator do send u via edits then applying;
             transition reopen first idle accept o : Reopen via operator do send o via edits then applying;
-            // An Assistant action.
             transition ask first idle accept i : Intent via operator do send i via assistant then thinking;
             transition read first thinking accept c : ToolCall via assistant if c.tool == Tool::readModel do send new ToolResult(ok = true) via assistant then thinking;
             transition assistantChange first thinking accept c : ToolCall via assistant if c.tool == Tool::applyChanges do send new Change(madeBy = Actor::assistant, touchesLock = c.touchesLock, confirmed = false) via edits then assistantApplying;
@@ -571,7 +588,6 @@ package AgentiqueArchitecture {
             transition assistantConfirmed first assistantAsking accept a : LockAnswer via operator if a.allow do send new Change(madeBy = Actor::assistant, touchesLock = true, confirmed = true) via edits then assistantApplying;
             transition assistantKeptLocked first assistantAsking accept a : LockAnswer via operator if not a.allow do send new ToolResult(ok = false) via assistant then thinking;
             transition reported first thinking accept r : Reply via assistant do send new Report(changed = r.changed) via operator then idle;
-            // A development task.
             transition approve first idle accept a : TaskApproval via operator do action {
                 assign required := a.required;
                 then assign passing := a.passing;
@@ -606,7 +622,8 @@ package AgentiqueArchitecture {
              * development sessions' permission policies and the conversation's entries.
              * Its behaviour comes from a model, so the scenarios stand it in. It never
              * changes the model except through Agentique's tools, and works on files
-             * and commands only inside its session's permission policy. */
+             * and commands only inside its session's permission policy.
+             */
         part 'agq-assistant' : Crate;
         port turn : TurnPort;
     }
@@ -631,7 +648,8 @@ package AgentiqueArchitecture {
              * local Claude login exists, never its token. Not a sandbox: it runs with
              * the Operator's rights and reaches its model's API (Anthropic, or an
              * Anthropic-compatible endpoint). No crate: its code is in claude-agent/src.
-             * A safeguard: locked. */
+             * A safeguard: locked.
+             */
     }
 
     part def Providers {
@@ -646,10 +664,12 @@ package AgentiqueArchitecture {
              * when it is unknown, one deadline for every attempt and wait, and
              * cancellation that sends nothing more. Exposes no rig, tokio or HTTP
              * type. Temporary: agq-assistant still uses reqwest for its hand-written
-             * Claude client until W5.7 moves it here. */
+             * Claude client until W5.7 moves it here.
+             */
         part 'agq-providers' : Crate {
             doc /* The provider layer: one streamed model call for every provider,
-                 * the capability table, keys and usage (S4.2 kept, start of W5.7). */
+                 * the capability table, keys and usage (S4.2 kept, start of W5.7).
+                 */
         }
     }
 
@@ -663,7 +683,8 @@ package AgentiqueArchitecture {
              * the binding the Studio prepared (which provider and model answer, through
              * which adapter and mapping), so a recording answers only the request it
              * was made for (C-52). It never changes the System State and never
-             * reaches a provider or any other service by itself. */
+             * reaches a provider or any other service by itself.
+             */
         part 'agq-simulation' : Crate;
     }
 
@@ -676,7 +697,8 @@ package AgentiqueArchitecture {
              * model/links.json (saved through History). Contract: a verification passes
              * only when every required check passed and nothing else failed; a check
              * that did not run is never a pass. Its processes run through Execution.
-             * A safeguard: locked. */
+             * A safeguard: locked.
+             */
         part 'agq-implementation' : Crate;
         port verdict : VerificationPort;
         exhibit state judging {
@@ -697,7 +719,8 @@ package AgentiqueArchitecture {
              * protected paths are never written, whatever their spelling; integration
              * brings exactly the reviewed commit and touches nothing else. It reports
              * the isolation the host really offers: trusted-local, no sandbox. A
-             * safeguard: locked. */
+             * safeguard: locked.
+             */
         part 'agq-execution' : Crate;
         port jobs : JobPort;
         exhibit state running {
@@ -719,7 +742,8 @@ package AgentiqueArchitecture {
              * handover names, restarts a crashed Studio once and then falls back, and
              * makes a build last known good only after its check after adoption. Owns
              * the builds registry. Depends on no other part, so it works when a new build
-             * does not; it never builds, downloads or deletes. A safeguard: locked. */
+             * does not; it never builds, downloads or deletes. A safeguard: locked.
+             */
         part 'agq-launcher' : Crate;
         port launch : LaunchPort;
         exhibit state launching {
@@ -758,7 +782,8 @@ package AgentiqueArchitecture {
              * passed; a check that did not run is never a pass; weakening a check never
              * counts; budgets and lack of progress stop it; resuming never repeats a
              * completed side effect; Stop interrupts every session. A safeguard:
-             * locked. */
+             * locked.
+             */
         port objectives : ObjectivePort;
         port control : ~ControlPort;
         part 'agq-orchestrator' : Crate;
@@ -766,7 +791,8 @@ package AgentiqueArchitecture {
 
     part def Agentique {
         doc /* The product and its parts, connected as they work together. The Operator
-             * reaches it through the Studio. */
+             * reaches it through the Studio.
+             */
         port operator : OperatorPort;
         part languageCore : LanguageCore;
         part systemState : SystemState;
@@ -792,99 +818,127 @@ package AgentiqueArchitecture {
         connect orchestrator.control to studio.control;
     }
 
-    // Allowed dependencies, client to supplier. A crate may use crates of its own part
-    // and of the parts its part depends on directly. Arrows point inward.
-
     dependency from Studio to SystemState;
+
     dependency from Studio to Assistant {
         doc /* The Conversation in the Studio sends the Operator's messages to the
-             * Assistant and shows its replies (refines R-14). */
+             * Assistant and shows its replies (refines R-14).
+             */
     }
+
     dependency from Studio to LanguageCore {
         doc /* Element identities and model types shown on the Surface. */
     }
+
     dependency from Studio to Providers {
         doc /* Settings tests keys and lists models; a live evaluation's model client
              * (the Studio's, handed to Simulation) asks the capability table how an
-             * agent's model is called and calls it through Providers (C-52). */
+             * agent's model is called and calls it through Providers (C-52).
+             */
     }
+
     dependency from Studio to Library {
         doc /* The Library panel, insertion, previews and My Library. */
     }
+
     dependency from Assistant to SystemState;
+
     dependency from Assistant to LanguageCore {
         doc /* Element identities and model types in tool calls. */
     }
+
     dependency from Assistant to Providers {
         doc /* Model calls: requests, streamed replies, usage; and the key of the Claude
              * Agent runtime's model (Anthropic's, or the provider whose
-             * Anthropic-compatible endpoint it uses, C-53) for its process. */
+             * Anthropic-compatible endpoint it uses, C-53) for its process.
+             */
     }
+
     dependency from Assistant to Library {
         doc /* The Library tools: search, read and use building blocks. */
     }
+
     dependency from Assistant to ClaudeAgentRuntime {
         doc /* The Claude Agent runtime: started per turn, protocol 2 (C-51, C-53). */
     }
+
     dependency from Studio to Simulation {
         doc /* The Scenarios tab, run controls, traces and results (C-50). */
     }
+
     dependency from Studio to Implementation {
         doc /* Implementation links, checks, drift and patch review (C-50). */
     }
+
     dependency from Studio to Execution {
         doc /* Jobs the Studio starts, cancels and resumes; trusted-local mode (C-50). */
     }
+
     dependency from Studio to Launcher {
         doc /* Builds, trying and adopting: the registry and the manifests (C-51). */
     }
+
     dependency from Assistant to Simulation {
         doc /* The run tools prepare typed run requests and read results (C-50). */
     }
+
     dependency from Assistant to Implementation {
         doc /* The code-link tools and the implementation task context (C-50). */
     }
+
     dependency from Assistant to Execution {
         doc /* The implementation tools prepare typed operations; the Studio carries
-             * them out (C-50). */
+             * them out (C-50).
+             */
     }
+
     dependency from Library to SystemState {
         doc /* Plans are System State changes, tried on a copy of the state. */
     }
+
     dependency from Library to LanguageCore {
         doc /* Blocks are definitions; their features and fit come from Semantics. */
     }
+
     dependency from SystemState to LanguageCore;
+
     dependency from SystemState to History;
+
     dependency from Simulation to LanguageCore {
         doc /* Scenarios, behaviour and expressions are model elements; runs read a
-             * snapshot of the tree. */
+             * snapshot of the tree.
+             */
     }
+
     dependency from Implementation to LanguageCore {
         doc /* Links name elements by identity; contract shapes come from item and enum
-             * definitions. */
+             * definitions.
+             */
     }
+
     dependency from Implementation to Simulation {
         doc /* The implementation runner shares the run contract, the step interpreter
-             * and the check evaluator with model execution. */
+             * and the check evaluator with model execution.
+             */
     }
+
     dependency from Implementation to Execution {
         doc /* Builds, tests and the harness run as controlled processes. */
     }
-
-    // The guarantees the workflows keep, and the parts that keep them.
 
     requirement def OneChangePath {
         doc /* The Surface, the Inspector, the Library and the Assistant change the model
              * only through System State changes, each one undo step; a change to a
              * locked part applies only after the Operator confirms that change, or
-             * within an objective that names it (C-53). */
+             * within an objective that names it (C-53).
+             */
         subject systemState : SystemState;
     }
 
     requirement def SavedBeforeShown {
         doc /* A change is durable before the Surface shows it as applied; one that cannot
-             * be saved is undone and said; reopening shows the model as last saved. */
+             * be saved is undone and said; reopening shows the model as last saved.
+             */
         subject systemState : SystemState;
     }
 
@@ -892,14 +946,16 @@ package AgentiqueArchitecture {
         doc /* The Assistant changes the model only through Agentique's tools, each
              * checked and carried out by the Studio on the one change path, whatever
              * runtime runs its turn; in a development session its other side effects
-             * happen only inside the session's permission policy (C-53). */
+             * happen only inside the session's permission policy (C-53).
+             */
         subject studio : Studio;
     }
 
     requirement def RequiredChecksDecide {
         doc /* A task's required checks are fixed when it is approved; it is integrated
              * only with a current, passing verification of all of them, or by the
-             * Operator's explicit choice, recorded with the task. */
+             * Operator's explicit choice, recorded with the task.
+             */
         subject implementation : Implementation;
     }
 
@@ -913,60 +969,73 @@ package AgentiqueArchitecture {
              * acceptance criterion passed on the reviewed commit, an independent review
              * approved it and the repository's own checks passed, and a build is adopted
              * only after its test instance passed; an agent's judgment never overrides
-             * a failing check (C-53). */
+             * a failing check (C-53).
+             */
         subject orchestrator : Orchestrator;
     }
 
     requirement oneChangePath : OneChangePath;
+
     requirement savedBeforeShown : SavedBeforeShown;
+
     requirement assistantThroughTools : AssistantThroughTools;
+
     requirement requiredChecksDecide : RequiredChecksDecide;
+
     requirement recoverableAdoption : RecoverableAdoption;
+
     requirement gatesDecide : GatesDecide;
 
     part agentique : Agentique;
 
     satisfy oneChangePath by agentique.systemState;
-    satisfy savedBeforeShown by agentique.systemState;
-    satisfy assistantThroughTools by agentique.studio;
-    satisfy requiredChecksDecide by agentique.implementation;
-    satisfy recoverableAdoption by agentique.launcher;
-    satisfy gatesDecide by agentique.orchestrator;
 
-    // The Orchestrator's allowed dependencies (C-53), after the earlier anonymous
-    // members so that their identities keep their places.
+    satisfy savedBeforeShown by agentique.systemState;
+
+    satisfy assistantThroughTools by agentique.studio;
+
+    satisfy requiredChecksDecide by agentique.implementation;
+
+    satisfy recoverableAdoption by agentique.launcher;
+
+    satisfy gatesDecide by agentique.orchestrator;
 
     dependency from Studio to Orchestrator {
         doc /* The Conversation and the Objectives panel start, show, steer and stop
              * objectives; the control interface's types are the Orchestrator's, which
-             * drives test instances. */
+             * drives test instances.
+             */
     }
+
     dependency from Orchestrator to Assistant {
         doc /* Each role is an agent session on the Assistant's runtime. */
     }
+
     dependency from Orchestrator to Execution {
         doc /* Worktrees, commits and commands; pushing and pull requests as exact
-             * commands on Execution's existing allow-list. */
+             * commands on Execution's existing allow-list.
+             */
     }
+
     dependency from Orchestrator to Implementation {
         doc /* The required checks and the one verification summary. */
     }
+
     dependency from Orchestrator to Providers {
         doc /* Typed decisions in operation, and prices for the spend budget. */
     }
+
     dependency from Orchestrator to Launcher {
         doc /* Builds' manifests and the registry, for trial and adoption. */
     }
-
-    // C-54's guarantees, after the earlier anonymous members so that their
-    // identities keep their places.
 
     requirement def FindingsReproduce {
         doc /* A finding is recorded only when a deterministic check failed during
              * exploration (an invariant of the running application, or an expectation
              * stated before the action) and its replay from a fresh start of the same
              * build fails the same way; a model's opinion alone is never a finding
-             * (C-54). */
+             * (C-54).
+             */
         subject orchestrator : Orchestrator;
     }
 
@@ -976,7 +1045,8 @@ package AgentiqueArchitecture {
              * base build, or a test that compiles and runs there) and passes on the
              * change; no tests, a compile error or a broken setup on the base is no
              * evidence; a change to user-facing code is evaluated in a test instance
-             * (C-54). */
+             * (C-54).
+             */
         subject orchestrator : Orchestrator;
     }
 
@@ -985,35 +1055,41 @@ package AgentiqueArchitecture {
              * against the parent's budgets, nests at most two deep and is started only
              * as a directive the Orchestrator validated and recorded; an agent never
              * grants itself a permission, answers the Operator's approvals or speaks as
-             * the Operator (C-54). */
+             * the Operator (C-54).
+             */
         subject orchestrator : Orchestrator;
     }
 
     requirement def OnlyGivenCredentials {
         doc /* A Claude Agent runtime session uses only the credential the Studio gave
              * it; one that would use another, such as the machine's claude.ai login,
-             * stops before its first model call (C-54). */
+             * stops before its first model call (C-54).
+             */
         subject claudeAgent : ClaudeAgentRuntime;
     }
 
     requirement findingsReproduce : FindingsReproduce;
+
     requirement defectShownBefore : DefectShownBefore;
+
     requirement childWorkBounded : ChildWorkBounded;
+
     requirement onlyGivenCredentials : OnlyGivenCredentials;
 
     satisfy findingsReproduce by agentique.orchestrator;
-    satisfy defectShownBefore by agentique.orchestrator;
-    satisfy childWorkBounded by agentique.orchestrator;
-    satisfy onlyGivenCredentials by agentique.claudeAgent;
 
-    // The workflows (ROADMAP §2.8 C2), with their failure paths. Each runs in model
-    // execution and steps across the parts; each step's code and tests are linked.
+    satisfy defectShownBefore by agentique.orchestrator;
+
+    satisfy childWorkBounded by agentique.orchestrator;
+
+    satisfy onlyGivenCredentials by agentique.claudeAgent;
 
     verification def RenameAPart {
         doc /* An ordinary edit: the Operator renames a part; the System State applies the
              * change and History saves it before the Surface shows it; undo brings the
              * old name back, saved too; closing and reopening shows the model as last
-             * saved. */
+             * saved.
+             */
         subject product : Agentique;
         objective {
             verify oneChangePath;
@@ -1038,7 +1114,8 @@ package AgentiqueArchitecture {
 
     verification def RenameALockedPart {
         doc /* A failure path of the ordinary edit: the part is locked. The change is
-             * refused until the Operator confirms it; refused, nothing changes. */
+             * refused until the Operator confirms it; refused, nothing changes.
+             */
         subject product : Agentique;
         objective {
             verify oneChangePath;
@@ -1062,7 +1139,8 @@ package AgentiqueArchitecture {
     verification def AChangeThatCannotBeSaved {
         doc /* A failure path of the ordinary edit: the save fails (a full disk, a model
              * file edited outside Agentique). The change is not applied, and the status
-             * bar says so. */
+             * bar says so.
+             */
         subject product : Agentique;
         objective {
             verify savedBeforeShown;
@@ -1083,7 +1161,8 @@ package AgentiqueArchitecture {
         doc /* An Assistant action: the Operator asks; the Assistant reads the model, then
              * changes a locked part; the Studio asks the Operator, who allows it; the
              * change goes through the one change path; the Assistant reports what it
-             * did. The Assistant's decisions come from a model, so they are stood in. */
+             * did. The Assistant's decisions come from a model, so they are stood in.
+             */
         subject product : Agentique;
         objective {
             verify assistantThroughTools;
@@ -1122,7 +1201,8 @@ package AgentiqueArchitecture {
 
     verification def TheAssistantIsRefusedALock {
         doc /* A failure path of the Assistant action: the Operator keeps the lock; the
-             * Assistant is told, changes nothing and says so. */
+             * Assistant is told, changes nothing and says so.
+             */
         subject product : Agentique;
         objective {
             verify assistantThroughTools;
@@ -1153,7 +1233,8 @@ package AgentiqueArchitecture {
              * Execution makes its worktree; the worker (the Assistant) changes the code;
              * the Studio runs every required check on the task commit and
              * Implementation judges them; the Operator reviews and integrates exactly
-             * that commit, builds it and adopts the build, which the launcher starts. */
+             * that commit, builds it and adopts the build, which the launcher starts.
+             */
         subject product : Agentique;
         objective {
             verify requiredChecksDecide;
@@ -1186,7 +1267,8 @@ package AgentiqueArchitecture {
     verification def ARequiredCheckThatDidNotRun {
         doc /* A failure path of the development task: one required check did not pass (it
              * failed, or did not run). The verification does not pass, and integration
-             * is refused unless the Operator says otherwise, explicitly. */
+             * is refused unless the Operator says otherwise, explicitly.
+             */
         subject product : Agentique;
         objective {
             verify requiredChecksDecide;
@@ -1210,7 +1292,8 @@ package AgentiqueArchitecture {
 
     verification def ANewBuildThatDoesNotStart {
         doc /* A failure path of adoption: the new build does not start; the launcher
-             * starts the last known good build. */
+             * starts the last known good build.
+             */
         subject product : Agentique;
         objective {
             verify recoverableAdoption;
@@ -1221,4 +1304,11 @@ package AgentiqueArchitecture {
             running.build == Started::lastKnownGood
         }
     }
+
+    requirement def Purpose {
+        doc /* Agentique's purpose, as ROADMAP §1.1 states it (C-55; the one authoritative statement, referred to here, not restated). W13.4 states its obligations as subrequirements of the requirement `purpose`; the purpose and its protections change only by the Operator's decision, never inside an objective. */
+        subject product : Agentique;
+    }
+
+    requirement purpose : Purpose;
 }

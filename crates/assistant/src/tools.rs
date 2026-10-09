@@ -185,7 +185,7 @@ pub fn definitions() -> Value {
     let name = |description: &str| json!({ "type": "string", "description": description });
     let operation_fields = json!({
         "op": { "type": "string", "enum": ["create", "delete", "rename", "move", "connect", "set"] },
-        "element": name("delete, rename, move, set: qualified name of the element, e.g. \"Shop::Store\"."),
+        "element": name("delete, rename, move, set: qualified name of the element, e.g. \"Shop::Store\"; an element without a name by the name the tools show, e.g. \"Shop::Service::(connect api.orders to store.orders)\"."),
         "parent": name("create, move, connect: qualified name of the new owner. Omit for the top level of the model."),
         "kind": { "type": "string", "enum": kinds, "description": "create: what to create." },
         "name": name("create: the new element's name. rename: the new name."),
@@ -1283,10 +1283,36 @@ fn parent(tree: &Tree, item: &Value) -> Result<Parent, String> {
     }
 }
 
+/// The element a qualified name names: by its members' names, or, for an
+/// element without a name (a connection, a satisfy, a transition without
+/// one), by the name the tools show it under, such as
+/// `Shop::Store::(connect api.orders to store.orders)` (C-55: agents could
+/// otherwise never change or delete it). Two unnamed elements shown under
+/// the same name are ambiguous and refused.
 fn find(tree: &Tree, name: &str) -> Result<ElementId, String> {
-    tree.find(name).ok_or_else(|| {
-        format!("there is no element `{name}`; use its qualified name, e.g. `Package::Part`")
-    })
+    if let Some(id) = tree.find(name) {
+        return Ok(id);
+    }
+    if name.contains('(') {
+        let matches: Vec<ElementId> = tree
+            .walk()
+            .into_iter()
+            .filter(|id| tree.effective_name(*id).is_none() && tree.qualified_name(*id) == name)
+            .collect();
+        match matches[..] {
+            [id] => return Ok(id),
+            [] => {}
+            _ => {
+                return Err(format!(
+                    "`{name}` names {} elements without a name of their own; give the one you mean a name first",
+                    matches.len()
+                ));
+            }
+        }
+    }
+    Err(format!(
+        "there is no element `{name}`; use its qualified name, e.g. `Package::Part`, or for an element without a name the name the tools show, e.g. `Package::Part::(connect a.p to b.q)`"
+    ))
 }
 
 fn kind_from(keyword: &str) -> Result<ElementKind, String> {
