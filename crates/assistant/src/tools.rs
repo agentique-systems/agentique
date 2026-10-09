@@ -200,8 +200,8 @@ pub fn definitions() -> Value {
         "ref": { "type": "boolean", "description": "create, set (part or item): true for a referential usage, `ref part`: it refers to a part that exists elsewhere instead of containing one, so nothing is copied; give the part it refers to as `expression`, e.g. \"bus\" or \"power.bus\" (without one it is not bound: the part it refers to is not identified in this model). false (the default) makes it composite: contained, and existing only with its owner. A redefinition of a composite part stays composite, whatever it says: declare the inherited one `ref`. Share one part between several users with one composite part and `ref` parts bound to it, never a second composite part." },
         "value": { "type": ["string", "number", "boolean"], "description": "create, set: the value of an attribute." },
         "doc": name("create, set: documentation in plain words."),
-        "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\"."),
-        "to": name("connect: the second end, e.g. \"store.links\"."),
+        "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\". create or set transition: the state it leaves (set needs `to` too)."),
+        "to": name("connect: the second end, e.g. \"store.links\". create or set transition: the state it enters."),
         "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
         "requirement": name("create satisfy: the requirement being satisfied."),
         "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\"."),
@@ -1267,6 +1267,18 @@ fn operations_of(tree: &Tree, item: &Value) -> Result<Vec<Operation>, String> {
             }
             if let Some(text) = optional_str(item, "guard")? {
                 properties.push(Property::Guard(Some(factory::expression(text)?)));
+            }
+            // A transition's source and target (C-55): both, so a
+            // transition moves between states keeping its identity.
+            if tree[element].kind == ElementKind::Transition
+                && (item.get("from").is_some() || item.get("to").is_some())
+            {
+                let from = required_str(item, "from")?;
+                let to = required_str(item, "to")?;
+                properties.push(Property::Ends(vec![
+                    Reference::new(from),
+                    Reference::new(to),
+                ]));
             }
             if item.get("features").is_some() {
                 let features = factory::set_features(tree, element, item)?;

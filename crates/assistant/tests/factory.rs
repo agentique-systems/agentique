@@ -448,3 +448,47 @@ fn a_transition_keeps_its_identity_when_its_effect_is_replaced_by_several_steps(
         "{text_now}"
     );
 }
+
+/// C-55: `set` moves a transition between states, keeping its identity.
+#[test]
+fn a_transition_is_moved_between_states_by_set() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Job;
+    port def JobPort { in item job : Job; }
+    part def Worker {
+        port jobs : JobPort;
+        exhibit state working {
+            entry;
+            then idle;
+            state idle;
+            state busy;
+            state spare;
+            transition start first idle accept j : Job via jobs then spare;
+        }
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    let start = state.tree().find("Jobs::Worker::working::start").unwrap();
+    apply(
+        &mut state,
+        json!({ "description": "Start goes to busy", "operations": [
+            { "op": "set", "element": "Jobs::Worker::working::start", "from": "idle", "to": "busy" },
+            { "op": "delete", "element": "Jobs::Worker::working::spare" }
+        ]}),
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    assert_eq!(
+        state.tree().find("Jobs::Worker::working::start"),
+        Some(start)
+    );
+    assert!(
+        written(&state).contains("transition start first idle accept j : Job via jobs then busy;"),
+        "{}",
+        written(&state)
+    );
+}
