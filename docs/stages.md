@@ -2090,6 +2090,12 @@ it). Read against the code and the model before any change:
 | W13.4 The self-model | #118 | In review (below); the purpose's subrequirements follow W13.3 |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | — | In progress (`stage13/drone`) |
+| W13.1 Direction | #117 | In review |
+| W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
+| W13.3 Requirement constraints and evidence | — | In review (`stage13/requirements`, below) |
+| W13.4 The self-model | — | In progress (`stage13/self-model`) |
+| W13.5 Alignment in the loop | — | In review (`stage13/alignment`, below) |
+| W13.6 A second system | — | Not started |
 | W13.7 Proof | — | Not started |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
@@ -2239,3 +2245,29 @@ nothing here says the Operator accepted anything).
   element exists under that name, the path exists, the function is defined
   there. It found two stale links on `main` (a test moved to the
   Orchestrator in W11.5, a test renamed in W12.5), fixed.
+
+**W13.3 Requirement constraints and evidence** (`stage13/requirements`;
+nothing here says the Operator accepted anything). Before: requirements had
+a subject, doc text, attributes and `satisfy`; the Requirements panel
+headlined "N of M satisfied" from declarations. Now: assumed and required
+constraints (formal or informal) and subrequirements on the whole path
+(language, System State, `apply_changes`, `read_model`), their evaluation on
+the modelled configuration of each satisfying feature (`agq-simulation`,
+`requirements`: roll-ups through feature chains, values worked out once with
+cycle detection, a redefinition in a usage winning over its definition;
+problems in the model slice, parts with a multiplicity other than one,
+informal or undetermined values give "not evaluable", never a pass), and the
+evidence ladder (`agq-implementation`, `requirements`): declared, calculated,
+scenarios with their freshness, linked tests. The panel's headline counts
+standings ("1 violated by calculation · 1 holds by calculation · 1 only
+declared · 1 with no evidence (of 4)"), each row opens its ladder, the
+Inspector shows the same, and the button says "Declare satisfied by …". The
+Assistant's `check_requirements` answers the ladder as text. Tested:
+language, System State, simulation (a mass budget that holds, is violated
+with its values, has assumptions not met, is informal or undetermined, a
+violated subrequirement, one definition reused by two usages with different
+limits), assistant, implementation and Studio tests: 352 passed after
+rebasing on `main`; the Studio's own 185 passed on the branch's base. Not
+verified: the panel by eye, the reference run, a real model calling
+`check_requirements`. Limits: no units; package-level constants are not
+read; scenario runs still read only earlier attributes of the same part.
