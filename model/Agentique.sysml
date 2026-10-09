@@ -1,21 +1,5 @@
 package AgentiqueArchitecture {
-    doc /* Agentique: a workspace where the Operator understands and deliberately
-         * changes a system through its architecture, while AI helps build and check
-         * its implementation (ROADMAP §1.5). This model is Agentique's own
-         * architecture, and the contract for its code (C-20): each part says what it
-         * is for, what it owns, its contract and what it must not do; the crates
-         * that implement it are its `Crate` parts; `dependency` lists every allowed
-         * use of one part by another; the scenarios at the end walk the three
-         * workflows of ROADMAP §2.8 C2 across the parts, with their failure paths.
-         * Inside: one System State per project, its history in git, the Library,
-         * scenarios and runs, implementation links and checks, controlled
-         * execution, the Assistant, the builds of Agentique itself, and the
-         * Operator's objectives, which the Orchestrator runs (C-53). Outside:
-         * a project's code and deployments, other people, and any sandbox the
-         * host does not have. The scenarios run in model execution: they check
-         * this model's account of the workflows, not the code; the code is checked
-         * by the tests linked to each step (model/links.json).
-         */
+    doc /* Agentique's own architecture, and the contract for its code (C-20). Its purpose is ROADMAP §1.1's (C-55), held here as the requirement `purpose`. Each part says what it is for, what it owns, its contract and what it must not do; the crates that implement it are its `Crate` parts; `dependency` lists every allowed use of one part by another; requirements state the guarantees; the scenarios walk the workflows across the parts with their failure paths. Inside: one System State per project, its history in git, the Library, scenarios and runs, implementation links and checks, controlled execution, the Assistant, the builds of Agentique itself, and the Operator's objectives, which the Orchestrator runs (C-53). Outside: a project's code and deployments, other people, and any sandbox the host does not have. The scenarios run in model execution: they check this model's account of the workflows, not the code; the code is checked by the tests linked to each step (model/links.json). */
 
     private import ScalarValues::*;
 
@@ -1322,11 +1306,9 @@ package AgentiqueArchitecture {
     }
 
     requirement def Purpose {
-        doc /* Agentique's purpose, stated once in ROADMAP §1.1 (C-55): a system for understanding, modelling, simulating, verifying, implementing and evolving systems through explicit KerML/SysML architecture, which is itself such a system. Its obligations are the requirements this definition gathers; the purpose and its protections change only by the Operator's decision, never inside an objective. */
+        doc /* Agentique's purpose, as ROADMAP §1.1 states it (C-55; the one authoritative statement, referred to here, not restated). W13.4 states its obligations as subrequirements of the requirement `purpose`; the purpose and its protections change only by the Operator's decision, never inside an objective. */
         subject product : Agentique;
     }
 
     requirement purpose : Purpose;
-
-    satisfy purpose by agentique;
 }

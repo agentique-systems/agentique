@@ -1359,7 +1359,7 @@ The workflow (`crates/orchestrator/tests/workflow.rs`): a test instance of the S
 
 ## Stage 12: Agentique tests and improves itself (C-54)
 
-Status: **in progress.** Started on 2026-10-04 under the Operator's direction
+Status: **in progress** (its mechanisms merged; its proof, W12.7, runs as Stage 13's W13.7 under C-55). Started on 2026-10-04 under the Operator's direction
 (C-54, ROADMAP §6.9): from one intent, Agentique explores its own running
 application, reproduces what it finds, fixes and adopts, and explores the
 adopted version with what it learned. Nothing here says the Operator accepted
@@ -2084,19 +2084,21 @@ it). Read against the code and the model before any change:
 
 | Item | Pull request | State |
 |---|---|---|
-| W13.1 Direction | — | In review |
+| W13.1 Direction | #117 | In review |
 | W13.2 Referential usages | — | In progress |
 | W13.3 Requirement constraints and evidence | — | In progress |
-| W13.4 The self-model | — | Not started |
+| W13.4 The self-model | — | In progress (`stage13/self-model`) |
 | W13.5 Alignment in the loop | — | In progress |
 | W13.6 A second system | — | Not started |
 | W13.7 Proof | — | Not started |
 
-**Changing a model without a window.** External agents (Claude Code during a
-bootstrap) change a project's model through Agentique's own operations, not
-by editing its files: `cargo run -p agq-assistant --example apply_changes --
-<project folder> <changes.json>` opens the project, prepares each call of the
-file (the input of the `apply_changes` tool, or a list of them) exactly as the
-Assistant's tool does, applies it as one System State change and saves it;
-`--confirm <qualified name>` confirms a change to a locked element, as the
-Operator does, and is recorded in the change's description.
+**W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
+protections named; C-55 and Stage 13; the claims of §4.14; alignment in
+§4.16; `AGENTS.md`, `README.md` and the one-truth tables refer to §1.1. The
+self-model holds the requirement `purpose` (no `satisfy` yet: the
+Requirements panel would show a declaration as satisfaction until W13.3),
+locked on the Operator's C-55 instruction. External agents change a model
+through `apply_changes` without a window (`README.md`, "Changing a model
+without a window"); the tools now also address an element without a name by
+the name they show it under (`Owner::(connect a to b)`), so agents can change
+or delete connections and `satisfy` relationships.

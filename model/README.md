@@ -28,6 +28,12 @@ How to read it, from the top down:
    check this model's account of the workflow, not the code. The code is
    checked by the tests linked to each step.
 
+Changes are made through Agentique (the Studio, the Assistant's tools, or
+the `apply_changes` example for an agent without a window), which prints the
+model as it saves it: new members are added after the existing ones, and a
+member without a name (a connection, a `satisfy`) is identified by its
+position among its owner's unnamed members, so they are not reordered by hand.
+
 Beside it, as in every project:
 
 - `agentique.json`: the identity file (element ids, and the locks: the locked

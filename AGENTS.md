@@ -27,8 +27,10 @@ are its primary users: these rules are theirs as much as any person's.
    State operations or the persistence format requires an explicit Operator
    decision, recorded in ROADMAP §7.6.
 5. **Changes that cut across parts start in the self-model.** Update
-   `model/` first (Agentique's own project model). The dependency check (R-15)
-   must stay green.
+   `model/` first (Agentique's own project model), through Agentique's own
+   operations (the Studio, the Assistant's tools, or, without a window, the
+   `apply_changes` example in `README.md`), never by editing its files. The
+   dependency check (R-15) must stay green.
 6. **No new crate, top-level folder, register, generator or evidence format**
    without a distinct responsibility in the self-model and a reason the
    Operator can see.
@@ -101,8 +103,8 @@ code and are committed.
   implementation link, drift, agent, autonomy mode, objective, cycle,
   permission policy, control interface, observation, typed decision,
   exploration, finding, testing knowledge, child objective, observer mode,
-  directive, thread, approved baseline. A new product term needs a reason and
-  a glossary entry
+  directive, thread, approved baseline, disposition. A new product term needs
+  a reason and a glossary entry
   (ROADMAP §9).
 
 ## One truth per topic (ROADMAP §8.2)
@@ -111,7 +113,8 @@ code and are committed.
 |---|---|
 | Direction, decisions and stages | `ROADMAP.md` |
 | Stage progress | `docs/stages.md` |
-| What Agentique is and how to run it | `README.md` |
+| Agentique's purpose | `ROADMAP.md` §1.1 |
+| What Agentique does and how to run it | `README.md` |
 | Architecture | `model/` (Agentique's own project model) |
 | Supported KerML/SysML constructs and deviations | `docs/subset.md`, `docs/deviations.md` |
 | Design tokens and components | the tokens module and the component gallery |

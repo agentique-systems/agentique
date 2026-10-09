@@ -1,11 +1,9 @@
 # Agentique
 
-Agentique is a system for understanding, modelling, simulating, verifying,
-implementing and evolving systems through explicit KerML/SysML v2
-architecture, and it is itself such a system; its purpose is stated once, in
-[ROADMAP.md §1.1](ROADMAP.md). It is a native desktop application in which a
-person (the Operator) and AI agents design, simulate and implement systems
-together, working at the level of system architecture rather than code.
+Agentique's purpose is stated once, in [ROADMAP.md §1.1](ROADMAP.md). It is
+delivered as a native desktop application in which a person (the Operator)
+and AI agents design, simulate and implement systems together, working at the
+level of system architecture rather than code.
 
 The Operator works in the **Studio**, which has two equal ways to work:
 
@@ -141,6 +139,23 @@ place by the component gallery:
 ```text
 cargo run --release -p agq-studio-native -- --fixture components --no-restore
 ```
+
+### Changing a model without a window
+
+An agent without a window (Claude Code during a bootstrap) changes a
+project's model through Agentique's own operations, never by editing its
+files (ROADMAP §8.1 rule 5):
+
+```text
+cargo run -p agq-assistant --example apply_changes -- <project folder> <changes.json>
+```
+
+`changes.json` holds the input of the Assistant's `apply_changes` tool, or a
+list of them; each is checked and prepared exactly as the tool does, applied
+as one System State change and saved (not committed). Locks are the
+Operator's: `--confirm <qualified name>` confirms a lock for a change that is
+refused because of it, and `--lock <qualified name>` locks an element, each
+only on the Operator's explicit instruction for that change.
 
 ## Checks
 
