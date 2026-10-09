@@ -288,6 +288,9 @@ impl Printer<'_> {
         if e.exhibit {
             parts.push("exhibit".into());
         }
+        if e.referential {
+            parts.push("ref".into());
+        }
         if e.kind != ElementKind::Reference {
             parts.push(e.kind.keyword().into());
         }
@@ -464,6 +467,7 @@ fn is_bare_connect(e: &Element) -> bool {
         && e.multiplicity.is_none()
         && !e.is_abstract
         && !e.is_end
+        && !e.referential
         && e.direction.is_none()
 }
 

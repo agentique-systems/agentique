@@ -844,6 +844,7 @@ impl<'a> Checker<'a> {
         if let Some(value) = element.value.clone() {
             self.check_value(id, &value);
         }
+        self.check_binding(id);
         if kind == ElementKind::Enum
             && self.model.tree[id].owner().map(|o| self.kind(o)) == Some(ElementKind::EnumDef)
             && (!self.model.tree[id].typed_by.is_empty()
@@ -978,6 +979,112 @@ impl<'a> Checker<'a> {
         }
     }
 
+    /// Whether a part or item usage refers to its value or contains it:
+    /// `Some((true, kind))` for `ref part` / `ref item`, and for a usage
+    /// without a kind keyword that gives an inherited part or item usage a
+    /// value (`:>> supply = bus;`: a reference usage is referential by
+    /// definition); `Some((false, kind))` for a composite part or item.
+    /// `kind` is `Part` or `Item`. `None` for anything else.
+    pub(crate) fn part_binding(&self, id: ElementId) -> Option<(bool, ElementKind)> {
+        let element = self.model.get(id);
+        match element.kind {
+            ElementKind::Part | ElementKind::Item => Some((element.referential, element.kind)),
+            ElementKind::Reference if element.value.is_some() || element.expression.is_some() => {
+                let mut stack: Vec<ElementId> = self.model.redefined(id).to_vec();
+                let mut seen = Vec::new();
+                while let Some(next) = stack.pop() {
+                    if seen.contains(&next) {
+                        continue;
+                    }
+                    seen.push(next);
+                    match self.kind(next) {
+                        kind @ (ElementKind::Part | ElementKind::Item) => {
+                            return Some((true, kind));
+                        }
+                        ElementKind::Reference => stack.extend(self.model.redefined(next).iter()),
+                        _ => {}
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
+    }
+
+    /// The value of a part or item usage binds it (SysML 7.13.4). A
+    /// referential usage refers to a part (or item) usage that exists
+    /// elsewhere, so its value names one whose types fit; a composite one
+    /// is never bound to another part, which would then be owned twice
+    /// (deviation 19).
+    fn check_binding(&mut self, id: ElementId) {
+        let Some((referential, kind)) = self.part_binding(id) else {
+            return;
+        };
+        let element = &self.model.tree[id];
+        if element.value.is_none() && element.expression.is_none() {
+            return;
+        }
+        let noun = kind.keyword();
+        let named = match (&element.value, &element.expression) {
+            (None, Some(Expression::Name(reference))) => Some(reference.clone()),
+            _ => None,
+        };
+        let target = named
+            .as_ref()
+            .and_then(|reference| self.model.target(id, Role::Value, reference).ok())
+            .filter(|target| self.model.exists(*target));
+        if !referential {
+            if let Some(target) = target
+                && matches!(self.kind(target), ElementKind::Part | ElementKind::Item)
+            {
+                let message = format!(
+                    "a composite {noun} cannot be bound to another {}: it would be owned twice; make it `ref {noun}` to share it",
+                    self.kind(target).keyword()
+                );
+                self.report(id, "wrong-value", message);
+            }
+            return;
+        }
+        let Some(reference) = named else {
+            let message = format!(
+                "a referential {noun} refers to a {noun} that exists elsewhere: its value names that {noun} usage, such as `= bus` or `= power.bus`"
+            );
+            self.report(id, "wrong-value", message);
+            return;
+        };
+        // A name that does not resolve is reported where names are checked.
+        let Some(target) = target else {
+            return;
+        };
+        let target_kind = self.kind(target);
+        let fits_kind = match kind {
+            ElementKind::Item => matches!(target_kind, ElementKind::Part | ElementKind::Item),
+            _ => target_kind == ElementKind::Part,
+        };
+        if !fits_kind {
+            let message = format!(
+                "`{reference}` is a {}; a referential {noun} refers to a {noun} usage",
+                target_kind.keyword()
+            );
+            self.report(id, "wrong-value", message);
+            return;
+        }
+        let actual = self.model.types_of(target);
+        let fits = self.model.types_of(id).iter().all(|(expected, _)| {
+            actual
+                .iter()
+                .any(|(a, _)| self.model.specializes(*a, *expected))
+        });
+        if !fits {
+            let message = format!(
+                "`{reference}` ({}) cannot be what this {noun} refers to: it is not a {}",
+                self.type_text(target),
+                self.type_text(id)
+            );
+            self.report(id, "wrong-value", message);
+        }
+    }
+
     /// Literal values are checked against the built-in scalar types.
     fn check_value(&mut self, id: ElementId, value: &Literal) {
         let Some(&(declared, _)) = self.model.types_of(id).first() else {
@@ -1108,9 +1215,18 @@ impl<'a> Checker<'a> {
     ) -> Option<bool> {
         let part = |steps: &[ElementId]| steps[..steps.len() - 1].to_vec();
         let (part_a, part_b) = (part(a), part(b));
+        // A part reached through a referential part is not inside: it is
+        // referred to, and exists elsewhere.
+        let referred = |steps: &[ElementId]| {
+            steps.iter().any(|s| {
+                self.part_binding(*s)
+                    .is_some_and(|(referential, _)| referential)
+            })
+        };
         let outer_of = |outer: &[ElementId], port: ElementId, inner: &[ElementId]| {
             outer.len() < inner.len()
                 && inner.starts_with(outer)
+                && !referred(&inner[outer.len()..])
                 && (!outer.is_empty()
                     || self
                         .model
@@ -1127,8 +1243,10 @@ impl<'a> Checker<'a> {
         }
     }
 
-    /// A part def must not contain itself through required parts (lower bound
-    /// of at least 1; a part without a multiplicity is required).
+    /// A part def must not contain itself through required composite parts
+    /// (lower bound of at least 1; a part without a multiplicity is
+    /// required). A referential part contains nothing: it may refer to a
+    /// part of its own owner's kind.
     fn check_composition(&mut self, id: ElementId) {
         let mut seen = vec![id];
         let mut i = 0;
@@ -1136,7 +1254,7 @@ impl<'a> Checker<'a> {
             for feature in self.model.features(seen[i]) {
                 let element = self.model.get(feature);
                 let required = element.multiplicity.is_none_or(|m| m.lower > 0);
-                if element.kind != ElementKind::Part || !required {
+                if element.kind != ElementKind::Part || element.referential || !required {
                     continue;
                 }
                 for (ty, _) in self.model.types_of(feature) {

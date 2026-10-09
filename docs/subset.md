@@ -17,6 +17,7 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 | `import X::*;` `import X::Y;` | With `public` / `private`; public imports are re-exported; a top-level import serves its own document |
 | `doc /* ... */`, bare `/* ... */` comments | Survive load and save; `//` notes are dropped |
 | `part def` / `part` | |
+| `ref part` / `ref item` *(C-55)* | A referential usage: it refers to a part (or item) that exists elsewhere instead of containing one (SysML 7.6.3). `ref part supply : PowerBus;` declares the role; `= bus` (or `ref part :>> supply = bus;` in a usage) binds it to a part usage, and no copy is made. Without a value it refers to nothing in that configuration. A part without `ref` is composite: it is contained, and exists only with its owner. A connection end through a referential part faces the other end (what it refers to is not inside). Model execution runs a bound referential part as the instance it refers to (slots, ports and state machine are that instance's, and traces name it); an unbound one has only its ports, so connections through it hold, and a message reaching it stops the run (`missing-stand-in`) unless a scenario stand-in answers for it |
 | `port def` / `port` | Conjugated typing `~P`; directed features `in` / `out` / `inout` |
 | `item def` / `item` | |
 | `attribute def` / `attribute` | |
@@ -28,7 +29,7 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 | Typing `:` / `defined by` / `typed by` | One or more types |
 | Subsetting `:>` / `subsets`, redefinition `:>>` / `redefines` | `:>> x` without a name takes the name `x` |
 | Implied redefinition | An `end` redefines the end at the same position of each general; a `subject` redefines the general requirement's subject (derived, never written) |
-| Usages without a kind keyword | `x : T;`, `:>> x = 5;` and `ref x : T;` are reference usages; printed without a keyword |
+| Usages without a kind keyword | `x : T;`, `:>> x = 5;` and `ref x : T;` are reference usages; printed without a keyword. A reference usage is referential by definition: `:>> supply = bus;`, giving an inherited part a value, binds it as `ref part :>> supply = bus;` does |
 | Multiplicity `[n]` `[n..m]` `[n..*]` `[*]` | Integer bounds |
 | `abstract` | Definitions and usages |
 | Quoted names `'Order Line'` | |
@@ -62,7 +63,7 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 | `flow`, `message`, named `succession`, `bind`, `allocation` | Added when a scenario needs them |
 | `require` / `assume` constraints, `actor`, `stakeholder`, `frame`, `concern` | Need constraint expressions |
 | `occurrence`, `individual`, `snapshot`, `timeslice`, `event` | Time and individuals are not modelled |
-| `ref part` and other `ref` + kind usages, `::>` reference subsetting, `=>` crossing, `derived`, `constant`, `variation` / `variant` | Not needed; each adds semantics to check |
+| `ref` with kinds other than `part` and `item` (`ref port`, `ref attribute`, `ref action`, ...), `::>` reference subsetting, `=>` crossing, `derived`, `constant`, `variation` / `variant` | Not needed; each adds semantics to check (attributes and directed features are referential anyway) |
 | Initial / default values `:=`, `default` | Need expressions |
 | `ordered`, `nonunique`, multiplicity expressions | Integer bounds are enough so far |
 | Short names `<id>`, `alias` | One name per element keeps identity and display simple |
@@ -89,7 +90,7 @@ Diagnostic codes reported by `validate`:
 | `wrong-type` | A usage's type is not the right kind of definition (a part by a part def, a port by a port def, ...); `~` on a non-port |
 | `wrong-kind` | Specialisation, subsetting, redefinition, satisfy or connection end names the wrong kind of element |
 | `specialization-cycle` | A definition specialises itself, or a feature subsets itself |
-| `composition-cycle` | A part def contains itself through parts with a lower bound of at least 1 |
+| `composition-cycle` | A part def contains itself through composite parts with a lower bound of at least 1; a referential part contains nothing, so a part def may refer to its own kind |
 | `redefines-unknown` | `:>> x` does not name a feature inherited by the owner |
 | `incompatible-ends` | Connected features do not fit the definition's ends, or two ports do not fit each other (see deviation 8) |
 | `misplaced-end`, `misplaced-subject`, `duplicate-subject` | `end` outside connection/interface defs; subject outside a requirement; more than one subject |
@@ -97,6 +98,7 @@ Diagnostic codes reported by `validate`:
 | `wrong-value` | A literal does not fit its built-in scalar type |
 | `wrong-subject` | `satisfy ... by x`: `x` is not of the requirement subject's type |
 | `wrong-value` | Also: a value that is not one of its enum def's values, or a literal for an enum-typed feature; a value of an enum def with a type or value |
+| `wrong-value` | Also (C-55): a referential part or item whose value is not a feature chain naming a part usage (for `ref item`: a part or item usage) of every type the referential usage has; a composite part or item bound to another part or item usage (deviation 19) |
 | `misplaced-behaviour` | A state, transition, action node or check outside the place it belongs (an exhibit state in a part; states and transitions in a state machine; `entry`/`exit` in a state; checks in a scenario) |
 | `initial-state` | A state machine with states and no `entry; then S;`, or with several |
 | `incompatible-send` | `send` of an item through a port with no `out` item of that type (seen from a scenario, which stands outside its subject: no `in` item) |

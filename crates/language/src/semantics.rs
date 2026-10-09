@@ -119,6 +119,21 @@ impl<'a> Semantics<'a> {
         self.checker.model.redefined(feature).to_vec()
     }
 
+    /// Whether a part or item usage refers to its value instead of
+    /// containing it: `Some(true)` for `ref part` / `ref item`, and for a
+    /// usage without a kind keyword that gives an inherited part or item
+    /// usage a value (`:>> supply = bus;`, referential by definition);
+    /// `Some(false)` for a composite part or item; `None` for anything
+    /// else. The rule `validate` checks bindings by (`wrong-value`).
+    pub fn referential(&self, feature: ElementId) -> Option<bool> {
+        if !self.checker.model.exists(feature) {
+            return None;
+        }
+        self.checker
+            .part_binding(feature)
+            .map(|(referential, _)| referential)
+    }
+
     /// The directed features of a port as seen from outside it, with its
     /// conjugation applied: (name, direction, type).
     pub fn directed_features(

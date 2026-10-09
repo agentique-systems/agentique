@@ -461,6 +461,11 @@ pub struct Element {
     pub is_abstract: bool,
     /// `end` feature of a connection or interface definition.
     pub is_end: bool,
+    /// `ref part` / `ref item`: a referential usage, which refers to a part
+    /// (or item) that exists elsewhere instead of containing one (SysML
+    /// 7.6.3). Only part and item usages carry it; a usage without a kind
+    /// keyword is referential by definition and needs no flag.
+    pub referential: bool,
     pub direction: Option<Direction>,
     /// `: ~P`: the port's type is conjugated.
     pub conjugated: bool,
@@ -512,6 +517,7 @@ impl Element {
             visibility: Visibility::Public,
             is_abstract: false,
             is_end: false,
+            referential: false,
             direction: None,
             conjugated: false,
             typed_by: Vec::new(),

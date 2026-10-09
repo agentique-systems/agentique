@@ -32,11 +32,12 @@ const KINDS: [ElementKind; 21] = {
     ]
 };
 
-const FIELDS: [Field; 23] = [
+const FIELDS: [Field; 24] = [
     Field::Name,
     Field::Visibility,
     Field::Abstract,
     Field::End,
+    Field::Referential,
     Field::Direction,
     Field::TypedBy,
     Field::Conjugated,
@@ -82,6 +83,7 @@ fn with(mut e: Element, field: Field) -> Element {
         Field::Visibility => e.visibility = Visibility::Private,
         Field::Abstract => e.is_abstract = true,
         Field::End => e.is_end = true,
+        Field::Referential => e.referential = true,
         Field::Direction => e.direction = Some(Direction::In),
         Field::TypedBy => e.typed_by = vec![named("T")],
         Field::Conjugated => {

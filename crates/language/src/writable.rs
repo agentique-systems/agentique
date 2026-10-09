@@ -17,6 +17,8 @@ pub enum Field {
     Abstract,
     /// `end`
     End,
+    /// `ref` before `part` or `item`: a referential usage.
+    Referential,
     /// `in`, `out`, `inout`
     Direction,
     /// `: T`
@@ -92,6 +94,7 @@ impl Field {
             Field::Abstract | Field::Specializes => plain,
             // `end x;` without a kind keyword reads back as a port, or not at all.
             Field::End => kind.is_usage() && kind != Reference,
+            Field::Referential => matches!(kind, Part | Item),
             Field::Direction | Field::Conjugated | Field::Multiplicity | Field::Value => {
                 kind.is_usage()
             }
@@ -121,6 +124,7 @@ impl Field {
             Field::Visibility => "visibility",
             Field::Abstract => "`abstract`",
             Field::End => "`end`",
+            Field::Referential => "`ref`",
             Field::Direction => "direction",
             Field::TypedBy => "type (`:`)",
             Field::Conjugated => "conjugated type (`~`)",
@@ -192,6 +196,9 @@ pub fn writable(tree: &Tree, id: ElementId) -> Result<(), String> {
     }
     if e.target.is_none() && kind == Satisfy {
         return Err("a satisfy needs the requirement it satisfies".into());
+    }
+    if e.referential && e.is_end {
+        return Err("an `end` feature is always referential; it is not written with `ref`".into());
     }
     if e.conjugated && e.typed_by.len() != 1 {
         return Err("a conjugated usage (`~`) has exactly one type".into());
@@ -350,6 +357,7 @@ fn fields(e: &Element) -> Vec<Field> {
         (e.visibility != Visibility::Public, Field::Visibility),
         (e.is_abstract, Field::Abstract),
         (e.is_end, Field::End),
+        (e.referential, Field::Referential),
         (e.direction.is_some(), Field::Direction),
         (!e.typed_by.is_empty(), Field::TypedBy),
         (e.conjugated, Field::Conjugated),
