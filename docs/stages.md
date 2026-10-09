@@ -2085,7 +2085,7 @@ it). Read against the code and the model before any change:
 | Item | Pull request | State |
 |---|---|---|
 | W13.1 Direction | #117 | In review |
-| W13.2 Referential usages | — | In progress |
+| W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
 | W13.3 Requirement constraints and evidence | — | In progress |
 | W13.4 The self-model | — | In progress (`stage13/self-model`) |
 | W13.5 Alignment in the loop | — | In progress |
@@ -2102,3 +2102,29 @@ through `apply_changes` without a window (`README.md`, "Changing a model
 without a window"); the tools now also address an element without a name by
 the name they show it under (`Owner::(connect a to b)`), so agents can change
 or delete connections and `satisfy` relationships.
+
+**W13.2 Referential usages** (`stage13/ref-parts`; nothing here says the
+Operator accepted anything). `ref part` and `ref item` on the whole path:
+the language core (a `referential` flag; parse, print, link, the validity
+rules above and deviation 19), the System State (`Property::Referential`),
+the Library (copies keep the flag), the Assistant (`apply_changes` `"ref"`,
+`read_model` and `inspect_behaviour` say what a reference refers to),
+`explain_element` and the Inspector ("Refers to …", a Usage switch between
+composite and reference, Owns marking references), the Surface (a dashed
+card edge, no new colour), and model execution (a bound reference is the
+instance it refers to; an unbound one has only its ports, and a message
+reaching it stops the run with `missing-stand-in` unless a stand-in answers).
+Tested: language (9 tests: round trips, the shared bus, a wrong type, a
+composite bound to another part, a system referring to its own kind while
+the composite version is a composition cycle, identities through print and
+reload, ends facing through a reference), System State (2), Assistant (1),
+explain (1), simulation (6: both paths reach the one bus, which counts both
+messages on one machine; an unbound reference compiles, stops a message,
+is answered by a stand-in), scene (1). Workspace on the branch's base: 826
+passed, 25 ignored; CPU-side budgets in release passed (scene build at 10k
+1.82 s, an edit to the Surface at 10k 78.6 ms). Not verified: the Studio
+visually (no window was opened), the reference run, replay and live modes
+with references. Limits: the Library's block summary counts a reference as
+contained; a part's own state machine sends only through its own ports;
+`bind` stays unsupported; a reference with a multiplicity above 1 binds one
+instance.
