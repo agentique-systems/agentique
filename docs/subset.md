@@ -50,6 +50,7 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 | Behaviour | Flat state machines, one per part, are what runs (ROADMAP §4.14); nested states are read and validated | Runners report nested states, `do` actions of states and several behaviours of one part as unsupported |
 | Durations | `accept after d` with `d` in milliseconds of logical time | No units library (deviation 14) |
 | Connections | Binary; plain feature chains as ends; `end` features need a kind keyword (`end part a`) outside interface defs | Scenario A needs no n-ary or named ends |
+| Connections through a reference *(C-55)* | Validation decides whether a connection through a reference passes items inward where the connection is written, by what the reference is bound to there | A usage that binds the reference to a part inside the connection's owner (`part fc : FlightComputer { part local : PowerBus; ref part :>> supply = local; }`) makes the run link inward, where validation checked the definition's connection as facing: the binding a usage gives is not known where the definition is checked |
 | Feature chains | Connection ends and `satisfy ... by`; steps after the first are simple names; typing, subsetting or redefining by a chain is unsupported | Enough for `a.b.c` |
 | Requirements | Subject, doc text, attributes, satisfy | Constraints need expressions |
 | Standard library | `ScalarValues`, built in; plus Agentique's own `Agents` and `Scenarios` (deviations 12 and 13) | No runtime bundle (R-4); grows by need |
@@ -79,7 +80,7 @@ Diagnostic codes reported by `validate`:
 | Code | Rule |
 |---|---|
 | `syntax` | Text could not be parsed (kept verbatim) |
-| `unsupported` | A construct outside the subset, or a reference to one |
+| `unsupported` | A construct outside the subset, or a reference to one; also (C-55) a `ref part` bound by an expression other than a feature chain (`= new T()`), or to a usage without a kind keyword that redefines no part or item |
 | `unresolved` | A name cannot be found from where it is written, or a linked chain step is no longer a feature of the step before |
 | `removed-target` | A linked reference points at an element that was removed |
 | `unreachable-target` | No name written at the reference leads back to its target (the target is private, hidden by another element with that name, or inside an unnamed element), so saving would lose the link |
@@ -98,7 +99,7 @@ Diagnostic codes reported by `validate`:
 | `wrong-value` | A literal does not fit its built-in scalar type |
 | `wrong-subject` | `satisfy ... by x`: `x` is not of the requirement subject's type |
 | `wrong-value` | Also: a value that is not one of its enum def's values, or a literal for an enum-typed feature; a value of an enum def with a type or value |
-| `wrong-value` | Also (C-55): a referential part whose value is not a feature chain naming a part usage (for `ref item`: a part or item usage, or `new T(...)`) of every type the referential usage has, or that leads back to itself (`a = a`, `a = b; b = a`); a binding that changes the binding of a feature it redefines; a composite part or item bound to a part or item usage of another owner (SysML 7.6.3) or of the same owner (deviation 19), including through a `ref` or keyword-less redefinition of a composite part |
+| `wrong-value` | Also (C-55): a referential part whose value is not a feature chain naming a part usage of every type the referential usage has, or that leads back to itself (`a = a`, `a = b; b = a`); a `ref item` whose value is a literal, a name of anything but a part or item usage of its types, or `new T(...)` of another type (any other expression is a value); a binding that changes the binding of a feature it redefines (for references, and for composite parts and items); a composite part or item bound to a part or item usage, by the part the binding reaches: a composite part of another owner, which the standard forbids (SysML 7.6.3), or anything else, such as a part of the same owner (deviation 19); also through a `ref` or keyword-less redefinition of a composite part |
 | `misplaced-behaviour` | A state, transition, action node or check outside the place it belongs (an exhibit state in a part; states and transitions in a state machine; `entry`/`exit` in a state; checks in a scenario) |
 | `initial-state` | A state machine with states and no `entry; then S;`, or with several |
 | `incompatible-send` | `send` of an item through a port with no `out` item of that type (seen from a scenario, which stands outside its subject: no `in` item) |

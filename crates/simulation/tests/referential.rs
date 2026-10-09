@@ -527,3 +527,72 @@ fn bindings_to_themselves_keep_the_scenario_from_starting() {
         ]
     );
 }
+
+#[test]
+fn a_reference_bound_to_one_not_bound_is_the_same_instance() {
+    // The monitor's supply is bound to the flight computer's, which is not
+    // bound: both are one instance, so one stand-in answers both, and it
+    // counts the two calls as its first and second.
+    let text = DRONE.replace(
+        "    part def Gauge {
+        part meter : Meter;
+    }",
+        "    part def Gauge {
+        part meter : Meter;
+    }
+
+    part def Monitor {
+        port control : ControlPort;
+        port draw : ~PowerPort;
+        ref part supply : PowerBus;
+        connect draw to supply.main;
+        exhibit state watching {
+            entry;
+            then ready;
+            state ready;
+            state waiting;
+            transition first ready accept c : Command via control do send new Load(watts = c.watts) via draw then waiting;
+            transition first waiting accept a : Ack via draw do send new Done(total = a.total) via control then ready;
+        }
+    }
+
+    part def Twin {
+        port pilot : ControlPort;
+        port watch : ControlPort;
+        part flightComputer : FlightComputer;
+        part monitor : Monitor {
+            :>> supply = flightComputer.supply;
+        }
+        connect pilot to flightComputer.control;
+        connect watch to monitor.control;
+    }
+
+    verification def OneStandInAnswersBoth {
+        subject twin : Twin;
+        part battery : Scenarios::StandIn {
+            :>> target = twin.flightComputer.supply;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Ack(total = 7);
+        }
+        send new Command(watts = 20) via twin.pilot;
+        then accept d : Done via twin.pilot;
+        then send new Command(watts = 5) via twin.watch;
+        then accept e : Done via twin.watch;
+        then assert constraint bothAnswered {
+            d.total == 7 and e.total == 7
+        }
+    }",
+    );
+    let tree = load(&text);
+    assert_eq!(validate(&tree), []);
+    let result = run_model(&tree, "Drones::OneStandInAnswersBoth");
+    assert_eq!(result.status, RunStatus::Completed, "{:#?}", result.stop);
+    assert!(result.all_passed(), "{:?}", verdicts(&result));
+    assert_eq!(
+        texts(&result, EventKind::StandIn),
+        [
+            "Stand-in `battery` answers for `twin.flightComputer.supply` (call 1)",
+            "Stand-in `battery` answers for `twin.flightComputer.supply` (call 2)",
+        ]
+    );
+}

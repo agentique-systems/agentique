@@ -667,11 +667,12 @@ impl Fields {
         // redefines. Directed, `end` and package-level usages always refer.
         let has_usage = matches!(kind, ElementKind::Part | ElementKind::Item);
         let written = e.referential;
-        let always = has_usage
-            && (e.direction.is_some()
-                || e.is_end
-                || e.owner()
-                    .is_none_or(|o| tree[o].kind == ElementKind::Package));
+        // A usage owned by a package has no featuring type: it is a part of
+        // the model, with nothing to choose here.
+        let package_level = e
+            .owner()
+            .is_none_or(|o| tree[o].kind == ElementKind::Package);
+        let always = has_usage && !package_level && (e.direction.is_some() || e.is_end);
         let (effective, bound, inherited) = if has_usage {
             let semantics = agq_language::Semantics::new(tree);
             let holder = semantics.value_holder(element);
@@ -873,11 +874,11 @@ impl Fields {
                     .when(has_usage && always, |this| {
                         this.child(row(
                             "Usage",
-                            div().pt(r(6.0)).child(super::note("Referential: directed, `end` and package-level usages always are.", cx)),
+                            div().pt(r(6.0)).child(super::note("Referential: directed and `end` usages always are.", cx)),
                             cx,
                         ))
                     })
-                    .when(has_usage && !always, |this| {
+                    .when(has_usage && !always && !package_level, |this| {
                         let studio = studio_entity.clone();
                         this.child(row(
                             "Usage",

@@ -1134,14 +1134,28 @@ impl<'a> Checker<'a> {
                     "it redefines `{}`, which is bound to `{reference}`: as a composite {noun} it would hold that {target_noun} as its own; declare it `ref {noun}`",
                     self.name(holder)
                 )
-            } else if self.same_owner(id, &reference, target) {
-                format!(
-                    "`{reference}` is a {target_noun} of the same owner: bound to it, this composite {noun} would be that {target_noun} under a second name; declare it `ref {noun}` (deviation 19)"
-                )
             } else {
-                format!(
-                    "a composite {noun}'s value cannot be a {target_noun} of another owner (SysML 7.6.3); declare it `ref {noun}` to refer to `{reference}`"
-                )
+                // Classified by the part the binding reaches through any
+                // references: a composite part of another owner is the
+                // standard's own rule (7.6.3); anything else is ours.
+                let reached = self.reached_part(target);
+                let composite = self.featured(reached)
+                    && self
+                        .part_binding(reached)
+                        .is_some_and(|(referential, _)| !referential);
+                if composite && self.same_featuring(id, reached) {
+                    format!(
+                        "`{reference}` is a {target_noun} of the same owner: bound to it, this composite {noun} would be that {target_noun} under a second name; declare it `ref {noun}` (deviation 19)"
+                    )
+                } else if composite {
+                    format!(
+                        "a composite {noun}'s value cannot be a {target_noun} of another owner (SysML 7.6.3); declare it `ref {noun}` to refer to `{reference}`"
+                    )
+                } else {
+                    format!(
+                        "bound to `{reference}`, this composite {noun} would be that {target_noun} under a second name; declare it `ref {noun}` (deviation 19)"
+                    )
+                }
             };
             self.report(id, "wrong-value", message);
             return;
@@ -1201,6 +1215,15 @@ impl<'a> Checker<'a> {
             return;
         };
         let target_kind = self.part_kind(target);
+        if target_kind.is_none() && self.kind(target) == ElementKind::Reference {
+            // `x : B;`: its kind is not written, and the subset does not
+            // infer it from its type.
+            let message = format!(
+                "binding to `{reference}`, a usage without a kind keyword that redefines no part or item, is not supported; declare it `{noun}` or `ref {noun}`"
+            );
+            self.report(id, "unsupported", message);
+            return;
+        }
         let fits_kind = match kind {
             ElementKind::Item => target_kind.is_some(),
             _ => target_kind == Some(ElementKind::Part),
@@ -1265,15 +1288,42 @@ impl<'a> Checker<'a> {
         }
     }
 
-    /// Whether `target`, named by a one-step value of `id`, is a feature of
-    /// `id`'s own owner (the same featuring instance).
-    fn same_owner(&self, id: ElementId, reference: &Reference, target: ElementId) -> bool {
+    /// Whether a usage has a featuring type: it is owned by something other
+    /// than a package.
+    fn featured(&self, id: ElementId) -> bool {
+        self.model
+            .get(id)
+            .owner()
+            .is_some_and(|o| self.kind(o) != ElementKind::Package)
+    }
+
+    /// The part a binding reaches from `target`: `target` itself, or, for
+    /// a bound reference with a featuring type, what its value reaches.
+    fn reached_part(&self, target: ElementId) -> ElementId {
+        let mut seen = Vec::new();
+        let mut current = target;
+        while !seen.contains(&current)
+            && self.featured(current)
+            && self
+                .part_binding(current)
+                .is_some_and(|(referential, _)| referential)
+            && let Some((_, next)) = self
+                .value_holder(current)
+                .and_then(|holder| self.named_target(holder))
+        {
+            seen.push(current);
+            current = next;
+        }
+        current
+    }
+
+    /// Whether `feature` is a feature of `id`'s own owner (the same
+    /// featuring instance): owned by it or inherited.
+    fn same_featuring(&self, id: ElementId, feature: ElementId) -> bool {
         let Some(owner) = self.model.get(id).owner() else {
             return false;
         };
-        reference.steps.len() == 1
-            && (self.model.get(target).owner() == Some(owner)
-                || self.model.is_inherited(owner, target))
+        self.model.get(feature).owner() == Some(owner) || self.model.is_inherited(owner, feature)
     }
 
     /// Literal values are checked against the built-in scalar types.
@@ -1437,16 +1487,10 @@ impl<'a> Checker<'a> {
     fn bound_chain(&self, owner: Option<ElementId>, steps: &[ElementId]) -> Option<Vec<ElementId>> {
         // A usage without a featuring type (owned by a package) is where a
         // chain written there starts, not a reference to replace.
-        let featured = |s: ElementId| {
-            self.model
-                .get(s)
-                .owner()
-                .is_some_and(|o| self.kind(o) != ElementKind::Package)
-        };
         let mut chain = steps.to_vec();
         for _ in 0..16 {
             let Some(i) = chain.iter().position(|s| {
-                featured(*s)
+                self.featured(*s)
                     && self
                         .part_binding(*s)
                         .is_some_and(|(referential, _)| referential)

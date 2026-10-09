@@ -525,3 +525,42 @@ fn ids_and_the_flag_survive_print_parse_and_rekey() {
     assert_eq!(value, Some(bus));
     assert_eq!(codes(&again), []);
 }
+
+#[test]
+fn a_composite_binding_is_judged_by_the_part_it_reaches() {
+    let message = |text: &str| validate(&load(text)).remove(0).message;
+    // Through a reference of the same owner, it reaches a composite part
+    // of another owner: the standard's rule (7.6.3).
+    assert_eq!(
+        message(
+            "package P {
+                 part def B;
+                 part def Power { part bus : B; }
+                 part def S { part power : Power; ref part r : B = power.bus; part c : B = r; }
+             }"
+        ),
+        "a composite part's value cannot be a part of another owner (SysML 7.6.3); declare it `ref part` to refer to `r`"
+    );
+    // A part owned by a package, or a reference that is not bound, is no
+    // composite part of another owner: deviation 19.
+    assert_eq!(
+        message("package P { part def B; part a : B; part def S { part c : B = a; } }"),
+        "bound to `a`, this composite part would be that part under a second name; declare it `ref part` (deviation 19)"
+    );
+    assert_eq!(
+        message("package P { part def B; part def S { ref part r : B; part c : B = r; } }"),
+        "bound to `r`, this composite part would be that part under a second name; declare it `ref part` (deviation 19)"
+    );
+}
+
+#[test]
+fn a_reference_to_a_usage_of_unwritten_kind_is_unsupported() {
+    // `x : B;` has no kind keyword and redefines nothing: the subset does
+    // not infer that it is a part.
+    let text = "package P { part def B; part def S { x : B; ref part r : B = x; } }";
+    expect(text, &[("P::S::r", "unsupported")]);
+    assert_eq!(
+        validate(&load(text)).remove(0).message,
+        "binding to `x`, a usage without a kind keyword that redefines no part or item, is not supported; declare it `part` or `ref part`"
+    );
+}

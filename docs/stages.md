@@ -2121,16 +2121,18 @@ referential itself (`ref`, no kind keyword, directed, `end`, or owned by a
 package) whose redefined part and item usages are all referential, since a
 redefinition has the values of what it redefines. After an independent
 standards review: a `ref` redefinition of a composite part is composite;
-an inherited binding is kept and never changed in a redefinition; self and
+an inherited binding is kept and never changed in a redefinition (of a
+reference, or of a composite part or item); self and
 mutual bindings, and `ref part … = new T()` (unsupported), are reported;
 whether a connection passes items inward is decided by what a reference is
-bound to. Tested: language (11 tests), System State (2), Library (1),
-Assistant (1), explain (1), simulation (13: both paths reach the one bus,
+bound to. Tested: language (13 tests), System State (2), Library (1),
+Assistant (1), explain (2), simulation (14: both paths reach the one bus,
 `= power.bus` and a keyword-less binding through another reference, an
 inherited binding, a reference with features of its own, a `ref item` to a
 part, a binding that reaches no running part, reading and setting through a
 reference not bound, a message into one, a stand-in answering for one or for
-a bound reference, bindings to themselves), scene (1). Workspace: 838
+a bound reference, a reference bound to one not bound answered by one
+stand-in, bindings to themselves), scene (1). Workspace: 842
 passed, 25 ignored; CPU-side budgets in release passed (scene build at 10k
 1.78 s, an edit to the Surface at 10k 75.9 ms, a System State edit at 10k
 45.4 ms). Not verified: the Studio visually (no window was opened), the

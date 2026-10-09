@@ -288,8 +288,14 @@ pub fn responsibility(
         purpose: doc_text(tree, definition),
         owns,
         refers,
-        usage: (semantics.referential(element) == Some(true))
-            .then(|| Referential::of(tree, &semantics, element)),
+        // A usage owned by a package has no featuring type: SysML counts it
+        // referential, but it is a part of the model, not a reference to
+        // describe as bound or not.
+        usage: (semantics.referential(element) == Some(true)
+            && tree[element]
+                .owner()
+                .is_some_and(|o| tree[o].kind != ElementKind::Package))
+        .then(|| Referential::of(tree, &semantics, element)),
         contract,
         depends_on,
         used_by,
@@ -500,6 +506,23 @@ mod tests {
         assert!(text.contains("crate crates/queue"), "{text}");
         // Not a part: nothing to explain this way.
         assert!(responsibility(&tree, &links, &[], tree.find("M::Job").unwrap()).is_none());
+    }
+
+    #[test]
+    fn a_part_owned_by_a_package_is_not_explained_as_a_reference() {
+        let tree = parse(&[Source::new(
+            "M.sysml",
+            "package M {
+                part def UrlShortenerService { doc /* Shortens links. */ }
+                part shortener : UrlShortenerService;
+            }",
+        )]);
+        let shortener = tree.find("M::shortener").unwrap();
+        let r = responsibility(&tree, &Links::default(), &[], shortener).unwrap();
+        assert_eq!(r.usage, None);
+        let text = r.describe(&tree);
+        assert!(!text.contains("referential"), "{text}");
+        assert!(!text.contains("not bound"), "{text}");
     }
 
     #[test]
