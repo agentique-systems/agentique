@@ -153,7 +153,7 @@ fn main() -> ExitCode {
             }
         }
         let change = Change::new(
-            Actor::Operator,
+            Actor::Assistant,
             &format!(
                 "Lock {} (on the Operator's instruction, given on the command line, --lock)",
                 lock.join(", ")

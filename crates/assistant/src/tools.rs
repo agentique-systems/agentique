@@ -185,7 +185,7 @@ pub fn definitions() -> Value {
     let name = |description: &str| json!({ "type": "string", "description": description });
     let operation_fields = json!({
         "op": { "type": "string", "enum": ["create", "delete", "rename", "move", "connect", "set"] },
-        "element": name("delete, rename, move, set: qualified name of the element, e.g. \"Shop::Store\"."),
+        "element": name("delete, rename, move, set: qualified name of the element, e.g. \"Shop::Store\"; an element without a name by the name the tools show, e.g. \"Shop::Service::(connect api.orders to store.orders)\"."),
         "parent": name("create, move, connect: qualified name of the new owner. Omit for the top level of the model."),
         "kind": { "type": "string", "enum": kinds, "description": "create: what to create." },
         "name": name("create: the new element's name. rename: the new name."),

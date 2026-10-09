@@ -49,8 +49,9 @@ Agentique's purpose; every other document, instruction and agent brief refers
 to it here instead of restating it. **Agentique is a system for understanding,
 modelling, simulating, verifying, implementing and evolving systems through
 explicit architecture grounded in KerML and SysML v2, in their standard terms
-(§8.4). Agentique is itself such a system:** it uses for its own development the same modelling concepts,
-operations, contracts and verification mechanisms it gives its users. AI
+(§8.4). Agentique is itself such a system:** it uses for its own
+development the same modelling concepts, operations, contracts and
+verification mechanisms it gives its users. AI
 agents do the work; people express intent, inspect the system visually,
 observe execution and evidence, and keep control of the purpose and of
 consequential decisions. The ambition is a system of systems: a system that
@@ -84,11 +85,14 @@ with it:
 
 The self-model holds this purpose as the requirement `purpose` of
 `model/Agentique.sysml`, whose subrequirements state its obligations (W13.4).
-The purpose and its **protections** (this paragraph and the rest of
-`ROADMAP.md`, the requirement `purpose` and everything it owns, the rules of
-`AGENTS.md` that keep it, the gates of §4.16 that enforce them, and the
-approved baseline) change only by the Operator's decision, recorded in §7.6:
-agents may propose such a change, never make it (§4.16).
+The purpose and its **protections** change only by the Operator's decision:
+`ROADMAP.md` (this paragraph with it) and the requirement `purpose` with
+everything it owns change by a decision recorded in §7.6, never inside an
+objective, even one that names them; the agent configuration (`AGENTS.md`,
+`CLAUDE.md`) and the code of the gates of §4.16 (the locked Orchestrator)
+change inside an objective only when the Operator's objective names them
+(C-53); and only the Operator moves the approved baseline. Agents may propose
+such a change, never make it (§4.16).
 
 **How it is delivered.** Agentique is a **native desktop application in which
 a person and AI agents design, simulate and implement systems together,
@@ -2103,8 +2107,8 @@ and changed required checks are listed for the reviewer as test changes, and
 fail the cycle unless the proposal named them as intended, with a reason the
 reviewer accepted. The criteria and the required checks are frozen at the
 proposal; a later attempt cannot replace them. A change to `ROADMAP.md` or to
-the self-model's purpose requirement (`Purpose` and `purpose` and everything
-they own, by identity) fails the gates even when the objective names it, as the locked core does
+the self-model's purpose requirement (`Purpose` and `purpose` and
+everything they own, by identity) fails the gates even when the objective names it, as the locked core does
 (C-55): the governing text and the purpose change only by the Operator's
 decision.
 
@@ -2588,7 +2592,8 @@ what this document or a README says; **not verified** means neither was
 run. The four checks passed on that revision (`docs/stages.md`, Stage 10).
 
 **What Agentique does, and what lies outside it.** The purpose is in §1.1
-(C-55; it replaces C-51's organising principle in §1.5). Inside: one System State per project (the model: intent), its
+(C-55; it replaces C-51's organising principle in §1.5).
+Inside: one System State per project (the model: intent), its
 history in git, the Library, scenarios and their runs (observations),
 implementation links and checks, controlled execution of builds and tests in
 worktrees, and the Assistant. Outside: the project's code (in its own
@@ -3323,8 +3328,9 @@ staying aligned with the purpose (§1.1).
   evaluation on the modelled configuration of what satisfies them; the
   claims of §4.14 kept apart in the Requirements panel, the Inspector and
   the agents' tools (a declaration is never shown as satisfaction).
-- **W13.4 The self-model** (§4.6): the purpose's obligations as requirements;
-  the autonomous lifecycle (objective, exploration, delegation, proposal,
+- **W13.4 The self-model** (§4.6): the purpose's obligations as
+  subrequirements of the locked `purpose` (its lock confirmed for that change
+  on the Operator's C-55 instruction); the autonomous lifecycle (objective, exploration, delegation, proposal,
   implementation, checks, review, merge, build, adoption, recovery,
   continuation) as the Orchestrator's behaviour with its role agents and
   scenarios for the success and failure paths, linked to the tests that
@@ -3658,7 +3664,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-09 | **C-55, the Operator's direction:** the purpose is recorded once, in §1.1, with the root-system and generalisation principles; §1.5 gains its paragraph; §4.3 gains the C-55 subset growth, the rule that a construct is complete on the whole path, and "the same constructs for Agentique and its users"; §4.14's claims become the nine of its table (parse, resolution, rules, calculation on the model, executable, completed, check passed, implementation agrees, evidence under stated assumptions), a `satisfy` declaration being a claim, not evidence; §4.16 gains the protection of `ROADMAP.md` and the purpose from cycles and "Alignment with the purpose"; Stage 13 (§6.10) folds W12.7 in as W13.7; the glossary gains approved baseline; `AGENTS.md` refers to §1.1 | The Operator's instruction in this session: autonomous development must serve the purpose, and Agentique's foundations must carry it |
 | 2026-10-09 | Locked core under C-55, named before it is built (R-16). **Language core:** referential usages `ref part` and `ref item` (a flag on part and item usages; the kind, and so every identity locator, unchanged), with `composition-cycle` ignoring them, a referential value that must name a part or item usage of a fitting type, and a composite part bound to another part reported (stricter than the standard, a new deviation); `assume constraint` and `require constraint` in requirement definitions and usages, named or not, formal (an expression) or informal (a doc comment), and subrequirements, whose subject is the container's; `calc def` with `in` parameters and a result, invoked with named arguments, if Stage 13's scenarios need it. **System State operations:** the properties that create and edit them (the referential flag; constraints through the existing expression property). **Persistence format:** unchanged; the new constructs are SysML text, and the identity file keeps its format; an older build reads them as unsupported text, kept verbatim, so a project that uses them loses nothing when opened there, but shows them as unsupported until it is opened in a build that reads them | Composition versus reference, and requirements that can be evaluated, are what the scenarios of §6.10 ask; nothing else in the core changes |
 | 2026-10-09 | Locked safeguard under C-55, named before it is built: **Orchestrator:** `submit_proposal` requires `serves` (requirements of the project's model), `benefit` and `complexity`, and checks `serves` and `parts` against the base's model; review lists changed-but-not-named and named-but-not-changed elements by identity and the cumulative change since the approved baseline (the tag `approved-baseline`, the Operator's only; without it, the objective's start, said so); a change to `ROADMAP.md` or to the purpose requirement fails the gates even when named; the lead records a finding's disposition (defect, wrong expectation, ambiguous requirement, unreliable reproduction) with `adjudicate_finding` before proposing it, only a defect is proposed, and wrong expectations are not offered again. Records: optional fields in `objective.json` (format 1) and the testing knowledge (format 1), read by the previous build | §4.16's alignment: the purpose constrains the loop through its existing records, requirements, locks and gates, not a second governance framework |
-| 2026-10-09 | Self-model under C-55 (§8.1 rule 5): the requirement `purpose` (its definition `Purpose`, subject `Agentique`) refers to §1.1, added through `apply_changes` (W13.1) and locked on the Operator's C-55 instruction; no `satisfy` is declared until its obligations exist and the Requirements panel keeps a declaration apart from evidence (W13.3, W13.4); which also printed the model as Agentique saves it (its `//` notes, which are not model elements, are gone; `model/README.md` explains the order); the purpose's obligations as subrequirements, Simulation's evaluation of requirements on a modelled configuration (no new part, crate or dependency), the Orchestrator's behaviour and role agents, and the test instance as a referential `Agentique` follow in W13.3 and W13.4 | Changes that cut across parts start in the self-model |
+| 2026-10-09 | Self-model under C-55 (§8.1 rule 5): the requirement `purpose` (its definition `Purpose`, subject `Agentique`) refers to §1.1, added through `apply_changes` (W13.1) and locked on the Operator's C-55 instruction; no `satisfy` is declared until its obligations exist and the Requirements panel keeps a declaration apart from evidence (W13.3, W13.4); `apply_changes` also printed the model as Agentique saves it (its `//` notes, which are not model elements, are gone; `model/README.md` explains the order); the purpose's obligations as subrequirements, Simulation's evaluation of requirements on a modelled configuration (no new part, crate or dependency), the Orchestrator's behaviour and role agents, and the test instance as a referential `Agentique` follow in W13.3 and W13.4 | Changes that cut across parts start in the self-model |
 | 2026-10-09 | The approved baseline starts at `f3f313b0`, the `main` the Operator reviewed before giving C-55 ("the last reviewed main was f3f313b"); the tag `approved-baseline` is set there when this record is merged, and only the Operator moves it (`git tag -f approved-baseline <commit>` and a push) | A cumulative review needs a human-approved reference; the Operator named this one |
 | 2026-10-09 | `docs/stages.md`, Stage 12: the work-item table and the "built" notes said "not merged" for W12.2, W12.3, W12.5 and W12.6; all were merged (#110, #111, #113–#116) before `f3f313b0`. W12.7 had not started and is W13.7 | One truth: the record had kept the branches' wording |
 
