@@ -216,10 +216,15 @@ pub fn definitions() -> Value {
             "additionalProperties": false
         },
         "effect": {
-            "type": "object",
-            "description": "create transition: what it does, a `send` (an expression, with `via`) or an `assign` (a feature and its new `value` expression).",
+            "type": ["object", "array"],
+            "description": "create transition: what it does, a `send` (an expression, with `via`) or an `assign` (a feature and its new `value` expression); or a list of such steps, which run one after the other in the order given (a composite action), e.g. [{\"assign\": \"attempts\", \"value\": \"attempts + 1\"}, {\"send\": \"pending\", \"via\": \"authority\"}].",
             "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "items": {
+                "type": "object",
+                "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
+                "additionalProperties": false
+            }
         },
         "subject": name("create verification def: the type of the scenario's subject, e.g. \"UrlShortenerService\"; the subject is named after it (urlShortenerService) unless `subject_name` says otherwise."),
         "subject_name": name("create verification def: the subject's name, e.g. \"service\"."),

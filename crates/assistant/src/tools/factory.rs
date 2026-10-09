@@ -201,31 +201,23 @@ pub(super) fn members(
                 }
                 out.push(create(inside, accept));
             }
-            if let Some(effect) = item.get("effect").filter(|e| !e.is_null()) {
-                let node = match (
-                    optional_str(effect, "send")?,
-                    optional_str(effect, "assign")?,
-                ) {
-                    (Some(send), None) => {
-                        let mut node = Element::new(ElementKind::Send);
-                        node.expression = Some(expression(send)?);
-                        node.via = optional_str(effect, "via")?.map(Reference::new);
-                        node
+            match item.get("effect") {
+                None | Some(Value::Null) => {}
+                // Several steps: one composite action whose members run in
+                // the order written (`do action { a; then b; }`).
+                Some(Value::Array(steps)) => {
+                    if steps.is_empty() {
+                        return Err("an effect list needs at least one step".into());
                     }
-                    (None, Some(target)) => {
-                        let mut node = Element::new(ElementKind::Assign);
-                        node.target = Some(Reference::new(target));
-                        node.expression = Some(expression(required_str(effect, "value")?)?);
-                        node
+                    // Ids follow the order of the creations: the trigger
+                    // (if any), then this action, then its steps.
+                    let action = ElementId::from_raw(id.raw() + 1 + out.len() as u64);
+                    out.push(create(inside, Element::new(ElementKind::Action)));
+                    for step in steps {
+                        out.push(create(Parent::Element(action), effect_step(step)?));
                     }
-                    _ => {
-                        return Err(
-                            "an effect is either a `send` (with `via`) or an `assign` (with `value`)"
-                                .into(),
-                        );
-                    }
-                };
-                out.push(create(inside, node));
+                }
+                Some(effect) => out.push(create(inside, effect_step(effect)?)),
             }
         }
         _ => {}
@@ -240,6 +232,29 @@ pub(super) fn members(
         }
     }
     Ok(out)
+}
+
+/// One step of a transition's effect: a `send` (with `via`) or an
+/// `assign` (with `value`).
+fn effect_step(effect: &Value) -> Result<Element, String> {
+    match (
+        optional_str(effect, "send")?,
+        optional_str(effect, "assign")?,
+    ) {
+        (Some(send), None) => {
+            let mut node = Element::new(ElementKind::Send);
+            node.expression = Some(expression(send)?);
+            node.via = optional_str(effect, "via")?.map(Reference::new);
+            Ok(node)
+        }
+        (None, Some(target)) => {
+            let mut node = Element::new(ElementKind::Assign);
+            node.target = Some(Reference::new(target));
+            node.expression = Some(expression(required_str(effect, "value")?)?);
+            Ok(node)
+        }
+        _ => Err("an effect is either a `send` (with `via`) or an `assign` (with `value`)".into()),
+    }
 }
 
 /// `:>> name = value`: a value for an inherited feature.
