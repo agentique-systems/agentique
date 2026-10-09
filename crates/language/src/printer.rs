@@ -275,18 +275,23 @@ impl Printer<'_> {
             }
             _ => {}
         }
+        // The order of SysML's usage prefix: direction, `abstract`, then
+        // `ref` right before the kind keyword (8.2.2.6.2).
         let mut parts: Vec<String> = Vec::new();
-        if e.is_abstract {
-            parts.push("abstract".into());
-        }
         if let Some(direction) = e.direction {
             parts.push(direction.keyword().into());
+        }
+        if e.is_abstract {
+            parts.push("abstract".into());
         }
         if e.is_end {
             parts.push("end".into());
         }
         if e.exhibit {
             parts.push("exhibit".into());
+        }
+        if e.referential {
+            parts.push("ref".into());
         }
         if e.kind != ElementKind::Reference {
             parts.push(e.kind.keyword().into());
@@ -464,6 +469,7 @@ fn is_bare_connect(e: &Element) -> bool {
         && e.multiplicity.is_none()
         && !e.is_abstract
         && !e.is_end
+        && !e.referential
         && e.direction.is_none()
 }
 

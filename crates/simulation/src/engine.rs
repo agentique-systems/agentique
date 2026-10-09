@@ -378,6 +378,16 @@ impl<'p> Engine<'p> {
                 Some(usage),
                 format!("`{}` cannot run: {why}", self.instance(instance).path),
             )),
+            // A referential part that is not bound, with no stand-in (C-55).
+            Behaviour::Unbound => Err(self.stop(
+                StopReason::MissingStandIn,
+                Some(usage),
+                format!(
+                    "`{}` is not bound: the part it refers to is not identified in this model, so {value} sent to it through `{}` reaches no part; bind it (`= ...`) or stand it in",
+                    self.instance(instance).path,
+                    p.name
+                ),
+            )),
         }
     }
 
@@ -1473,6 +1483,13 @@ impl<'p> Engine<'p> {
                     current = child;
                     rest = tail;
                 }
+                None if self.instance(current).behaviour == Behaviour::Unbound => {
+                    return Err(self.stop(
+                        StopReason::EvaluationError,
+                        Some(element),
+                        format!("`{text}`: {}", unbound(self.instance(current))),
+                    ));
+                }
                 None => {
                     return Err(self.stop(
                         StopReason::EvaluationError,
@@ -1510,6 +1527,9 @@ impl<'p> Engine<'p> {
                 .find(|(aliases, _)| aliases.contains(step))
             {
                 Some((_, child)) => current = *child,
+                None if inst.behaviour == Behaviour::Unbound => {
+                    return Err(unbound(inst));
+                }
                 None => {
                     return Err(format!("`{}` has no attribute or part here", inst.path));
                 }
@@ -1522,6 +1542,15 @@ impl<'p> Engine<'p> {
     pub fn now_ms(&self) -> u64 {
         self.now
     }
+}
+
+/// Why nothing can be read from or set in a referential part that is not
+/// bound (C-55).
+fn unbound(instance: &Instance) -> String {
+    format!(
+        "`{}` is not bound: the part it refers to is not identified in this model; bind it (`= ...`) or stand it in",
+        instance.path
+    )
 }
 
 fn set_field(holder: &mut Value, path: &[ElementId], value: Value) -> Result<(), String> {

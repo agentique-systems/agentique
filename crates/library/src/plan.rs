@@ -350,6 +350,11 @@ impl Library {
                             kind.keyword()
                         )));
                     }
+                    if !last && semantics.referential(feature) == Some(true) {
+                        return Err(invalid(format!(
+                            "`{path_name}` goes through `{step}`, which refers to a part that exists elsewhere; give that part's attributes their values where it is declared"
+                        )));
+                    }
                     path.push(feature);
                     let target = if copied { map[&feature] } else { feature };
                     if !last {
@@ -645,6 +650,11 @@ impl Library {
                 .ok_or_else(|| invalid("the feature to override does not exist"))?;
             let name = tree.effective_name(feature).unwrap_or_default().to_string();
             names.push(name.clone());
+            if !last && semantics.referential(feature) == Some(true) {
+                return Err(invalid(format!(
+                    "`{name}` refers to a part that exists elsewhere; override its features where that part is declared"
+                )));
+            }
             if exists {
                 if let Some(existing) = redefinition_in(tree, &semantics, container, feature) {
                     if last {
@@ -672,6 +682,7 @@ impl Library {
                 }
             }
             let mut redefinition = Element::new(feature_element.kind);
+            redefinition.referential = feature_element.referential;
             redefinition.redefines = vec![Reference::to(feature, &name)];
             if last {
                 match &what {

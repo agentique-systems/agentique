@@ -1093,3 +1093,52 @@ fn search_stays_fast_in_a_large_library() {
 
 #[allow(dead_code)]
 fn unused(_: &Tree) {}
+
+#[test]
+fn no_value_is_given_through_a_reference() {
+    // Values for attributes of a part a reference refers to belong where
+    // that part is declared: the Library never writes `ref part :>> x { … }`.
+    let library = Library::built_in_only();
+    let state = state(
+        "package Shop {
+    private import ScalarValues::*;
+    part def Cache { attribute ttlSeconds : Natural = 30; }
+    part def Front { ref part cache : Cache; }
+    part def System {
+        part store : Cache;
+        part front : Front { ref part :>> cache = store; }
+    }
+}",
+    );
+    let front = find(&state, "Shop::Front");
+    let cache = find(&state, "Shop::Front::cache");
+    let ttl = find(&state, "Shop::Cache::ttlSeconds");
+    let Err(PlanError::Invalid(reason)) = library.plan_override(
+        &state,
+        front,
+        &[cache, ttl],
+        Override::Value(Literal::Integer("60".into())),
+        Actor::Operator,
+    ) else {
+        panic!("refused")
+    };
+    assert_eq!(
+        reason,
+        "`cache` refers to a part that exists elsewhere; override its features where that part is declared"
+    );
+    let index = Index::build(&library, Some((state.tree(), state.revision())));
+    let block = index.blocks()[index.project_block(front).unwrap()]
+        .reference
+        .clone();
+    let mut request = Use::new(block, Parent::Element(find(&state, "Shop::System")));
+    request.name = Some("side".into());
+    request.values = vec![("cache.ttlSeconds".into(), Literal::Integer("60".into()))];
+    let Err(PlanError::Invalid(reason)) = library.plan_use(&state, &request, Actor::Operator)
+    else {
+        panic!("refused")
+    };
+    assert_eq!(
+        reason,
+        "`cache.ttlSeconds` goes through `cache`, which refers to a part that exists elsewhere; give that part's attributes their values where it is declared"
+    );
+}

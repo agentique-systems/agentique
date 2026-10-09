@@ -120,6 +120,10 @@ pub enum Property {
     /// a string's quotes and backslashes inside it are escaped (`\"`, `\\`).
     Value(Option<Literal>),
     Abstract(bool),
+    /// `ref part` / `ref item`: the part or item usage refers to a part that
+    /// exists elsewhere instead of containing one (C-55). Only part and
+    /// item usages have it.
+    Referential(bool),
     Visibility(Visibility),
     /// The two ends of a connection or interface usage (or none).
     Ends(Vec<Reference>),
@@ -158,6 +162,7 @@ impl Property {
             Property::Direction(_) => Field::Direction,
             Property::Value(_) => Field::Value,
             Property::Abstract(_) => Field::Abstract,
+            Property::Referential(_) => Field::Referential,
             Property::Visibility(_) => Field::Visibility,
             Property::Ends(_) => Field::Ends,
             Property::Target(_) => Field::Target,
@@ -763,6 +768,7 @@ impl Edit<'_> {
             Property::Direction(value) => target.direction = value,
             Property::Value(value) => target.value = value,
             Property::Abstract(value) => target.is_abstract = value,
+            Property::Referential(value) => target.referential = value,
             Property::Visibility(value) => target.visibility = value,
             Property::Ends(value) => target.ends = value,
             Property::Target(value) => target.target = value,

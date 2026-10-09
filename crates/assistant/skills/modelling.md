@@ -20,6 +20,17 @@ checked, and it is reported as a problem; do not write it.
   (`attribute :>> capacity = 1000000;`).
 - Multiplicity: `[1]`, `[0..1]`, `[1..*]`, `[*]`. A part without one counts as
   required.
+- A `part` is composite: its owner contains it, and it exists only with its
+  owner. A `ref part` refers to a part that exists elsewhere instead:
+  `ref part supply : PowerBus;` in the definition, bound in the usage with
+  `ref part :>> supply = bus;` (with `apply_changes`: `"ref": true` and
+  `"expression": "bus"`). Share one part between several users this way:
+  one composite part and `ref` parts bound to it, never a second composite
+  part bound to the first (that is reported). A redefinition shares the
+  values of what it redefines: to bind a role in a usage, declare it `ref`
+  in the definition too; `ref part :>> x` over a composite `x` is still
+  composite. A `ref part` may refer to a part of its own owner's kind; a
+  composite part may not contain one.
 
 ## Items and ports
 
@@ -65,7 +76,8 @@ checked, and it is reported as a problem; do not write it.
 
 Actions, states, calcs, constraints, use cases, flows, messages,
 successions, bindings, allocations, actors and stakeholders, enums,
-occurrences, `ref` usages, default values (`:=`), expressions, `ordered`,
+occurrences, `ref` with kinds other than `part` and `item`, default values
+(`:=`), expressions, `ordered`,
 short names and aliases, metadata, views. Behaviour comes in a later stage;
 model structure, interfaces and requirements now. (Imports are part of the
 subset and may appear in a model the Operator wrote, but the tools cannot

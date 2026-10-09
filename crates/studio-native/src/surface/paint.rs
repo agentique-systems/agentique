@@ -426,6 +426,13 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                     BorderStyle::Solid,
                 ),
             };
+            // A referential part refers to a part that exists elsewhere: a
+            // dashed edge, like the keyword `ref part` above its name (C-55).
+            let style = if node.diff == DiffMark::Unchanged && node.semantic.referential {
+                BorderStyle::Dashed
+            } else {
+                style
+            };
             let tiny = rect.size.width < px(6.0);
             window.paint_quad(quad(
                 rect,

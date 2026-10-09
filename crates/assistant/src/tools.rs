@@ -195,6 +195,7 @@ pub fn definitions() -> Value {
         "multiplicity": name("create, set: e.g. \"1\", \"0..1\", \"1..*\", \"*\"."),
         "direction": { "type": "string", "enum": ["in", "out", "inout"], "description": "create, set: direction of an item or port feature." },
         "end": { "type": "boolean", "description": "create: true for an end of an interface or connection def, e.g. a port `client` with type \"~LinkStorePort\" becomes `end port client : ~LinkStorePort;`." },
+        "ref": { "type": "boolean", "description": "create, set (part or item): true for a referential usage, `ref part`: it refers to a part that exists elsewhere instead of containing one, so nothing is copied; give the part it refers to as `expression`, e.g. \"bus\" or \"power.bus\" (without one it is not bound: the part it refers to is not identified in this model). false (the default) makes it composite: contained, and existing only with its owner. A redefinition of a composite part stays composite, whatever it says: declare the inherited one `ref`. Share one part between several users with one composite part and `ref` parts bound to it, never a second composite part." },
         "value": { "type": ["string", "number", "boolean"], "description": "create, set: the value of an attribute." },
         "doc": name("create, set: documentation in plain words."),
         "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\"."),
@@ -202,7 +203,7 @@ pub fn definitions() -> Value {
         "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
         "requirement": name("create satisfy: the requirement being satisfied."),
         "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\"."),
-        "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; ref or attribute: a value that is not a plain literal, e.g. \"service.screening\"."),
+        "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; ref or attribute: a value that is not a plain literal, e.g. \"service.screening\"; ref part: the part it refers to, e.g. \"bus\"."),
         "via": name("create send or accept: the port, as a feature chain from the scenario or the part, e.g. \"service.shorten\"."),
         "after": { "type": "boolean", "description": "create accept: wait for the time in `expression` to pass instead of for an item." },
         "guard": name("create or set transition: the condition, e.g. \"attempts < 3\"."),
@@ -923,6 +924,7 @@ fn outline(state: &SystemState) -> String {
         "Outline (indented by owner; read an element by qualified name for its full text):"
             .to_string(),
     ];
+    let semantics = agq_language::Semantics::new(tree);
     let mut stack: Vec<(ElementId, usize)> = tree.roots().map(|root| (root, 0)).collect();
     stack.reverse();
     while let Some((id, depth)) = stack.pop() {
@@ -933,7 +935,11 @@ fn outline(state: &SystemState) -> String {
         ) {
             continue;
         }
-        let mut line = format!("{}{}", "  ".repeat(depth), outline_line(tree, id, element));
+        let mut line = format!(
+            "{}{}",
+            "  ".repeat(depth),
+            outline_line(tree, &semantics, id, element)
+        );
         if state.locks().contains(&id) {
             line.push_str(" [locked]");
         }
@@ -951,7 +957,12 @@ fn outline(state: &SystemState) -> String {
 }
 
 /// One element in the outline: `name (kind : Type [m] :> General, a.b to c.d)`.
-fn outline_line(tree: &Tree, id: ElementId, element: &Element) -> String {
+fn outline_line(
+    tree: &Tree,
+    semantics: &agq_language::Semantics,
+    id: ElementId,
+    element: &Element,
+) -> String {
     let names = |references: &[Reference]| {
         references
             .iter()
@@ -988,6 +999,9 @@ fn outline_line(tree: &Tree, id: ElementId, element: &Element) -> String {
         detail.push_str(direction.keyword());
         detail.push(' ');
     }
+    if element.referential {
+        detail.push_str("ref ");
+    }
     detail.push_str(element.kind.keyword());
     if !element.typed_by.is_empty() {
         let tilde = if element.conjugated { "~" } else { "" };
@@ -1004,6 +1018,26 @@ fn outline_line(tree: &Tree, id: ElementId, element: &Element) -> String {
     }
     if let Some(value) = &element.value {
         detail.push_str(&format!(" = {value}"));
+    }
+    if element.referential {
+        // What it refers to: a part that exists elsewhere, never a copy;
+        // its own value, or the one of the feature it redefines.
+        let holder = semantics.value_holder(id);
+        match holder.and_then(|h| Some((h, tree.get(h)?.expression.as_ref()?))) {
+            Some((holder, value)) => {
+                detail.push_str(&format!(
+                    " = {}",
+                    agq_language::print_expression(tree, holder, value)
+                ));
+                if holder != id {
+                    detail.push_str(", bound where it is declared");
+                }
+            }
+            None => detail.push_str(", not bound"),
+        }
+        if semantics.referential(id) == Some(false) {
+            detail.push_str(", composite: it redefines a composite part");
+        }
     }
     if element.ends.len() == 2 {
         detail.push_str(&format!(", {} to {}", element.ends[0], element.ends[1]));
@@ -1203,6 +1237,9 @@ fn operations_of(tree: &Tree, item: &Value) -> Result<Vec<Operation>, String> {
             if changed.multiplicity != old.multiplicity {
                 properties.push(Property::Multiplicity(changed.multiplicity));
             }
+            if changed.referential != old.referential {
+                properties.push(Property::Referential(changed.referential));
+            }
             if changed.direction != old.direction {
                 properties.push(Property::Direction(changed.direction));
             }
@@ -1260,6 +1297,11 @@ fn set_fields(element: &mut Element, item: &Value) -> Result<(), String> {
     }
     if let Some(text) = optional_str(item, "multiplicity")? {
         element.multiplicity = Some(multiplicity(text)?);
+    }
+    match item.get("ref") {
+        None | Some(Value::Null) => {}
+        Some(Value::Bool(referential)) => element.referential = *referential,
+        Some(_) => return Err("`ref` must be true or false".to_string()),
     }
     if let Some(text) = optional_str(item, "direction")? {
         element.direction = Some(match text {

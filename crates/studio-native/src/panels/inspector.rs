@@ -140,6 +140,8 @@ enum Field {
 /// What the Value row is called for an element, if it has one.
 fn value_label(e: &agq_language::Element) -> Option<&'static str> {
     Some(match e.kind {
+        // The part a referential part refers to (C-55).
+        ElementKind::Part | ElementKind::Item if e.referential => "Refers to",
         ElementKind::Attribute | ElementKind::Reference => "Value",
         ElementKind::Send => "Sends",
         ElementKind::AssertConstraint => "Check",
@@ -660,6 +662,39 @@ impl Fields {
         );
         let direction = e.direction;
         let value_row = value_label(e);
+        // A part or item contains what it holds or refers to it (C-55), by
+        // the language's rule: written `ref`, and so is every part it
+        // redefines. Directed, `end` and package-level usages always refer.
+        let has_usage = matches!(kind, ElementKind::Part | ElementKind::Item);
+        let written = e.referential;
+        // A usage owned by a package has no featuring type: it is a part of
+        // the model, with nothing to choose here.
+        let package_level = e
+            .owner()
+            .is_none_or(|o| tree[o].kind == ElementKind::Package);
+        let always = has_usage && !package_level && (e.direction.is_some() || e.is_end);
+        let (effective, bound, inherited) = if has_usage {
+            let semantics = agq_language::Semantics::new(tree);
+            let holder = semantics.value_holder(element);
+            let inherited = holder.filter(|h| *h != element).and_then(|h| {
+                let value = tree.get(h)?.expression.as_ref()?;
+                Some(agq_language::print_expression(tree, h, value))
+            });
+            (
+                semantics.referential(element) == Some(true),
+                holder.is_some(),
+                inherited,
+            )
+        } else {
+            (false, false, None)
+        };
+        let composite_after_all = written && !effective;
+        let not_bound = written && effective && !bound;
+        let chip = match (written && effective, kind) {
+            (true, ElementKind::Part) => "ref part",
+            (true, ElementKind::Item) => "ref item",
+            _ => kind.keyword(),
+        };
         let has_guard = kind == ElementKind::Transition;
         let via = e.via.as_ref().map(ToString::to_string);
         let namespace = kind.is_namespace();
@@ -672,7 +707,7 @@ impl Fields {
                 problems.extend(messages.iter().cloned());
             }
         }
-        let members: Vec<(ElementId, ElementKind, String)> = e
+        let members: Vec<(ElementId, ElementKind, bool, String)> = e
             .children()
             .iter()
             .filter(|c| tree[**c].kind.is_namespace() || tree[**c].kind == ElementKind::Satisfy)
@@ -680,6 +715,7 @@ impl Fields {
                 (
                     *c,
                     tree[*c].kind,
+                    tree[*c].referential,
                     tree.effective_name(*c)
                         .map_or_else(|| crate::edit::display_name(tree, *c), str::to_string),
                 )
@@ -718,7 +754,7 @@ impl Fields {
                             .flex()
                             .items_center()
                             .gap(r(6.0))
-                            .child(Chip::new(kind.keyword()).icon(kind_icon(kind)).tone(match kind {
+                            .child(Chip::new(chip).icon(kind_icon(kind)).tone(match kind {
                                 ElementKind::Requirement | ElementKind::RequirementDef => Tone::Warning,
                                 k if k.is_definition() => Tone::Info,
                                 _ => Tone::Accent,
@@ -835,6 +871,40 @@ impl Fields {
                             cx,
                         ))
                     })
+                    .when(has_usage && always, |this| {
+                        this.child(row(
+                            "Usage",
+                            div().pt(r(6.0)).child(super::note("Referential: directed and `end` usages always are.", cx)),
+                            cx,
+                        ))
+                    })
+                    .when(has_usage && !always && !package_level, |this| {
+                        let studio = studio_entity.clone();
+                        this.child(row(
+                            "Usage",
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(r(4.0))
+                                .child(
+                                    Segmented::new("usage", usize::from(written))
+                                        .choice(None, "composite")
+                                        .choice(None, "ref")
+                                        .on_choose(move |index, _, cx| {
+                                            if !editable {
+                                                return;
+                                            }
+                                            studio.act(cx, |studio| {
+                                                studio.set_property(element, Property::Referential(index == 1), "usage")
+                                            });
+                                        }),
+                                )
+                                .when(composite_after_all, |this| {
+                                    this.child(super::note("Composite all the same: it redefines a composite part, which it shares values with. Declare that one `ref` where it is declared.", cx))
+                                }),
+                            cx,
+                        ))
+                    })
                     .when(has_direction, |this| {
                         let studio = studio_entity.clone();
                         let index = match direction {
@@ -870,6 +940,12 @@ impl Fields {
                                 .flex_col()
                                 .gap(r(4.0))
                                 .child(TextField::new(&self.value).mono().invalid(self.value_error.is_some()).target("Value"))
+                                .when(not_bound, |this| {
+                                    this.child(super::note("Not bound: the part it refers to is not identified in this model. Name it here, or give it a stand-in in a scenario.", cx))
+                                })
+                                .when_some(inherited.clone(), |this, value| {
+                                    this.child(super::note(format!("Bound where it is declared: = {value}"), cx))
+                                })
                                 .when_some(self.value_error.clone(), |this, error| {
                                     this.child(ui::inline_message(Tone::Danger, error, cx))
                                 }),
@@ -967,7 +1043,7 @@ impl Fields {
             })
             .when(!members.is_empty(), |this| {
                 this.child(super::group("Owns", Some(members.len()), cx)).child(
-                    div().flex().flex_col().children(members.into_iter().enumerate().map(|(index, (id, kind, label))| {
+                    div().flex().flex_col().children(members.into_iter().enumerate().map(|(index, (id, kind, referential, label))| {
                         let studio = studio_entity.clone();
                         div()
                             .id(("owns", index))
@@ -999,7 +1075,7 @@ impl Fields {
                                 })
                             })
                             .child(icon(kind_icon(kind)).size(13.0).color(theme.text_muted))
-                            .child(div().text_color(theme.text_muted).child(kind.keyword()))
+                            .child(div().text_color(theme.text_muted).child(if referential { format!("ref {}", kind.keyword()) } else { kind.keyword().to_string() }))
                             .child(div().flex_1().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().font_family(theme::MONO).text_color(theme.text_secondary).child(label))
                     })),
                 )

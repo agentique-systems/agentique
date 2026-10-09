@@ -286,6 +286,9 @@ pub struct Instance {
     pub types: Vec<ElementId>,
     pub parent: Option<usize>,
     /// Child instances by the part feature they stand for (and its aliases).
+    /// A referential part leads to the instance it refers to, which another
+    /// part owns (C-55): no instance is made for it, so its slots, ports and
+    /// state machine are those of that instance.
     pub children: Vec<(Vec<ElementId>, usize)>,
     pub slots: Vec<Slot>,
     pub ports: Vec<usize>,
@@ -314,6 +317,11 @@ pub enum Behaviour {
     Agent(Agent),
     /// Not runnable: why.
     Unsupported(String),
+    /// A referential part that is not bound (C-55): the part it refers to
+    /// is not identified in this model. It has only its ports, so that
+    /// connections through it hold; a message reaching it stops the run
+    /// unless a stand-in answers for it.
+    Unbound,
 }
 
 /// An agent at run time. Its settings are read from its slots when it is
@@ -481,6 +489,9 @@ pub fn compile(tree: &Tree, scenario: ElementId) -> Result<Program, Vec<Blocker>
         library: Library::default(),
         blockers: Vec::new(),
         names: BTreeMap::new(),
+        refs: Vec::new(),
+        deferred: Vec::new(),
+        refs_bound: false,
     };
     compiler.library();
     compiler.scalars();
@@ -521,6 +532,26 @@ struct Compiler<'a> {
     library: Library,
     blockers: Vec<Blocker>,
     names: BTreeMap<ElementId, String>,
+    /// Referential parts met while instantiating, bound once every
+    /// instance exists.
+    refs: Vec<RefPart>,
+    /// Connections through a referential part, joined once it is bound:
+    /// (the instance that owns the connection, the connection).
+    deferred: Vec<(usize, ElementId)>,
+    refs_bound: bool,
+}
+
+/// A referential part of an instance, waiting to be bound (C-55).
+struct RefPart {
+    /// The instance whose feature it is.
+    owner: usize,
+    feature: ElementId,
+    aliases: Vec<ElementId>,
+    /// `drone.flightComputer.supply`.
+    path: String,
+    /// The features its value leads through (`bus`, `power.bus`), as
+    /// written, or `None` when it is not bound.
+    value: Option<(Vec<ElementId>, String)>,
 }
 
 impl<'a> Compiler<'a> {
@@ -1181,6 +1212,12 @@ impl<'a> Compiler<'a> {
             None,
             0,
         );
+        // Every instance exists: referential parts now lead to the instance
+        // they refer to, and connections through them can be joined.
+        self.bind_refs(&mut system);
+        for (owner, connection) in std::mem::take(&mut self.deferred) {
+            self.connect(&mut system, owner, connection);
+        }
         // Stand-ins must name parts of the subject; agent-only outcomes only
         // agents.
         for stand_in in &scenario.stand_ins {
@@ -1254,7 +1291,20 @@ impl<'a> Compiler<'a> {
             let Some(element) = self.element(feature) else {
                 continue;
             };
-            match element.kind {
+            if self.is_ref_part(feature) {
+                let ref_path = format!("{path}.{}", self.name(feature));
+                if let Some(r) = self.ref_part(index, feature, ref_path) {
+                    self.refs.push(r);
+                }
+                continue;
+            }
+            // A part usage, or a usage without a kind keyword that
+            // redefines a composite part, is a part of its own.
+            let kind = match self.semantics.part_kind(feature) {
+                Some(ElementKind::Part) => ElementKind::Part,
+                _ => element.kind,
+            };
+            match kind {
                 ElementKind::Part => {
                     if self.semantics.types_of(feature).is_empty() {
                         continue; // an untyped part (an agent without a fallback)
@@ -1282,26 +1332,9 @@ impl<'a> Compiler<'a> {
                     let aliases = self.aliases(feature);
                     system.instances[index].children.push((aliases, child));
                 }
-                ElementKind::Port => {
-                    let port = system.ports.len();
-                    let port_name = self.name(feature);
-                    let directed = self.semantics.directed_features(feature);
-                    for (_, _, ty) in &directed {
-                        if let Some(ty) = ty {
-                            self.learn_type(*ty);
-                        }
-                    }
-                    system.ports.push(Port {
-                        instance: index,
-                        feature,
-                        aliases: self.aliases(feature),
-                        name: port_name.clone(),
-                        path: format!("{path}.{port_name}"),
-                        directed,
-                    });
-                    system.instances[index].ports.push(port);
-                }
+                ElementKind::Port => self.add_port(system, index, feature, &path),
                 ElementKind::Attribute | ElementKind::Reference | ElementKind::Item => {
+                    self.check_ref_item(feature, &path);
                     let init = match self.value_of(feature) {
                         Ok(init) => init,
                         Err(why) => {
@@ -1360,6 +1393,10 @@ impl<'a> Compiler<'a> {
                 }
             };
             let (instance_steps, port_step) = steps.split_at(steps.len() - 1);
+            if !self.refs_bound && instance_steps.iter().any(|s| self.is_ref_part(*s)) {
+                self.deferred.push((owner, connection));
+                return;
+            }
             let Some(instance) = find_instance(system, owner, instance_steps) else {
                 self.block(
                     connection,
@@ -1376,14 +1413,17 @@ impl<'a> Compiler<'a> {
                 // A connection between parts or items (not ports) carries nothing.
                 return;
             };
-            ports.push((port, instance_steps.is_empty()));
+            ports.push((port, instance == owner, inside(system, owner, instance)));
         }
-        let [(a, a_outer), (b, b_outer)] = ports[..] else {
+        // A port of the owner passes items on to a part inside the owner
+        // (whatever path reaches it); otherwise the two ports face each
+        // other.
+        let [(a, a_outer, a_inside), (b, b_outer, b_inside)] = ports[..] else {
             return;
         };
         let kind = match (a_outer, b_outer) {
-            (true, false) => LinkKind::Delegation { outer: a },
-            (false, true) => LinkKind::Delegation { outer: b },
+            (true, false) if b_inside => LinkKind::Delegation { outer: a },
+            (false, true) if a_inside => LinkKind::Delegation { outer: b },
             _ => LinkKind::Facing,
         };
         system.links.push(Link {
@@ -1392,6 +1432,215 @@ impl<'a> Compiler<'a> {
             kind,
             element: Some(connection),
         });
+    }
+
+    /// A port of instance `index`, with its directed features.
+    fn add_port(&mut self, system: &mut System, index: usize, feature: ElementId, path: &str) {
+        let port = system.ports.len();
+        let port_name = self.name(feature);
+        let directed = self.semantics.directed_features(feature);
+        for (_, _, ty) in &directed {
+            if let Some(ty) = ty {
+                self.learn_type(*ty);
+            }
+        }
+        system.ports.push(Port {
+            instance: index,
+            feature,
+            aliases: self.aliases(feature),
+            name: port_name.clone(),
+            path: format!("{path}.{port_name}"),
+            directed,
+        });
+        system.instances[index].ports.push(port);
+    }
+
+    /// A referential part (C-55), by the language's rule: a part usage (or
+    /// a usage without a kind keyword redefining one) that is referential
+    /// itself, as is every part it redefines. It gets no instance of its
+    /// own; it is the instance its value leads to.
+    fn is_ref_part(&self, feature: ElementId) -> bool {
+        self.semantics.part_kind(feature) == Some(ElementKind::Part)
+            && self.semantics.referential(feature) == Some(true)
+    }
+
+    /// A referential part of instance `owner`, waiting to be bound. Its
+    /// value is its own or that of the nearest feature it redefines, so a
+    /// redefinition without one keeps the binding. A bound reference with
+    /// features of its own cannot run: its features are those of the part
+    /// it refers to.
+    fn ref_part(&mut self, owner: usize, feature: ElementId, path: String) -> Option<RefPart> {
+        let aliases = self.aliases(feature);
+        let value = match self.semantics.value_holder(feature) {
+            None => None,
+            Some(holder) => {
+                let Some(Expression::Name(reference)) =
+                    self.element(holder).and_then(|e| e.expression.clone())
+                else {
+                    self.block(
+                        feature,
+                        format!("`{path}` is a reference whose value is not a feature chain naming a part"),
+                    );
+                    return None;
+                };
+                match self.steps(holder, Role::Value, &reference) {
+                    Ok(steps) => Some((steps, reference.to_string())),
+                    Err(why) => {
+                        self.block(feature, why);
+                        return None;
+                    }
+                }
+            }
+        };
+        if let Some((_, text)) = &value {
+            let members: Vec<ElementId> = aliases
+                .iter()
+                .filter_map(|a| self.element(*a))
+                .flat_map(|e| e.children().to_vec())
+                .filter(|c| {
+                    self.element(*c)
+                        .is_some_and(|c| !matches!(c.kind, ElementKind::Doc | ElementKind::Comment))
+                })
+                .collect();
+            let own: Vec<String> = members
+                .into_iter()
+                .map(|c| format!("`{}`", self.name(c)))
+                .collect();
+            if !own.is_empty() {
+                // Still bound below, so that nothing else is reported for it.
+                self.block(
+                    feature,
+                    format!(
+                        "`{path}` refers to `{text}` and declares {} of its own; what it refers to has that part's features, so declare them there",
+                        own.join(", ")
+                    ),
+                );
+            }
+        }
+        Some(RefPart {
+            owner,
+            feature,
+            aliases,
+            path,
+            value,
+        })
+    }
+
+    /// In a run a `ref item` is a value, copied into its slot: it cannot
+    /// refer to a part, which runs as an instance. `path` is its owner's.
+    fn check_ref_item(&mut self, feature: ElementId, path: &str) {
+        if self.semantics.part_kind(feature) != Some(ElementKind::Item)
+            || self.semantics.referential(feature) != Some(true)
+        {
+            return;
+        }
+        let Some(holder) = self.semantics.value_holder(feature) else {
+            return;
+        };
+        let Some(Expression::Name(reference)) =
+            self.element(holder).and_then(|e| e.expression.clone())
+        else {
+            return;
+        };
+        let target = self
+            .steps(holder, Role::Value, &reference)
+            .ok()
+            .and_then(|steps| steps.last().copied());
+        if target.is_some_and(|t| self.semantics.part_kind(t) == Some(ElementKind::Part)) {
+            let name = self.name(feature);
+            self.block(
+                feature,
+                format!(
+                    "`{path}.{name}` is a `ref item`, a value in runs; it cannot refer to the part `{reference}`, which runs as an instance"
+                ),
+            );
+        }
+    }
+
+    /// Binds each referential part to the instance its value leads to: the
+    /// value's first feature is looked up from the part's owner outward,
+    /// as its name is. A reference that is not bound gets an instance with
+    /// its ports only first (`Behaviour::Unbound`), so that connections
+    /// through it hold, a stand-in can answer for it, and a reference bound
+    /// to it is the same instance. A value through another reference waits
+    /// for that one; a value that never leads to an instance (bound to
+    /// itself, or to something that does not run) keeps the run from
+    /// starting.
+    fn bind_refs(&mut self, system: &mut System) {
+        let (unbound, mut pending): (Vec<RefPart>, Vec<RefPart>) = std::mem::take(&mut self.refs)
+            .into_iter()
+            .partition(|r| r.value.is_none());
+        for r in unbound {
+            self.unbound_instance(system, r);
+        }
+        loop {
+            let before = pending.len();
+            pending.retain(|r| {
+                let Some(target) = r
+                    .value
+                    .as_ref()
+                    .and_then(|(value, _)| resolve(system, r.owner, value))
+                else {
+                    return true;
+                };
+                system.instances[r.owner]
+                    .children
+                    .push((r.aliases.clone(), target));
+                false
+            });
+            if pending.len() == before {
+                break;
+            }
+        }
+        for r in pending {
+            let text = r.value.map(|(_, text)| text).unwrap_or_default();
+            self.block(
+                r.feature,
+                format!(
+                    "`{}` is bound to `{text}`, which does not lead to a part that runs in this configuration",
+                    r.path
+                ),
+            );
+        }
+        self.refs_bound = true;
+    }
+
+    /// The instance of a reference that is not bound: its ports only.
+    fn unbound_instance(&mut self, system: &mut System, r: RefPart) {
+        let types: Vec<ElementId> = self
+            .semantics
+            .types_of(r.feature)
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect();
+        if types.is_empty() {
+            return; // nothing could reach an untyped one
+        }
+        for ty in &types {
+            self.learn_type(*ty);
+        }
+        let index = system.instances.len();
+        system.instances.push(Instance {
+            usage: r.feature,
+            name: self.name(r.feature),
+            path: r.path.clone(),
+            types,
+            parent: Some(r.owner),
+            children: Vec::new(),
+            slots: Vec::new(),
+            ports: Vec::new(),
+            behaviour: Behaviour::Unbound,
+            fallback_of: None,
+        });
+        for feature in self.semantics.features(r.feature) {
+            if self
+                .element(feature)
+                .is_some_and(|e| e.kind == ElementKind::Port)
+            {
+                self.add_port(system, index, feature, &r.path);
+            }
+        }
+        system.instances[r.owner].children.push((r.aliases, index));
     }
 
     /// What an instance does: an agent, its exhibit state machine, or nothing.
@@ -1765,6 +2014,43 @@ pub(crate) fn find_instance(system: &System, from: usize, features: &[ElementId]
             .map(|(_, child)| *child)?;
     }
     Some(current)
+}
+
+/// Whether `instance` is a part inside `owner`: a composite descendant,
+/// found by walking up its owners. An unbound reference is outside.
+fn inside(system: &System, owner: usize, instance: usize) -> bool {
+    let mut current = instance;
+    while current != owner {
+        let at = &system.instances[current];
+        if at.behaviour == Behaviour::Unbound {
+            return false;
+        }
+        match at.parent {
+            Some(parent) => current = parent,
+            None => return false,
+        }
+    }
+    instance != owner
+}
+
+/// The instance a referential part's value leads to: the value's first
+/// feature belongs to `owner` or to the nearest instance above it that has
+/// it, as a name is looked up outward.
+fn resolve(system: &System, owner: usize, value: &[ElementId]) -> Option<usize> {
+    let first = value.first()?;
+    let mut at = Some(owner);
+    while let Some(current) = at {
+        let instance = &system.instances[current];
+        if instance
+            .children
+            .iter()
+            .any(|(aliases, _)| aliases.contains(first))
+        {
+            return find_instance(system, current, value);
+        }
+        at = instance.parent;
+    }
+    None
 }
 
 /// Calls `visit` on the steps of every path in an expression.

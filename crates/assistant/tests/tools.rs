@@ -917,3 +917,109 @@ fn library_tool_inputs_are_checked_against_their_schemas() {
         .is_ok()
     );
 }
+
+#[test]
+fn a_referential_part_is_created_bound_read_and_explained() {
+    let mut state = state();
+    let prepared = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        APPLY_CHANGES,
+        &json!({
+            "description": "Share one store",
+            "operations": [
+                { "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "Service" },
+                { "op": "create", "parent": "UrlShortener::Service", "kind": "part", "name": "store", "type": "LinkStore" },
+                { "op": "create", "parent": "UrlShortener::Service", "kind": "part", "name": "primary",
+                  "type": "LinkStore", "ref": true, "expression": "store" },
+                { "op": "create", "parent": "UrlShortener::Service", "kind": "part", "name": "backup",
+                  "type": "LinkStore", "ref": true }
+            ]
+        }),
+    );
+    state.apply(change(prepared)).expect("applies");
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    let text = &print(state.tree())[0].text;
+    assert!(
+        text.contains("ref part primary : LinkStore = store;"),
+        "{text}"
+    );
+    assert!(text.contains("ref part backup : LinkStore;"), "{text}");
+    let Prepared::Answer(outline) =
+        tools::prepare(&state, &Library::built_in_only(), READ_MODEL, &json!({}))
+    else {
+        panic!()
+    };
+    assert!(
+        outline.contains("primary (ref part : LinkStore = store)"),
+        "{outline}"
+    );
+    assert!(
+        outline.contains("backup (ref part : LinkStore, not bound)"),
+        "{outline}"
+    );
+    assert!(outline.contains("store (part : LinkStore)"), "{outline}");
+    let Prepared::Answer(element) = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        READ_MODEL,
+        &json!({ "element": "UrlShortener::Service::primary" }),
+    ) else {
+        panic!()
+    };
+    assert!(
+        element.contains("ref part primary : LinkStore = store;"),
+        "{element}"
+    );
+    let Prepared::Answer(behaviour) = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        tools::INSPECT_BEHAVIOUR,
+        &json!({ "element": "UrlShortener::Service" }),
+    ) else {
+        panic!()
+    };
+    assert!(
+        behaviour
+            .contains("- primary : LinkStore (ref part: refers to `store`, does not contain it)"),
+        "{behaviour}"
+    );
+    assert!(
+        behaviour.contains(
+            "- backup : LinkStore (ref part: not bound; the part it refers to is not identified in this model)"
+        ),
+        "{behaviour}"
+    );
+    // Made composite, it would own the store twice: applied, and reported.
+    let prepared = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        APPLY_CHANGES,
+        &json!({
+            "description": "Make it composite",
+            "operations": [{ "op": "set", "element": "UrlShortener::Service::primary", "ref": false }]
+        }),
+    );
+    let event = state.apply(change(prepared)).expect("applies");
+    let result = tools::describe_event(&state, &event);
+    assert!(
+        result.contains(
+            "this composite part would be that part under a second name; declare it `ref part` (deviation 19) [wrong-value]"
+        ),
+        "{result}"
+    );
+    // `ref` is a part's or an item's.
+    let prepared = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        APPLY_CHANGES,
+        &json!({
+            "description": "Refer to a port",
+            "operations": [{ "op": "set", "element": "UrlShortener::LinkStore::links", "ref": true }]
+        }),
+    );
+    let Prepared::Invalid(message) = prepared else {
+        panic!("expected an explanation, got {prepared:?}");
+    };
+    assert!(message.contains("a port has no `ref`"), "{message}");
+}

@@ -800,3 +800,56 @@ fn deleting_a_renamed_element_never_binds_its_references_to_another() {
     }
     assert_eq!(texts[0], texts[1]);
 }
+
+#[test]
+fn a_referential_part_keeps_its_flag_through_undo_save_and_reopen() {
+    let (_dir, folder, mut project) = shop();
+    let system = id(&project, "Shop::System");
+    let store = id(&project, "Shop::Store");
+    // `ref part primary : Store = store;`: it refers to the system's store.
+    let mut primary = part("primary", store, "Store");
+    primary.referential = true;
+    primary.expression = Some(agq_language::parse_expression("store").unwrap());
+    let primary = add(&mut project, system, primary);
+    assert!(project.state().tree()[primary].referential);
+    assert!(
+        project.state().diagnostics().is_empty(),
+        "{:?}",
+        project.state().diagnostics()
+    );
+    // Made composite, it would own the store a second time.
+    change(
+        &mut project,
+        Operation::Set {
+            element: primary,
+            property: Property::Referential(false),
+        },
+    );
+    assert!(!project.state().tree()[primary].referential);
+    let codes: Vec<&str> = project
+        .state()
+        .diagnostics_for(primary)
+        .map(|d| d.code)
+        .collect();
+    assert_eq!(codes, ["wrong-value"]);
+    project.undo().unwrap();
+    assert!(project.state().tree()[primary].referential);
+    assert!(project.state().diagnostics().is_empty());
+    project.redo().unwrap();
+    assert!(!project.state().tree()[primary].referential);
+    project.undo().unwrap();
+    let before = project.state().tree().clone();
+    drop(project); // close
+
+    let text = fs::read_to_string(model_file(&folder)).unwrap();
+    assert!(text.contains("ref part primary : Store = store;"), "{text}");
+    let project = Project::open(&folder).unwrap();
+    assert!(project.unmatched().is_empty(), "{:?}", project.unmatched());
+    assert_eq!(
+        compare(&before, project.state().tree()),
+        Comparison::default()
+    );
+    assert_eq!(id(&project, "Shop::System::primary"), primary);
+    assert!(project.state().tree()[primary].referential);
+    assert!(project.state().diagnostics().is_empty());
+}

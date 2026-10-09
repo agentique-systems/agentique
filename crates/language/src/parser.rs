@@ -511,10 +511,41 @@ impl<'a> Parser<'a> {
                 "out" => element.direction = Some(Direction::Out),
                 "inout" => element.direction = Some(Direction::InOut),
                 "end" => element.is_end = true,
+                // `ref part x` / `ref item x`: a referential usage. `ref x`
+                // (no kind keyword) is a reference usage, read below.
+                "ref" if matches!(self.peek_text(1), "part" | "item") => element.referential = true,
+                // `ref` comes right before the kind keyword (8.2.2.6.2).
+                "ref"
+                    if matches!(
+                        self.peek_text(1),
+                        "abstract"
+                            | "in"
+                            | "out"
+                            | "inout"
+                            | "end"
+                            | "derived"
+                            | "constant"
+                            | "variation"
+                    ) =>
+                {
+                    let message = match self.peek_text(1) {
+                        "end" => {
+                            "an `end` feature is always referential; write it without `ref`".into()
+                        }
+                        next => {
+                            format!("`ref` comes after `{next}`, right before `part` or `item`")
+                        }
+                    };
+                    return Err((Failure::Syntax(message), self.pos));
+                }
                 "#" => return self.unsupported("metadata `#`"),
                 _ => break,
             }
             self.bump();
+        }
+        if element.referential && element.is_end {
+            let message = "an `end` feature is always referential; write it without `ref`";
+            return Err((Failure::Syntax(message.into()), self.pos));
         }
         let keyword = self.peek_text(0);
         let is_word = self.kind() == TokenKind::Word && lexer::is_keyword(keyword);
@@ -577,6 +608,10 @@ impl<'a> Parser<'a> {
             };
             if element.direction.is_some() || element.is_end {
                 let message = "a definition cannot have a direction or be an `end`".to_string();
+                return Err((Failure::Syntax(message), self.pos));
+            }
+            if element.referential {
+                let message = "a definition cannot be `ref`; only a usage refers".to_string();
                 return Err((Failure::Syntax(message), self.pos));
             }
             self.bump();

@@ -415,15 +415,46 @@ pub(super) fn inspect_behaviour(tree: &Tree, input: &Value) -> Result<String, St
             continue;
         }
         for part in semantics.features(holder) {
-            if semantics.element(part).map(|e| e.kind) != Some(ElementKind::Part) {
+            let Some(element) = semantics.element(part) else {
+                continue;
+            };
+            // `:>> supply = bus;` redefining a part is a referential part too.
+            let redefines_part = || {
+                semantics.redefined(part).iter().any(|r| {
+                    semantics
+                        .element(*r)
+                        .is_some_and(|e| e.kind == ElementKind::Part)
+                })
+            };
+            let is_part = element.kind == ElementKind::Part
+                || (element.kind == ElementKind::Reference && redefines_part());
+            if !is_part {
                 continue;
             }
             let path = format!("{prefix}{}", name(part));
             let ty = semantics.types_of(part).first().map(|(t, _)| *t);
-            parts.push(format!(
-                "- {path}{}",
-                ty.map(|t| format!(" : {}", name(t))).unwrap_or_default()
-            ));
+            let typed = ty.map(|t| format!(" : {}", name(t))).unwrap_or_default();
+            if semantics.referential(part) == Some(true) {
+                // It refers to a part that exists elsewhere: not contained,
+                // so what is inside belongs to that part.
+                let value = semantics
+                    .value_holder(part)
+                    .filter(|holder| tree.contains(*holder))
+                    .and_then(|holder| {
+                        let x = tree[holder].expression.as_ref()?;
+                        Some(agq_language::print_expression(tree, holder, x))
+                    });
+                parts.push(match value {
+                    Some(value) => format!(
+                        "- {path}{typed} (ref part: refers to `{value}`, does not contain it)"
+                    ),
+                    None => format!(
+                        "- {path}{typed} (ref part: not bound; the part it refers to is not identified in this model)"
+                    ),
+                });
+                continue;
+            }
+            parts.push(format!("- {path}{typed}"));
             if let Some(ty) = ty {
                 stack.push((ty, format!("{path}."), depth + 1));
             }
