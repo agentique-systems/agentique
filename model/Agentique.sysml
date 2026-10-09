@@ -1617,8 +1617,26 @@ package AgentiqueArchitecture {
     }
 
     requirement def Purpose {
-        doc /* Agentique's purpose, as ROADMAP §1.1 states it (C-55; the one authoritative statement, referred to here, not restated). W13.4 states its obligations as subrequirements of the requirement `purpose`; the purpose and its protections change only by the Operator's decision, never inside an objective. */
+        doc /* Agentique's purpose, as ROADMAP §1.1 states it (C-55; the one authoritative statement, referred to here, not restated). Its obligations are the subrequirements below; they are informal, so the purpose is never calculated to hold: its evidence is the requirements that make each obligation concrete (OneChangePath, GatesDecide, FindingsReproduce, DefectShownBefore, ChildWorkBounded and the others), their scenarios and the tests linked to them. The purpose and its protections change only by the Operator's decision, never inside an objective. */
         subject product : Agentique;
+        requirement explicitArchitecture {
+            doc /* A system's structure, contracts, behaviour and requirements are explicit KerML/SysML elements of one System State, valid under the supported subset, shown on the Surface and given to agents through the same operations. */
+        }
+        requirement executableOrReported {
+            doc /* Modelled behaviour runs in model execution and requirements are evaluated on modelled configurations; what cannot run or be evaluated is reported as such, never approximated. */
+        }
+        requirement claimsKeptApart {
+            doc /* The claims of ROADMAP §4.14 (parse, resolution, rules, calculation, executable, completed, check passed, implementation agrees, evidence under stated assumptions) are shown apart, none stronger than it is. */
+        }
+        requirement sameMechanismsForItself {
+            doc /* Agentique's own architecture uses the concepts, operations and checks it offers: this model is valid under its own core, its scenarios run in its own model execution, and its links point at its code. */
+        }
+        requirement operatorKeepsControl {
+            doc /* The Operator gives intent, sees what agents do and the evidence, and keeps control of the purpose and of consequential decisions: locks, approvals, budgets, Pause and Stop. */
+        }
+        requirement alignedEvolution {
+            doc /* Every autonomous change names the requirement it serves and the elements it affects, is reviewed against the approved baseline, and leaves the purpose and the governing text to the Operator. */
+        }
     }
 
     requirement purpose : Purpose;
@@ -2028,4 +2046,6 @@ package AgentiqueArchitecture {
             not ended.merged and ended.reproduced == 0
         }
     }
+
+    satisfy purpose by agentique;
 }

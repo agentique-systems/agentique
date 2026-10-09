@@ -2087,7 +2087,7 @@ it). Read against the code and the model before any change:
 | W13.1 Direction | #117 | Merged |
 | W13.2 Referential usages | #119 | Merged (below) |
 | W13.3 Requirement constraints and evidence | #121 | In review (below) |
-| W13.4 The self-model | #118 | Merged (below); the purpose's subrequirements follow W13.3 |
+| W13.4 The self-model | #118 | Merged (below); the purpose's obligations in review (below) |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | — | In review (below) |
 | W13.7 Proof | — | Not started |
@@ -2323,3 +2323,14 @@ Not verified: the model in the Studio by eye; units (a number is in the
 unit its documentation states). Before this stage the same model text had
 five unsupported constructs (`ref part`, `assume`, `require`) and nothing
 of its mass or wait could be calculated.
+
+**W13.4, the purpose's obligations** (`stage13/purpose`, made through
+`apply_changes`, the lock of `Purpose` confirmed on the Operator's C-55
+instruction). `Purpose` gains six informal subrequirements (explicit
+architecture; executable or reported; claims kept apart; the same mechanisms
+for itself; the Operator keeps control; aligned evolution), and
+`satisfy purpose by agentique` is declared now that the Requirements panel
+keeps a declaration apart from evidence: the purpose shows as declared and
+not calculable (its obligations are informal), never as holding; its
+evidence is the requirements that make each obligation concrete. Dogfood:
+4 passed.
