@@ -44,9 +44,52 @@ build, on the Operator's machine), **derived** (computed from measured parts),
 
 ### 1.1 What Agentique is
 
-Agentique is a **native desktop application in which a person and AI agents
-design, simulate and implement systems together, working at the level of
-system architecture rather than code.**
+**Purpose (C-55).** This paragraph is the one authoritative statement of
+Agentique's purpose; every other document, instruction and agent brief refers
+to it here instead of restating it. **Agentique is a system for understanding,
+modelling, simulating, verifying, implementing and evolving systems through
+explicit architecture grounded in KerML and SysML v2. Agentique is itself such
+a system:** it uses for its own development the same modelling concepts,
+operations, contracts and verification mechanisms it gives its users. AI
+agents do the work; people express intent, inspect the system visually,
+observe execution and evidence, and keep control of the purpose and of
+consequential decisions. The ambition is a system of systems: a system that
+helps build and evolve other systems, itself included, through recursive
+composition and reusable knowledge. Autonomous development is a means of
+improving this modelling and engineering environment, and every improvement
+serves this purpose.
+
+Two architectural principles follow, for Agentique and for every system built
+with it:
+
+- **The root system.** A system's root states its purpose, a small set of
+  coherent responsibilities and stable contracts. A system that builds systems
+  is composed the same way as the systems it builds, and refers to them, and
+  to other instances of itself, rather than containing them. The core stays
+  cohesive and limited; no part becomes a universal object that accumulates
+  every responsibility.
+- **Generalise the mechanism; specialise the application.** Shared contracts
+  are definitions and contextual roles are usages; variation (providers,
+  domain rules, workflows, implementation choices) sits at the narrowest scope
+  that needs it, through specialisation, subsetting and redefinition with
+  their standard meanings, explicit interfaces, and dependencies directed
+  toward stable abstractions. An abstraction is introduced when distinct uses
+  demonstrate the commonality; meaningful differences are kept rather than
+  hidden behind flags, untyped payloads or generic dispatchers. A design is
+  simpler when the whole is easier to understand, less coupled, less
+  duplicated, cheaper to change and to verify, not when it has fewer boxes or
+  lines. Compositionality, cohesion, low coupling, substitutability,
+  separation of concerns, dependency inversion and behavioural refinement are
+  the criteria.
+
+The self-model states this purpose's obligations as the requirement `purpose`
+of `model/Agentique.sysml`, which Agentique's architecture satisfies. The
+purpose and its protections change only by the Operator's decision, recorded
+in §7.6: agents may propose such a change, never make it (§4.16).
+
+**How it is delivered.** Agentique is a **native desktop application in which
+a person and AI agents design, simulate and implement systems together,
+working at the level of system architecture rather than code.**
 
 It is where a project's **development** lives for the project's whole
 lifecycle (C-1). The project's artifacts (source code, repositories, running
@@ -228,6 +271,26 @@ model's opinion alone; a fix counts only when its regression fails on the
 original implementation (§4.16, Scenario K in §2.12, Stage 12 in §6.9).
 External Claude Code bootstraps this stage and is not needed afterwards for
 ordinary development, testing, orchestration or adoption.
+
+**Agentique models, simulates and evolves systems, itself included (C-55,
+2026-10-09).** The Operator recorded the enduring purpose (§1.1) and
+directed the next stage: strengthen the KerML/SysML foundations the purpose
+rests on, and make autonomous evolution stay faithful to it. The supported
+subset grows where engineering scenarios need it (referential usages for
+shared elements, requirement constraints with their assumptions and their
+evaluation, reusable calculations), each complete from text to validation,
+System State operations, the Surface and the agents' tools, execution or
+analysis, evidence, and saving; the self-model states the purpose's
+obligations as requirements and models the autonomous lifecycle (objectives,
+delegation, execution, verification, review, adoption, recovery,
+continuation) as behaviour that runs and is checked against the
+implementation; a second, materially different system (an inspection drone
+and its charging station) exercises the same abstractions; every autonomous
+proposal names the requirement it serves, the elements it affects, its
+benefit, its evidence and its effect on root complexity, and is reviewed
+against the Operator's approved baseline, not only the previous commit;
+verification claims stay apart, each shown no stronger than it is (§4.14);
+and the remaining proof of Stage 12 runs with a modelling objective (§6.10).
 
 **Ambition in the outcome, simplicity in the mechanism.** Every item in this
 document names the scenario step, decision or recommendation it serves (§8.1).
@@ -908,10 +971,27 @@ interfaces studied (R-24):
   `accept … via`, `accept after`, guards and effects; `send`, `assign`, `if`
   and composite actions); and verification cases as scenarios (`verification
   def` with `subject`, `objective { verify … }`, steps and `assert
-  constraint`). Each is listed in §4.14 and the manifest (Q-5).
+  constraint`). Each is listed in §4.14 and the manifest (Q-5). C-55 adds,
+  for the engineering questions of Stage 13 (§6.10), on Agentique's own model
+  and on the inspection drone: referential usages (`ref part`, `ref item`), so
+  a shared element is referred to instead of copied and a system can refer to
+  another instance of its own kind without a composition cycle; requirement
+  constraints (`assume constraint`, `require constraint`, subrequirements),
+  evaluated on the modelled configuration of what satisfies them; and, where
+  a calculation is reused, `calc def` with named arguments. Each is complete
+  on the whole path (text, validation, System State operations, the Surface
+  and the tools, execution or analysis, evidence, saving), never parser
+  acceptance alone, and named in §7.6 before it is built.
 - **Standard terms, standard meaning.** Deviations are recorded in one line
-  each with the reason in `docs/deviations.md` (R-9). There are eleven today;
-  this phase adds one for the built-in `Agents` library (§4.11).
+  each with the reason in `docs/deviations.md` (R-9), and an existing one that
+  affects a scenario is corrected or its limit stated where the scenario
+  meets it. Standard syntax is never given a convenient meaning of
+  Agentique's own; a reference implementation accepting a model is evidence,
+  not proof of conformance.
+- **The same constructs for Agentique and its users** (C-20, C-55). Agentique's
+  self-model uses the constructs, operations and checks it offers, and every
+  extension is proven on Agentique's own model and on a system of another
+  kind, so that a mechanism is general and its applications stay specific.
 - **Unsupported means explicit.** An unsupported construct is reported as
   unsupported, never silently approximated.
 - **Invisible to users.** SysML text is the storage format for Agentique and
@@ -1778,13 +1858,29 @@ runners add their own data (a model trace, a process log).
   and its source, fallback and why, check), the inputs and outputs, and why the
   run stopped. They are processed away from drawing and stored with the result.
 
-**What a result may claim.** Five claims stay apart and are never merged:
-*structurally valid* (validation), *behaviour executable* (the runner compiled
-it), *scenario completed* (the run ended normally), *check passed* (an assert
-held in that run), and *implementation agrees within the checked scope*
-(§4.15). Checks are shown as **passed, failed, not run, unsupported, blocked or
-inconclusive**. A requirement linked to a part is not a tested requirement; a
-requirement shows the scenarios that verify it and their current verdicts.
+**What a result may claim** (C-50, extended by C-55). These claims stay
+apart, each shown for what it is and never merged into a stronger one:
+
+| Claim | Established by | Not established by it |
+|---|---|---|
+| *The text parses* | The parser | That its names resolve |
+| *References resolve* | Linking | That the model means what was intended |
+| *The implemented semantic rules hold* | Validation under the subset | Every rule of the standard, or any physical law |
+| *Calculated from the model* | Evaluating a requirement's assumed and required constraints on the modelled configuration of what satisfies it (C-55): holds, violated, assumptions not met, or not evaluable | That a built system has those values |
+| *The behaviour is executable* | The runner compiled it | That it ran |
+| *The run completed* | The run ended normally | That any check passed |
+| *A check passed* | An assert held in that run | Anything outside that run's stand-ins and inputs |
+| *The implementation agrees within the checked scope* | The checks of §4.15 | What those checks do not cover |
+| *Evidence supports a requirement under stated assumptions* | Current calculations, passing scenarios and agreeing implementation checks for that requirement, with the assumptions they rest on | Validity outside those assumptions |
+
+A `satisfy` declaration is a claim someone made, not evidence; an empty or
+informal requirement, a verification case without steps or checks, a
+successful parse and a scripted stand-in are never shown as stronger than
+they are. Checks are shown as **passed, failed, not run, unsupported, blocked
+or inconclusive**. A requirement linked to a part is not a tested
+requirement; a requirement shows, kept apart, who declared it satisfied, what
+the calculation on the model says, the scenarios that verify it with their
+current verdicts, and the implementation checks linked to it.
 Probabilistic results (live evaluation) report samples, outcomes, failure
 categories and a 95% Wilson interval, and say whether each check is
 deterministic or judged.
@@ -1795,7 +1891,10 @@ definitions and everything they reference, the scenario and its stand-ins),
 the implementation commit and tree state for implementation runs, and the
 provider, model, instructions and case versions for live evaluations.
 Freshness is computed, never stored: when any recorded digest differs from the
-current one the result is **outdated**, and the Studio shows it as such. An
+current one the result is **outdated**, and the Studio shows it as such. A
+calculation on the model (C-55) is worked out from the current model when it
+is shown, with the digest of the slice it read, so it is never outdated, and
+it says which values and assumptions it used. An
 outdated result that belongs to an older model revision opens with that
 revision's snapshot, never overlaid on today's geometry.
 
@@ -1999,7 +2098,39 @@ with its base: deleted or ignored tests, removed assertions, relaxed budgets
 and changed required checks are listed for the reviewer as test changes, and
 fail the cycle unless the proposal named them as intended, with a reason the
 reviewer accepted. The criteria and the required checks are frozen at the
-proposal; a later attempt cannot replace them.
+proposal; a later attempt cannot replace them. A change to `ROADMAP.md` or to
+the self-model's purpose requirement (`Purpose` and `purpose`, by identity)
+fails the gates even when the objective names it, as the locked core does
+(C-55): the governing text and the purpose change only by the Operator's
+decision.
+
+**Alignment with the purpose (C-55).** Every proposal names, besides its
+parts, plan and criteria: the requirements of the project's model it serves
+(`serves`: the capability or root requirement, by qualified name), the model
+elements and contracts it affects (`parts`), the expected user-visible
+benefit, and its effect on root complexity, reuse and dependencies. The
+Orchestrator checks mechanically, on the base's model, that each named
+requirement and element exists, and refuses the proposal otherwise. At
+review it lists what the commit changed (model elements by identity, and the
+parts whose linked code changed) beside what the proposal named, so changes
+not named and names not changed are judged explicitly; and it summarises the
+**cumulative** change from the Operator's **approved baseline** (the commit
+the tag `approved-baseline` marks, which only the Operator moves) to the
+reviewed commit: elements added, removed and changed, counted at the root
+(part definitions, dependencies, requirements, locks), and the tests and
+checks changed over that range. The reviewer judges whether the cumulative
+change still serves the purpose and the named requirements, so that small,
+individually plausible changes cannot redefine the product over many cycles.
+The mechanical checks say what changed; only the review judges alignment, and
+neither a number nor an agent's approval proves it. Before a reproduced
+finding is fixed, the lead records its **disposition** in the testing
+knowledge: a genuine defect, a wrong expectation of the tester, an ambiguous
+requirement (a question for the Operator, not a fix), or an unreliable
+reproduction, judged against the requirements and intended semantics; only a
+defect is proposed, an explorer's own expectation is never one until it is
+judged so, and a finding judged a wrong expectation or unreliable is not
+offered again, so repeated disagreement with a model-generated expectation
+does not turn into a change.
 
 **Budgets and progress.** An objective has a spend budget (USD, from usage at
 the models' own prices, typed decisions included), a cycle budget, an attempt
@@ -3132,7 +3263,8 @@ run if the Operator accepts it.
   on the final `main`. Where a role's default model has no credential it may
   use (on the reference machine, roles that call Claude directly, since only
   the Operator's subscription token is there), the proof shows that role on
-  its fallback, with the reason, and says the default is not tried.
+  its fallback, with the reason, and says the default is not tried. Under
+  C-55 this proof runs as W13.7, with a modelling or simulation objective.
 
 **Gates** (the Operator's, C-15): the Operator gives an intent, watches
 Agentique explore, delegate, fix and adopt through K1–K8, and accepts the
@@ -3142,6 +3274,82 @@ result.
 **Waits:** exploration of projects other than Agentique; a claude.ai login
 offered by Agentique (needs Anthropic's approval, §4.16); remote test
 machines.
+
+### 6.10 Stage 13: Agentique models, simulates and evolves systems, itself included (C-55)
+
+Directed by the Operator on 2026-10-09 (C-55). It builds on Stage 12's
+mechanisms (merged; their proof outstanding) and folds W12.7 into its own
+proof. Stage 12's gate stands and is met by the same run if the Operator
+accepts it.
+
+**Outcome.** The engineering questions below are answered by Agentique, on
+its own model and on a materially different system, with evidence that says
+what it is; and the autonomous loop improves this modelling capability while
+staying aligned with the purpose (§1.1).
+
+- *Composition and sharing:* what is owned, composed, shared or referred to;
+  can one element be used in several roles without being copied or counted
+  twice; can a system refer to another instance of its own kind?
+- *Requirements and evidence:* which requirement does a configuration
+  satisfy, under which assumptions, by calculation on the model, by scenario,
+  by implementation check, or only by declaration?
+- *Behaviour:* does authorisation precede energising; does a timeout recover;
+  does the autonomous cycle merge only when its gates pass and recover when a
+  build fails?
+- *Evolution:* which requirement does a change serve, what did it actually
+  change, and what has changed since the Operator's approved baseline?
+
+**Work items** (in dependency order, each integrated as a working slice):
+
+- **W13.1 Direction:** C-55 and the purpose in this document (§1.1),
+  `AGENTS.md` referring to it, the locked parts named in §7.6, the Stage 12
+  record reconciled, `docs/stages.md` Stage 13, and a way for external
+  agents to change a model through Agentique's own `apply_changes` without a
+  window.
+- **W13.2 Referential usages** (§4.3): `ref part` and `ref item` across the
+  whole path; composite and referential kept apart in validation
+  (composition cycles, a composite part bound to another part), in model
+  execution (a bound reference is the same instance) and on the Surface.
+- **W13.3 Requirement constraints and evidence** (§4.3, §4.14): assumed and
+  required constraints and subrequirements across the whole path; their
+  evaluation on the modelled configuration of what satisfies them; the
+  claims of §4.14 kept apart in the Requirements panel, the Inspector and
+  the agents' tools (a declaration is never shown as satisfaction).
+- **W13.4 The self-model** (§4.6): the purpose's obligations as requirements;
+  the autonomous lifecycle (objective, exploration, delegation, proposal,
+  implementation, checks, review, merge, build, adoption, recovery,
+  continuation) as the Orchestrator's behaviour with its role agents and
+  scenarios for the success and failure paths, linked to the tests that
+  check the implementation; the test instance as a reference to another
+  Agentique; logical responsibilities kept apart from their crates.
+- **W13.5 Alignment in the loop** (§4.16): proposals that name what they
+  serve, affect, benefit and cost; traceability by identity; the cumulative
+  review against the approved baseline; the purpose and the governing text
+  protected from cycles; dispositions of findings before they are fixed.
+- **W13.6 A second system:** an inspection drone and its charging station,
+  after the Operator's supplied guide: its boundary, assumptions, reusable
+  definitions, configurations, interfaces, behaviour and requirements; a
+  bounded question answered by simulation and calculation, with a successful
+  case and failure cases (authorisation refused, a timeout and its recovery,
+  a limit exceeded, a shared element counted once); one reusable definition
+  in several contextual usages without copying it.
+- **W13.7 Proof:** W12.7's proof with a modelling or simulation objective,
+  and a second cycle in the adopted build that uses the first one's
+  knowledge; the alignment and evidence checks visible in both;
+  interruption, cancellation, a failed validation and recovery shown on
+  purpose; external interventions recorded as such. The repository's checks,
+  the journeys and the reference run on the final `main`.
+
+**Gates** (the Operator's, C-15): the Operator inspects the self-model and
+the second system in the Studio, runs their scenarios and calculations,
+watches the autonomous cycles, and accepts the result.
+
+**Depends on:** Stage 12 (merged, proof outstanding).
+**Waits:** the ISQ and SI quantity libraries (not among the pinned
+standards; quantities stay numbers in documented units, deviation 14);
+individuals, time slices and snapshots; `flow`, `allocation`, metadata and
+views; several state machines per part; `state def` and `action def` reused
+through parameters (until a scenario needs their binding of ports).
 
 ---
 
@@ -3213,6 +3421,7 @@ Confirmed in the interview of 2026-09-27:
 | C-52 | **Typed decisions for Scenario I, alongside Stage 10.** The System One investigation's plan (updated 2026-10-03 after PR #86) is brought forward beside Stage 10 as explicitly reprioritised work: restoring CI, correcting the Execution safeguard's paths, making the Jev adapter correct (complete bounded replies, request-bound validation, explicit usage), end-to-end deadlines and cancellation, exact execution identity in the existing run records, the opt-in single-choice `LinkScreening` evaluation in the Studio, a real Rust `LinkScreening` client in the URL shortener's code with frozen-response conformance tests, and a separate, deliberate rig migration (C-34). Authorises those designs and their necessary supporting changes, including the additive persistence change recorded in §7.6. It does not authorise paid inference, live evaluations, production activation, Jev for the Assistant (C-35 stands), a router, registry, new runtime or library extraction; it changes no Stage 10 gate, does not count as its two-generation proof and declares no acceptance (the Operator's direction, 2026-10-03) |
 | C-53 | **Agentique improves itself.** Autonomous, self-improving development through Agentique: AI agents are its primary users; the Operator supplies intent as objectives, observes activity and outcomes visually, and steers or stops the work. Agentique builds, runs, tests and evaluates Agentique and adopts a new version when the objective's acceptance criteria pass, with no routine approvals and no terminal repair. Supersedes the rules that required supervised-only development, the Operator's approval of every development cycle and integration, "Agentique never pushes", the postponement of the Orchestrator, the Claude Agent runtime's restriction to Agentique's own tools, Jev never serving Agentique's own operation (C-35) and the absence of budgets for autonomous work (C-37). Authorises the necessary changes to locked parts (the Claude Agent runtime, the launcher, Execution's use, the companion protocol) when they are documented, reviewed, tested and recoverable, each named in §7.6. Keeps: model changes through the one operation boundary with validation and identity (C-2); locks (an objective may name locked elements it may change); deterministic checks and independent review decide, and an agent's or a typed decision's judgment never overrides a failing check; weakening a check never counts as improvement; Stop and recovery always work; the host's permissions, credentials, repository rules and configured budgets are respected; no force-push, no bypassed branch protection; unrelated guarantees stand (the Operator's direction, 2026-10-03) |
 | C-54 | **Agentique tests and improves itself.** From one intent, Agentique explores its own running application through the real GUI, reproduces what it finds, carries a reproduced problem through a cycle (C-53) to adoption, and explores the adopted version again with what it learned; testing knowledge, scenarios, skills and the ways of deciding improve only on measured evidence. Each agent role runs on its own configured model: Claude Opus 5.5 for the lead, the independent reviewer and escalation (difficult reasoning); Claude Sonnet 5.5 for the implementer, the evaluator and the Assistant; DeepSeek's `deepseek-flash` for the explorer; Jev for bounded typed decisions; every fallback explicit and shown with its reason. Agents may delegate child objectives within the parent's permissions and budgets, as directives the Orchestrator validates and records; the Conversation is the one place where the Operator gives intent and follows and steers every agent, the Objectives panel a dashboard of the same work (clarified by the Operator the same day). Authorises the necessary changes to the Orchestrator, the Claude Agent runtime, the control interface, the Studio's rules for agents and Settings, each named in §7.6. Keeps everything C-53 keeps, and adds: Agentique never offers a claude.ai login (that needs Anthropic's approval), never reads the CLI's stored login and never extracts or copies a credential, while the Operator may give it their own subscription token from `claude setup-token` for their own sessions in the Claude Agent runtime (decided by the Operator later the same day); a finding is a deterministic check that failed and reproduced, never a model's opinion alone; a fix counts only when its regression fails on the original implementation; user-facing changes are verified in the GUI; the tasks that judge testing knowledge and the ways of deciding are fixed and held out; external Claude Code bootstraps the stage and does not steer its proof (the Operator's direction, 2026-10-04) |
+| C-55 | **Agentique models, simulates and evolves systems, itself included.** Agentique's enduring purpose is recorded once, in §1.1: a system for understanding, modelling, simulating, verifying, implementing and evolving systems through explicit architecture grounded in KerML and SysML v2, which is itself such a system and uses for itself the concepts, operations, contracts and verification it offers; agents do the work, people give intent, inspect, observe and keep control of the purpose and consequential decisions; a system of systems that builds and evolves systems, itself included. The root system and "generalise the mechanism, specialise the application" are architectural principles (§1.1). Stage 13 (§6.10) strengthens the KerML/SysML foundations for the scenarios that need them (referential usages, requirement constraints and their evaluation, reusable calculations), each complete on the whole path; improves the self-model substantively, with the purpose's obligations and the autonomous lifecycle modelled and checked; proves the same abstractions on a second, materially different system; makes every autonomous proposal name the requirement it serves, the elements it affects, its benefit, evidence and effect on root complexity, reviewed cumulatively against the Operator's approved baseline; keeps verification claims apart (§4.14); and completes Stage 12's proof with a modelling objective. Authorises the narrowly scoped changes to the language core, the System State operations, Simulation, the Orchestrator and the related Studio and Assistant code these scenarios need, each named in §7.6 before it is built, with compatibility kept and migrations explicit. Keeps everything C-53 and C-54 keep, and adds: the purpose, the governing text and their protections change only by the Operator's decision (agents may propose, never make, such a change); proposals never weaken the purpose, acceptance criteria or review requirements to succeed; mechanical checks and reasoned review stay distinct, and no score or agent approval proves alignment; standard syntax never receives a convenient meaning of Agentique's own, and unsupported semantics are reported; the pinned standards are preserved; external Claude Code bootstraps and repairs, records its interventions, and does not supply intermediate objectives or edit the solution during a claimed autonomous proof (the Operator's direction, 2026-10-09) |
 
 ### 7.2 Recommendations
 
@@ -3435,6 +3644,12 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-04 | Decided in this session under C-54, pending the Operator: a test instance of a merged build used for exploration may be given the explorer's provider key for its own Assistant, so self-testing of the Conversation reaches real answers within the objective's spend budget; a test instance of an unreviewed build (evaluation) still receives no credential (W11.5) and its Assistant runs on the scripted stand-in the journeys use, so the Conversation's own behaviour is testable there, while a criterion that needs a real model is not run, never a pass. An objective continues by itself after an adoption or a crash the launcher recovers; one interrupted because the Operator closed Agentique waits for the Operator's Continue, as in W11.7, and a Pause is kept across restarts | Self-testing the Conversation needs a model to answer; merged code has been reviewed, unreviewed code has not; closing Agentique is the Operator's way to stop spending |
 | 2026-10-04 | W12.6 under C-54, persistence: beside a project's conversation file the Studio keeps `conversation.objectives.json` (when each entry was added, and the objectives started while that conversation was open), so an objective's thread interleaves in time and shows only in the conversation it was started from; it is covered by the existing `conversation` data format (2), whose file is unchanged, and a previous build never reads it. A test instance never runs an objective (it shows a recorded one), the Assistant's `propose_objective` only opens the start form, and a message to an ended objective is refused | One place for intent without changing the conversation's format; self-testing must never start real work |
 | 2026-10-04 | W12.5 under C-54, as built: an objective continues by itself only after an adoption (its continuation) or a fallback to the last known good build (`--recovered-from`); a crash the launcher restarts in the same build passes no flag, and the launcher is locked, so such an objective waits for the Operator's Continue, as after a close (the Studio marks it interrupted as it closes). A reproduced finding a failed cycle left unfixed stays eligible, once it reproduces again on the new base, until the objective has tried it twice. Evidence on the base, as built: command criteria run with the checked commit's own new and changed test files, recorded with their blob ids and run again when an attempt's differ; only a failing test whose own output shows an assertion failing counts (not an `unwrap` or `expect` on nothing, a `TypeError`, a Python `ERROR`); an observation counts only when its own expectation fails (a setup action that failed, a broken connection or an instance that did not start is no evidence); only the frozen criteria and the replay count | The independent reviews of W12.5 (PR #115); §4.16 "Durable, continuing work" and "Evidence, gates and bounds" |
+| 2026-10-09 | **C-55, the Operator's direction:** the purpose is recorded once, in §1.1, with the root-system and generalisation principles; §1.5 gains its paragraph; §4.3 gains the C-55 subset growth, the rule that a construct is complete on the whole path, and "the same constructs for Agentique and its users"; §4.14's claims become the nine of its table (parse, resolution, rules, calculation on the model, executable, completed, check passed, implementation agrees, evidence under stated assumptions), a `satisfy` declaration being a claim, not evidence; §4.16 gains the protection of `ROADMAP.md` and the purpose from cycles and "Alignment with the purpose"; Stage 13 (§6.10) folds W12.7 in as W13.7; the glossary gains approved baseline; `AGENTS.md` refers to §1.1 | The Operator's instruction in this session: autonomous development must serve the purpose, and Agentique's foundations must carry it |
+| 2026-10-09 | Locked core under C-55, named before it is built (R-16). **Language core:** referential usages `ref part` and `ref item` (a flag on part and item usages; the kind, and so every identity locator, unchanged), with `composition-cycle` ignoring them, a referential value that must name a part or item usage of a fitting type, and a composite part bound to another part reported (stricter than the standard, a new deviation); `assume constraint` and `require constraint` in requirement definitions and usages, named or not, formal (an expression) or informal (a doc comment), and subrequirements, whose subject is the container's; `calc def` with `in` parameters and a result, invoked with named arguments, if Stage 13's scenarios need it. **System State operations:** the properties that create and edit them (the referential flag; constraints through the existing expression property). **Persistence format:** unchanged; the new constructs are SysML text, and the identity file keeps its format; an older build reads them as unsupported text, kept verbatim, so a project that uses them loses nothing when opened there, but shows them as unsupported until it is opened in a build that reads them | Composition versus reference, and requirements that can be evaluated, are what the scenarios of §6.10 ask; nothing else in the core changes |
+| 2026-10-09 | Locked safeguard under C-55, named before it is built: **Orchestrator:** `submit_proposal` requires `serves` (requirements of the project's model), `benefit` and `complexity`, and checks `serves` and `parts` against the base's model; review lists changed-but-not-named and named-but-not-changed elements by identity and the cumulative change since the approved baseline (the tag `approved-baseline`, the Operator's only; without it, the objective's start, said so); a change to `ROADMAP.md` or to the purpose requirement fails the gates even when named; the lead records a finding's disposition (defect, wrong expectation, ambiguous requirement, unreliable reproduction) with `adjudicate_finding` before proposing it, only a defect is proposed, and wrong expectations are not offered again. Records: optional fields in `objective.json` (format 1) and the testing knowledge (format 1), read by the previous build | §4.16's alignment: the purpose constrains the loop through its existing records, requirements, locks and gates, not a second governance framework |
+| 2026-10-09 | Self-model under C-55 (§8.1 rule 5): the requirement `purpose` (its definition `Purpose`, subject `Agentique`) points to §1.1 and is satisfied by `agentique`, added through `apply_changes` (W13.1), which also printed the model as Agentique saves it (its `//` notes, which are not model elements, are gone; `model/README.md` explains the order); the purpose's obligations as subrequirements, Simulation's evaluation of requirements on a modelled configuration (no new part, crate or dependency), the Orchestrator's behaviour and role agents, and the test instance as a referential `Agentique` follow in W13.3 and W13.4 | Changes that cut across parts start in the self-model |
+| 2026-10-09 | The approved baseline starts at `f3f313b0`, the `main` the Operator reviewed before giving C-55 ("the last reviewed main was f3f313b"); the tag `approved-baseline` is set there locally and pushed, and only the Operator moves it (`git tag -f approved-baseline <commit>` and a push) | A cumulative review needs a human-approved reference; the Operator named this one |
+| 2026-10-09 | `docs/stages.md`, Stage 12: the work-item table and the "built" notes said "not merged" for W12.2, W12.3, W12.5 and W12.6; all were merged (#110, #111, #113–#116) before `f3f313b0`. W12.7 had not started and is W13.7 | One truth: the record had kept the branches' wording |
 
 ### 7.7 The original requirements
 
@@ -3450,8 +3665,10 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 
 ### 8.1 Governing rules (`AGENTS.md` must state these)
 
-1. **`ROADMAP.md` governs.** Every piece of work names the stage (§6) and the
-   scenario step, decision (C-n) or recommendation (R-n) it serves. If it serves
+1. **`ROADMAP.md` governs, and its purpose (§1.1, C-55) governs every
+   change.** Every piece of work names the stage (§6) and the scenario step,
+   decision (C-n) or recommendation (R-n) it serves, and, inside an
+   objective, the requirement of the project's model it serves. If it serves
    none, it does not start; propose an update to this document instead.
 2. **Work only in the current stage.** Items that wait do not start early,
    however attractive.
@@ -3493,7 +3710,9 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
     test, check or budget is deleted, ignored or loosened to make it pass (a
     deliberate change is named, with its reason, for the reviewer); no
     force-push, no push to the default branch, and only the Orchestrator
-    merges, when the gates pass.
+    merges, when the gates pass. `ROADMAP.md` and the self-model's purpose
+    requirement are never changed inside an objective, even when it names
+    them (C-55): such a change is proposed to the Operator.
 
 ### 8.2 One truth per topic
 
@@ -3683,6 +3902,7 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Directive** | A recorded instruction from one agent to another (author, recipient, parent objective, scope, status, result), created only by a tool the Orchestrator validates, never by text alone (C-54) |
 | **Thread** | An objective's entries in the Conversation: the Operator's messages, directives, results and system events, with tool activity folded under each step; kept with the objective's records (C-54) |
 | **Observer mode** | The visible agents (§4.16) at a speed the Operator sets: agents' typing drawn character by character, clicks, focus and scrolling, with the agent, its goal and its decisions; `instant` turns it off (C-54) |
+| **Approved baseline** | The commit the Operator last approved as the reference for Agentique's architecture (the git tag `approved-baseline`, moved only by the Operator); an objective's review compares the cumulative change since it, not only the last commit (C-55) |
 | **Archive tag** | `archive/pre-realignment`, the preserved state before Stage 0 |
 
 ---

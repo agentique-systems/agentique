@@ -1429,8 +1429,7 @@ Read against the code before any change (file:line on that commit):
   crates, 12 parts, 31 dependencies); the companion's 31 tests pass (Node
   22.11). The workspace's Rust checks passed in CI on `388b5dba`.
 
-**W12.3 Models per role and credentials** (built on `stage12/models`, not
-yet merged). Settings › Agents names, for the lead, implementer, reviewer,
+**W12.3 Models per role and credentials** (merged in #110). Settings › Agents names, for the lead, implementer, reviewer,
 evaluator, explorer, escalation and typed decisions, a model from the
 capability table (`agents.<role>.model`), its effort among the levels that
 model offers, and a fallback with its effort; the defaults are C-54's
@@ -1530,12 +1529,12 @@ the flag tier blanked them. The general-purpose and Explore subagents of a
 | Item | Pull request | State |
 |---|---|---|
 | W12.1 Direction and self-model | #108 | C-54, Scenario K, §4.16, Stage 12, the decision log naming the locked parts before they change; the self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`, `Assistant`, `Providers`, the objective and control items) and four requirements (`FindingsReproduce`, `DefectShownBefore`, `ChildWorkBounded`, `OnlyGivenCredentials`); identities reconciled by `Project::open` (only new elements got ids) |
-| W12.2 Control interface, complete and observable | — | Built: on `stage12/control` (below): tool inputs checked as declared, every interactive control observed with a readable label and an `operatorOnly` mark, title-bar buttons that answer the operating system's clicks, one agent per window, observer mode with Stop, the trace's why, goal and holder, the model's digest; with the coordinator's additions, test instances where agents also use the Conversation and undo, keys only from the environment there, and refusal kinds. Tested: unit tests, three control journeys on real windows, a real-input title-bar check |
-| W12.3 Models per role and credentials | — | Built on `stage12/models` (not merged): Settings › Agents, each role resolved and recorded before an objective starts, its sessions on its own model, effort and credential, spend by role and model, typed decisions from the `escalation` and `decisions` roles; the Claude subscription token as Anthropic's second credential; the companion's credential check and `claude auth status` probe; Claude 5.5 prices |
+| W12.2 Control interface, complete and observable | #111 | Merged (below): tool inputs checked as declared, every interactive control observed with a readable label and an `operatorOnly` mark, title-bar buttons that answer the operating system's clicks, one agent per window, observer mode with Stop, the trace's why, goal and holder, the model's digest; with the coordinator's additions, test instances where agents also use the Conversation and undo, keys only from the environment there, and refusal kinds. Tested: unit tests, three control journeys on real windows, a real-input title-bar check |
+| W12.3 Models per role and credentials | #110 | Merged: Settings › Agents, each role resolved and recorded before an objective starts, its sessions on its own model, effort and credential, spend by role and model, typed decisions from the `escalation` and `decisions` roles; the Claude subscription token as Anthropic's second credential; the companion's credential check and `claude auth status` probe; Claude 5.5 prices |
 | W12.4 Exploration and testing knowledge | #112 | Built, not yet in cycles (W12.5): `explore` (the explorer's run behind an `Instance` boundary: a test instance started fresh from a copy of the start project inside its own folder, or a stand-in; the actions valid there that the observation offers to agents, fields with fixed input classes and the Conversation's composer with fixed request classes; the rules, Jev among the rules' best eight, the explorer's model with its answer checked, or Jev escalating; recovery from stale refusals, dialogs in the way, dead ends, exits and hangs), `findings` (the checks `answers`, `offered-acts`, `readable-labels`, `undo-restores`, `dialogs-close`, `action-time`, `no-internal-error`, `turn-ends`, `turn-stops` and the explorer's `expectation`; identities normalised; `replay`, `reproduce` by two replays, `reduce` within a bound) and `knowledge` (`testing/<project>/knowledge.json`, format 1, atomic, bounded); `decide` asks one typed question for dialogs and exploration, the dialog decisions unchanged; fixed exploration tasks, tuning and held-out (`tests/fixtures/exploration.json`); measured live, preliminary (below) |
-| W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | #113, #114 (records); the rest on `stage12/loop` | Built (below), not merged: Explore and Reproduce before Propose, the finding's replay as a frozen criterion, evidence on the base, evaluation of user-facing changes, failure identity, budgets of steps and calls, stated conditions, a loop that continues through adoption and recovery, bounds on worktrees, builds and branches; the Orchestrator's half of W12.6 (delegation, message routing) with it |
-| W12.6 The Conversation as the one window: threads, directives, delegation | #116 | The Studio's side built (below): one set of objective commands for the Conversation, the Objectives panel and the palette; one start form (in the Conversation from the message or the Assistant's `propose_objective`, else in the panel) with explore, budgets, permissions and each role's model; the objective's thread in the Conversation in time order (messages with where each went, directives with their recorded status, results, events, tool calls folded with diffs, children nested, directives streaming at the observer speed); replies through the composer addressed explicitly; the panel as a dashboard; agents operate it in test instances (`--assistant-stand-in`), never in the Operator's window. The `delegate` tool, child objectives and the routing of messages are W12.5's |
-| W12.7 Proof | — | Not started |
+| W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | #113, #114 (records), #115 | Merged (below): Explore and Reproduce before Propose, the finding's replay as a frozen criterion, evidence on the base, evaluation of user-facing changes, failure identity, budgets of steps and calls, stated conditions, a loop that continues through adoption and recovery, bounds on worktrees, builds and branches; the Orchestrator's half of W12.6 (delegation, message routing) with it |
+| W12.6 The Conversation as the one window: threads, directives, delegation | #116 | Merged; the Studio's side (below): one set of objective commands for the Conversation, the Objectives panel and the palette; one start form (in the Conversation from the message or the Assistant's `propose_objective`, else in the panel) with explore, budgets, permissions and each role's model; the objective's thread in the Conversation in time order (messages with where each went, directives with their recorded status, results, events, tool calls folded with diffs, children nested, directives streaming at the observer speed); replies through the composer addressed explicitly; the panel as a dashboard; agents operate it in test instances (`--assistant-stand-in`), never in the Operator's window. The `delegate` tool, child objectives and the routing of messages are W12.5's |
+| W12.7 Proof | — | Not started; folded into Stage 13's proof, W13.7 (C-55) |
 
 **W12.4 measured, preliminary** (live, 2026-10-04, on `stage12/explore` at the code of `2e56d6dc`, as rebased onto `c563d23a`; a debug Studio built from that branch, before W12.2's control-interface changes; Jev `jev-1.13.0` through TypeSafe AI with threshold 0.6 and a 4 s deadline; the explorer's model and the escalation both DeepSeek's `deepseek-flash` at effort `low`, to compare like with like; results kept outside the repository)
 
@@ -1554,8 +1553,8 @@ Three fixed tasks (`crates/orchestrator/tests/fixtures/exploration.json`: t1 for
 
 Twelve runs, 23 minutes, $0.30. Jev was confident in 1 to 4 of each run's 20 decisions, so the Jev way mostly fell back to the rules and the escalating way escalated 15 to 19 times a run, at about the model's cost and latency. Only the model ways reached h1's Requirements panel. The two findings are expectations the model stated and the Studio did not meet (the command palette was to open as a dialog, but an observation shows it as `palette`; clicking the row “Scenario ScreeningTimesOut” was to put that text in the selection, which lists elements by name): both reproduced, both more likely wrong guesses than defects, which is a later judgment. No invariant failed in these runs; an earlier run of the rules (other coverage keys, another seed) found that the Objectives panel's three fields are labelled with their machine ids (`objective-intent`, `objective-usd`, `objective-cycles`), each reproduced and reduced to one step (opening the Objectives tab). What the runs could not do on today's Studio: the undo check (undo is the Operator's; the run says so), and the Conversation (nothing is marked, so it stays the Operator's by place; with W12.2's marks a test instance offers its composer). Tuned on this Studio, in the checks only: coverage keys name the region, not the panel shown; a dialog's confirm names the inputs it confirms; a fill's budget adds 100 ms a typed character (a 300-character fill takes 9 s in a debug build); an empty `input` for a button is no input. Preliminary: three tasks, one seed, one run each; the escalation role's own model is not tried. The code changed after this measurement (the Conversation where a test instance offers it, `a5588318`; the undo check waiting for a dialog, `00ddf6d7`; the answer to the independent review, `0c5c0502`); on that last code, t1 run again by the rules and the model (20 steps each) gave the same coverage (20 and 20 keys) and progress (2 of 2), no unwanted action and no finding, the model at $0.054 (p50 5.7 s, p95 34 s), and the Conversation left alone (the run is not allowed to send requests by default). The rest of the table is not measured on the final code.
 
-**W12.2 built** (branch `stage12/control`, 2026-10-04; not merged; nothing
-here says the Operator accepted anything).
+**W12.2 built** (branch `stage12/control`, 2026-10-04; merged in #111;
+nothing here says the Operator accepted anything).
 
 - **Tool inputs checked as declared** (`assistant/src/tools.rs`): the checker
   knows every JSON Schema type (`integer` is a whole number within 64 bits,
@@ -1680,7 +1679,7 @@ agents built in parallel):
   met here and is to be measured again on a quiet machine.
 
 **W12.6 built, the Studio's side** (branch `stage12/conversation`,
-2026-10-04, on `main` at `813068e4`; not merged; the Orchestrator's side,
+2026-10-04, on `main` at `813068e4`; merged in #116; the Orchestrator's side,
 the lead's `delegate` tool, child objectives and the routing of messages,
 is W12.5's; nothing here says the Operator accepted anything).
 
@@ -1837,7 +1836,7 @@ built in parallel and the Operator used the machine):
 
 **W12.5 built** (branch `stage12/loop`, 2026-10-04; the thread and
 directive records (Step 0) and their review fixes merged as #113 and #114;
-the rest not merged; nothing here says the Operator accepted anything).
+the rest merged as #115; nothing here says the Operator accepted anything).
 
 - **Explore and Reproduce before Propose** (`run/explore.rs`) when an
   objective explores (`Objective.explore`; the cycle's sub-phase is in
@@ -1957,7 +1956,7 @@ the rest not merged; nothing here says the Operator accepted anything).
   instances' folders are removed after use.
 
 **W12.6, the Orchestrator's half: the delegation backend** (branch
-`stage12/loop`, with W12.5; not merged).
+`stage12/loop`, with W12.5; merged as #115).
 
 - The lead's `delegate` tool (`{ instruction, focus?, usd, steps }`), in
   planning and in Propose of an objective that explores, checked by the
@@ -2040,3 +2039,64 @@ Checked for W12.5 and the delegation backend (2026-10-04):
   adoption that goes on to explore the adopted build, the Studio's own
   start-up decision on a real restart (unit-tested only), and the explorer's
   key in a test instance (no exploring roles with keys were used).
+
+## Stage 13: Agentique models, simulates and evolves systems, itself included (C-55)
+
+Status: **in progress.** Directed by the Operator on 2026-10-09 (C-55,
+ROADMAP §6.10): the purpose is recorded once (ROADMAP §1.1); the KerML/SysML
+foundations grow where engineering scenarios need them, each complete on the
+whole path; the self-model states the purpose's obligations and models the
+autonomous lifecycle; a second system exercises the same abstractions; the
+autonomous loop is aligned with the purpose; and Stage 12's proof runs with a
+modelling objective. Nothing here says the Operator accepted anything.
+
+**Baseline** (`main` at `f3f313b0`, CI green; the installed build
+`202610041807-f3f313b0fb` is current and last known good; the Operator
+reviewed this `main` before giving C-55, so the tag `approved-baseline` marks
+it). Read against the code and the model before any change:
+
+- *Subset* (`docs/subset.md`): `ref part` and every `ref` with a kind
+  keyword, `assume`/`require` constraints, `calc def`, `constraint def`,
+  `state def`, `action def`, `perform`, `flow`, `allocation`, individuals and
+  units are excluded or unsupported; requirements carry a subject, doc text,
+  attributes and `satisfy` only, so no requirement can be evaluated.
+- *Evidence:* the Requirements panel headlines "N of M satisfied", counting
+  `satisfy` declarations (`studio-native/src/panels/requirements.rs`), so a
+  claim is shown as satisfaction; the Inspector lists the scenarios that
+  verify a requirement with their newest results (`panels/evidence.rs`).
+- *Self-model* (`model/Agentique.sysml`): no statement of the purpose; the
+  Orchestrator, the part that runs autonomous work, has ports and a contract
+  but no behaviour and no scenario, so the autonomous lifecycle is described
+  only in prose; `connect orchestrator.control to studio.control` says the
+  Orchestrator drives its own Studio, while it drives test instances (other
+  builds of Agentique); the Studio holds one state machine for three
+  workflows; each logical part owns its crates as `Crate` parts (its
+  allocation to code), and `ClaudeAgentRuntime` has no crate.
+- *Loop* (`crates/orchestrator`): a proposal names its parts, plan and
+  criteria, but not the requirement it serves; nothing compares what a cycle
+  changed with what it named, or the change since a human-approved state;
+  `ROADMAP.md` is not a protected path; findings have no disposition, so an
+  explorer's mistaken expectation can be proposed again (W12.4's measured
+  runs found two expectation findings that were "more likely wrong guesses
+  than defects").
+
+**Work items**
+
+| Item | Pull request | State |
+|---|---|---|
+| W13.1 Direction | — | In review |
+| W13.2 Referential usages | — | In progress |
+| W13.3 Requirement constraints and evidence | — | In progress |
+| W13.4 The self-model | — | Not started |
+| W13.5 Alignment in the loop | — | In progress |
+| W13.6 A second system | — | Not started |
+| W13.7 Proof | — | Not started |
+
+**Changing a model without a window.** External agents (Claude Code during a
+bootstrap) change a project's model through Agentique's own operations, not
+by editing its files: `cargo run -p agq-assistant --example apply_changes --
+<project folder> <changes.json>` opens the project, prepares each call of the
+file (the input of the `apply_changes` tool, or a list of them) exactly as the
+Assistant's tool does, applies it as one System State change and saves it;
+`--confirm <qualified name>` confirms a change to a locked element, as the
+Operator does, and is recorded in the change's description.

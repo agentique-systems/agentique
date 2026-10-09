@@ -1,8 +1,11 @@
 # Agentique: instructions for agents
 
-Agentique is a native desktop application in which a person (the Operator)
-and AI agents design, simulate and implement systems together, working at the
-level of system architecture. `ROADMAP.md` is the governing direction. This
+Agentique's purpose is stated once, in `ROADMAP.md` §1.1 (C-55): read it
+first; every change serves it, and the purpose and the governing text change
+only by the Operator's decision. Agentique is delivered as a native desktop
+application in which a person (the Operator) and AI agents design, simulate
+and implement systems together, working at the level of system architecture.
+`ROADMAP.md` is the governing direction. This
 file is its short working summary (ROADMAP §8.1); where they differ,
 `ROADMAP.md` wins. Since C-53, AI agents working inside Agentique (its
 Assistant and the Orchestrator's lead, implementer, reviewer and evaluator)
@@ -10,9 +13,11 @@ are its primary users: these rules are theirs as much as any person's.
 
 ## Rules
 
-1. **`ROADMAP.md` governs.** Every piece of work names the stage (§6) and the
-   scenario step, decision (C-n) or recommendation (R-n) it serves. If it
-   serves none, it does not start; propose an update to `ROADMAP.md` instead.
+1. **`ROADMAP.md` governs, and its purpose (§1.1) governs every change.**
+   Every piece of work names the stage (§6) and the scenario step, decision
+   (C-n) or recommendation (R-n) it serves, and, inside an objective, the
+   requirement of the project's model it serves. If it serves none, it does
+   not start; propose an update to `ROADMAP.md` instead.
 2. **Work only in the current stage** (see `docs/stages.md`). Items that wait
    do not start early, however attractive.
 3. **Read ROADMAP §1.3 (slop) before designing anything.** Prefer the simplest
@@ -47,12 +52,17 @@ are its primary users: these rules are theirs as much as any person's.
     objective names them; besides the SDK's subagents inside your own
     session, hand work to another agent only as a directive (the lead's
     `delegate` tool, never text alone) within the objective's permissions and
-    budgets (C-54); keep the acceptance criteria and required checks frozen
-    at the proposal; never delete, ignore or loosen a test, check or
-    budget to make it pass (a deliberate change to one is named, with its
+    budgets (C-54); never change `ROADMAP.md` or the self-model's purpose
+    requirement, even when the objective names them (propose such a change
+    to the Operator instead, C-55); keep the acceptance criteria and required
+    checks frozen at the proposal; never delete, ignore or loosen a test,
+    check or budget to make it pass (a deliberate change to one is named, with its
     reason, for the reviewer); never force-push, push to the default branch
     (`main`) or merge yourself: the Orchestrator merges when the gates pass.
-    Say what you did not verify.
+    Say what you did not verify. A proposal names the requirements it
+    serves, the elements it affects, its benefit, its evidence and its
+    effect on root complexity; judge a finding against the requirements
+    before fixing it (a wrong expectation is not a defect).
 
 ## Checks
 
@@ -91,7 +101,8 @@ code and are committed.
   implementation link, drift, agent, autonomy mode, objective, cycle,
   permission policy, control interface, observation, typed decision,
   exploration, finding, testing knowledge, child objective, observer mode,
-  directive, thread. A new product term needs a reason and a glossary entry
+  directive, thread, approved baseline. A new product term needs a reason and
+  a glossary entry
   (ROADMAP §9).
 
 ## One truth per topic (ROADMAP §8.2)

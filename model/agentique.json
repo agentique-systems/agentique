@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "next": 1435,
+  "next": 1440,
   "elements": {
     "1000": "action AgentiqueArchitecture::Studio::working::assistantApplied::#1",
     "1001": "send AgentiqueArchitecture::Studio::working::assistantApplied::#1::#1",
@@ -431,6 +431,11 @@
     "1432": "doc AgentiqueArchitecture::Directive::#1",
     "1433": "attribute AgentiqueArchitecture::Directive::delegates",
     "1434": "item AgentiqueArchitecture::ObjectivePort::directive",
+    "1435": "requirement def AgentiqueArchitecture::Purpose",
+    "1436": "doc AgentiqueArchitecture::Purpose::#1",
+    "1437": "subject AgentiqueArchitecture::Purpose::product",
+    "1438": "requirement AgentiqueArchitecture::purpose",
+    "1439": "satisfy AgentiqueArchitecture::#44",
     "673": "package AgentiqueArchitecture",
     "674": "doc AgentiqueArchitecture::#1",
     "675": "import AgentiqueArchitecture::#2",

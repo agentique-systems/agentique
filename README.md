@@ -1,8 +1,11 @@
 # Agentique
 
-Agentique is a native desktop application in which a person (the Operator)
-and AI agents design, simulate and implement systems together, working at the
-level of system architecture rather than code.
+Agentique is a system for understanding, modelling, simulating, verifying,
+implementing and evolving systems through explicit KerML/SysML v2
+architecture, and it is itself such a system; its purpose is stated once, in
+[ROADMAP.md §1.1](ROADMAP.md). It is a native desktop application in which a
+person (the Operator) and AI agents design, simulate and implement systems
+together, working at the level of system architecture rather than code.
 
 The Operator works in the **Studio**, which has two equal ways to work:
 
@@ -20,13 +23,14 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-Stage 11 (Agentique improves itself, C-53, ROADMAP §6.8) is in progress: the
-Operator gives an objective in the Objectives panel and Agentique's agents
-propose, implement, check, review, merge, build, try and adopt an improvement
-of Agentique itself, which then restarts in the new version (below, "Agentique
-improves itself"). Its proof ran live on 2026-10-04 with an AI agent standing
-in for the Operator, and waits for the Operator's own run and acceptance; see
-[docs/stages.md](docs/stages.md).
+Stage 13 (Agentique models, simulates and evolves systems, itself included,
+C-55, ROADMAP §6.10) is in progress: referential usages and requirement
+constraints with their evaluation, the self-model's purpose and autonomous
+lifecycle, a second example system, and autonomous cycles that name the
+requirement they serve and are reviewed against the Operator's approved
+baseline. Stages 11 and 12 (Agentique improves, then tests and improves,
+itself) are built and wait for the Operator's own run and acceptance; see
+[docs/stages.md](docs/stages.md) and, below, "Agentique improves itself".
 
 Stages 7–8 (the factory loop, C-50, ROADMAP §6.5) are in progress: agents
 in the model, scenarios that run against the model, recordings, a live model
