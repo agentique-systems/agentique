@@ -962,13 +962,6 @@
       "symbol": "a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_make"
     },
     {
-      "element": 2437,
-      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::noProgress",
-      "kind": "test",
-      "path": "crates/orchestrator/src/record.rs",
-      "symbol": "the_same_failures_twice_are_the_same_fingerprint"
-    },
-    {
       "element": 2443,
       "name": "AgentiqueArchitecture::Orchestrator::Driver::running::notPermitted",
       "kind": "test",
@@ -1046,18 +1039,18 @@
       "symbol": "purpose"
     },
     {
-      "element": 2437,
-      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::noProgress",
-      "kind": "test",
-      "path": "crates/orchestrator/src/gates.rs",
-      "symbol": "purpose_and_governance_fail_even_when_the_objective_names_them"
-    },
-    {
       "element": 2806,
       "name": "AgentiqueArchitecture::Orchestrator::Driver::running::nothingToFix",
       "kind": "test",
       "path": "crates/orchestrator/tests/exploring.rs",
       "symbol": "a_finding_judged_a_wrong_expectation_is_not_fixed_nor_offered_again"
+    },
+    {
+      "element": 2428,
+      "name": "AgentiqueArchitecture::Orchestrator::Driver::running::toReview",
+      "kind": "test",
+      "path": "crates/orchestrator/src/gates.rs",
+      "symbol": "purpose_and_governance_fail_even_when_the_objective_names_them"
     }
   ],
   "protected": [

@@ -830,7 +830,7 @@ package AgentiqueArchitecture {
             out item result : RoleResult;
         }
         port def InstancePort {
-            doc /* Fresh test instances of the build under exploration, for the deterministic replays. */
+            doc /* Fresh test instances of the build under exploration, for the deterministic replays: each replay is a fresh start of the same kind of instance the explorer operated (the test instance the Orchestrator refers to), answered here at the Orchestrator's boundary. */
             in item replay : ReplayRequest;
             out item replayed : Replayed;
         }
@@ -857,7 +857,7 @@ package AgentiqueArchitecture {
             port work : RolePort;
         }
         part def Driver {
-            doc /* The Orchestrator's deterministic code (run.rs): it drives one objective through its cycles and decides each next phase from recorded results. A cycle plans and explores (when the objective explores; every exploration is planned, so the lead may delegate in each turn, unless the objective is a child at the maximum depth), replays what was found, proposes (a proposal whose names do not resolve is asked once more; a lead that judges every finding other than a defect proposes nothing), implements, checks, reviews, merges, builds and tries, and adopts; a failing check or gate, a rejected review or a failed merge goes to repair within the attempt budget; after a cycle, done or failed, the next one starts while cycles are left; a child objective explores once and returns its result. Folded, and so stricter or coarser than the code: Evaluate is part of Check (gatesPassed), and a user-facing change without a behavioural criterion is shown as a failing gate rather than an immediate end; Try is part of the build's answer (Built); the code ends a cycle on the same failures twice in a row or after two rounds without fewer failures, while the model ends it after one round without fewer failures (and on a rejection that follows a rejection), so it ends some cycles earlier; host refusals at merge go to repair here; the lead's delegation while proposing is not modelled. */
+            doc /* The Orchestrator's deterministic code (run.rs): it drives one objective through its cycles and decides each next phase from recorded results. A cycle plans and explores (when the objective explores; every exploration is planned, so the lead may delegate in each turn, unless the objective is a child at the maximum depth), replays what was found, proposes (a proposal whose names do not resolve is asked once more; a lead that judges every finding other than a defect proposes nothing), implements, checks, reviews, merges, builds and tries, and adopts; a failing check or gate, a rejected review or a failed merge goes to repair within the attempt budget; after a cycle, done or failed, the next one starts while cycles are left; a child objective explores once and returns its result. Folded, and so stricter or coarser than the code: Evaluate is part of Check (gatesPassed), and a user-facing change without a behavioural criterion is shown as a failing gate rather than an immediate end; Try is part of the build's answer (Built); every round of repair (a failing check or gate, a rejection, a failed merge) counts its failures, and a round without fewer failures than the last ends the cycle, where the code ends it on the same failures twice in a row or after two rounds without fewer failures, so the model ends some cycles earlier than the code and none later; host refusals at merge go to repair here; the lead's delegation while proposing, and the code's cap of five children per cycle, are not modelled. */
             port objectives : ObjectivePort;
             port explorer : ~RolePort;
             port lead : ~RolePort;
@@ -933,6 +933,12 @@ package AgentiqueArchitecture {
                     then assign mayAdopt := g.mayAdopt;
                     then assign cyclesLeft := g.cycles;
                     then assign maxAttempts := g.attempts;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign emptyInARow := 0;
+                    then assign childBudget := 3;
+                    then assign merged := false;
+                    then assign adopted := false;
                     then send new Directive(delegates = false, refused = false) via lead;
                 } then planning;
                 transition exploreAtMaxDepth first idle accept g : ObjectiveRequest via objectives if g.explore and g.depth >= maxDepth do action {
@@ -942,6 +948,12 @@ package AgentiqueArchitecture {
                     then assign mayAdopt := g.mayAdopt;
                     then assign cyclesLeft := g.cycles;
                     then assign maxAttempts := g.attempts;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign emptyInARow := 0;
+                    then assign childBudget := 3;
+                    then assign merged := false;
+                    then assign adopted := false;
                     then send new Directive(delegates = false, refused = false) via explorer;
                 } then exploring;
                 transition propose first idle accept g : ObjectiveRequest via objectives if not g.explore do action {
@@ -951,6 +963,12 @@ package AgentiqueArchitecture {
                     then assign mayAdopt := g.mayAdopt;
                     then assign cyclesLeft := g.cycles;
                     then assign maxAttempts := g.attempts;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign emptyInARow := 0;
+                    then assign childBudget := 3;
+                    then assign merged := false;
+                    then assign adopted := false;
                     then send new Directive(delegates = false, refused = false) via lead;
                 } then proposing;
                 transition planned first planning accept p : Plan via lead do send new Directive(delegates = false, refused = false) via explorer then exploring;
@@ -995,18 +1013,17 @@ package AgentiqueArchitecture {
                 transition repair first checking accept c : CycleChecks via jobs if not (c.passed == c.required and c.evidenceOnBase and c.gatesPassed) and c.required - c.passed + (if c.evidenceOnBase ? 0 else 1) + (if c.gatesPassed ? 0 else 1) < lastFailures and attempts + 1 < maxAttempts do action {
                     assign attempts := attempts + 1;
                     then assign lastFailures := c.required - c.passed + (if c.evidenceOnBase ? 0 else 1) + (if c.gatesPassed ? 0 else 1);
-                    then assign rejectedBefore := false;
                     then send new Directive(delegates = false, refused = false) via implementer;
                 } then implementing;
                 transition noProgress first checking accept c : CycleChecks via jobs if not (c.passed == c.required and c.evidenceOnBase and c.gatesPassed) and (c.required - c.passed + (if c.evidenceOnBase ? 0 else 1) + (if c.gatesPassed ? 0 else 1) >= lastFailures or attempts + 1 >= maxAttempts) do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
                 transition approvedToMerge first reviewing accept v : ReviewVerdict via reviewer if v.approved and mayMerge do send new Integrate(task = "cycle") via jobs then merging;
                 transition notPermitted first reviewing accept v : ReviewVerdict via reviewer if v.approved and not mayMerge do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
-                transition changesRequested first reviewing accept v : ReviewVerdict via reviewer if not v.approved and not rejectedBefore and attempts + 1 < maxAttempts do action {
+                transition changesRequested first reviewing accept v : ReviewVerdict via reviewer if not v.approved and 1 < lastFailures and attempts + 1 < maxAttempts do action {
                     assign attempts := attempts + 1;
-                    then assign rejectedBefore := true;
+                    then assign lastFailures := 1;
                     then send new Directive(delegates = false, refused = false) via implementer;
                 } then implementing;
-                transition rejected first reviewing accept v : ReviewVerdict via reviewer if not v.approved and (rejectedBefore or attempts + 1 >= maxAttempts) do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+                transition rejected first reviewing accept v : ReviewVerdict via reviewer if not v.approved and (1 >= lastFailures or attempts + 1 >= maxAttempts) do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
                 transition build first merging accept i : Integrated via jobs if i.ok and mayAdopt do action {
                     assign merged := true;
                     then send new BuildRequest() via jobs;
@@ -1048,9 +1065,6 @@ package AgentiqueArchitecture {
                 } then proposing;
                 transition budgetUsed first between accept after 0 if cyclesLeft <= 1 do assign cyclesLeft := 0 then idle;
                 transition nothingToFix first proposing accept n : NothingToFix via lead do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
-            }
-            attribute rejectedBefore : Boolean = false {
-                doc /* Whether the last round ended in the reviewer's rejection; a rejection that follows one is the same failure twice. */
             }
         }
         port jobs : ~JobPort;

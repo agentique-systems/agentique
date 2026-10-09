@@ -2200,7 +2200,7 @@ nothing here says the Operator accepted anything).
   stood in and the environment answering at the Orchestrator's boundary: an
   objective that adopts and explores again until two empty explorations
   end it; a failing check repaired; a round without fewer failures; no
-  defect shown on the base; a reviewer rejecting until the budget is used;
+  defect shown on the base; a reviewer rejecting twice in a row;
   the governing text kept the Operator's; a merge without the permission to
   adopt; a build that does not take over; a fourth delegation in a turn
   refused; a child that explores once and returns; every finding judged
