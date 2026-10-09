@@ -65,13 +65,20 @@ const call = async (name, input) => {
   }
 };
 
+const modelled = existsSync(join(o.cwd, "model"));
+
 switch (role) {
   case "lead": {
     const answer = await call("submit_proposal", {
       title: "Add an improvement note",
       kind: "correctness",
       why: "The repository has no note of its improvement (README.md:1).",
-      parts: ["Demo"],
+      // With a model (C-55), its names resolve there; SERVES-PART names a
+      // part where a requirement is due, which is refused.
+      serves: modelled ? [existsSync(join(o.cwd, "SERVES-PART")) ? "Shop::Store" : "Shop::Fast"] : ["Demo::NotesKept"],
+      benefit: "The Operator reads what improved.",
+      complexity: "Adds one file; nothing at the root changes.",
+      parts: modelled ? ["Shop::Store"] : ["Demo"],
       plan: ["Write IMPROVEMENT.md", "Check it is there"],
       criteria: [
         { id: "c1", statement: "The note says the repository improved", check: { kind: "command", program: ["node", "--test", "note.test.mjs"] } },
@@ -96,6 +103,10 @@ switch (role) {
     }
     const repairing = o.prompt.includes("Repair round");
     writeFileSync(join(o.cwd, "IMPROVEMENT.md"), repairing ? "Improved.\n" : `Improved with ${KEY}.\n`);
+    if (modelled) {
+      // The code of a part the proposal does not name (C-55).
+      writeFileSync(join(o.cwd, "src", "cart.rs"), "fn cart() { checkout(); }\n");
+    }
     writeFileSync(
       join(o.cwd, "note.test.mjs"),
       // On the base it fails by an assertion (there is no note), which is
@@ -112,6 +123,8 @@ switch (role) {
       verdict: leaked ? "request_changes" : "approve",
       findings: leaked ? ["IMPROVEMENT.md:1 holds a key"] : [],
       test_changes_accepted: false,
+      traceability: "none listed",
+      purpose: "It still serves the purpose: a note, nothing at the root.",
     });
     out({ type: "assistant", id: "msg_end", model: "deepseek-v4-pro", content: [{ type: "text", text: "Reviewed." }] });
     break;

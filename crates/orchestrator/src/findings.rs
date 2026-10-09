@@ -11,7 +11,11 @@
 //! Operator's own, a stale action) is never a finding, and neither is a
 //! model's opinion. [`replay`] is what a cycle's criterion runs later: it
 //! fails on the build that has the problem and passes on one that fixed it;
-//! an instance that ends or hangs in a replay is never a pass.
+//! an instance that ends or hangs in a replay is never a pass. Since C-55 a
+//! reproduced finding is fixed only once the lead has judged it a defect
+//! (its [`Disposition`]); one judged a wrong expectation or an unreliable
+//! reproduction is set aside, and an ambiguous requirement goes to the
+//! Operator.
 
 use crate::explore::{Act, Instance, Step};
 use crate::observed::{self, Refusal};
@@ -238,6 +242,65 @@ pub struct Finding {
     /// The build in which the fix was last replayed (and passed).
     #[serde(default)]
     pub checked_in: Option<String>,
+    /// What the lead judged it to be before anything was fixed (C-55).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disposition: Option<Disposition>,
+}
+
+/// What a finding is judged to be (C-55): only a defect is fixed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DispositionKind {
+    /// The application is wrong: a cycle may fix it.
+    Defect,
+    /// The expectation the check stated is wrong (an explorer's expectation
+    /// is a model's guess): not offered again.
+    WrongExpectation,
+    /// The requirements do not say what is right: a question for the
+    /// Operator, never proposed.
+    AmbiguousRequirement,
+    /// It does not reproduce reliably: not offered again.
+    UnreliableReproduction,
+}
+
+impl DispositionKind {
+    pub fn name(self) -> &'static str {
+        match self {
+            DispositionKind::Defect => "a defect",
+            DispositionKind::WrongExpectation => "a wrong expectation",
+            DispositionKind::AmbiguousRequirement => "an ambiguous requirement",
+            DispositionKind::UnreliableReproduction => "an unreliable reproduction",
+        }
+    }
+}
+
+/// A finding's disposition (C-55): its kind, why, the requirement it was
+/// judged against, and who recorded it where. Kept in the testing
+/// knowledge, across objectives.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Disposition {
+    pub kind: DispositionKind,
+    pub reason: String,
+    /// The requirement of the model it was judged against (qualified name).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirement: Option<String>,
+    pub objective: String,
+    pub cycle: u32,
+    /// The role that recorded it (`lead`).
+    pub role: String,
+    pub at: String,
+}
+
+impl Disposition {
+    /// Whether it keeps the finding from being offered again: a wrong
+    /// expectation or an unreliable reproduction.
+    pub fn sets_aside(&self) -> bool {
+        matches!(
+            self.kind,
+            DispositionKind::WrongExpectation | DispositionKind::UnreliableReproduction
+        )
+    }
 }
 
 impl Finding {
@@ -272,6 +335,7 @@ impl Finding {
             fixed_in: None,
             pull_request: None,
             checked_in: None,
+            disposition: None,
         }
     }
 

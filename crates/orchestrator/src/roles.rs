@@ -4,8 +4,11 @@
 //! driver), Agentique's model and control tools beside them, and one tool
 //! with which the role hands its result to the Orchestrator, which checks it.
 
+use crate::findings::{Disposition, DispositionKind};
 use crate::record::{Attempt, Objective, Proposal};
+use crate::traceability::{self, Elements, Resolution};
 use serde_json::{Value, json};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Role {
@@ -32,6 +35,7 @@ pub const DELEGATE: &str = "delegate";
 pub const SUBMIT_IMPLEMENTATION: &str = "submit_implementation";
 pub const SUBMIT_REVIEW: &str = "submit_review";
 pub const SUBMIT_EVALUATION: &str = "submit_evaluation";
+pub const ADJUDICATE_FINDING: &str = "adjudicate_finding";
 
 /// Agentique's model tools a role may call, by name.
 fn model_tools(write: bool) -> Vec<&'static str> {
@@ -62,14 +66,17 @@ fn agentique(names: &[&str]) -> Vec<Value> {
 fn submit_proposal() -> Value {
     json!({
         "name": SUBMIT_PROPOSAL,
-        "description": "Hand the Orchestrator one improvement for this cycle. It is checked (at least one criterion with a deterministic check; ids unique) and then frozen: later attempts are judged by exactly these criteria.",
+        "description": "Hand the Orchestrator one improvement for this cycle. It is checked (at least one criterion with a deterministic check; ids unique; `serves` and `parts` resolved in the base commit's model) and then frozen: later attempts are judged by exactly these criteria.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "title": { "type": "string", "description": "What the improvement does, in a few words." },
                 "kind": { "type": "string", "enum": ["correctness", "usability", "comprehension", "other"] },
                 "why": { "type": "string", "description": "The problem it solves, with the evidence you found (file:line, an observation)." },
-                "parts": { "type": "array", "items": { "type": "string" }, "description": "The parts of the self-model it affects (qualified names)." },
+                "serves": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "The requirements of the project's model the change serves, by qualified name (a requirement def or usage, such as AgentiqueArchitecture::GatesDecide): the engineering capability or root requirement it is for. Each must be a requirement of the base commit's model." },
+                "benefit": { "type": "string", "description": "The benefit the Operator is expected to see, in one or two sentences." },
+                "complexity": { "type": "string", "description": "Its effect on root complexity, reuse and dependencies: what it adds, removes or generalises, and whether a root part, a dependency or a crate changes." },
+                "parts": { "type": "array", "items": { "type": "string" }, "description": "The elements and contracts of the model it affects (qualified names), each an element of the base commit's model; for elements it creates, the element that will own them. The review compares them with what the commit changes." },
                 "plan": { "type": "array", "items": { "type": "string" }, "description": "The steps, in order." },
                 "criteria": {
                     "type": "array",
@@ -104,9 +111,27 @@ fn submit_proposal() -> Value {
                         "required": ["path", "why"]
                     }
                 },
-                "finding": { "type": "string", "description": "The reproduced finding it fixes, by its id in your brief (f1, f2, …): required when the brief lists reproduced findings. Its replay becomes a frozen criterion: it must fail on the original build and pass on the change." }
+                "finding": { "type": "string", "description": "The reproduced finding it fixes, by its id in your brief (f1, f2, …), adjudicated a defect first (adjudicate_finding): required while the brief lists a finding not judged other than a defect. Its replay becomes a frozen criterion: it must fail on the original build and pass on the change." }
             },
-            "required": ["title", "kind", "why", "parts", "plan", "criteria"],
+            "required": ["title", "kind", "why", "serves", "benefit", "complexity", "parts", "plan", "criteria"],
+            "additionalProperties": false
+        }
+    })
+}
+
+fn adjudicate_finding() -> Value {
+    json!({
+        "name": ADJUDICATE_FINDING,
+        "description": "Record your judgment of a reproduced finding before anything is fixed (C-55). Judge it against the requirements and the intended semantics, not by how often its check failed: an explorer's expectation is a model's guess, and failing it again and again does not make a defect. `defect`: the application is wrong; only a defect is fixed (choose it with submit_proposal's `finding`). `wrong-expectation`: what the check expected is wrong; it is not offered again. `ambiguous-requirement`: the requirements do not say what is right; it goes to the Operator as a question and is not proposed. `unreliable-reproduction`: it does not reproduce reliably; it is not offered again. The Orchestrator records it in the testing knowledge, kept across objectives, and shows it in the thread.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "finding": { "type": "string", "description": "The finding, by its id in your brief (f1, f2, …)." },
+                "disposition": { "type": "string", "enum": ["defect", "wrong-expectation", "ambiguous-requirement", "unreliable-reproduction"] },
+                "reason": { "type": "string", "description": "Why: what the requirement or the intended behaviour says, and what the finding shows." },
+                "requirement": { "type": "string", "description": "The requirement of the model it was judged against (qualified name), if there is one." }
+            },
+            "required": ["finding", "disposition", "reason"],
             "additionalProperties": false
         }
     })
@@ -136,9 +161,11 @@ fn submit_review() -> Value {
             "properties": {
                 "verdict": { "type": "string", "enum": ["approve", "request_changes"] },
                 "findings": { "type": "array", "items": { "type": "string" }, "description": "Concrete findings, file:line, what is wrong and why." },
-                "test_changes_accepted": { "type": "boolean", "description": "Whether the changes to tests, checks or budgets that the proposal named are justified. False when there are none." }
+                "test_changes_accepted": { "type": "boolean", "description": "Whether the changes to tests, checks or budgets that the proposal named are justified. False when there are none." },
+                "traceability": { "type": "string", "description": "Your judgment of each change listed as changed but not named in `parts` (does it belong to the proposal, or is it scope creep?) and each element named but not changed (does the proposal still hold?); `none listed` when both lists are empty." },
+                "purpose": { "type": "string", "description": "Your judgment of the cumulative change since the approved baseline: does it still serve Agentique's purpose (ROADMAP §1.1) and the requirements the proposal serves, or do small changes add up to redefining the product? The numbers inform; they do not decide." }
             },
-            "required": ["verdict", "findings", "test_changes_accepted"],
+            "required": ["verdict", "findings", "test_changes_accepted", "traceability", "purpose"],
             "additionalProperties": false
         }
     })
@@ -223,6 +250,9 @@ pub fn tools(role: Role) -> Value {
         Role::Reviewer => submit_review(),
         Role::Evaluator => submit_evaluation(),
     });
+    if role == Role::Lead {
+        list.push(adjudicate_finding());
+    }
     Value::Array(list)
 }
 
@@ -233,7 +263,7 @@ pub fn lead_tools(planning: bool, may_delegate: bool) -> Value {
     let mut list = tools(Role::Lead);
     let items = list.as_array_mut().expect("a list");
     if planning {
-        items.retain(|d| d["name"] != SUBMIT_PROPOSAL);
+        items.retain(|d| d["name"] != SUBMIT_PROPOSAL && d["name"] != ADJUDICATE_FINDING);
         items.push(submit_exploration());
     }
     if may_delegate {
@@ -270,11 +300,19 @@ fn criteria_text(proposal: &Proposal) -> String {
 /// A proposal as the other roles read it (and the thread shows it).
 pub fn proposal_text(proposal: &Proposal) -> String {
     format!(
-        "Title: {}\nKind: {}\nWhy: {}\nParts: {}\nPlan:\n{}\nAcceptance criteria (frozen):\n{}\nIntended changes to tests or checks: {}",
+        "Title: {}\nKind: {}\nWhy: {}\nServes: {}\nBenefit: {}\nComplexity: {}\nParts: {}\nIn the base commit's model: {}\nPlan:\n{}\nAcceptance criteria (frozen):\n{}\nIntended changes to tests or checks: {}",
         proposal.title,
         proposal.kind,
         proposal.why,
+        proposal.serves.join(", "),
+        proposal.benefit,
+        proposal.complexity,
         proposal.parts.join(", "),
+        proposal
+            .resolved
+            .as_ref()
+            .map(Resolution::text)
+            .unwrap_or_else(|| "not resolved".into()),
         proposal
             .plan
             .iter()
@@ -326,13 +364,13 @@ fn earlier(objective: &Objective) -> String {
 pub fn instructions(role: Role) -> String {
     let specific = match role {
         Role::Lead => {
-            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. When the brief lists reproduced findings (C-54), choose one of them (`finding`): its replay becomes a frozen criterion. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
+            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Say what it is for (C-55): `serves` names the requirements of the project's model it serves (requirement defs or usages, by qualified name; read_model shows them), `benefit` what the Operator will see, `complexity` what it adds, removes or generalises at the root (a root part, a dependency, a crate); `parts` names the existing elements and contracts it affects (for elements it creates, their future owner), and the review compares them with what the change touches; its evidence is its acceptance criteria, frozen with it (and the replay of the finding it fixes). Agentique's purpose (ROADMAP §1.1) and the model's requirements bound what any cycle changes: ROADMAP.md and the model's purpose requirement (`Purpose`, `purpose`) are the Operator's, and a change to them fails the gates even when the objective names them; describe a change you think the purpose needs in `why`, for the Operator. When the brief lists reproduced findings (C-54), judge each you consider with adjudicate_finding before choosing one (C-55): against the requirements and the intended semantics, never by how often its check failed (an explorer's expectation is a model's guess, and repeated disagreement with it does not establish a defect). Only a finding judged a defect is fixed (`finding`), and its replay becomes a frozen criterion; a wrong expectation or an unreliable reproduction is set aside, and an ambiguous requirement goes to the Operator as a question; when you judge none a defect, end without a proposal. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
         }
         Role::Implementer => {
-            "Your role: implementer. Implement the frozen proposal in this worktree, and only it. Add tests for the criteria; keep every existing test and check (rule 10). Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
+            "Your role: implementer. Implement the frozen proposal in this worktree, and only it: the review compares what you change with the elements it names. Add tests for the criteria; keep every existing test and check (rule 10). Never change ROADMAP.md or the model's purpose requirement (C-55): that fails the gates, whatever the objective names. Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
         }
         Role::Reviewer => {
-            "Your role: independent reviewer. You did not write this change. Review it against the frozen proposal and its criteria, the check results and the evaluation below, reading the code in this checkout (you write nothing). Judge correctness, scope (nothing unrelated), simplicity and naming (ROADMAP §1.3, §8.4), whether the tests really check the criteria, and every change to tests, checks or budgets the baseline guard lists. For each criterion counted as evidence on the original build, check that its failing test asserts the defect itself, not merely that the change exists (a test asserting that a new file, function or control exists fails on the base for any change); request changes when it does not. Then call submit_review: approve only a change you would merge as it is."
+            "Your role: independent reviewer. You did not write this change. Review it against the frozen proposal and its criteria, the check results and the evaluation below, reading the code in this checkout (you write nothing). Judge correctness, scope (nothing unrelated), simplicity and naming (ROADMAP §1.3, §8.4), whether the tests really check the criteria, and every change to tests, checks or budgets the baseline guard lists. For each criterion counted as evidence on the original build, check that its failing test asserts the defect itself, not merely that the change exists (a test asserting that a new file, function or control exists fails on the base for any change); request changes when it does not. Judge traceability explicitly, as you judge test changes (C-55): each change listed as changed but not named in the proposal's `parts` either belongs to the proposal or is scope creep (request changes), and each element named but not changed says whether the proposal still holds. Judge the cumulative change since the approved baseline: does it still serve Agentique's purpose (ROADMAP §1.1) and the requirements the proposal serves, or do small changes add up to redefining the product? The counts inform; they do not decide, and neither does any agent's approval. Then call submit_review with both judgments: approve only a change you would merge as it is."
         }
         Role::Evaluator => {
             "Your role: evaluator. A test instance of Agentique built from the change is running; observe_app and act_in_app operate it (not the Operator's Studio). Check each behavioural criterion (observation and judgment ones) by operating it as the Operator would, and report each with submit_evaluation: the outcome and the observations it rests on (controls, labels, values, status). If a criterion cannot be checked, say not run and why."
@@ -491,13 +529,96 @@ pub fn test_command(program: &[String]) -> Result<(), String> {
     }
 }
 
-/// A proposal from `submit_proposal`'s input, checked: at least one
-/// criterion with a deterministic check (the replay of the finding it
-/// chooses counts), unique ids, commands as words, conditions known; when
-/// `findings` (each `(id, identity)`, the reproduced findings the lead was
-/// given) are listed, one of them chosen; and a change to the part `Studio`
-/// with a behavioural criterion (C-54).
-pub fn read_proposal(input: &Value, findings: &[(String, String)]) -> Result<Proposal, String> {
+/// What a lead's submissions are checked against (C-54, C-55).
+pub struct Given<'a> {
+    /// The reproduced findings the lead was given: `(id, identity)`.
+    pub findings: &'a [(String, String)],
+    /// What each finding was judged to be, by identity: the testing
+    /// knowledge's, and the lead's own in this turn.
+    pub dispositions: &'a BTreeMap<String, Disposition>,
+    /// The base commit's model, or why there is none to resolve names in.
+    pub model: &'a Result<Elements, String>,
+}
+
+/// The finding `id` of the brief (`f1`, …), by its identity.
+fn finding_of(given: &Given, id: &str) -> Result<String, String> {
+    if given.findings.is_empty() {
+        return Err(format!(
+            "there are no reproduced findings; `finding` {id} is not one"
+        ));
+    }
+    given
+        .findings
+        .iter()
+        .find(|(f, _)| f == id.trim())
+        .map(|(_, identity)| identity.clone())
+        .ok_or_else(|| {
+            format!(
+                "`finding` {id} is not one of the reproduced findings ({})",
+                given
+                    .findings
+                    .iter()
+                    .map(|(f, _)| f.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        })
+}
+
+/// A disposition from `adjudicate_finding`'s input (C-55), by the lead of
+/// `objective`'s cycle `cycle`: the finding one the lead was given, its
+/// kind known, a reason, and the requirement it was judged against, if
+/// named, a requirement of the base commit's model. Returns the finding's
+/// identity with it.
+pub fn read_disposition(
+    input: &Value,
+    given: &Given,
+    objective: &str,
+    cycle: u32,
+) -> Result<(String, Disposition), String> {
+    let identity = finding_of(given, input["finding"].as_str().unwrap_or_default())?;
+    let kind: DispositionKind = serde_json::from_value(input["disposition"].clone()).map_err(|_| {
+        "`disposition` is one of defect, wrong-expectation, ambiguous-requirement, unreliable-reproduction"
+            .to_string()
+    })?;
+    let reason = input["reason"].as_str().unwrap_or_default().trim();
+    if reason.is_empty() {
+        return Err("a disposition needs its reason".into());
+    }
+    let requirement = input["requirement"]
+        .as_str()
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+        .map(str::to_string);
+    if let (Some(name), Ok(model)) = (&requirement, given.model) {
+        traceability::requirement(model, name)
+            .map_err(|problem| format!("`requirement`: {problem}"))?;
+    }
+    Ok((
+        identity,
+        Disposition {
+            kind,
+            reason: reason.to_string(),
+            requirement,
+            objective: objective.to_string(),
+            cycle,
+            role: Role::Lead.name().to_string(),
+            at: agq_launcher::now(),
+        },
+    ))
+}
+
+/// A proposal from `submit_proposal`'s input, checked against what the lead
+/// was `given`: at least one criterion with a deterministic check (the
+/// replay of the finding it chooses counts), unique ids, commands as words,
+/// conditions known; while a reproduced finding the lead was given is not
+/// judged other than a defect, one of them chosen, and the one chosen judged
+/// a defect (C-55); a change to the part `Studio` with a behavioural
+/// criterion (C-54); and (C-55) the requirements it serves, its benefit and
+/// its effect on complexity stated, `serves` resolved to requirements and
+/// `parts` to elements of the base commit's model (when it has one; else
+/// the resolution says why not).
+pub fn read_proposal(input: &Value, given: &Given) -> Result<Proposal, String> {
     let mut proposal: Proposal = serde_json::from_value(json!({
         "title": input["title"],
         "kind": input["kind"],
@@ -506,37 +627,75 @@ pub fn read_proposal(input: &Value, findings: &[(String, String)]) -> Result<Pro
         "plan": input["plan"],
         "criteria": input["criteria"],
         "intendedTestChanges": input.get("intended_test_changes").cloned().unwrap_or(json!([])),
+        "serves": input.get("serves").cloned().unwrap_or(json!([])),
+        "benefit": input.get("benefit").cloned().unwrap_or(json!("")),
+        "complexity": input.get("complexity").cloned().unwrap_or(json!("")),
     }))
     .map_err(|e| format!("the proposal cannot be read: {e}"))?;
-    proposal.finding = match (input["finding"].as_str(), findings.is_empty()) {
-        (None, true) => None,
-        (Some(id), true) => {
+    // The findings still to be fixed: none judged other than a defect.
+    let open: Vec<&str> = given
+        .findings
+        .iter()
+        .filter(|(_, identity)| {
+            given
+                .dispositions
+                .get(identity)
+                .is_none_or(|d| d.kind == DispositionKind::Defect)
+        })
+        .map(|(id, _)| id.as_str())
+        .collect();
+    proposal.finding = match input["finding"].as_str() {
+        None if open.is_empty() => None,
+        None => {
             return Err(format!(
-                "there are no reproduced findings to choose; `finding` {id} is not one"
+                "choose the reproduced finding it fixes: `finding` is one of {}, judged a defect first with adjudicate_finding (a finding judged other than a defect is not fixed)",
+                open.join(", ")
             ));
         }
-        (None, false) => {
-            return Err(format!(
-                "choose the reproduced finding it fixes: `finding` is one of {}",
-                findings
-                    .iter()
-                    .map(|(id, _)| id.as_str())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ));
+        Some(id) => {
+            let identity = finding_of(given, id)?;
+            match given.dispositions.get(&identity) {
+                Some(d) if d.kind == DispositionKind::Defect => Some(identity),
+                Some(d) => {
+                    return Err(format!(
+                        "finding {id} was judged {}, not a defect: it is not fixed",
+                        d.kind.name()
+                    ));
+                }
+                None => {
+                    return Err(format!(
+                        "finding {id} is not adjudicated: judge it with adjudicate_finding first (only a defect is fixed)"
+                    ));
+                }
+            }
         }
-        (Some(id), false) => Some(
-            findings
-                .iter()
-                .find(|(f, _)| f == id.trim())
-                .map(|(_, identity)| identity.clone())
-                .ok_or_else(|| format!("`finding` {id} is not one of the reproduced findings"))?,
-        ),
     };
     proposal.title = proposal.title.trim().to_string();
     if proposal.title.is_empty() || proposal.why.trim().is_empty() {
         return Err("a proposal needs a title and why".into());
     }
+    proposal.serves = proposal
+        .serves
+        .iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if proposal.serves.is_empty()
+        || proposal.benefit.trim().is_empty()
+        || proposal.complexity.trim().is_empty()
+    {
+        return Err(
+            "a proposal names the requirements of the model it serves (`serves`), the benefit the Operator will see (`benefit`) and its effect on complexity (`complexity`)"
+                .into(),
+        );
+    }
+    proposal.resolved = Some(match given.model {
+        Ok(model) => traceability::resolve(&proposal.serves, &proposal.parts, model)?,
+        Err(why) => Resolution {
+            skipped: Some(why.clone()),
+            ..Resolution::default()
+        },
+    });
     let mut ids = std::collections::BTreeSet::new();
     for criterion in &proposal.criteria {
         if !ids.insert(criterion.id.clone()) {
@@ -654,22 +813,64 @@ mod tests {
         }
     }
 
+    /// A proposal read as a lead without a model (nothing to resolve names
+    /// in) is given `findings`, judged as `dispositions` say.
+    fn judged(
+        input: &Value,
+        findings: &[(String, String)],
+        dispositions: &BTreeMap<String, Disposition>,
+    ) -> Result<Proposal, String> {
+        let model = Err("the project has no model".to_string());
+        read_proposal(
+            input,
+            &Given {
+                findings,
+                dispositions,
+                model: &model,
+            },
+        )
+    }
+
+    fn read(input: &Value, findings: &[(String, String)]) -> Result<Proposal, String> {
+        judged(input, findings, &BTreeMap::new())
+    }
+
+    fn disposition(kind: DispositionKind) -> Disposition {
+        Disposition {
+            kind,
+            reason: "r".into(),
+            requirement: None,
+            objective: "objective-1".into(),
+            cycle: 1,
+            role: "lead".into(),
+            at: "t".into(),
+        }
+    }
+
+    /// The alignment fields every proposal states (C-55), added to `input`.
+    fn aligned(mut input: Value) -> Value {
+        input["serves"] = json!(["AgentiqueArchitecture::GatesDecide"]);
+        input["benefit"] = json!("The Operator sees the gap closed");
+        input["complexity"] = json!("Adds one check inside the Orchestrator; nothing at the root");
+        input
+    }
+
     #[test]
     fn a_proposal_needs_a_deterministic_criterion_and_unique_ids() {
-        let base = json!({
+        let base = aligned(json!({
             "title": "Fix the gap", "kind": "correctness", "why": "It is wrong at x.rs:3",
             "parts": ["AgentiqueArchitecture::Orchestrator"], "plan": ["Write the test", "Fix it"],
             "criteria": [{ "id": "c1", "statement": "The gap is gone", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "gap"] } }]
-        });
-        let proposal = read_proposal(&base, &[]).unwrap();
+        }));
+        let proposal = read(&base, &[]).unwrap();
         assert_eq!(proposal.criteria.len(), 1);
         let mut judgment_only = base.clone();
         judgment_only["criteria"] =
             json!([{ "id": "c1", "statement": "Looks better", "check": { "kind": "judgment" } }]);
-        assert!(read_proposal(&judgment_only, &[]).is_err());
+        assert!(read(&judgment_only, &[]).is_err());
         let mut twice = base.clone();
         twice["criteria"] = json!([base["criteria"][0], base["criteria"][0]]);
-        assert!(read_proposal(&twice, &[]).is_err());
+        assert!(read(&twice, &[]).is_err());
     }
 
     /// C-54: a proposal chooses one of the reproduced findings it was given
@@ -677,11 +878,11 @@ mod tests {
     /// behavioural criterion, and a condition is one a test instance knows.
     #[test]
     fn a_proposal_chooses_a_reproduced_finding_and_a_studio_change_is_behavioural() {
-        let base = json!({
+        let base = aligned(json!({
             "title": "Label the filter", "kind": "usability", "why": "The filter has no readable label",
             "parts": ["AgentiqueArchitecture::Studio"], "plan": ["Label it"],
             "criteria": [{ "id": "c1", "statement": "It has a test", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "label"] } }]
-        });
+        }));
         let findings = vec![
             (
                 "f1".to_string(),
@@ -689,51 +890,259 @@ mod tests {
             ),
             ("f2".to_string(), "answers||the instance exited".to_string()),
         ];
-        assert!(
-            read_proposal(&base, &findings)
-                .unwrap_err()
-                .contains("f1, f2")
-        );
+        let defect =
+            BTreeMap::from([(findings[1].1.clone(), disposition(DispositionKind::Defect))]);
+        assert!(read(&base, &findings).unwrap_err().contains("f1, f2"));
         let mut chosen = base.clone();
         chosen["finding"] = json!("f2");
-        let proposal = read_proposal(&chosen, &findings).unwrap();
+        let proposal = judged(&chosen, &findings, &defect).unwrap();
         assert_eq!(
             proposal.finding.as_deref(),
             Some("answers||the instance exited")
         );
         let mut unknown = base.clone();
         unknown["finding"] = json!("f9");
-        assert!(read_proposal(&unknown, &findings).is_err());
-        assert!(
-            read_proposal(&chosen, &[]).is_err(),
-            "no findings to choose"
-        );
+        assert!(judged(&unknown, &findings, &defect).is_err());
+        assert!(read(&chosen, &[]).is_err(), "no findings to choose");
         // The Studio without a behavioural criterion: refused.
-        assert!(
-            read_proposal(&base, &[])
-                .unwrap_err()
-                .contains("behavioural")
-        );
+        assert!(read(&base, &[]).unwrap_err().contains("behavioural"));
         let mut observed = base.clone();
         observed["criteria"]
             .as_array_mut()
             .unwrap()
             .push(json!({ "id": "c2", "statement": "Labelled", "check": { "kind": "observation", "expect": { "anyLabelContains": "Filter" }, "condition": "recovered" } }));
-        assert!(read_proposal(&observed, &[]).is_ok());
+        assert!(read(&observed, &[]).is_ok());
         observed["criteria"][1]["check"]["condition"] = json!("on fire");
-        assert!(read_proposal(&observed, &[]).is_err());
+        assert!(read(&observed, &[]).is_err());
         let mut taken = base.clone();
         taken["parts"] = json!(["AgentiqueArchitecture::Orchestrator"]);
         taken["criteria"][0]["id"] = json!("replay");
-        assert!(
-            read_proposal(&taken, &[]).is_err(),
-            "the replay's id is taken"
-        );
+        assert!(read(&taken, &[]).is_err(), "the replay's id is taken");
         // A finding's replay alone is a deterministic, behavioural criterion.
         let mut replay_only = chosen.clone();
         replay_only["criteria"] =
             json!([{ "id": "c1", "statement": "Looks right", "check": { "kind": "judgment" } }]);
-        assert!(read_proposal(&replay_only, &findings).is_ok());
+        assert!(judged(&replay_only, &findings, &defect).is_ok());
+    }
+
+    /// C-55: a proposal states the requirements it serves, its benefit and
+    /// its effect on complexity; `serves` resolves to requirements and
+    /// `parts` to elements of the base commit's model, by identity, or the
+    /// proposal is refused with the reason; without a model, the
+    /// resolution says why nothing was resolved.
+    #[test]
+    fn a_proposal_names_requirements_it_serves_resolved_in_the_base_model() {
+        use agq_assistant::model_tools::Described;
+        let element = |id: u64, name: &str, kind: &str, owners: &[u64]| Described {
+            id,
+            name: name.into(),
+            kind: kind.into(),
+            owners: owners.to_vec(),
+            locked: false,
+        };
+        let model: Result<Elements, String> = Ok([
+            element(1, "AgentiqueArchitecture", "package", &[]),
+            element(2, "AgentiqueArchitecture::Orchestrator", "part def", &[1]),
+            element(
+                3,
+                "AgentiqueArchitecture::GatesDecide",
+                "requirement def",
+                &[1],
+            ),
+            element(4, "AgentiqueArchitecture::gatesDecide", "requirement", &[1]),
+        ]
+        .into_iter()
+        .map(|e| (e.id, e))
+        .collect());
+        let none = BTreeMap::new();
+        let given = Given {
+            findings: &[],
+            dispositions: &none,
+            model: &model,
+        };
+        let base = aligned(json!({
+            "title": "Fix the gap", "kind": "correctness", "why": "It is wrong at x.rs:3",
+            "parts": ["AgentiqueArchitecture::Orchestrator"], "plan": ["Fix it"],
+            "criteria": [{ "id": "c1", "statement": "The gap is gone", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "gap"] } }]
+        }));
+        // Valid: the ids recorded.
+        let proposal = read_proposal(&base, &given).unwrap();
+        let resolved = proposal.resolved.as_ref().unwrap();
+        assert_eq!(resolved.serves[0].element, 3);
+        assert_eq!(resolved.parts[0].element, 2);
+        assert!(resolved.skipped.is_none());
+        assert!(proposal_text(&proposal).contains("AgentiqueArchitecture::GatesDecide (#3)"));
+        // Unresolved `serves`: refused, with the requirements there are.
+        let mut unknown = base.clone();
+        unknown["serves"] = json!(["AgentiqueArchitecture::Purpose"]);
+        let refused = read_proposal(&unknown, &given).unwrap_err();
+        assert!(
+            refused.contains("`AgentiqueArchitecture::Purpose` is not an element"),
+            "{refused}"
+        );
+        assert!(
+            refused.contains("AgentiqueArchitecture::gatesDecide"),
+            "{refused}"
+        );
+        // `serves` naming a part: refused.
+        let mut part = base.clone();
+        part["serves"] = json!(["AgentiqueArchitecture::Orchestrator"]);
+        let refused = read_proposal(&part, &given).unwrap_err();
+        assert!(
+            refused.contains("is a part def, not a requirement"),
+            "{refused}"
+        );
+        // Unresolved `parts`: refused.
+        let mut parts = base.clone();
+        parts["parts"] = json!(["AgentiqueArchitecture::Conductor"]);
+        let refused = read_proposal(&parts, &given).unwrap_err();
+        assert!(
+            refused.contains("`parts`: `AgentiqueArchitecture::Conductor`"),
+            "{refused}"
+        );
+        // Each alignment field is needed.
+        for field in ["serves", "benefit", "complexity"] {
+            let mut missing = base.clone();
+            missing.as_object_mut().unwrap().remove(field);
+            assert!(read_proposal(&missing, &given).is_err(), "{field}");
+        }
+        let mut blank = base.clone();
+        blank["benefit"] = json!("  ");
+        assert!(read_proposal(&blank, &given).is_err());
+        // No model: accepted, and the record says why nothing was resolved.
+        let proposal = read(&unknown, &[]).unwrap();
+        let resolved = proposal.resolved.unwrap();
+        assert_eq!(
+            resolved.skipped.as_deref(),
+            Some("the project has no model")
+        );
+        assert!(resolved.serves.is_empty());
+        // The tool states them as required.
+        let schema = submit_proposal();
+        let required = schema["input_schema"]["required"].as_array().unwrap();
+        for field in ["serves", "benefit", "complexity"] {
+            assert!(required.contains(&json!(field)), "{field}");
+        }
+    }
+
+    /// C-55: a finding is adjudicated before it is fixed: choosing one not
+    /// adjudicated (an explorer's expectation, say) is refused, as is one
+    /// judged other than a defect; when every finding is judged other than
+    /// a defect, a proposal needs none. A disposition names a finding the
+    /// lead was given, a known kind, a reason, and a requirement of the
+    /// model if any.
+    #[test]
+    fn a_finding_is_adjudicated_before_it_is_chosen() {
+        let base = aligned(json!({
+            "title": "Fix the dialog", "kind": "correctness", "why": "It does not close",
+            "parts": ["AgentiqueArchitecture::Orchestrator"], "plan": ["Fix it"],
+            "criteria": [{ "id": "c1", "statement": "It closes", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "closes"] } }]
+        }));
+        let findings = vec![
+            (
+                "f1".to_string(),
+                "expectation|save|the status says saved".to_string(),
+            ),
+            ("f2".to_string(), "dialogs-close|dialog|x".to_string()),
+        ];
+        let mut chosen = base.clone();
+        chosen["finding"] = json!("f1");
+        let refused = read(&chosen, &findings).unwrap_err();
+        assert!(refused.contains("not adjudicated"), "{refused}");
+        let mut dispositions = BTreeMap::from([(
+            findings[0].1.clone(),
+            disposition(DispositionKind::WrongExpectation),
+        )]);
+        let refused = judged(&chosen, &findings, &dispositions).unwrap_err();
+        assert!(
+            refused.contains("a wrong expectation, not a defect"),
+            "{refused}"
+        );
+        // f2 is still open: a proposal must choose it.
+        let refused = judged(&base, &findings, &dispositions).unwrap_err();
+        assert!(refused.contains("one of f2"), "{refused}");
+        dispositions.insert(
+            findings[1].1.clone(),
+            disposition(DispositionKind::AmbiguousRequirement),
+        );
+        let mut ambiguous = base.clone();
+        ambiguous["finding"] = json!("f2");
+        assert!(judged(&ambiguous, &findings, &dispositions).is_err());
+        // Nothing judged a defect: a proposal of its own needs no finding.
+        assert!(
+            judged(&base, &findings, &dispositions)
+                .unwrap()
+                .finding
+                .is_none()
+        );
+        dispositions.insert(findings[0].1.clone(), disposition(DispositionKind::Defect));
+        assert_eq!(
+            judged(&chosen, &findings, &dispositions).unwrap().finding,
+            Some(findings[0].1.clone())
+        );
+        // The disposition itself.
+        let model: Result<Elements, String> = Ok(BTreeMap::from([(
+            7,
+            agq_assistant::model_tools::Described {
+                id: 7,
+                name: "Shop::Store".into(),
+                kind: "part def".into(),
+                owners: Vec::new(),
+                locked: false,
+            },
+        )]));
+        let none = BTreeMap::new();
+        let given = Given {
+            findings: &findings,
+            dispositions: &none,
+            model: &model,
+        };
+        let input = json!({ "finding": "f1", "disposition": "wrong-expectation", "reason": "The requirement says the status stays" });
+        let (identity, read) = read_disposition(&input, &given, "objective-1", 3).unwrap();
+        assert_eq!(identity, findings[0].1);
+        assert_eq!(read.kind, DispositionKind::WrongExpectation);
+        assert_eq!(
+            (read.objective.as_str(), read.cycle, read.role.as_str()),
+            ("objective-1", 3, "lead")
+        );
+        for (wrong, why) in [
+            (
+                json!({ "finding": "f9", "disposition": "defect", "reason": "x" }),
+                "not one of",
+            ),
+            (
+                json!({ "finding": "f1", "disposition": "bug", "reason": "x" }),
+                "one of defect",
+            ),
+            (
+                json!({ "finding": "f1", "disposition": "defect", "reason": " " }),
+                "reason",
+            ),
+            (
+                json!({ "finding": "f1", "disposition": "defect", "reason": "x", "requirement": "Shop::Store" }),
+                "not a requirement",
+            ),
+        ] {
+            let refused = read_disposition(&wrong, &given, "objective-1", 3).unwrap_err();
+            assert!(refused.contains(why), "{refused}");
+        }
+        let empty = Given {
+            findings: &[],
+            dispositions: &none,
+            model: &model,
+        };
+        assert!(read_disposition(&input, &empty, "o", 1).is_err());
+        // The lead plans without it, and proposes with it.
+        let names = |tools: Value| -> Vec<String> {
+            tools
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|d| d["name"].as_str().unwrap().to_string())
+                .collect()
+        };
+        assert!(names(lead_tools(false, false)).contains(&ADJUDICATE_FINDING.to_string()));
+        assert!(!names(lead_tools(true, false)).contains(&ADJUDICATE_FINDING.to_string()));
     }
 
     #[test]
@@ -783,26 +1192,29 @@ mod tests {
         ] {
             assert!(test_command(&words(refused)).is_err(), "{refused:?}");
         }
-        let base = json!({
+        let base = aligned(json!({
             "title": "Fix the gap", "kind": "correctness", "why": "x.rs:3",
             "parts": [], "plan": ["a"],
             "criteria": [{ "id": "c1", "statement": "s", "check": { "kind": "command", "program": ["git", "push", "origin", "HEAD:main"] } }]
-        });
+        }));
         assert!(
-            read_proposal(&base, &[]).is_err(),
+            read(&base, &[]).unwrap_err().contains("criterion c1"),
             "a criterion cannot push"
         );
         let mut empty = base.clone();
         empty["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": {} } }]);
         assert!(
-            read_proposal(&empty, &[]).is_err(),
+            read(&empty, &[]).unwrap_err().contains("criterion c1"),
             "an observation must expect something"
         );
         let mut misspelt = base.clone();
         misspelt["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": { "status_contains": "x" } } }]);
         assert!(
-            read_proposal(&misspelt, &[]).is_err(),
+            read(&misspelt, &[]).unwrap_err().contains("criterion c1"),
             "unknown keys are refused"
         );
+        let mut fine = base.clone();
+        fine["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": { "statusContains": "x" } } }]);
+        assert!(read(&fine, &[]).is_ok());
     }
 }

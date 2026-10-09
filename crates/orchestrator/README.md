@@ -53,6 +53,32 @@ what to change.
 - **Roles** (`roles`): lead, implementer, reviewer and evaluator, each its
   own Claude Agent runtime session with its instructions, tools and
   permission policy, and one tool to hand its result over.
+- **Purpose and traceability** (`traceability`, C-55): a proposal names
+  the requirements of the project's model it `serves`, its `benefit` and
+  its effect on `complexity`; `serves` and `parts` are resolved by identity
+  in the base commit's model when it is submitted (a name that does not
+  resolve, or a `serves` that is no requirement, refuses it; a project
+  without a model records why nothing was resolved). At review, what the
+  commit changed (model elements by identity, and the parts whose linked
+  code changed) is compared with `parts` ("changed but not named", "named
+  but not changed"), and the cumulative change since the Operator's
+  approved baseline (the tag `approved-baseline` on `origin`, read there
+  and never locally; without it, the objective's start) is counted at the
+  root: both go to the reviewer, who records its judgments, to the cycle's
+  record and to the thread; the numbers inform, they do not decide. The
+  gate "purpose and governance unchanged" fails a change to `ROADMAP.md`
+  or to the model's purpose requirement (`Purpose`, `purpose` in a root
+  package, and what they own, by identity), whatever the objective names.
+  Worktree sessions are refused `git tag`.
+- **Dispositions** (`findings`, `knowledge`; C-55): the lead judges a
+  reproduced finding with `adjudicate_finding` (a defect, a wrong
+  expectation, an ambiguous requirement or an unreliable reproduction),
+  which the Orchestrator records in the testing knowledge, across
+  objectives, and shows in the thread; only a defect is chosen to fix, a
+  wrong expectation or an unreliable reproduction is not offered again
+  (found again, it is not new), an ambiguous requirement is a question for
+  the Operator; when every finding is judged other than a defect, the cycle
+  ends with nothing to fix.
 - **Models per role** (`models`, C-54): each role's model (the four above,
   the explorer, escalation and typed decisions), resolved by the Studio
   from Settings › Agents and the credentials before an objective starts: its

@@ -15,11 +15,14 @@
 mod children;
 mod evidence;
 mod explore;
+mod trace;
 
 pub use explore::STARTS;
 
 use crate::control::{Client, Options, TestInstance};
 use crate::explore::Instance;
+use crate::findings::Disposition;
+use crate::knowledge::Knowledge;
 use crate::record;
 use crate::record::{
     Attempt, Check, Continuation, Cost, Criterion, Cycle, DirectiveStatus, Objective, Outcome,
@@ -27,6 +30,7 @@ use crate::record::{
 };
 use crate::roles::{self, Role};
 use crate::thread::{self, Author, Kind, ThreadEntry};
+use crate::traceability::Elements;
 use crate::{builds, forge, gates};
 use agq_assistant::conversation::{Conversation, Entry, ToolResult};
 use agq_assistant::model_tools::WorkingModel;
@@ -607,6 +611,12 @@ struct Driver {
 /// What a role's session handed over.
 struct Session {
     submitted: Option<Value>,
+    /// The lead's proposal, as the Orchestrator accepted it.
+    proposal: Option<record::Proposal>,
+    /// Why the lead's last proposal was not accepted, if it was not.
+    refusal: Option<String>,
+    /// What the lead judged findings to be (C-55), by identity.
+    adjudicated: Vec<(String, Disposition)>,
     /// What the session said last, for a report.
     said: String,
     /// The child objective the lead delegated, checked (C-54).
@@ -616,13 +626,15 @@ struct Session {
 }
 
 /// What a session works with besides its role's own: the test instance its
-/// control tools operate, the lead's tools for an exploring cycle, and the
-/// reproduced findings it may choose among.
+/// control tools operate, the lead's tools for an exploring cycle, the
+/// reproduced findings it may choose among, and the base commit's model a
+/// proposal's names are resolved in (C-55).
 #[derive(Default)]
 struct With<'a> {
     test: Option<&'a mut Client>,
     kit: Option<Toolset>,
     offered: Vec<(String, String)>,
+    model: Option<&'a Result<Elements, String>>,
 }
 
 /// What an exploration by the rules decides with: they ask no model, so
@@ -1174,9 +1186,32 @@ impl Driver {
             mut test,
             kit,
             offered,
+            model: base_model,
         } = with;
         // What the lead may delegate now, as its `delegate` tool checks it.
         let bounds = self.bounds();
+        // What the lead's submissions are checked against (C-55): the base
+        // commit's model, and what findings were judged to be, its own
+        // judgments in this session included.
+        let unread: Result<Elements, String> =
+            Err("the base commit's model was not read for this session".into());
+        let base_model = base_model.unwrap_or(&unread);
+        let dispositions = RefCell::new(if role == Role::Lead {
+            self.dispositions()
+        } else {
+            BTreeMap::new()
+        });
+        let cycle_findings: Vec<crate::findings::Finding> = self
+            .objective
+            .cycle()
+            .map(|c| c.findings.clone())
+            .unwrap_or_default();
+        let (objective_id, cycle_n) = (self.id(), self.objective.cycle().map_or(0, |c| c.n));
+        let knowledge_file = Knowledge::file(&self.setup.store, &self.objective.repository);
+        let knowledge_key = Knowledge::key(&self.objective.repository);
+        let accepted: RefCell<Option<record::Proposal>> = RefCell::new(None);
+        let refusal: RefCell<Option<String>> = RefCell::new(None);
+        let adjudicated: RefCell<Vec<(String, Disposition)>> = RefCell::new(Vec::new());
         let mut model = WorkingModel::new(cwd.to_path_buf());
         if role == Role::Implementer {
             model = model.confirming(self.objective.permissions.locked.clone());
@@ -1249,15 +1284,89 @@ impl Driver {
                 | roles::SUBMIT_IMPLEMENTATION
                 | roles::SUBMIT_REVIEW
                 | roles::SUBMIT_EVALUATION => {
-                    if call.name == roles::SUBMIT_PROPOSAL
-                        && let Err(problem) = roles::read_proposal(&call.input, &offered)
-                    {
-                        return ToolResult::error(format!(
-                            "Not accepted: {problem}. Fix it and submit again."
-                        ));
+                    if call.name == roles::SUBMIT_PROPOSAL {
+                        let read = roles::read_proposal(
+                            &call.input,
+                            &roles::Given {
+                                findings: &offered,
+                                dispositions: &dispositions.borrow(),
+                                model: base_model,
+                            },
+                        );
+                        match read {
+                            Ok(proposal) => *accepted.borrow_mut() = Some(proposal),
+                            Err(problem) => {
+                                refusals.post(ThreadEntry::new(
+                                    Kind::Result,
+                                    lead.clone(),
+                                    format!(
+                                        "Proposes “{}” (not accepted: {problem})",
+                                        call.input["title"].as_str().unwrap_or_default()
+                                    ),
+                                ));
+                                *refusal.borrow_mut() = Some(problem.clone());
+                                return ToolResult::error(format!(
+                                    "Not accepted: {problem}. Fix it and submit again."
+                                ));
+                            }
+                        }
                     }
                     *submitted.borrow_mut() = Some(call.input.clone());
                     ToolResult::answer("Received. End your turn now with one short sentence.")
+                }
+                roles::ADJUDICATE_FINDING if role == Role::Lead => {
+                    let read = roles::read_disposition(
+                        &call.input,
+                        &roles::Given {
+                            findings: &offered,
+                            dispositions: &dispositions.borrow(),
+                            model: base_model,
+                        },
+                        &objective_id,
+                        cycle_n,
+                    );
+                    let (identity, disposition) = match read {
+                        Ok(read) => read,
+                        Err(problem) => {
+                            return ToolResult::error(format!("Not recorded: {problem}."));
+                        }
+                    };
+                    let Some(finding) = cycle_findings.iter().find(|f| f.identity == identity)
+                    else {
+                        return ToolResult::error(
+                            "Not recorded: it is not one of this cycle's findings.",
+                        );
+                    };
+                    // In the testing knowledge at once: kept across
+                    // objectives, whatever this session does next.
+                    if let Err(error) = Knowledge::change(&knowledge_file, &knowledge_key, |k| {
+                        k.adjudicate(finding, disposition.clone())
+                    }) {
+                        return ToolResult::error(format!(
+                            "Not recorded: the testing knowledge could not be written ({error})."
+                        ));
+                    }
+                    let id = call.input["finding"].as_str().unwrap_or_default().trim();
+                    refusals.post(explore::adjudication_entry(
+                        lead.clone(),
+                        id,
+                        finding,
+                        &disposition,
+                    ));
+                    dispositions
+                        .borrow_mut()
+                        .insert(identity.clone(), disposition.clone());
+                    let kind = disposition.kind;
+                    adjudicated.borrow_mut().push((identity, disposition));
+                    ToolResult::answer(match kind {
+                        crate::findings::DispositionKind::Defect => {
+                            "Recorded: a defect, which you may choose to fix with submit_proposal's `finding`."
+                        }
+                        crate::findings::DispositionKind::AmbiguousRequirement => {
+                            "Recorded: it goes to the Operator as a question, and is not proposed."
+                        }
+                        _ => "Recorded: it is set aside and not offered again.",
+                    })
                 }
                 roles::DELEGATE if role == Role::Lead => {
                     // Checked now; recorded and started when the turn ends.
@@ -1510,6 +1619,9 @@ impl Driver {
         }
         Ok(Session {
             submitted: submitted.into_inner(),
+            proposal: accepted.into_inner(),
+            refusal: refusal.into_inner(),
+            adjudicated: adjudicated.into_inner(),
             delegated: delegated.into_inner(),
             refused: refused.into_inner(),
             said,
@@ -1700,6 +1812,9 @@ impl Driver {
             return Ok(Phase::Implement);
         }
         let lead = self.checkout("lead", &base)?;
+        // The base commit's model, read before the lead's session opens it
+        // (C-55): the proposal's `serves` and `parts` are resolved in it.
+        let model = crate::traceability::base_model(&lead, &base);
         let policy = self.policy(&lead, false, false);
         let kit = Toolset {
             system: roles::instructions(Role::Lead),
@@ -1713,15 +1828,12 @@ impl Driver {
                 brief.clone(),
                 kit.clone(),
                 attempt > 0,
+                Some(&model),
             )?;
-            // The findings it may choose among, children's included.
-            let (offered, _) = self.offered_findings();
-            match session
-                .submitted
-                .as_ref()
-                .map(|input| roles::read_proposal(input, &offered))
-            {
-                Some(Ok(proposal)) => {
+            // Accepted when it was submitted, against the findings it was
+            // offered and its own judgments of them.
+            match session.proposal {
+                Some(proposal) => {
                     // The proposal, frozen, handed to the implementer; the
                     // finding it fixes is frozen with it (its replay).
                     let title = proposal.title.clone();
@@ -1762,16 +1874,27 @@ impl Driver {
                     );
                     return Ok(Phase::Implement);
                 }
-                Some(Err(problem)) => {
-                    brief = format!(
-                        "Your proposal was not accepted: {problem}. Submit a corrected one."
-                    )
+                None if self.nothing_to_fix() => {
+                    // Every reproduced finding was judged other than a
+                    // defect (C-55): nothing to fix, an outcome.
+                    self.event(
+                        "Nothing to fix in this cycle: the lead judged every reproduced finding other than a defect",
+                    );
+                    let _ = git::remove_worktree(
+                        &repository,
+                        &format!("{}-{}-lead", self.id(), self.cycle().n),
+                    );
+                    return Ok(Phase::Done);
                 }
-                None => {
-                    brief =
+                None => brief = match &session.refusal {
+                    Some(problem) => format!(
+                        "Your proposal was not accepted: {problem}. Submit a corrected one."
+                    ),
+                    None => {
                         "You ended without submit_proposal. Choose one improvement and submit it."
                             .into()
-                }
+                    }
+                },
             }
             if self.over().is_some() {
                 break;
@@ -1792,7 +1915,7 @@ impl Driver {
             if offered.is_empty() {
                 ""
             } else {
-                " (choose the one you fix with `finding`)"
+                " (judge each you consider with adjudicate_finding; choose the defect you fix with `finding`)"
             },
             if text.is_empty() { "none" } else { &text },
             self.testing_summary()
@@ -2183,17 +2306,7 @@ impl Driver {
             .iter()
             .map(|f| f.path.replace('\\', "/"))
             .collect();
-        let mut links = Vec::new();
-        if let Ok(text) = std::fs::read_to_string(verify.join("model").join("links.json")) {
-            links.push(text);
-        }
-        if let Ok(shown) = forge::run(
-            &repository,
-            &["git", "show", &format!("{base}:model/links.json")],
-            Duration::from_secs(60),
-        ) {
-            links.push(shown.stdout);
-        }
+        let links = crate::traceability::links_of(&repository, &verify, &base);
         gates.push(if verify.join("model").is_dir() {
             match agq_assistant::model_tools::locked_code(
                 &verify,
@@ -2232,6 +2345,10 @@ impl Driver {
  judged: false,
             }
         });
+        // Purpose and governance stay the Operator's (C-55), whatever the
+        // objective names.
+        let purpose = crate::traceability::purpose_in(&verify, &base, &commit, &patch);
+        gates.push(gates::purpose(&patch, &purpose));
         // The criteria show the defect on the base (C-54), by their own
         // outcomes there, made with this commit's test files.
         let mut ids: Vec<String> = proposal.criteria.iter().map(|c| c.id.clone()).collect();
@@ -2304,17 +2421,7 @@ impl Driver {
             .iter()
             .map(|f| f.path.replace('\\', "/"))
             .collect();
-        let mut links = Vec::new();
-        if let Ok(text) = std::fs::read_to_string(verify.join("model").join("links.json")) {
-            links.push(text);
-        }
-        if let Ok(shown) = forge::run(
-            &self.objective.repository,
-            &["git", "show", &format!("{base}:model/links.json")],
-            Duration::from_secs(60),
-        ) {
-            links.push(shown.stdout);
-        }
+        let links = crate::traceability::links_of(&self.objective.repository, &verify, &base);
         let user_facing = gates::user_facing(&files, &links);
         let observed: Vec<&Criterion> = proposal
             .criteria
@@ -2531,8 +2638,12 @@ impl Driver {
         let attempt = self.cycle().attempt().cloned().unwrap_or_default();
         let outcomes = outcome_lines(&attempt);
         let changes = gates::listed_test_changes(&patch);
+        // What the commit changed against what the proposal named, and the
+        // cumulative change since the approved baseline (C-55).
+        let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
+        let traced = self.trace_for_review(&verify, &base, &commit, &patch, &proposal);
         let context = format!(
-            "The implementer's summary: {}\n\nOutcomes:\n{outcomes}\n\nChanges to tests, checks or budgets the baseline guard lists: {}\n\nThe diff against {}:\n{diff}",
+            "The implementer's summary: {}\n\nOutcomes:\n{outcomes}\n\nChanges to tests, checks or budgets the baseline guard lists: {}\n\n{traced}\n\nThe diff against {}:\n{diff}",
             attempt.summary,
             if changes.is_empty() {
                 "none".to_string()
@@ -2565,6 +2676,11 @@ impl Driver {
                 .collect(),
             test_changes_accepted: verdict["test_changes_accepted"] == true,
             commit: commit.clone(),
+            traceability: verdict["traceability"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            purpose: verdict["purpose"].as_str().unwrap_or_default().to_string(),
         };
         let findings = review
             .findings
@@ -2582,7 +2698,10 @@ impl Driver {
                     format!("Asks for changes to {}", builds::short(&commit))
                 },
             )
-            .with_details(findings.clone()),
+            .with_details(format!(
+                "{findings}\nTraceability: {}\nPurpose: {}",
+                review.traceability, review.purpose
+            )),
         );
         if review.verdict != "approve" {
             // Its findings, handed to the implementer for repair (a
@@ -2622,7 +2741,6 @@ impl Driver {
                 findings,
             );
         }
-        let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         let baseline = gates::baseline(&patch, &proposal, Some(&review));
         let approved = review.verdict == "approve";
         let asked = review.findings.join("\n");
@@ -2889,10 +3007,12 @@ impl Driver {
             .collect::<Vec<_>>()
             .join("\n");
         format!(
-            "Made by Agentique's Orchestrator for the objective “{}” (C-53, ROADMAP §4.16), cycle {}.\n\n**Why**: {}\n\n**Acceptance criteria** (frozen at the proposal):\n{}\n\n**Implementer's summary**: {}\n\n**Checks on a clean checkout of the reviewed commit**:\n{}\n\n**Independent review**: {} — {}\n",
+            "Made by Agentique's Orchestrator for the objective “{}” (C-53, ROADMAP §4.16), cycle {}.\n\n**Why**: {}\n\n**Serves** (C-55): {}. **Benefit**: {}\n\n**Acceptance criteria** (frozen at the proposal):\n{}\n\n**Implementer's summary**: {}\n\n**Checks on a clean checkout of the reviewed commit**:\n{}\n\n**Independent review**: {} — {}\n",
             self.objective.intent,
             cycle.n,
             proposal.map(|p| p.why.as_str()).unwrap_or(""),
+            proposal.map(|p| p.serves.join(", ")).unwrap_or_default(),
+            proposal.map(|p| p.benefit.as_str()).unwrap_or(""),
             proposal
                 .map(|p| p
                     .criteria
@@ -3144,7 +3264,7 @@ mod tests {
                 },
             ],
             intended_test_changes: Vec::new(),
-            finding: None,
+            ..record::Proposal::default()
         };
         let files = vec!["crates/studio-native/src/a.rs".to_string()];
         let not_run = [

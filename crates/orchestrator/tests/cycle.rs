@@ -456,3 +456,223 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
         .count();
     assert_eq!(worktrees, 1, "the worktree was made once");
 }
+
+fn git_out(folder: &Path, args: &[&str]) -> String {
+    let output = std::process::Command::new("git")
+        .args(args)
+        .current_dir(folder)
+        .output()
+        .expect("git runs");
+    assert!(output.status.success(), "git {args:?}");
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+/// Commits everything, the model's new elements given their identities
+/// first (opening the project does).
+fn commit_model(repository: &Path, message: &str) -> String {
+    let _ = agq_assistant::model_tools::model_at(repository, "HEAD");
+    git(repository, &["add", "-A"]);
+    git(repository, &["commit", "-q", "-m", message]);
+    git_out(repository, &["rev-parse", "HEAD"])
+}
+
+/// A repository with a model (C-55): `Shop` with the parts `Store` and
+/// `Cart`, each linked to its code, and the requirement `Fast`; the tag
+/// `approved-baseline` pushed to its `origin` one commit before its head,
+/// which adds the part `Basket`. Returns it and the approved commit.
+fn modelled_repository(dir: &Path, markers: &[&str]) -> (PathBuf, String) {
+    let repository = repository_with(dir, markers);
+    let origin = dir.join("origin.git");
+    git(dir, &["init", "-q", "--bare", "origin.git"]);
+    git(
+        &repository,
+        &["remote", "add", "origin", &origin.display().to_string()],
+    );
+    let shop =
+        "package Shop {\n    part def Store;\n    part def Cart;\n    requirement def Fast;\n}\n";
+    std::fs::create_dir_all(repository.join("model")).unwrap();
+    std::fs::create_dir_all(repository.join("src")).unwrap();
+    std::fs::write(repository.join("model/Shop.sysml"), shop).unwrap();
+    std::fs::write(repository.join("src/store.rs"), "fn store() {}\n").unwrap();
+    std::fs::write(repository.join("src/cart.rs"), "fn cart() {}\n").unwrap();
+    let approved = commit_model(&repository, "Model");
+    git(&repository, &["tag", "approved-baseline"]);
+    git(&repository, &["push", "-q", "origin", "approved-baseline"]);
+    let model = agq_assistant::model_tools::model_at(&repository, &approved).unwrap();
+    let id = |name: &str| model.values().find(|e| e.name == name).unwrap().id;
+    std::fs::write(
+        repository.join("model/links.json"),
+        format!(
+            "{{\"format\": 1, \"repository\": \".\", \"links\": [{{\"element\": {}, \"name\": \"Shop::Store\", \"kind\": \"crate\", \"path\": \"src/store.rs\"}}, {{\"element\": {}, \"name\": \"Shop::Cart\", \"kind\": \"crate\", \"path\": \"src/cart.rs\"}}]}}",
+            id("Shop::Store"),
+            id("Shop::Cart")
+        ),
+    )
+    .unwrap();
+    std::fs::write(
+        repository.join("model/Shop.sysml"),
+        shop.replace("part def Cart;", "part def Cart;\n    part def Basket;"),
+    )
+    .unwrap();
+    commit_model(&repository, "Links and a basket");
+    (repository, approved)
+}
+
+/// Runs an objective of one cycle on `repository` to its end, and returns
+/// its record.
+fn run_objective(
+    dir: &Path,
+    repository: &Path,
+    node: agq_assistant::claude_agent::Node,
+) -> Objective {
+    let store = Store::new(dir.join("objectives"));
+    let objective = with_models(
+        store
+            .create(
+                "Leave a note of the improvement",
+                repository,
+                "main",
+                Budgets {
+                    usd: 1.0,
+                    cycles: 1,
+                    attempts: 3,
+                    hours: 1.0,
+                    ..Budgets::default()
+                },
+                Permissions::default(),
+            )
+            .unwrap(),
+        &store,
+    );
+    let id = objective.id.clone();
+    let handle = run::start(setup_with(dir, &store, node), objective);
+    let deadline = Instant::now() + Duration::from_secs(240);
+    while !handle.finished() {
+        assert!(Instant::now() < deadline, "the objective did not end");
+        while handle.events.try_recv().is_ok() {}
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    store.load(&id).unwrap()
+}
+
+/// C-55, end to end: the proposal's `serves` and `parts` are resolved in the
+/// base commit's model by identity; the review is given, and the cycle
+/// records, what the commit changed but the proposal did not name (the
+/// code of `Cart`) and what it named but did not change (`Store`), and the
+/// cumulative change since the approved baseline on `origin` (the part
+/// `Basket`, added before the cycle's base); the thread says both, the
+/// reviewer's judgments are recorded, and the purpose gate passed.
+#[test]
+fn a_cycle_resolves_its_proposal_and_traces_its_change_for_the_review() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let (repository, approved) = modelled_repository(dir.path(), &[]);
+    let record = run_objective(dir.path(), &repository, node);
+    let cycle = record.cycle().expect("a cycle ran");
+    let proposal = cycle.proposal.as_ref().expect("a proposal");
+    let resolved = proposal.resolved.as_ref().expect("resolved");
+    assert_eq!(resolved.serves[0].name, "Shop::Fast");
+    assert_eq!(resolved.serves[0].kind, "requirement def");
+    assert_eq!(resolved.parts[0].name, "Shop::Store");
+    let traced = cycle.traceability.as_ref().expect("traced");
+    assert_eq!(
+        traced.not_named,
+        vec!["Shop::Cart (part def, its linked code changed)".to_string()],
+        "{traced:?}"
+    );
+    assert_eq!(
+        traced.not_changed,
+        vec!["Shop::Store (part def)".to_string()]
+    );
+    assert_eq!(
+        Some(&traced.commit),
+        cycle.review.as_ref().map(|r| &r.commit)
+    );
+    let cumulative = cycle.cumulative.as_ref().expect("the cumulative change");
+    assert!(cumulative.approved);
+    assert_eq!(cumulative.since, approved);
+    let parts = cumulative
+        .groups
+        .iter()
+        .find(|g| g.what == "top-level part defs")
+        .unwrap();
+    assert_eq!(parts.added, vec!["Shop::Basket".to_string()]);
+    let review = cycle.review.as_ref().unwrap();
+    assert_eq!(review.traceability, "none listed");
+    assert!(review.purpose.contains("purpose"));
+    let gate = cycle
+        .attempt()
+        .unwrap()
+        .gates
+        .iter()
+        .find(|g| g.name == "purpose and governance unchanged")
+        .expect("the purpose gate");
+    assert!(gate.passed(), "{gate:?}");
+    let store = Store::new(dir.path().join("objectives"));
+    let thread = store.thread(&record.id, 0);
+    let traced_entry = thread
+        .iter()
+        .find(|e| e.text.starts_with("Traceability of "))
+        .expect("traceability in the thread");
+    assert!(
+        traced_entry
+            .text
+            .contains("1 changed but not named, 1 named but not changed"),
+        "{}",
+        traced_entry.text
+    );
+    assert!(
+        traced_entry
+            .details
+            .as_deref()
+            .unwrap_or_default()
+            .contains("Shop::Cart")
+    );
+    assert!(thread.iter().any(|e| {
+        e.text
+            .starts_with("Cumulative change since the approved baseline at")
+    }));
+}
+
+/// C-55, end to end: a proposal whose `serves` names a part, not a
+/// requirement of the model, is refused with the reason, which the thread
+/// shows; refused again, the cycle stops without a proposal.
+#[test]
+fn a_proposal_serving_a_part_is_refused() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let (repository, _) = modelled_repository(dir.path(), &["SERVES-PART"]);
+    let record = run_objective(dir.path(), &repository, node);
+    let cycle = record.cycle().expect("a cycle ran");
+    assert!(cycle.proposal.is_none());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .contains("acceptable proposal"),
+        "{:?}",
+        cycle.blocker
+    );
+    let store = Store::new(dir.path().join("objectives"));
+    let refused: Vec<_> = store
+        .thread(&record.id, 0)
+        .into_iter()
+        .filter(|e| e.text.contains("not accepted"))
+        .collect();
+    assert_eq!(refused.len(), 2, "{refused:?}");
+    assert!(
+        refused[0]
+            .text
+            .contains("`Shop::Store` is a part def, not a requirement"),
+        "{}",
+        refused[0].text
+    );
+    assert!(refused[0].text.contains("its requirements are: Shop::Fast"));
+}

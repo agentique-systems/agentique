@@ -117,10 +117,25 @@ if (role === "lead" && planning) {
 } else if (role === "lead") {
   const finding = o.prompt.includes("f1:") ? "f1" : undefined;
   const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];
+  if (finding) {
+    // A finding is judged before it is fixed (C-55).
+    const judged = await call("adjudicate_finding", {
+      finding,
+      disposition: here("WRONG-EXPECTATION") ? "wrong-expectation" : "defect",
+      reason: "A button the Operator can press must say what it does.",
+    });
+    if (judged.isError) process.exit(8);
+  }
+  if (here("WRONG-EXPECTATION")) {
+    end("Judged it a wrong expectation: nothing to fix.");
+  } else {
   const answer = await call("submit_proposal", {
     title: "Label the History panel's Archive button",
     kind: "usability",
     why: `The Archive button has no readable label.${wrote ? ` The Operator wrote: ${wrote}` : ""}`,
+    serves: ["Demo::LabelsReadable"],
+    benefit: "The Operator can tell what the Archive button does.",
+    complexity: "Changes one label; nothing at the root changes.",
     parts: ["Demo"],
     plan: ["Label it", "Test it"],
     criteria: [
@@ -129,6 +144,7 @@ if (role === "lead" && planning) {
     ...(finding ? { finding } : {}),
   });
   end(`Proposed (${answer.isError ? `refused: ${answer.content}` : "accepted"}).`);
+  }
 } else if (role === "implementer") {
   if (here("WAIT-MESSAGE")) {
     out({ type: "text", text: "Working." });
@@ -164,7 +180,13 @@ if (role === "lead" && planning) {
   await call("submit_implementation", { summary: `Labelled it.${said.length ? ` Heard: ${said.join("; ")}` : ""}` });
   end("Implemented.");
 } else if (role === "reviewer") {
-  await call("submit_review", { verdict: "approve", findings: [], test_changes_accepted: false });
+  await call("submit_review", {
+    verdict: "approve",
+    findings: [],
+    test_changes_accepted: false,
+    traceability: "none listed",
+    purpose: "It still serves the purpose: one label.",
+  });
   end("Reviewed.");
 } else {
   end(`No script for ${role}.`);

@@ -177,9 +177,15 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
         // working copy: only its own branch is the session's to change.
         list.push(refused(
             &format!(
-                r"{GIT}(stash\s+(drop|clear|pop|apply)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|tag\b[^\n;&|]*(\s-d\b|--delete)|reflog\s+(expire|delete)|replace\b|worktree\s+(remove|prune|move)|config\s+(--local\s+)?[A-Za-z][\w.-]*\s+[^\s;&|]|config\b[^\n;&|]*--(unset|add|replace-all|rename-section|remove-section|edit))"
+                r"{GIT}(stash\s+(drop|clear|pop|apply)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|reflog\s+(expire|delete)|replace\b|worktree\s+(remove|prune|move)|config\s+(--local\s+)?[A-Za-z][\w.-]*\s+[^\s;&|]|config\b[^\n;&|]*--(unset|add|replace-all|rename-section|remove-section|edit))"
             ),
             "That changes the repository's refs, which the Operator's working copy shares; a cycle's worktree changes only its own branch.",
+        ));
+        // Tags are the Operator's: the approved baseline (C-55) is one, and
+        // only the Operator creates or moves it.
+        list.push(refused(
+            &git("tag"),
+            "Tags are the Operator's (the approved baseline is one): a cycle's worktree never creates, moves or deletes one.",
         ));
     }
     if place == Place::WorkingCopy {
@@ -720,6 +726,9 @@ mod tests {
             "git branch -f main HEAD",
             "git branch -D feature",
             "git -C ../agentique tag -d v1",
+            "git tag approved-baseline",
+            "git tag -f approved-baseline HEAD",
+            "git -c x=y tag -a v2 -m 'release'",
             "git symbolic-ref HEAD refs/heads/main",
             "git stash pop",
             "git config core.hooksPath hooks",

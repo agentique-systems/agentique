@@ -404,3 +404,37 @@ pub fn follow(repository: &Path, base_branch: &str, merged: &str) -> Result<(), 
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    /// C-55: tags are the Operator's (the approved baseline is one): no code
+    /// of the Orchestrator's runs `git tag` or pushes a tag; it only lists
+    /// the remote's (`traceability::approved_baseline`).
+    #[test]
+    fn the_orchestrator_never_creates_or_moves_a_tag() {
+        let tag = concat!("\"ta", "g\"");
+        let tags = concat!("--", "tags");
+        let follow = concat!("--follow", "-tags");
+        for (file, text) in [
+            ("forge.rs", include_str!("forge.rs")),
+            ("builds.rs", include_str!("builds.rs")),
+            ("run.rs", include_str!("run.rs")),
+            ("run/children.rs", include_str!("run/children.rs")),
+            ("run/evidence.rs", include_str!("run/evidence.rs")),
+            ("run/explore.rs", include_str!("run/explore.rs")),
+            ("run/trace.rs", include_str!("run/trace.rs")),
+            ("traceability.rs", include_str!("traceability.rs")),
+        ] {
+            assert!(!text.contains(tag), "{file} runs git tag");
+            assert!(!text.contains(follow), "{file} pushes tags");
+            let listed = text.matches(tags).count();
+            let read = text
+                .matches(concat!("\"ls-remote\", \"--", "tags\""))
+                .count();
+            assert_eq!(
+                listed, read,
+                "{file} uses tags other than to list the remote's"
+            );
+        }
+    }
+}

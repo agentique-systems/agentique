@@ -4,7 +4,9 @@
 //! configured key in it, and since C-54 the defect shown on the base by at
 //! least one criterion with evidence while none passes there
 //! ([`defect_shown`]), and user-facing code ([`user_facing`]) evaluated with
-//! a behavioural criterion. Each ends with an explicit outcome.
+//! a behavioural criterion; since C-55, purpose and governance unchanged
+//! ([`purpose`]), whatever the objective names. Each ends with an explicit
+//! outcome.
 
 use crate::record::{Outcome, Proposal, Review};
 use agq_execution::git::{FileChange, Patch};
@@ -211,6 +213,50 @@ pub fn paths(patch: &Patch, protected: &[String], configuration: &[String]) -> O
         }
     }
     outcome("paths the change touches", problems)
+}
+
+/// The Operator's statement of Agentique's purpose and of how it is
+/// governed (C-55): no cycle changes it.
+pub const GOVERNANCE: &str = "ROADMAP.md";
+
+/// Purpose and governance stay the Operator's (C-55): a change to
+/// [`GOVERNANCE`], or to the model's purpose requirement (`purpose`: what it
+/// changes of it, found by identity, `traceability::purpose_changes`; why it
+/// could not be checked), fails, even when the objective names it, as no
+/// objective unlocks the stable core. A proposal may describe a desired
+/// change to the purpose for the Operator; a cycle cannot make it. The
+/// agent configuration keeps its own rule ([`paths`]).
+pub fn purpose(patch: &Patch, changed: &Result<Vec<String>, String>) -> Outcome {
+    let name = "purpose and governance unchanged";
+    let mut problems = Vec::new();
+    for file in &patch.files {
+        let path = file.path.replace('\\', "/");
+        if path.eq_ignore_ascii_case(GOVERNANCE) {
+            problems.push(format!(
+                "{path} states the purpose and the governance, which are the Operator's (C-55): no cycle changes it, even when the objective names it"
+            ));
+        }
+    }
+    match changed {
+        Ok(changed) => {
+            for change in changed {
+                problems.push(format!(
+                    "the model's purpose requirement changes ({change}): it is the Operator's (C-55), and no cycle changes it, even when the objective names it"
+                ));
+            }
+        }
+        Err(error) if problems.is_empty() => {
+            return Outcome::new(
+                name,
+                "not run",
+                format!("the purpose requirement could not be checked: {error}"),
+            );
+        }
+        Err(error) => problems.push(format!(
+            "the purpose requirement could not be checked: {error}"
+        )),
+    }
+    outcome(name, problems)
 }
 
 /// No configured key appears in what the change adds.
@@ -503,8 +549,57 @@ mod tests {
                     why: "z".into(),
                 })
                 .collect(),
-            finding: None,
+            ..Proposal::default()
         }
+    }
+
+    /// C-55: ROADMAP.md fails the gate even when the objective names it
+    /// (the configuration it may change does not count here); a change to
+    /// the purpose requirement fails it too; one that could not be checked
+    /// is not run, never a pass; AGENTS.md keeps its rule, allowed only
+    /// when named.
+    #[test]
+    fn purpose_and_governance_fail_even_when_the_objective_names_them() {
+        let roadmap = Patch {
+            files: vec![change("ROADMAP.md", "modified", "-old\n+new")],
+        };
+        let named = ["ROADMAP.md".to_string()];
+        // Named by the objective, the paths gate lets it through; the
+        // purpose gate does not read what the objective names at all.
+        assert!(paths(&roadmap, &[], &named).passed());
+        let failed = purpose(&roadmap, &Ok(Vec::new()));
+        assert!(!failed.passed());
+        assert!(failed.detail.contains("ROADMAP.md"), "{}", failed.detail);
+        let deleted = Patch {
+            files: vec![change("roadmap.md", "deleted", "-old")],
+        };
+        assert!(!purpose(&deleted, &Ok(Vec::new())).passed());
+        let elsewhere = Patch {
+            files: vec![change("docs/ROADMAP.md", "added", "+notes")],
+        };
+        assert!(purpose(&elsewhere, &Ok(Vec::new())).passed());
+        let ordinary = Patch {
+            files: vec![change("crates/a/src/lib.rs", "modified", "+x")],
+        };
+        let changed = Ok(vec!["Shop::Purpose::(doc) (doc, updated)".to_string()]);
+        let failed = purpose(&ordinary, &changed);
+        assert!(!failed.passed());
+        assert!(
+            failed.detail.contains("Shop::Purpose::(doc)"),
+            "{}",
+            failed.detail
+        );
+        let unknown = purpose(&ordinary, &Err("the model cannot be read".into()));
+        assert_eq!(unknown.verdict, "not run");
+        assert!(!unknown.passed());
+        assert!(purpose(&ordinary, &Ok(Vec::new())).passed());
+        // AGENTS.md: allowed only when named, as before.
+        let agents = Patch {
+            files: vec![change("AGENTS.md", "modified", "-a\n+b")],
+        };
+        assert!(!paths(&agents, &[], &[]).passed());
+        assert!(paths(&agents, &[], &["AGENTS.md".into()]).passed());
+        assert!(purpose(&agents, &Ok(Vec::new())).passed());
     }
 
     #[test]
@@ -564,6 +659,8 @@ mod tests {
             findings: vec![],
             test_changes_accepted: true,
             commit: "c".into(),
+            traceability: String::new(),
+            purpose: String::new(),
         };
         let all = [
             "crates/a/tests/a.rs",
