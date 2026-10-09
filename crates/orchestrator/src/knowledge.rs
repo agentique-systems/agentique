@@ -8,10 +8,15 @@
 //! bounded. The next run prefers what is not covered, first replays the
 //! findings fixed since, and the ways of deciding are compared by their
 //! runs.
+//!
+//! Since C-55 a finding keeps its disposition (what the lead judged it to
+//! be before anything was fixed), across objectives: one judged a wrong
+//! expectation or an unreliable reproduction is not offered again, and
+//! found again it is already adjudicated, not new.
 
 use crate::decide::Way;
 use crate::explore::Run;
-use crate::findings::{Finding, Replay, State};
+use crate::findings::{Disposition, DispositionKind, Finding, Replay, State};
 use crate::record::Store;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -19,6 +24,13 @@ use std::path::{Path, PathBuf};
 
 /// The file's format; a build that does not know it does not read it.
 pub const FORMAT: u32 = 1;
+
+/// A finding's id in a lead's brief, from its place in its cycle's findings
+/// (`f1` for the first): stable for the cycle, never renumbered when other
+/// findings are set aside, so an id names one finding in every session.
+pub fn finding_id(index: usize) -> String {
+    format!("f{}", index + 1)
+}
 
 /// Bounds: coverage keys, runs and findings kept. The least recently
 /// covered keys go first; the oldest runs; the oldest findings that propose
@@ -285,6 +297,29 @@ impl Knowledge {
                     );
                     known.set_state(State::FailingAgain, &note);
                 }
+                // Found again after it was judged a wrong expectation: it
+                // stays adjudicated (C-55), and says when it was seen.
+                Some(known)
+                    if known
+                        .disposition
+                        .as_ref()
+                        .is_some_and(|d| d.kind == DispositionKind::WrongExpectation) =>
+                {
+                    known.note = format!(
+                        "found again in build {}; already adjudicated as a wrong expectation",
+                        run.build
+                    );
+                }
+                // Judged an unreliable reproduction, and found again on
+                // another build than the one it was judged on: offered
+                // again, to be reproduced there.
+                Some(known) if Knowledge::found_again(known, &run.build) => {
+                    known.disposition = None;
+                    known.note = format!(
+                        "found again in build {}, another than it was judged an unreliable reproduction on: offered again",
+                        run.build
+                    );
+                }
                 Some(_) => {}
                 None => self.findings.push(finding.clone()),
             }
@@ -337,6 +372,13 @@ impl Knowledge {
         known.fixed_in = known.fixed_in.take().or(finding.fixed_in.clone());
         known.pull_request = known.pull_request.or(finding.pull_request);
         known.checked_in = known.checked_in.take().or(finding.checked_in.clone());
+        // A later judgment replaces an earlier one; none, or an older copy,
+        // leaves it as it is.
+        if let Some(newer) = &finding.disposition
+            && known.disposition.as_ref().is_none_or(|d| d.at <= newer.at)
+        {
+            known.disposition = Some(newer.clone());
+        }
         let state = match (known.state, finding.state) {
             (State::Fixed | State::FailingAgain, State::Reproduced) => State::FailingAgain,
             (State::Fixed | State::FailingAgain, State::Open | State::NotReproduced) => known.state,
@@ -388,6 +430,105 @@ impl Knowledge {
         }
     }
 
+    /// Records what `finding` was judged to be (C-55), replacing an earlier
+    /// judgment; a finding the knowledge no longer keeps is kept again.
+    pub fn adjudicate(&mut self, finding: &Finding, disposition: Disposition) {
+        match self
+            .findings
+            .iter_mut()
+            .find(|f| f.identity == finding.identity)
+        {
+            Some(known) => known.disposition = Some(disposition),
+            None => {
+                let mut kept = finding.clone();
+                kept.disposition = Some(disposition);
+                self.findings.push(kept);
+            }
+        }
+        self.bound();
+    }
+
+    /// The disposition of the finding `identity`, if it was adjudicated.
+    pub fn disposition(&self, identity: &str) -> Option<&Disposition> {
+        self.findings
+            .iter()
+            .find(|f| f.identity == identity)
+            .and_then(|f| f.disposition.as_ref())
+    }
+
+    /// Every finding's disposition, by identity.
+    pub fn dispositions(&self) -> BTreeMap<String, Disposition> {
+        self.findings
+            .iter()
+            .filter_map(|f| Some((f.identity.clone(), f.disposition.clone()?)))
+            .collect()
+    }
+
+    /// The findings of `found` that are new: not known by their identity
+    /// (one judged a wrong expectation is known, so found again it is not
+    /// new).
+    pub fn new_findings(&self, found: &[Finding], build: &str) -> Vec<Finding> {
+        found
+            .iter()
+            .filter(|f| {
+                self.findings
+                    .iter()
+                    .find(|k| k.identity == f.identity)
+                    .is_none_or(|known| Knowledge::found_again(known, build))
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// Whether `known`, judged an unreliable reproduction, is found again in
+    /// `build`, another build than the one it was judged on (or, for a
+    /// judgment that does not say, found on): then it is new again.
+    fn found_again(known: &Finding, build: &str) -> bool {
+        known.disposition.as_ref().is_some_and(|d| {
+            d.kind == DispositionKind::UnreliableReproduction
+                && d.build.as_deref().unwrap_or(&known.build) != build
+        })
+    }
+
+    /// The findings of `found` (in `build`) already adjudicated, with their
+    /// dispositions: found again, they are not new (but for an unreliable
+    /// reproduction found on another build than the one it was judged on,
+    /// which is).
+    pub fn already_adjudicated<'a>(
+        &'a self,
+        found: &'a [Finding],
+        build: &str,
+    ) -> Vec<(&'a Finding, &'a Disposition)> {
+        found
+            .iter()
+            .filter(|f| {
+                !self
+                    .findings
+                    .iter()
+                    .any(|k| k.identity == f.identity && Knowledge::found_again(k, build))
+            })
+            .filter_map(|f| Some((f, self.disposition(&f.identity)?)))
+            .collect()
+    }
+
+    /// The reproduced findings of `findings` (a cycle's) a lead may still be
+    /// offered, each with its place there, which gives its id
+    /// ([`finding_id`]): none whose disposition (its own, or the
+    /// knowledge's) sets it aside.
+    pub fn offered<'a>(&self, findings: &'a [Finding]) -> Vec<(usize, &'a Finding)> {
+        findings
+            .iter()
+            .enumerate()
+            .filter(|(_, f)| f.state == State::Reproduced)
+            .filter(|(_, f)| {
+                !f.disposition
+                    .as_ref()
+                    .or_else(|| self.disposition(&f.identity))
+                    .is_some_and(Disposition::sets_aside)
+            })
+            .collect()
+    }
+
     fn bound(&mut self) {
         if self.coverage.len() > COVERAGE {
             let mut keys: Vec<(u64, u64, String)> = self
@@ -403,12 +544,26 @@ impl Knowledge {
         if self.runs.len() > RUNS {
             self.runs.drain(..self.runs.len() - RUNS);
         }
+        // Adjudicated findings go last (C-55), those set aside last of all:
+        // their dispositions keep them from being proposed again.
         while self.findings.len() > FINDINGS {
-            let closed = self.findings.iter().position(|f| {
+            let closed = |f: &Finding| {
                 f.state == State::NotReproduced
                     || (f.state == State::Fixed && f.checked_in.is_some())
-            });
-            self.findings.remove(closed.unwrap_or(0));
+            };
+            let kind = |f: &Finding| f.disposition.as_ref().map(|d| d.kind);
+            let order: [&dyn Fn(&Finding) -> bool; 5] = [
+                &|f| kind(f).is_none() && closed(f),
+                &|f| kind(f).is_none(),
+                &|f| closed(f),
+                &|f| kind(f) == Some(DispositionKind::Defect),
+                &|f| kind(f) == Some(DispositionKind::AmbiguousRequirement),
+            ];
+            let at = order
+                .iter()
+                .find_map(|first| self.findings.iter().position(first))
+                .unwrap_or(0);
+            self.findings.remove(at);
         }
     }
 }
@@ -618,6 +773,234 @@ mod tests {
         k.update(&flaky);
         assert_eq!(k.findings[0].state, State::Fixed);
         assert_eq!(k.findings[0].fixed_in.as_deref(), Some("f2x"));
+    }
+
+    fn disposed(kind: DispositionKind) -> Disposition {
+        Disposition {
+            kind,
+            reason: "judged against the requirement".into(),
+            requirement: Some("Shop::LabelsReadable".into()),
+            objective: "objective-1".into(),
+            cycle: 2,
+            role: "lead".into(),
+            at: "2026-10-09T10:00:00Z".into(),
+            build: None,
+        }
+    }
+
+    /// C-55: a disposition is kept in the knowledge across a reload (and so
+    /// across objectives), a later one replaces it, and a file written
+    /// before dispositions existed still loads, its findings unjudged.
+    #[test]
+    fn dispositions_survive_a_reload_and_older_knowledge_still_loads() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("testing").join("p").join("knowledge.json");
+        let mut reproduced = finding(1, State::Reproduced);
+        reproduced.set_state(State::Reproduced, "");
+        Knowledge::change(&path, "p", |k| {
+            k.add_run(&run(&[("a|b|c|click", 1)], vec![reproduced.clone()]));
+            k.adjudicate(&reproduced, disposed(DispositionKind::WrongExpectation));
+        })
+        .unwrap();
+        let read = Knowledge::load(&path, "p").unwrap();
+        let kept = read.disposition(&reproduced.identity).unwrap();
+        assert_eq!(kept.kind, DispositionKind::WrongExpectation);
+        assert_eq!(kept.requirement.as_deref(), Some("Shop::LabelsReadable"));
+        assert_eq!((kept.cycle, kept.role.as_str()), (2, "lead"));
+        assert_eq!(read.dispositions().len(), 1);
+        // A later judgment replaces it; a finding the knowledge lost is kept.
+        let other = finding(2, State::Reproduced);
+        Knowledge::change(&path, "p", |k| {
+            k.adjudicate(&reproduced, disposed(DispositionKind::Defect));
+            k.adjudicate(&other, disposed(DispositionKind::AmbiguousRequirement));
+        })
+        .unwrap();
+        let read = Knowledge::load(&path, "p").unwrap();
+        assert_eq!(
+            read.disposition(&reproduced.identity).unwrap().kind,
+            DispositionKind::Defect
+        );
+        assert_eq!(read.findings.len(), 2);
+        // An update of what became of it keeps its disposition.
+        let mut again = read.clone();
+        again.update(&finding(1, State::Reproduced));
+        assert!(again.disposition(&reproduced.identity).is_some());
+        // Written by the build before C-55: no `disposition` anywhere.
+        let text = std::fs::read_to_string(&path).unwrap();
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        for f in old["findings"].as_array_mut().unwrap() {
+            f.as_object_mut().unwrap().remove("disposition");
+        }
+        assert!(!old.to_string().contains("disposition"));
+        std::fs::write(&path, old.to_string()).unwrap();
+        let read = Knowledge::load(&path, "p").unwrap();
+        assert_eq!(read.findings.len(), 2);
+        assert!(read.dispositions().is_empty());
+        assert_eq!(read.format, FORMAT);
+    }
+
+    /// C-55: a finding judged a wrong expectation or an unreliable
+    /// reproduction is not offered again; found again, it is not new but
+    /// already adjudicated; a defect and an unjudged finding are offered.
+    #[test]
+    fn a_wrong_expectation_is_not_offered_again_nor_new_when_found_again() {
+        let mut k = Knowledge::new("p");
+        let mut findings: Vec<Finding> = (1..=4)
+            .map(|n| {
+                let mut f = finding(n, State::Open);
+                f.set_state(State::Reproduced, "");
+                f
+            })
+            .collect();
+        k.add_run(&run(&[], findings.clone()));
+        k.adjudicate(&findings[0], disposed(DispositionKind::WrongExpectation));
+        k.adjudicate(
+            &findings[1],
+            disposed(DispositionKind::UnreliableReproduction),
+        );
+        // Its own copy says it is a defect: offered.
+        findings[2].disposition = Some(disposed(DispositionKind::Defect));
+        // Their ids are their places among the cycle's findings: f3 and f4,
+        // whatever was set aside before them.
+        let offered: Vec<(String, &str)> = k
+            .offered(&findings)
+            .into_iter()
+            .map(|(i, f)| (finding_id(i), f.identity.as_str()))
+            .collect();
+        assert_eq!(
+            offered,
+            vec![
+                ("f3".to_string(), findings[2].identity.as_str()),
+                ("f4".to_string(), findings[3].identity.as_str())
+            ]
+        );
+        // Found again by a later run: not new, already adjudicated.
+        let again = vec![finding(1, State::Open), finding(9, State::Open)];
+        let new = k.new_findings(&again, "b1");
+        assert_eq!(new.len(), 1);
+        assert_eq!(new[0].identity, again[1].identity);
+        let adjudicated = k.already_adjudicated(&again, "b1");
+        assert_eq!(adjudicated.len(), 1);
+        assert_eq!(adjudicated[0].1.kind, DispositionKind::WrongExpectation);
+        let before = k.findings.len();
+        k.add_run(&Run {
+            build: "b7".into(),
+            ..run(&[], vec![finding(1, State::Open)])
+        });
+        assert_eq!(k.findings.len(), before, "not recorded as new");
+        let known = &k.findings[0];
+        assert_eq!(
+            known.disposition.as_ref().unwrap().kind,
+            DispositionKind::WrongExpectation
+        );
+        assert!(known.note.contains("already adjudicated"), "{}", known.note);
+        assert!(known.note.contains("b7"), "{}", known.note);
+    }
+
+    /// C-55: an unreliable reproduction found again in the build it was
+    /// judged on stays set aside; found on another build, it is new again
+    /// and offered.
+    #[test]
+    fn an_unreliable_reproduction_found_on_another_build_is_offered_again() {
+        let mut k = Knowledge::new("p");
+        let mut flaky = finding(1, State::Open);
+        flaky.set_state(State::Reproduced, "");
+        k.add_run(&run(&[], vec![flaky.clone()]));
+        k.adjudicate(&flaky, disposed(DispositionKind::UnreliableReproduction));
+        let found = vec![finding(1, State::Open)];
+        // The same build (`b1`): still set aside, not new.
+        assert!(k.new_findings(&found, "b1").is_empty());
+        assert_eq!(k.already_adjudicated(&found, "b1").len(), 1);
+        assert!(k.offered(std::slice::from_ref(&flaky)).is_empty());
+        // Another build: new, not already adjudicated, and once the run is
+        // added, no longer set aside.
+        assert_eq!(k.new_findings(&found, "b2").len(), 1);
+        assert!(k.already_adjudicated(&found, "b2").is_empty());
+        k.add_run(&Run {
+            build: "b2".into(),
+            ..run(&[], found.clone())
+        });
+        assert!(k.disposition(&flaky.identity).is_none());
+        assert!(
+            k.findings[0].note.contains("offered again"),
+            "{}",
+            k.findings[0].note
+        );
+        assert_eq!(k.offered(std::slice::from_ref(&flaky)).len(), 1);
+        // Judged on another build than it was first found on (`b4`): the
+        // build it was judged on counts.
+        let mut later = Knowledge::new("p");
+        let mut other = finding(2, State::Open);
+        other.set_state(State::Reproduced, "");
+        later.add_run(&run(&[], vec![other.clone()]));
+        later.adjudicate(
+            &other,
+            Disposition {
+                build: Some("b4".into()),
+                ..disposed(DispositionKind::UnreliableReproduction)
+            },
+        );
+        let again = vec![finding(2, State::Open)];
+        assert!(later.new_findings(&again, "b4").is_empty(), "judged there");
+        assert_eq!(later.new_findings(&again, "b1").len(), 1, "another build");
+    }
+
+    /// C-55: an older copy of a finding's disposition never replaces a
+    /// newer one; when the knowledge is full of judged findings, a defect
+    /// goes before what is set aside.
+    #[test]
+    fn a_newer_disposition_is_kept_and_judged_findings_are_bounded_in_order() {
+        let mut k = Knowledge::new("p");
+        let first = finding(1, State::Reproduced);
+        let older = Disposition {
+            at: "2026-10-01T00:00:00Z".into(),
+            ..disposed(DispositionKind::Defect)
+        };
+        k.adjudicate(&first, disposed(DispositionKind::WrongExpectation));
+        let mut stale = first.clone();
+        stale.disposition = Some(older);
+        k.update(&stale);
+        assert_eq!(
+            k.disposition(&first.identity).map(|d| d.kind),
+            Some(DispositionKind::WrongExpectation)
+        );
+        let mut newer = first.clone();
+        newer.disposition = Some(Disposition {
+            at: "2026-10-12T00:00:00Z".into(),
+            ..disposed(DispositionKind::Defect)
+        });
+        k.update(&newer);
+        assert_eq!(
+            k.disposition(&first.identity).map(|d| d.kind),
+            Some(DispositionKind::Defect)
+        );
+        // Full of judged findings: the defects go first, oldest first.
+        let mut full = Knowledge::new("p");
+        for n in 0..FINDINGS {
+            let kind = if n % 2 == 0 {
+                DispositionKind::WrongExpectation
+            } else {
+                DispositionKind::Defect
+            };
+            full.adjudicate(&finding(n, State::Reproduced), disposed(kind));
+        }
+        let extra = finding(FINDINGS + 1, State::Reproduced);
+        full.adjudicate(&extra, disposed(DispositionKind::WrongExpectation));
+        assert_eq!(full.findings.len(), FINDINGS);
+        assert_eq!(
+            full.findings
+                .iter()
+                .filter(
+                    |f| f.disposition.as_ref().unwrap().kind == DispositionKind::WrongExpectation
+                )
+                .count(),
+            FINDINGS / 2 + 1,
+            "what is set aside is kept"
+        );
+        assert!(
+            full.disposition(&finding(1, State::Reproduced).identity)
+                .is_none()
+        );
     }
 
     #[test]

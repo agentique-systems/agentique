@@ -376,13 +376,15 @@ pub struct TestChange {
 }
 
 /// The improvement a cycle makes, as proposed and then frozen.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Proposal {
     pub title: String,
     /// `correctness`, `usability`, `comprehension` or `other`.
     pub kind: String,
     pub why: String,
+    /// The elements and contracts of the model it affects (qualified
+    /// names); for new elements, the element that will own them.
     pub parts: Vec<String>,
     pub plan: Vec<String>,
     pub criteria: Vec<Criterion>,
@@ -392,6 +394,20 @@ pub struct Proposal {
     /// Orchestrator adds as a frozen criterion (C-54).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub finding: Option<String>,
+    /// The requirements of the project's model it serves (qualified names;
+    /// C-55): the engineering capability or root requirement.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub serves: Vec<String>,
+    /// The benefit the Operator is expected to see.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub benefit: String,
+    /// Its effect on root complexity, reuse and dependencies.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub complexity: String,
+    /// What `serves` and `parts` resolved to in the base commit's model, by
+    /// identity, or why they were not resolved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolved: Option<crate::traceability::Resolution>,
 }
 
 /// One check's outcome.
@@ -523,6 +539,14 @@ pub struct Review {
     #[serde(default)]
     pub test_changes_accepted: bool,
     pub commit: String,
+    /// Its judgment of what the commit changed against what the proposal
+    /// named (C-55).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub traceability: String,
+    /// Its judgment of the cumulative change since the approved baseline
+    /// against the purpose and the requirements the proposal serves (C-55).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub purpose: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -591,6 +615,14 @@ pub struct Cycle {
     /// commit with other test files has its test runs on the base again.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence: Option<Evidence>,
+    /// What the reviewed commit changed against what the proposal named
+    /// (C-55), as the reviewer was given it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub traceability: Option<crate::traceability::Traced>,
+    /// The cumulative change since the approved baseline to the reviewed
+    /// commit (C-55), as the reviewer was given it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cumulative: Option<crate::traceability::Cumulative>,
 }
 
 /// What a cycle's evidence on the base was made with (C-54).
@@ -679,6 +711,8 @@ impl Cycle {
             findings: Vec::new(),
             replay: None,
             evidence: None,
+            traceability: None,
+            cumulative: None,
         }
     }
 
@@ -862,6 +896,11 @@ pub struct Objective {
     /// `lead`) given to it: the later ones go to its next turn.
     #[serde(default, skip_serializing_if = "is_zero_u64")]
     pub delivered: u64,
+    /// The URL of the repository's remote `origin` when the objective was
+    /// created (C-55): where the approved baseline is read, whatever an
+    /// agent does to the remote later. None without a remote.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
 }
 
 fn is_zero_u32(value: &u32) -> bool {
@@ -1061,6 +1100,7 @@ impl Store {
             interrupted: false,
             resumes: 0,
             delivered: 0,
+            origin: crate::forge::origin_url(repository),
         };
         self.save(&objective)?;
         Ok(objective)
@@ -1385,6 +1425,7 @@ mod tests {
             interrupted: false,
             resumes: 0,
             delivered: 0,
+            origin: None,
         };
         objective.spent.add(
             "lead",
@@ -1647,6 +1688,7 @@ mod tests {
             }],
             intended_test_changes: Vec::new(),
             finding: Some("readable-labels|x|y".into()),
+            ..Proposal::default()
         });
         cycle
             .before
@@ -1686,6 +1728,166 @@ mod tests {
         assert_eq!(read.budgets.steps, DEFAULT_STEPS);
         assert!(!read.explore && read.parent.is_none() && read.directives.is_empty());
         assert_eq!(read, plain);
+    }
+
+    /// `objective.json` stays format 1 with what C-55 adds: a proposal's
+    /// `serves`, benefit, complexity and resolution, a review's judgments,
+    /// a cycle's traceability and cumulative change, a finding's
+    /// disposition, all optional. The previous build's readers of the types
+    /// that gained fields (`PreviousProposal`, `PreviousReview`, with the
+    /// fields `main` at W12.6 knows and the same serde attributes) read what
+    /// this build writes, and this build reads a record written without
+    /// them.
+    #[test]
+    fn a_record_with_traceability_and_dispositions_stays_format_1() {
+        use crate::findings::{Disposition, DispositionKind};
+        use crate::traceability::{Cumulative, Group, Resolution, Resolved, Traced};
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct PreviousProposal {
+            title: String,
+            kind: String,
+            why: String,
+            parts: Vec<String>,
+            plan: Vec<String>,
+            criteria: Vec<Criterion>,
+            #[serde(default)]
+            intended_test_changes: Vec<TestChange>,
+            #[serde(default)]
+            finding: Option<String>,
+        }
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct PreviousReview {
+            verdict: String,
+            findings: Vec<String>,
+            #[serde(default)]
+            test_changes_accepted: bool,
+            commit: String,
+        }
+        let mut objective = with_models();
+        let cycle = objective.cycle_mut().unwrap();
+        cycle.proposal = Some(Proposal {
+            title: "t".into(),
+            kind: "correctness".into(),
+            why: "w".into(),
+            parts: vec!["Shop::Store".into()],
+            serves: vec!["Shop::Fast".into()],
+            benefit: "Faster checkout".into(),
+            complexity: "Adds nothing at the root".into(),
+            resolved: Some(Resolution {
+                serves: vec![Resolved {
+                    name: "Shop::Fast".into(),
+                    element: 4,
+                    kind: "requirement def".into(),
+                }],
+                parts: Vec::new(),
+                skipped: None,
+            }),
+            ..Proposal::default()
+        });
+        cycle.review = Some(Review {
+            verdict: "approve".into(),
+            findings: Vec::new(),
+            test_changes_accepted: false,
+            commit: "abc".into(),
+            traceability: "Every change is within Store".into(),
+            purpose: "It still serves the purpose".into(),
+        });
+        cycle.traceability = Some(Traced {
+            commit: "abc".into(),
+            base: "def".into(),
+            changed: 2,
+            not_named: vec!["Shop::Cart (part def, updated)".into()],
+            not_changed: Vec::new(),
+            skipped: None,
+        });
+        cycle.cumulative = Some(Cumulative {
+            commit: "abc".into(),
+            since: "0ld".into(),
+            approved: true,
+            created: 3,
+            groups: vec![Group {
+                what: "requirements".into(),
+                added: vec!["Shop::Slow".into()],
+                ..Group::default()
+            }],
+            ..Cumulative::default()
+        });
+        let mut finding = crate::findings::Finding::new(
+            crate::findings::Failed {
+                check: crate::findings::Check::Expectation,
+                control: "x".into(),
+                message: "y".into(),
+                evidence: serde_json::json!({}),
+            },
+            Vec::new(),
+            "b1",
+            "abc",
+            "model",
+        );
+        finding.disposition = Some(Disposition {
+            kind: DispositionKind::WrongExpectation,
+            reason: "the requirement says otherwise".into(),
+            requirement: None,
+            objective: "objective-1".into(),
+            cycle: 1,
+            role: "lead".into(),
+            at: "t".into(),
+            build: None,
+        });
+        cycle.findings.push(finding);
+        let text = serde_json::to_string_pretty(&objective).unwrap();
+        for field in [
+            "\"serves\"",
+            "\"benefit\"",
+            "\"complexity\"",
+            "\"resolved\"",
+            "\"traceability\"",
+            "\"cumulative\"",
+            "\"purpose\"",
+            "\"disposition\"",
+            "\"wrong-expectation\"",
+        ] {
+            assert!(text.contains(field), "{field}");
+        }
+        // This build reads it back whole, and still as format 1.
+        let read: Objective = serde_json::from_str(&text).unwrap();
+        assert_eq!(read, objective);
+        assert_eq!(read.format, 1);
+        // The previous build reads the proposal and review it wrote.
+        let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+        let previous: PreviousProposal =
+            serde_json::from_value(value["cycles"][0]["proposal"].clone()).unwrap();
+        assert_eq!(previous.parts, vec!["Shop::Store".to_string()]);
+        let previous: PreviousReview =
+            serde_json::from_value(value["cycles"][0]["review"].clone()).unwrap();
+        assert_eq!(previous.verdict, "approve");
+        // A record written without them reads with them empty.
+        let mut old = value.clone();
+        let cycle = &mut old["cycles"][0];
+        for field in ["traceability", "cumulative"] {
+            cycle.as_object_mut().unwrap().remove(field);
+        }
+        for field in ["serves", "benefit", "complexity", "resolved"] {
+            cycle["proposal"].as_object_mut().unwrap().remove(field);
+        }
+        for field in ["traceability", "purpose"] {
+            cycle["review"].as_object_mut().unwrap().remove(field);
+        }
+        cycle["findings"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("disposition");
+        let read: Objective = serde_json::from_value(old).unwrap();
+        let cycle = read.cycle().unwrap();
+        let proposal = cycle.proposal.as_ref().unwrap();
+        assert!(proposal.serves.is_empty() && proposal.resolved.is_none());
+        assert!(cycle.review.as_ref().unwrap().purpose.is_empty());
+        assert!(cycle.traceability.is_none() && cycle.cumulative.is_none());
+        assert!(cycle.findings[0].disposition.is_none());
     }
 
     /// Durable work (C-54): after an adoption or a recovered crash it goes

@@ -146,8 +146,29 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
             "Merging is the Orchestrator's, after the checks and an independent review pass.",
         ),
         refused(
-            r"\bgh(\.exe)?\s+(repo\s+(delete|edit|rename|archive)\b|api\b[^\n;&|]*(-X|--method)\s*(DELETE|PATCH|PUT))",
+            r"\bgh(\.exe)?\s+(repo\s+(delete|edit|rename|archive)\b|api\b[^\n;&|]*(-X\s*|--method(\s+|=))(DELETE|PATCH|PUT))",
             "Changing or deleting the repository on GitHub is the Operator's.",
+        ),
+        // Tags and releases are the Operator's (the approved baseline,
+        // C-55, is a tag): none is created, moved or deleted on the host.
+        refused(
+            r"\bgh(\.exe)?\s+(release\s+(create|delete|edit|upload)\b|api\b[^\n;&|]*\bgit/(refs|tags)\b)",
+            "Releases and tags on GitHub are the Operator's (the approved baseline is a tag).",
+        ),
+        // A GraphQL mutation can create, move or delete a ref (a tag) as
+        // the REST calls above can.
+        refused(
+            r"\bgh(\.exe)?\s+api\s+graphql\b[^\n]*\b(mutation|(create|update|delete)Refs?)\b",
+            "Changing GitHub through a GraphQL mutation is the Operator's (refs and tags among it).",
+        ),
+        // Git configuration given on the command line or in the
+        // environment can rename a subcommand (an alias) past these rules,
+        // or bring in other configuration (an include) that does. These
+        // rules cannot close every way: the approved baseline's real
+        // protection is a tag ruleset on the host, the Operator's.
+        refused(
+            r#"\bgit(\.exe)?\b[^\n;&|]*\s(-c\s*|--config-env(\s+|=))['"]?(alias\.|include\.path|includeif\.)|\bGIT_CONFIG_(PARAMETERS|COUNT|KEY_\d+|VALUE_\d+)\b|\bGIT_CONFIG_(GLOBAL|SYSTEM)\s*="#,
+            "A git alias or included configuration given on the command line or in the environment is refused: run the git command itself.",
         ),
         refused(
             &format!(r"{}[^\n;&|]*--(global|system)\b", git("config")),
@@ -177,9 +198,22 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
         // working copy: only its own branch is the session's to change.
         list.push(refused(
             &format!(
-                r"{GIT}(stash\s+(drop|clear|pop|apply)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|tag\b[^\n;&|]*(\s-d\b|--delete)|reflog\s+(expire|delete)|replace\b|worktree\s+(remove|prune|move)|config\s+(--local\s+)?[A-Za-z][\w.-]*\s+[^\s;&|]|config\b[^\n;&|]*--(unset|add|replace-all|rename-section|remove-section|edit))"
+                r"{GIT}(stash\s+(drop|clear|pop|apply)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|reflog\s+(expire|delete)|replace\b|worktree\s+(remove|prune|move)|config\s+(--local\s+)?[A-Za-z][\w.-]*\s+[^\s;&|]|config\b[^\n;&|]*--(unset|add|replace-all|rename-section|remove-section|edit))"
             ),
             "That changes the repository's refs, which the Operator's working copy shares; a cycle's worktree changes only its own branch.",
+        ));
+        // Tags are the Operator's: the approved baseline (C-55) is one, and
+        // only the Operator creates or moves it, on the remote the objective
+        // recorded, which a worktree never redirects.
+        list.push(refused(
+            &git("tag"),
+            "Tags are the Operator's (the approved baseline is one): a cycle's worktree never creates, moves or deletes one.",
+        ));
+        list.push(refused(
+            &format!(
+                r"{GIT}remote\s+(add|set-url|rename|remove|rm|set-head|set-branches|prune|update)\b"
+            ),
+            "The repository's remotes are the Operator's: a cycle's worktree never adds, redirects or removes one.",
         ));
     }
     if place == Place::WorkingCopy {
@@ -193,7 +227,7 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
     if !network {
         list.push(refused(
             &format!(
-                r"(^|[;&|(]\s*)(curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b|{}|\b(npm|pnpm|yarn)\s+(install|ci|add|i)\b|\bpip3?\s+install\b|\bcargo\s+(install|update|fetch)\b",
+                r"(^|[;&|(]\s*)(curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b|{}|\b(npm|pnpm|yarn)\s+(install|ci|add|i)\b|\bpip3?\s+install\b|\bcargo\s+(install|update|fetch)\b|(^|[;&|(])\s*gh(\.exe)?\s",
                 git("(fetch|pull|clone)")
             ),
             "The network is off for this session.",
@@ -493,8 +527,6 @@ mod tests {
             "git commit -m \"Fix the gap\"",
             "git log --oneline -5",
             "python tools/check_architecture.py",
-            "gh pr view 97 --json state",
-            "gh pr checks 97",
             "rg -n model crates/history",
             "cat crates/history/src/lib.rs > /tmp/copy.rs",
             "node --test claude-agent/test/*.test.ts",
@@ -504,6 +536,16 @@ mod tests {
                 None,
                 "{command}"
             );
+        }
+        // `gh` reaches GitHub: ordinary with the network (C-55 refuses it
+        // without).
+        for command in ["gh pr view 97 --json state", "gh pr checks 97"] {
+            assert_eq!(
+                refusal(Place::WorkingCopy, false, true, command),
+                None,
+                "{command}"
+            );
+            assert!(refusal(Place::WorkingCopy, false, false, command).is_some());
         }
         assert_eq!(
             refusal(
@@ -702,6 +744,69 @@ mod tests {
         }
     }
 
+    /// C-55: an agent can neither redirect the remote the approved
+    /// baseline is read from, nor move a tag on the host, nor smuggle a git
+    /// subcommand past these rules as an alias; `gh` needs the network.
+    #[test]
+    fn remotes_tags_and_aliases_are_the_operators() {
+        let worktree = |command: &str| refusal(Place::Worktree, true, true, command);
+        for command in [
+            "git remote set-url origin https://example.invalid/x.git",
+            "git remote add mirror ../elsewhere",
+            "git -C ../agentique remote rename origin old",
+            "git remote remove origin",
+            "git remote rm origin",
+            "git -c alias.t=tag t -f approved-baseline",
+            "git -calias.t=tag t approved-baseline",
+            "git --config-env=alias.t=VAR t approved-baseline",
+            "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.t GIT_CONFIG_VALUE_0=tag git t x",
+            "gh api --method=DELETE repos/o/r/git/refs/tags/approved-baseline",
+            "gh api --method=PATCH repos/o/r",
+            "gh api -XPUT repos/o/r/topics",
+            "gh api repos/o/r/git/refs -f ref=refs/tags/approved-baseline -f sha=abc",
+            "gh release create approved-baseline --target main",
+            "gh release delete v1 --cleanup-tag --yes",
+            // Quoted, and configuration brought in from elsewhere.
+            "git -c 'alias.t=tag' t -f approved-baseline",
+            "git -c \"alias.t=tag\" t approved-baseline",
+            "git -c include.path=../evil.cfg t approved-baseline",
+            "git -c 'includeIf.gitdir:/.path=../evil.cfg' t x",
+            "GIT_CONFIG_GLOBAL=../evil.cfg git t approved-baseline",
+            "$env:GIT_CONFIG_SYSTEM = 'C:/evil.cfg'; git t x",
+            // A GraphQL mutation, of a ref or of anything.
+            "gh api graphql -f query='mutation { createRef(input: {repositoryId: \"r\", name: \"refs/tags/x\", oid: \"a\"}) { ref { name } } }'",
+            "gh api graphql -f query='mutation($id: ID!) { updateRefs(input: {}) { clientMutationId } }'",
+            "gh api graphql -f query='mutation { addStar(input: {}) { clientMutationId } }'",
+        ] {
+            assert!(worktree(command).is_some(), "{command}");
+        }
+        for command in [
+            "git remote -v",
+            "git remote get-url origin",
+            "git -c core.quotepath=off status",
+            "git -c 'user.name=x' commit -m y",
+            "gh pr view 12",
+            "gh api repos/o/r/pulls/12",
+            "gh api graphql -f query='query { viewer { login } }'",
+        ] {
+            assert!(worktree(command).is_none(), "{command}");
+        }
+        // Without the network, gh is refused.
+        assert!(refusal(Place::Worktree, true, false, "gh pr view 12").is_some());
+        assert!(refusal(Place::Worktree, true, false, "cd x && gh api user").is_some());
+        assert!(refusal(Place::Worktree, true, false, "git commit -m \"gh is fine\"").is_none());
+        // In the Operator's working copy, aliases are refused as well.
+        assert!(
+            refusal(
+                Place::WorkingCopy,
+                true,
+                true,
+                "git -c alias.r=reset r --hard"
+            )
+            .is_some()
+        );
+    }
+
     #[test]
     fn a_worktree_session_changes_only_its_own_branch() {
         let list = refused_commands(Place::Worktree, false, false);
@@ -720,6 +825,9 @@ mod tests {
             "git branch -f main HEAD",
             "git branch -D feature",
             "git -C ../agentique tag -d v1",
+            "git tag approved-baseline",
+            "git tag -f approved-baseline HEAD",
+            "git -c x=y tag -a v2 -m 'release'",
             "git symbolic-ref HEAD refs/heads/main",
             "git stash pop",
             "git config core.hooksPath hooks",

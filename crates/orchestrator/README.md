@@ -53,6 +53,51 @@ what to change.
 - **Roles** (`roles`): lead, implementer, reviewer and evaluator, each its
   own Claude Agent runtime session with its instructions, tools and
   permission policy, and one tool to hand its result over.
+- **Purpose and traceability** (`traceability`, C-55): a proposal names
+  the requirements of the project's model it `serves`, its `benefit` and
+  its effect on `complexity`; `serves` and `parts` are resolved by identity
+  in the base commit's model when it is submitted (a name that does not
+  resolve, or a `serves` that is no requirement, refuses it; a base without
+  a model folder resolves nothing, and a model with no requirement yet
+  records `serves` as stated, each saying why; a model that cannot be read
+  stops the cycle). At review, what the commit changed (model elements by
+  identity, and the parts whose linked code changed) is compared with
+  `parts` ("changed but not named", "named but not changed"), and the
+  cumulative change since the Operator's approved baseline (the tag
+  `approved-baseline`, read with `git ls-remote` at the URL of `origin`
+  recorded when the objective was created, never the local tag; without
+  it, the objective's start, saying why) is counted at the root: both go to
+  the reviewer, whose judgments of both are required and recorded, to the
+  cycle's record and to the thread; the numbers inform, they do not
+  decide. In a project whose model declares a root purpose requirement
+  (`Purpose`, `purpose`; Agentique's does), the gate "purpose and
+  governance unchanged" fails a change to `ROADMAP.md` or to that
+  requirement and what it owns, by identity, also when it is moved or
+  renamed, as the base, the objective's start and the approved baseline
+  declare it, whatever the objective names; a failure goes to repair like
+  any gate's. Models, links and their presence are read by the commits'
+  trees through a clean checkout made for it, never through the checkout
+  the checks ran in. The `origin` URL is recorded without credentials.
+  Worktree sessions are refused `git tag` and changes to the remotes; every
+  session (the Operator's Conversation too) is refused git aliases and
+  includes given on the command line or in the environment, releases, tag
+  refs and GraphQL mutations on the host, and `gh` without the network.
+  These rules cannot close every way: the approved baseline's real
+  protection is a tag ruleset on the host, recommended to the Operator.
+- **Dispositions** (`findings`, `knowledge`; C-55): the lead judges a
+  reproduced finding with `adjudicate_finding` (a defect, a wrong
+  expectation, an ambiguous requirement or an unreliable reproduction),
+  which the Orchestrator records in the testing knowledge, across
+  objectives, and shows in the thread; a finding's id (`f1`, …) is its
+  place among the cycle's findings and never changes. Only a defect is
+  chosen to fix, and once a proposal fixing it is accepted it cannot be
+  judged otherwise; a wrong expectation is not offered again (found again,
+  it is not new); an unreliable reproduction is not offered again until it
+  is found on another build than the one it was judged on; an ambiguous
+  requirement is a question for the Operator, not reproduced again in
+  later cycles. When every finding is
+  judged other than a defect, the cycle ends with nothing to fix. The
+  reviewer is told how the finding a change fixes was judged.
 - **Models per role** (`models`, C-54): each role's model (the four above,
   the explorer, escalation and typed decisions), resolved by the Studio
   from Settings › Agents and the credentials before an objective starts: its

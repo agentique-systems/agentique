@@ -23,6 +23,7 @@ use crate::record::{
 };
 use crate::roles::Role;
 use crate::thread::{Author, Kind, ThreadEntry};
+use crate::traceability::Elements;
 use agq_assistant::policy::Policy;
 use agq_assistant::turn::Toolset;
 use serde_json::Value;
@@ -181,8 +182,10 @@ impl Driver {
     /// The lead's turn: its session, and for each child it delegates, the
     /// child's run and the lead's session again with the child's result.
     /// What waits for the lead (the Operator's messages, children's results)
-    /// opens each of its sessions. `offered` are the reproduced findings it
-    /// may choose among.
+    /// opens each of its sessions; each is offered the reproduced findings
+    /// it may choose among, and its proposal is checked against `model`,
+    /// the base commit's (C-55). What it judged findings to be is recorded
+    /// on the cycle after each session.
     pub(super) fn lead(
         &mut self,
         cwd: &Path,
@@ -190,6 +193,7 @@ impl Driver {
         brief: String,
         kit: Toolset,
         resume: bool,
+        model: Option<&Result<Elements, String>>,
     ) -> Result<Session, String> {
         let proposing = kit
             .definitions
@@ -251,9 +255,11 @@ impl Driver {
                     test: None,
                     kit: Some(kit.clone()),
                     offered,
+                    model,
                 },
             )?;
             self.record_refused(&session);
+            self.record_adjudicated(&session.adjudicated);
             let Some(asked) = session.delegated.clone() else {
                 return Ok(session);
             };

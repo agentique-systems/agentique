@@ -2088,7 +2088,7 @@ it). Read against the code and the model before any change:
 | W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
 | W13.3 Requirement constraints and evidence | — | In progress |
 | W13.4 The self-model | — | In progress (`stage13/self-model`) |
-| W13.5 Alignment in the loop | — | In progress |
+| W13.5 Alignment in the loop | — | In review (`stage13/alignment`, below) |
 | W13.6 A second system | — | Not started |
 | W13.7 Proof | — | Not started |
 
@@ -2142,3 +2142,35 @@ sends only through its own ports; `bind` stays unsupported; a reference with
 a multiplicity above 1 binds one instance; attributes may still override a
 value given where they are declared (only bindings of references are
 refused).
+
+**W13.5 Alignment in the loop** (`stage13/alignment`, PR #120; nothing here
+says the Operator accepted anything). As the §7.6 entry of 2026-10-10
+describes: proposals name what they serve, benefit and cost, checked against
+the base's model; traceability and the cumulative change since the approved
+baseline (read at the `origin` URL the objective recorded, without
+credentials) for the reviewer, who answers both explicitly; the purpose
+gate, for projects that declare a root purpose, reading models by the
+commits' trees; no tags or remote changes in worktrees, and no git aliases
+or includes, releases, tag refs, GraphQL mutations or `gh` without the
+network in any session (the Operator's Conversation too); dispositions of
+findings with stable ids. After the independent reviews of #120: the purpose
+gate and the locked-element gates no longer read the checkout the checks
+ran in; the purpose is protected across cycles (moved or renamed, and as
+the objective's start and the approved baseline declare it); model read
+failures stop the cycle; models without requirements record `serves` as
+stated; ambiguous findings are not reproduced again; an unreliable
+reproduction is offered again only on another build than it was judged on;
+blank review judgments are refused. The refusals cannot close every way to
+move a tag: the approved baseline's real control is a GitHub tag ruleset on
+`approved-baseline`, recommended to the Operator. Tested with the scripted
+stand-ins (`tests/traceability.rs`, `tests/cycle.rs` with cycles that edit
+`ROADMAP.md` and the purpose, one while a check deletes `model/`,
+`tests/exploring.rs` with wrong-expectation, ambiguous and re-judged
+findings, unit tests in `traceability.rs`, `roles.rs`, `gates.rs`,
+`knowledge.rs`, `record.rs`, `forge.rs`, and the assistant's `policy.rs`
+and `model_tools.rs`), after rebasing on `main` at `ed6a91d9`:
+agq-orchestrator 136 passed, 0 failed, 5 ignored; agq-assistant 118
+passed, 0 failed, 4 ignored; workspace clippy, fmt and the architecture
+check passed. Not verified: live models; the approved baseline against
+GitHub (tested with local bare remotes); reversing a disposition by an
+Operator command (not built).

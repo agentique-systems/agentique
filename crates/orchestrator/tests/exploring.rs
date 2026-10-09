@@ -17,7 +17,7 @@ mod standin;
 use agq_assistant::claude_agent::{ClaudeAgent, Installation, find_node};
 use agq_orchestrator::control::Options;
 use agq_orchestrator::explore::Instance;
-use agq_orchestrator::findings::{Check as Found, State as FoundState};
+use agq_orchestrator::findings::{Check as Found, DispositionKind, State as FoundState};
 use agq_orchestrator::knowledge::Knowledge;
 use agq_orchestrator::record::{
     Access, Budgets, DirectiveStatus, Objective, Permissions, Recipient, RoleModel, State, Store,
@@ -241,7 +241,9 @@ fn an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it() {
         return;
     };
     let dir = tempfile::tempdir().unwrap();
-    let repository = repository_with(dir.path(), &[]);
+    // REJUDGE: once its proposal is accepted, the lead tries to judge the
+    // finding it fixes a wrong expectation, which is refused (C-55).
+    let repository = repository_with(dir.path(), &["REJUDGE"]);
     let store = Store::new(dir.path().join("objectives"));
     let (setup, log) = setup_with(dir.path(), &store, node, true);
     let objective = exploring(&store, &repository, "Find and fix problems", budgets());
@@ -327,6 +329,7 @@ fn an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it() {
         "Explores debug-",
         "Explored ",
         "Reproduced: readable-labels",
+        "Judges finding f1 a defect, to be fixed",
         "The criteria on the base, before the change",
         "Proposes: Label the History panel's Archive button",
     ] {
@@ -350,6 +353,22 @@ fn an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it() {
             .findings
             .iter()
             .any(|f| f.identity == finding.identity && f.state == FoundState::Reproduced)
+    );
+    let adjudications = all
+        .iter()
+        .filter(|e| e.kind == Kind::Activity && e.text == "adjudicate_finding")
+        .count();
+    assert_eq!(adjudications, 2, "the lead tried to judge it again");
+    // Judged a defect before it was fixed (C-55), on the cycle and in the
+    // knowledge; judging it otherwise after its proposal was accepted was
+    // refused.
+    assert_eq!(
+        finding.disposition.as_ref().map(|d| d.kind),
+        Some(DispositionKind::Defect)
+    );
+    assert_eq!(
+        knowledge.disposition(&finding.identity).map(|d| d.kind),
+        Some(DispositionKind::Defect)
     );
     // Bounds: the failed cycle keeps its work and nothing else.
     let worktrees = git(&repository, &["worktree", "list"]);
@@ -402,6 +421,153 @@ fn two_explorations_without_a_new_problem_end_the_objective() {
     );
     let worktrees = git(&repository, &["worktree", "list"]);
     assert_eq!(worktrees.lines().count(), 1, "{worktrees}");
+}
+
+/// C-55, end to end: the lead judges the reproduced finding a wrong
+/// expectation before anything is fixed: nothing is proposed or
+/// implemented, the cycle ends with nothing to fix, the disposition is kept
+/// in the testing knowledge and shown in the thread, and the next cycle
+/// neither reproduces nor offers that finding again.
+#[test]
+fn a_finding_judged_a_wrong_expectation_is_not_fixed_nor_offered_again() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["WRONG-EXPECTATION"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let mut budgets = budgets();
+    budgets.cycles = 2;
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets);
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Done, "{}", texts(&seen));
+    let first = &record.cycles[0];
+    let finding = first
+        .findings
+        .iter()
+        .find(|f| f.state == FoundState::Reproduced)
+        .expect("a reproduced finding");
+    let judged = finding.disposition.as_ref().expect("its disposition");
+    assert_eq!(judged.kind, DispositionKind::WrongExpectation);
+    assert_eq!((judged.role.as_str(), judged.cycle), ("lead", 1));
+    assert_eq!(judged.objective, id);
+    // Nothing proposed, nothing implemented.
+    assert!(record.cycles.iter().all(|c| c.proposal.is_none()));
+    assert!(
+        !record
+            .directives
+            .iter()
+            .any(|d| d.recipient == Recipient::Role("implementer".into()))
+    );
+    // Kept in the testing knowledge, across objectives.
+    let knowledge = Knowledge::load(
+        &Knowledge::file(&store, &repository),
+        &Knowledge::key(&repository),
+    )
+    .unwrap();
+    assert_eq!(
+        knowledge.disposition(&finding.identity).map(|d| d.kind),
+        Some(DispositionKind::WrongExpectation)
+    );
+    // Not offered again: the next cycle has no such finding.
+    assert_eq!(record.cycles.len(), 2, "{}", texts(&seen));
+    assert!(
+        record.cycles[1]
+            .findings
+            .iter()
+            .all(|f| f.identity != finding.identity),
+        "{:?}",
+        record.cycles[1].findings
+    );
+    let all = store.thread(&id, 0);
+    for wanted in [
+        "Judges finding f1 a wrong expectation, not a defect",
+        "Nothing to fix in this cycle",
+    ] {
+        assert!(
+            all.iter().any(|e| e.text.starts_with(wanted)),
+            "{wanted}: {}",
+            texts(&all)
+        );
+    }
+}
+
+/// C-55, end to end: a finding judged an ambiguous requirement is a
+/// question for the Operator in the thread, is not proposed, and is not
+/// reproduced or offered again in later cycles until the Operator answers:
+/// two explorations without anything new then end the objective, rather
+/// than the same question being asked cycle after cycle.
+#[test]
+fn an_ambiguous_requirement_is_asked_once_and_the_objective_ends() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["AMBIGUOUS"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let mut budgets = budgets();
+    budgets.cycles = 3;
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets);
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Done, "{}", texts(&seen));
+    assert!(
+        record
+            .note
+            .as_deref()
+            .unwrap_or_default()
+            .starts_with("Nothing new reproduced"),
+        "{:?}",
+        record.note
+    );
+    assert_eq!(record.cycles.len(), 2, "{}", texts(&seen));
+    let finding = record.cycles[0]
+        .findings
+        .iter()
+        .find(|f| f.state == FoundState::Reproduced)
+        .expect("a reproduced finding");
+    assert_eq!(
+        finding.disposition.as_ref().map(|d| d.kind),
+        Some(DispositionKind::AmbiguousRequirement)
+    );
+    assert!(record.cycles.iter().all(|c| c.proposal.is_none()));
+    assert!(
+        record.cycles[1]
+            .findings
+            .iter()
+            .all(|f| f.identity != finding.identity),
+        "not offered again"
+    );
+    let all = store.thread(&id, 0);
+    let asked: Vec<_> = all
+        .iter()
+        .filter(|e| {
+            e.text
+                .starts_with("A question for you: is finding f1 a defect?")
+        })
+        .collect();
+    assert_eq!(asked.len(), 1, "{}", texts(&all));
+    // The cycle's directives end with the real reason.
+    assert!(
+        record
+            .directives
+            .iter()
+            .filter(|d| d.refers_to.as_deref() == Some("cycle-1/exploration-1"))
+            .all(|d| d
+                .result
+                .as_deref()
+                .unwrap_or_default()
+                .starts_with("nothing to fix")),
+        "{:?}",
+        record.directives
+    );
 }
 
 /// `ChildWorkBounded`: the lead's delegation over the budget left is

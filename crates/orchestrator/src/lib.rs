@@ -13,7 +13,11 @@
 //! - [`thread`]: the objective's thread, what happened in time order as the
 //!   Conversation and the Objectives panel show it (C-54).
 //! - [`gates`]: deterministic gates on a change (protected paths, keys,
-//!   the baseline guard on tests and checks).
+//!   the baseline guard on tests and checks; since C-55, purpose and
+//!   governance unchanged).
+//! - [`traceability`]: what a proposal serves and affects, resolved in the
+//!   base commit's model; what the commit changed against it; the
+//!   cumulative change since the Operator's approved baseline (C-55).
 //! - [`forge`]: the branch, pull request, the repository's checks, the merge.
 //! - [`builds`]: release builds for adoption, debug builds for test instances.
 //! - [`control`]: test instances and the client of their control interface.
@@ -45,3 +49,4 @@ pub mod record;
 pub mod roles;
 pub mod run;
 pub mod thread;
+pub mod traceability;

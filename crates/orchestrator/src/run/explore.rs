@@ -11,7 +11,7 @@ use super::{Driver, Next, Watch};
 use crate::control::{InstanceKey, Options};
 use crate::decide::Way;
 use crate::explore::{self, Changes, Plan, Run};
-use crate::findings::{self, Finding, State as Found};
+use crate::findings::{self, Disposition, DispositionKind, Finding, State as Found};
 use crate::knowledge::Knowledge;
 use crate::record::{Cost, Exploration, Exploring, Phase, Recipient, Scope};
 use crate::roles::{self, Role};
@@ -65,9 +65,60 @@ pub fn finding_line(finding: &Finding) -> String {
     )
 }
 
+/// A disposition in a few words: `judged a wrong expectation (why)`.
+pub fn disposition_line(disposition: &Disposition) -> String {
+    format!(
+        "judged {}{} ({})",
+        disposition.kind.name(),
+        disposition
+            .requirement
+            .as_ref()
+            .map(|r| format!(" against {r}"))
+            .unwrap_or_default(),
+        disposition.reason
+    )
+}
+
+/// The lead's disposition of finding `id` as the thread shows it (C-55): an
+/// ambiguous requirement as a question for the Operator.
+pub(super) fn adjudication_entry(
+    lead: Author,
+    id: &str,
+    finding: &Finding,
+    disposition: &Disposition,
+) -> ThreadEntry {
+    let line = finding_line(finding);
+    let text = match disposition.kind {
+        DispositionKind::Defect => format!("Judges finding {id} a defect, to be fixed: {line}"),
+        DispositionKind::WrongExpectation => format!(
+            "Judges finding {id} a wrong expectation, not a defect; it is not offered again: {line}"
+        ),
+        DispositionKind::UnreliableReproduction => format!(
+            "Judges finding {id} an unreliable reproduction; it is not offered again: {line}"
+        ),
+        DispositionKind::AmbiguousRequirement => format!(
+            "A question for you: is finding {id} a defect? The requirement{} is ambiguous, so it is not proposed: {line}",
+            disposition
+                .requirement
+                .as_ref()
+                .map(|r| format!(" {r}"))
+                .unwrap_or_default()
+        ),
+    };
+    ThreadEntry::new(Kind::Result, lead, text).with_details(format!(
+        "Reason: {}{}",
+        disposition.reason,
+        disposition
+            .requirement
+            .as_ref()
+            .map(|r| format!("\nRequirement: {r}"))
+            .unwrap_or_default()
+    ))
+}
+
 /// A finding as the lead reads it: its check, steps, reduced steps,
-/// evidence and build (bounded).
-fn finding_text(id: &str, finding: &Finding) -> String {
+/// evidence, build (bounded) and how it was judged, if it was.
+fn finding_text(id: &str, finding: &Finding, disposition: Option<&Disposition>) -> String {
     let steps = |steps: &[explore::Step]| {
         steps
             .iter()
@@ -93,7 +144,7 @@ fn finding_text(id: &str, finding: &Finding) -> String {
         evidence = crate::thread::capped(&evidence, 1200);
     }
     format!(
-        "{id}: {}\n  check: {}; build {}; start {}\n  steps:\n{}{}\n  evidence: {evidence}",
+        "{id}: {}\n  check: {}; build {}; start {}\n  steps:\n{}{}\n  evidence: {evidence}{}",
         finding_line(finding),
         finding.check.name(),
         finding.build,
@@ -102,6 +153,13 @@ fn finding_text(id: &str, finding: &Finding) -> String {
         match &finding.reduced {
             Some(reduced) => format!("\n  reduced to:\n{}", steps(reduced)),
             None => String::new(),
+        },
+        match disposition {
+            Some(d) => format!("\n  {}", disposition_line(d)),
+            None if finding.check == findings::Check::Expectation => {
+                "\n  not adjudicated: the explorer's own expectation".to_string()
+            }
+            None => "\n  not adjudicated".to_string(),
         }
     )
 }
@@ -310,11 +368,21 @@ impl Driver {
         run.build = built.build.clone();
         run.commit = built.commit.clone();
         Knowledge::change(&file, &project, |k| k.add_run(&run))?;
-        let new: Vec<Finding> = run
-            .findings
-            .iter()
-            .filter(|f| knowledge.findings.iter().all(|k| k.identity != f.identity))
-            .cloned()
+        // Found again after it was adjudicated: not new (C-55).
+        let adjudicated: Vec<String> = knowledge
+            .already_adjudicated(&run.findings, &built.build)
+            .into_iter()
+            .map(|(f, d)| {
+                format!(
+                    "found again, already adjudicated: {} ({})",
+                    finding_line(f),
+                    disposition_line(d)
+                )
+            })
+            .collect();
+        let new: Vec<Finding> = knowledge
+            .new_findings(&run.findings, &built.build)
+            .into_iter()
             .map(|mut f| {
                 // The build it was found in, as the Orchestrator chose it:
                 // its reproduction is reused on the base only if that is it.
@@ -343,6 +411,7 @@ impl Driver {
                 new.iter()
                     .chain(&regressions)
                     .map(finding_line)
+                    .chain(adjudicated)
                     .chain(run.recoveries.iter().map(|r| format!("recovered: {} ({})", r.kind, r.detail)))
                     .chain(run.conditions.iter().map(|c| format!("condition: {c}")))
                     .collect::<Vec<_>>()
@@ -638,6 +707,14 @@ impl Driver {
             .iter()
             .filter(|f| matches!(f.state, Found::Reproduced | Found::FailingAgain))
             .filter(|f| !here.contains(&f.identity.as_str()) && tried(&f.identity) < TRIES)
+            // Judged a wrong expectation or an unreliable reproduction: not
+            // offered again; an ambiguous requirement: not until the
+            // Operator answers it (C-55).
+            .filter(|f| {
+                !f.disposition.as_ref().is_some_and(|d| {
+                    d.sets_aside() || d.kind == DispositionKind::AmbiguousRequirement
+                })
+            })
             .cloned()
             .collect()
     }
@@ -686,7 +763,7 @@ impl Driver {
             system: roles::planning_instructions(),
             definitions: roles::lead_tools(true, self.may_delegate()),
         };
-        let session = self.lead(&lead, policy, brief, kit, false)?;
+        let session = self.lead(&lead, policy, brief, kit, false, None)?;
         let goal = session
             .submitted
             .as_ref()
@@ -735,7 +812,17 @@ impl Driver {
             .iter()
             .rev()
             .take(12)
-            .map(|f| format!("- {} ({:?})", finding_line(f), f.state).to_lowercase())
+            .map(|f| {
+                format!(
+                    "- {} ({}{})",
+                    finding_line(f),
+                    format!("{:?}", f.state).to_lowercase(),
+                    f.disposition
+                        .as_ref()
+                        .map(|d| format!("; {}", disposition_line(d)))
+                        .unwrap_or_default()
+                )
+            })
             .collect();
         let runs: Vec<String> = knowledge
             .runs
@@ -781,23 +868,87 @@ impl Driver {
         )
     }
 
+    /// The testing knowledge of the objective's project, or none yet.
+    pub(super) fn knowledge(&self) -> Knowledge {
+        let repository = &self.objective.repository;
+        Knowledge::load(
+            &Knowledge::file(&self.setup.store, repository),
+            &Knowledge::key(repository),
+        )
+        .unwrap_or_else(|_| Knowledge::new(&Knowledge::key(repository)))
+    }
+
+    /// What each finding was judged to be (C-55), by identity: the testing
+    /// knowledge's, and this cycle's own.
+    pub(super) fn dispositions(&self) -> std::collections::BTreeMap<String, Disposition> {
+        let mut dispositions = self.knowledge().dispositions();
+        for finding in self.objective.cycle().map_or(&[][..], |c| &c.findings[..]) {
+            if let Some(d) = &finding.disposition {
+                dispositions.insert(finding.identity.clone(), d.clone());
+            }
+        }
+        dispositions
+    }
+
     /// The cycle's reproduced findings, as the lead chooses among them:
-    /// ids `f1`, `f2`, … with their identities, and the text of each.
+    /// ids `f1`, `f2`, … with their identities, and the text of each with
+    /// how it was judged; none judged a wrong expectation or an unreliable
+    /// reproduction (C-55).
     pub(super) fn offered_findings(&self) -> (Vec<(String, String)>, String) {
+        let knowledge = self.knowledge();
+        let dispositions = self.dispositions();
         let mut offered = Vec::new();
         let mut text = Vec::new();
-        for (i, finding) in self
+        for (i, finding) in knowledge.offered(&self.cycle().findings) {
+            // Its place among the cycle's findings: the same id in every
+            // session of the cycle (C-55).
+            let id = crate::knowledge::finding_id(i);
+            text.push(finding_text(
+                &id,
+                finding,
+                dispositions.get(&finding.identity),
+            ));
+            offered.push((id, finding.identity.clone()));
+        }
+        (offered, text.join("\n\n"))
+    }
+
+    /// Whether the cycle's reproduced findings were all judged other than a
+    /// defect (C-55): there is nothing to fix.
+    pub(super) fn nothing_to_fix(&self) -> bool {
+        let dispositions = self.dispositions();
+        let reproduced: Vec<&Finding> = self
             .cycle()
             .findings
             .iter()
             .filter(|f| f.state == Found::Reproduced)
-            .enumerate()
-        {
-            let id = format!("f{}", i + 1);
-            text.push(finding_text(&id, finding));
-            offered.push((id, finding.identity.clone()));
+            .collect();
+        !reproduced.is_empty()
+            && reproduced.iter().all(|f| {
+                dispositions
+                    .get(&f.identity)
+                    .is_some_and(|d| d.kind != DispositionKind::Defect)
+            })
+    }
+
+    /// Records on the cycle's findings what the lead judged them to be in
+    /// its session (the testing knowledge has it already).
+    pub(super) fn record_adjudicated(&mut self, adjudicated: &[(String, Disposition)]) {
+        if adjudicated.is_empty() {
+            return;
         }
-        (offered, text.join("\n\n"))
+        if let Some(cycle) = self.objective.cycle_mut() {
+            for (identity, disposition) in adjudicated {
+                for finding in cycle
+                    .findings
+                    .iter_mut()
+                    .filter(|f| &f.identity == identity)
+                {
+                    finding.disposition = Some(disposition.clone());
+                }
+            }
+        }
+        self.save();
     }
 
     /// The Operator's messages to the lead and its children's results it

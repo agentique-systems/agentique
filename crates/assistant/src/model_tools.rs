@@ -6,14 +6,16 @@
 //!
 //! [`locked_changes`] is §4.15's integration check on a worktree's commit:
 //! the elements it changes that were locked then or are locked now, and
-//! whether it changed the locks.
+//! whether it changed the locks. [`model_at`] and [`compare_commits`] read a
+//! project's model at commits as plain data by identity, for the
+//! Orchestrator's traceability (C-55).
 
 use crate::conversation::ToolResult;
 use crate::tools::{Prepared, cap, prepare};
 use crate::turn::ToolCall;
 use agq_language::{ElementId, Tree};
 use agq_system_state::{Actor, ApplyError, Project};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 /// A working copy's model, opened when a tool first needs it.
@@ -197,6 +199,87 @@ pub fn locked_changes(
     Ok(found)
 }
 
+/// One element of a project's model at a commit, as plain data by identity
+/// (C-55): what checks outside the Assistant read of a model without the
+/// language core's types.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Described {
+    pub id: u64,
+    /// Its qualified name; an unnamed element is described, as
+    /// `(dependency from A to B)`.
+    pub name: String,
+    /// Its kind's keyword: `package`, `part def`, `requirement def`,
+    /// `requirement`, `dependency`, `doc`, …
+    pub kind: String,
+    /// The elements that own it, nearest first.
+    pub owners: Vec<u64>,
+    /// It, or an element that owns it, is locked.
+    pub locked: bool,
+}
+
+/// A project's model at two commits and what differs between them by
+/// identity (`agq_system_state::compare`): `created` and `deleted` list
+/// every element, those inside a created or deleted one too.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Compared {
+    pub before: BTreeMap<u64, Described>,
+    pub after: BTreeMap<u64, Described>,
+    pub created: Vec<u64>,
+    pub updated: Vec<u64>,
+    pub deleted: Vec<u64>,
+}
+
+fn described(tree: &Tree, locks: &BTreeSet<ElementId>) -> BTreeMap<u64, Described> {
+    tree.walk()
+        .into_iter()
+        .map(|id| {
+            let mut owners = Vec::new();
+            let mut next = tree.get(id).and_then(|e| e.owner());
+            while let Some(owner) = next {
+                owners.push(owner.raw());
+                next = tree.get(owner).and_then(|e| e.owner());
+            }
+            let element = Described {
+                id: id.raw(),
+                name: tree.qualified_name(id),
+                kind: tree[id].kind.keyword().to_string(),
+                owners,
+                locked: covered(tree, id, locks),
+            };
+            (id.raw(), element)
+        })
+        .collect()
+}
+
+/// The model of the repository checked out in `folder`, as committed in
+/// `commit`, by identity. The project in `folder` is opened to read it, and
+/// closed again.
+pub fn model_at(folder: &Path, commit: &str) -> Result<BTreeMap<u64, Described>, String> {
+    let project = Project::open(folder).map_err(|e| e.to_string())?;
+    let tree = project.tree_at(commit).map_err(|e| e.to_string())?;
+    let locks = project.locks_at(commit).map_err(|e| e.to_string())?;
+    Ok(described(&tree, &locks))
+}
+
+/// The model of the repository checked out in `folder`, as committed in
+/// `from` and in `to`, compared by identity.
+pub fn compare_commits(folder: &Path, from: &str, to: &str) -> Result<Compared, String> {
+    let project = Project::open(folder).map_err(|e| e.to_string())?;
+    let before = project.tree_at(from).map_err(|e| e.to_string())?;
+    let locks_before = project.locks_at(from).map_err(|e| e.to_string())?;
+    let after = project.tree_at(to).map_err(|e| e.to_string())?;
+    let locks_after = project.locks_at(to).map_err(|e| e.to_string())?;
+    let comparison = agq_system_state::compare(&before, &after);
+    let raw = |ids: &[ElementId]| ids.iter().map(|id| id.raw()).collect();
+    Ok(Compared {
+        before: described(&before, &locks_before),
+        after: described(&after, &locks_after),
+        created: raw(&comparison.created),
+        updated: raw(&comparison.updated),
+        deleted: raw(&comparison.deleted),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,5 +355,56 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    /// C-55: a model at commits as plain data by identity, and what differs
+    /// between two commits, with owners and locks.
+    #[test]
+    fn a_model_is_read_and_compared_at_commits_by_identity() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path();
+        std::fs::create_dir_all(folder.join("model")).unwrap();
+        std::fs::write(
+            folder.join("model/Shop.sysml"),
+            "package Shop {\n    part def Store;\n    requirement def Fast;\n}\n",
+        )
+        .unwrap();
+        let mut project = Project::open(folder).unwrap();
+        let store = project.state().tree().find("Shop::Store").unwrap();
+        project
+            .apply(Change::new(
+                Actor::Operator,
+                "Lock Store",
+                vec![Operation::Lock { element: store }],
+            ))
+            .unwrap();
+        drop(project);
+        let base = agq_execution::git::init_and_commit(folder, "Start").unwrap();
+        let model = model_at(folder, &base).unwrap();
+        let fast = model.values().find(|e| e.name == "Shop::Fast").unwrap();
+        assert_eq!(fast.kind, "requirement def");
+        let shop = model.values().find(|e| e.name == "Shop").unwrap();
+        assert_eq!(fast.owners, vec![shop.id]);
+        assert!(model[&store.raw()].locked && !fast.locked);
+        // An attribute added to Store: created inside it, Store updated.
+        std::fs::write(
+            folder.join("model/Shop.sysml"),
+            "package Shop {\n    part def Store {\n        attribute open;\n    }\n    requirement def Fast;\n}\n",
+        )
+        .unwrap();
+        // Opened, the new element gets its identity.
+        drop(Project::open(folder).unwrap());
+        let commit = agq_execution::git::init_and_commit(folder, "Open").unwrap();
+        let compared = compare_commits(folder, &base, &commit).unwrap();
+        let names = |ids: &[u64]| -> Vec<String> {
+            ids.iter()
+                .map(|id| compared.after[id].name.clone())
+                .collect()
+        };
+        assert_eq!(names(&compared.created), vec!["Shop::Store::open"]);
+        assert!(names(&compared.updated).contains(&"Shop::Store".to_string()));
+        assert!(compared.deleted.is_empty());
+        assert_eq!(compared.after[&compared.created[0]].owners[0], store.raw());
+        assert!(compared.after[&compared.created[0]].locked, "inside a lock");
     }
 }
