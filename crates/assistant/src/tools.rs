@@ -106,6 +106,8 @@ const KINDS: &[ElementKind] = &[
     ElementKind::Accept,
     ElementKind::AssertConstraint,
     ElementKind::Reference,
+    // A composite action, such as a transition's effect of several steps (C-55).
+    ElementKind::Action,
 ];
 
 /// What the Studio should do with a tool call.
@@ -198,14 +200,24 @@ pub fn definitions() -> Value {
         "ref": { "type": "boolean", "description": "create, set (part or item): true for a referential usage, `ref part`: it refers to a part that exists elsewhere instead of containing one, so nothing is copied; give the part it refers to as `expression`, e.g. \"bus\" or \"power.bus\" (without one it is not bound: the part it refers to is not identified in this model). false (the default) makes it composite: contained, and existing only with its owner. A redefinition of a composite part stays composite, whatever it says: declare the inherited one `ref`. Share one part between several users with one composite part and `ref` parts bound to it, never a second composite part." },
         "value": { "type": ["string", "number", "boolean"], "description": "create, set: the value of an attribute." },
         "doc": name("create, set: documentation in plain words."),
-        "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\"."),
-        "to": name("connect: the second end, e.g. \"store.links\"."),
+        "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\". create or set transition: the state it leaves (set needs `to` too)."),
+        "to": name("connect: the second end, e.g. \"store.links\". create or set transition: the state it enters (set needs `from` too)."),
         "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
         "requirement": name("create satisfy: the requirement being satisfied."),
         "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\"."),
         "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; ref or attribute: a value that is not a plain literal, e.g. \"service.screening\"; ref part: the part it refers to, e.g. \"bus\"."),
         "via": name("create send or accept: the port, as a feature chain from the scenario or the part, e.g. \"service.shorten\"."),
         "after": { "type": "boolean", "description": "create accept: wait for the time in `expression` to pass instead of for an item." },
+        "steps": {
+            "type": "array",
+            "minItems": 1,
+            "description": "create action: its steps, run one after the other in the order given, each a `send` (with `via`) or an `assign` (with `value`); e.g. a new effect of a transition: {\"op\": \"create\", \"parent\": \"Shop::Worker::working::start\", \"kind\": \"action\", \"steps\": [{\"assign\": \"count\", \"value\": \"0\"}, {\"send\": \"new Ack(id = 1)\", \"via\": \"jobs\"}]} after deleting its old effect.",
+            "items": {
+                "type": "object",
+                "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
+                "additionalProperties": false
+            }
+        },
         "guard": name("create or set transition: the condition, e.g. \"attempts < 3\"."),
         "exhibit": { "type": "boolean", "description": "create state: the state machine the owning part or part def exhibits (one per owner)." },
         "initial": name("create exhibited state: the state it enters first (created with `then`)."),
@@ -216,10 +228,16 @@ pub fn definitions() -> Value {
             "additionalProperties": false
         },
         "effect": {
-            "type": "object",
-            "description": "create transition: what it does, a `send` (an expression, with `via`) or an `assign` (a feature and its new `value` expression).",
+            "type": ["object", "array"],
+            "description": "create transition: what it does, a `send` (an expression, with `via`) or an `assign` (a feature and its new `value` expression); or a list of such steps, which run one after the other in the order given (a composite action), e.g. [{\"assign\": \"attempts\", \"value\": \"attempts + 1\"}, {\"send\": \"pending\", \"via\": \"authority\"}].",
             "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
+                "additionalProperties": false
+            }
         },
         "subject": name("create verification def: the type of the scenario's subject, e.g. \"UrlShortenerService\"; the subject is named after it (urlShortenerService) unless `subject_name` says otherwise."),
         "subject_name": name("create verification def: the subject's name, e.g. \"service\"."),
@@ -1251,6 +1269,18 @@ fn operations_of(tree: &Tree, item: &Value) -> Result<Vec<Operation>, String> {
             }
             if let Some(text) = optional_str(item, "guard")? {
                 properties.push(Property::Guard(Some(factory::expression(text)?)));
+            }
+            // A transition's source and target (C-55): both, so a
+            // transition moves between states keeping its identity.
+            if tree[element].kind == ElementKind::Transition
+                && (item.get("from").is_some() || item.get("to").is_some())
+            {
+                let from = required_str(item, "from")?;
+                let to = required_str(item, "to")?;
+                properties.push(Property::Ends(vec![
+                    Reference::new(from),
+                    Reference::new(to),
+                ]));
             }
             if item.get("features").is_some() {
                 let features = factory::set_features(tree, element, item)?;

@@ -18,7 +18,7 @@
   Steps run in the order they are created. Text in an expression is in
   quotes; enum values are qualified (`LinkStatus::held`).
 - A state machine: `{"op": "create", "parent": "Shop::Worker", "kind": "state", "name": "working", "exhibit": true, "initial": "idle"}`, then its
-  states (`"kind": "state"` inside it) and transitions: `{"op": "create", "parent": "Shop::Worker::working", "kind": "transition", "from": "idle", "to": "busy", "trigger": {"name": "job", "type": "Job", "via": "jobs"}, "guard": "job.size > 0", "effect": {"send": "new Ack(id = job.id)", "via": "jobs"}}`. Behaviour is
+  states (`"kind": "state"` inside it) and transitions: `{"op": "create", "parent": "Shop::Worker::working", "kind": "transition", "from": "idle", "to": "busy", "trigger": {"name": "job", "type": "Job", "via": "jobs"}, "guard": "job.size > 0", "effect": {"send": "new Ack(id = job.id)", "via": "jobs"}}`; an effect of several steps is a list that runs in order, e.g. `"effect": [{"assign": "count", "value": "count + 1"}, {"send": "new Ack(id = job.id)", "via": "jobs"}]`. To change an existing transition, keep it (its identity matters to links and history): `set` it with `from` and `to` to move it between states, and replace its effect by deleting the old one (`Owner::machine::transition::(send)`) and creating `{"kind": "action", "parent": "...::transition", "steps": [...]}`. Behaviour is
   never inferred from names: a part without a state machine does nothing
   when a scenario runs.
 - An agent is a part def that specialises `Agents::Agent` and the contract

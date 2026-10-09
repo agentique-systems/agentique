@@ -22,11 +22,12 @@ How to read it, from the top down:
    one part by another (standard SysML `dependency`, client to supplier). They
    are not transitive, so a shortcut around the System State shows up here.
 5. **Guarantees**: requirements, with the parts that satisfy them.
-6. **Workflows**: the scenarios at the end walk an ordinary edit, an
-   Assistant action and a development task across the parts, each with its
-   failure paths. They run in model execution (the Scenarios tab, F5): they
+6. **Workflows**: the scenarios walk an ordinary edit, an Assistant
+   action and a development task across the parts, and an objective's
+   cycles across the Orchestrator's Driver and its role agents (C-55), each
+   with its failure paths. They run in model execution (the Scenarios tab, F5): they
    check this model's account of the workflow, not the code. The code is
-   checked by the tests linked to each step.
+   checked by the tests linked to the steps that have one (`model/links.json`).
 
 Changes are made through Agentique (the Studio, the Assistant's tools, or
 the `apply_changes` example for an agent without a window), which prints the

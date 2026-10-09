@@ -273,6 +273,15 @@ package AgentiqueArchitecture {
         attribute cycles : Natural;
         attribute explore : Boolean;
         attribute depth : Natural;
+        attribute mayMerge : Boolean {
+            doc /* The permission to push, open and merge pull requests when the gates pass. */
+        }
+        attribute mayAdopt : Boolean {
+            doc /* The permission to build, try and adopt a merged change. */
+        }
+        attribute attempts : Natural {
+            doc /* The attempt budget per phase (4 by default). */
+        }
     }
 
     item def Directive {
@@ -283,6 +292,9 @@ package AgentiqueArchitecture {
              * another role within a cycle.
              */
         attribute delegates : Boolean;
+        attribute refused : Boolean {
+            doc /* Whether the Orchestrator refused it (a child beyond the per-turn bound or the budget left), with the reason in the thread. */
+        }
     }
 
     item def CycleReport {
@@ -558,8 +570,6 @@ package AgentiqueArchitecture {
             state applying;
             state asking;
             state thinking;
-            state assistantApplying;
-            state assistantAsking;
             state preparing;
             state implementing;
             state checking;
@@ -568,25 +578,35 @@ package AgentiqueArchitecture {
             state integrating;
             state building;
             state adopting;
-            transition edit first idle accept e : Edit via operator do send new Change(madeBy = Actor::operator, touchesLock = e.locked, confirmed = false) via edits then applying;
-            transition shown first applying accept a : Applied via edits do send new SurfaceUpdate(revision = a.revision) via operator then idle;
-            transition askLock first applying accept r : Refused via edits if r.reason == Refusal::locked do send new LockQuestion(madeBy = Actor::operator) via operator then asking;
-            transition notDone first applying accept r : Refused via edits if r.reason != Refusal::locked do send new StatusMessage(reason = r.reason) via operator then idle;
-            transition confirmed first asking accept a : LockAnswer via operator if a.allow do send new Change(madeBy = Actor::operator, touchesLock = true, confirmed = true) via edits then applying;
-            transition keptLocked first asking accept a : LockAnswer via operator if not a.allow do send new StatusMessage(reason = Refusal::locked) via operator then idle;
-            transition undo first idle accept u : Undo via operator do send u via edits then applying;
-            transition reopen first idle accept o : Reopen via operator do send o via edits then applying;
+            transition edit first idle accept e : Edit via operator do action {
+                assign requester := Actor::operator;
+                then send new Change(madeBy = Actor::operator, touchesLock = e.locked, confirmed = false) via edits;
+            } then applying;
+            transition shown first applying accept a : Applied via edits if requester == Actor::operator do send new SurfaceUpdate(revision = a.revision) via operator then idle;
+            transition askLock first applying accept r : Refused via edits if r.reason == Refusal::locked do send new LockQuestion(madeBy = requester) via operator then asking;
+            transition notDone first applying accept r : Refused via edits if r.reason != Refusal::locked and requester == Actor::operator do send new StatusMessage(reason = r.reason) via operator then idle;
+            transition confirmed first asking accept a : LockAnswer via operator if a.allow do send new Change(madeBy = requester, touchesLock = true, confirmed = true) via edits then applying;
+            transition keptLocked first asking accept a : LockAnswer via operator if not a.allow and requester == Actor::operator do send new StatusMessage(reason = Refusal::locked) via operator then idle;
+            transition undo first idle accept u : Undo via operator do action {
+                assign requester := Actor::operator;
+                then send u via edits;
+            } then applying;
+            transition reopen first idle accept o : Reopen via operator do action {
+                assign requester := Actor::operator;
+                then send o via edits;
+            } then applying;
             transition ask first idle accept i : Intent via operator do send i via assistant then thinking;
             transition read first thinking accept c : ToolCall via assistant if c.tool == Tool::readModel do send new ToolResult(ok = true) via assistant then thinking;
-            transition assistantChange first thinking accept c : ToolCall via assistant if c.tool == Tool::applyChanges do send new Change(madeBy = Actor::assistant, touchesLock = c.touchesLock, confirmed = false) via edits then assistantApplying;
-            transition assistantApplied first assistantApplying accept a : Applied via edits do action {
+            transition assistantChange first thinking accept c : ToolCall via assistant if c.tool == Tool::applyChanges do action {
+                assign requester := Actor::assistant;
+                then send new Change(madeBy = Actor::assistant, touchesLock = c.touchesLock, confirmed = false) via edits;
+            } then applying;
+            transition assistantApplied first applying accept a : Applied via edits if requester == Actor::assistant do action {
                 send new SurfaceUpdate(revision = a.revision) via operator;
                 then send new ToolResult(ok = true) via assistant;
             } then thinking;
-            transition assistantAskLock first assistantApplying accept r : Refused via edits if r.reason == Refusal::locked do send new LockQuestion(madeBy = Actor::assistant) via operator then assistantAsking;
-            transition assistantRefused first assistantApplying accept r : Refused via edits if r.reason != Refusal::locked do send new ToolResult(ok = false) via assistant then thinking;
-            transition assistantConfirmed first assistantAsking accept a : LockAnswer via operator if a.allow do send new Change(madeBy = Actor::assistant, touchesLock = true, confirmed = true) via edits then assistantApplying;
-            transition assistantKeptLocked first assistantAsking accept a : LockAnswer via operator if not a.allow do send new ToolResult(ok = false) via assistant then thinking;
+            transition assistantRefused first applying accept r : Refused via edits if r.reason != Refusal::locked and requester == Actor::assistant do send new ToolResult(ok = false) via assistant then thinking;
+            transition assistantKeptLocked first asking accept a : LockAnswer via operator if not a.allow and requester == Actor::assistant do send new ToolResult(ok = false) via assistant then thinking;
             transition reported first thinking accept r : Reply via assistant do send new Report(changed = r.changed) via operator then idle;
             transition approve first idle accept a : TaskApproval via operator do action {
                 assign required := a.required;
@@ -607,6 +627,9 @@ package AgentiqueArchitecture {
             transition built first building accept b : Built via execution do send b via operator then idle;
             transition adopt first idle accept a : AdoptRequest via operator do send a via launcher then adopting;
             transition running first adopting accept r : Running via launcher do send r via operator then idle;
+        }
+        attribute requester : Actor = Actor::operator {
+            doc /* Who asked for the change in progress: the Operator by an edit, or the Assistant by a tool call. One change path and one lock question serve both; only where the answer goes differs. */
         }
     }
 
@@ -756,37 +779,321 @@ package AgentiqueArchitecture {
     }
 
     part def Orchestrator {
-        doc /* Runs the Operator's objectives (C-53, C-54, ROADMAP §4.16): each objective
-             * in cycles (explore the running application and reproduce what fails,
-             * propose with frozen acceptance criteria, implement in a worktree, check on
-             * a clean checkout, evaluate in a test instance through the control
-             * interface, independent review, bounded repair, merge, build, try, adopt,
-             * continue), each judgment by an agent session of the Assistant's runtime on
-             * its role's resolved model, each bounded choice in operation by a rule
-             * where the answer is known, otherwise by a typed decision that escalates
-             * when unsure; agents hand work to each other only as directives it
-             * validates and records (author, recipient, parent objective, scope,
-             * status, result), and child objectives a lead delegated run within their
-             * parent's permissions and budgets; an objective continues by itself
-             * through cycles, adoptions and restarts within its budgets. Owns the
-             * objectives' records (app data: state, journal, sessions, effective
-             * models, results, spend per role, directives, the thread, continuation)
-             * and each project's testing knowledge (coverage, findings with their
-             * replays, runs). Contract: deterministic code decides
-             * the next phase from recorded results; a finding is a deterministic check
-             * that failed and reproduced; a cycle merges only when every required check
-             * and acceptance criterion passed on the reviewed commit, one criterion
-             * showed the defect on the original implementation, a user-facing change
-             * was evaluated in a test instance, the reviewer approved and the
-             * repository's checks passed, and adopts only after its test instance
-             * passed; a check that did not run is never a pass; weakening a check never
-             * counts; budgets and lack of progress stop it; resuming never repeats a
-             * completed side effect; Stop interrupts every session. A safeguard:
-             * locked.
-             */
+        doc /* Runs the Operator's objectives (C-53, C-54, ROADMAP §4.16). It is composed of its deterministic Driver, which decides each next phase from recorded results, and its role agents (Explorer, Lead, Implementer, Reviewer), whose answers come from their roles' models; the lead, implementer and reviewer are sessions of the Assistant's runtime, the explorer one typed question per step. Agents hand work to each other only as directives it validates and records, and child objectives run within their parent's permissions and budgets. Owns the objectives' records (app data: state, journal, sessions, effective models, results, spend per role, directives, the thread, continuation) and each project's testing knowledge (coverage, findings with their replays and dispositions, runs). Contract: a finding is a deterministic check that failed and reproduced; a cycle merges only when every required check and acceptance criterion passed on the reviewed commit, one criterion showed the defect on the original implementation, a user-facing change was evaluated in a test instance, the gates passed (the purpose and the governing text among them), the reviewer approved and the repository's checks passed; it adopts only after its build's test instance passed; a check that did not run is never a pass; weakening a check never counts; budgets and lack of progress stop it; resuming never repeats a completed side effect; Stop interrupts every session. In this model its jobs, launches and replays are answered at its boundary: in the product they go to Execution, through the Studio to the Launcher, and to test instances. A safeguard: locked. */
         port objectives : ObjectivePort;
-        port control : ~ControlPort;
         part 'agq-orchestrator' : Crate;
+        item def RoleResult {
+            doc /* What an agent role hands back for a directive. */
+        }
+        item def Explored :> RoleResult {
+            doc /* What an exploration run found: deterministic checks that failed (an invariant, or an expectation stated before the action) while the explorer's model chose the actions. Not yet reproduced. */
+            attribute found : Natural;
+        }
+        item def LeadAnswer :> RoleResult {
+            doc /* What the lead hands back: a plan, a delegation, or a proposal. */
+        }
+        item def Plan :> LeadAnswer {
+            doc /* The lead's plan before exploring, when it delegates nothing more. */
+        }
+        item def Delegation :> LeadAnswer {
+            doc /* The lead asks for a child objective with its delegate tool (C-54). */
+            attribute focus : String;
+        }
+        item def Proposal :> LeadAnswer {
+            doc /* One improvement with frozen criteria (C-53, C-55). servesResolves: whether every requirement it serves and every element it names resolves in the base's model, which the Orchestrator checks when it is submitted (W13.5); the evidence and the gates are decided later, on the commit, not declared here. */
+            attribute servesResolves : Boolean;
+        }
+        item def ReviewVerdict :> RoleResult {
+            doc /* The independent reviewer's verdict on a change, against the frozen criteria, the check results and the cumulative change since the approved baseline (C-55). */
+            attribute approved : Boolean;
+        }
+        item def Implemented :> RoleResult {
+            doc /* The implementer's work in the cycle's worktree, from which the Orchestrator makes the cycle's commit. */
+            attribute files : Natural;
+        }
+        item def CycleChecks :> CheckResults {
+            doc /* A cycle's checks on its commit, on a clean checkout: the required checks, as a task's; evidenceOnBase: a criterion failed on the original implementation by its behaviour (C-54); gatesPassed: the gates passed (protected paths, locked elements and code, keys, the purpose and the governing text, the baseline guard; a user-facing change's evaluation in a test instance counts here). */
+            attribute evidenceOnBase : Boolean;
+            attribute gatesPassed : Boolean;
+        }
+        item def ReplayRequest {
+            doc /* Replay the findings an exploration found (and known ones not yet fixed) twice each from a fresh start of the same build: deterministic code, no model asked (C-54). */
+            attribute found : Natural;
+        }
+        item def Replayed {
+            doc /* How many findings failed the same way in both replays. */
+            attribute reproduced : Natural;
+        }
+        port def RolePort {
+            doc /* An agent role's side: a directive in, its result out; the one contract of every role, each answering its own kind of result. */
+            in item directive : Directive;
+            out item result : RoleResult;
+        }
+        port def InstancePort {
+            doc /* Fresh test instances of the build under exploration, for the deterministic replays: each replay is a fresh start of the same kind of instance the explorer operated (the test instance the Orchestrator refers to), answered here at the Orchestrator's boundary. */
+            in item replay : ReplayRequest;
+            out item replayed : Replayed;
+        }
+        part def Explorer :> Agents::Agent {
+            doc /* Chooses each action of an exploration run among the valid ones, by one typed question per step (not a session); the run checks invariants and stated expectations after every action and reports what failed (C-54). */
+            :>> mode = Agents::AgentMode::fast;
+            port work : RolePort;
+            port app : ~ControlPort;
+        }
+        part def Lead :> Agents::Agent {
+            doc /* Plans the exploration (and may delegate a child objective), then proposes one improvement with frozen criteria, naming the requirements it serves, the elements it affects, its benefit and its effect on root complexity (C-53, C-55); it reads only, and observes the running application. */
+            :>> mode = Agents::AgentMode::deliberate;
+            port work : RolePort;
+            port app : ~ControlPort;
+        }
+        part def Implementer :> Agents::Agent {
+            doc /* Implements the frozen proposal, and repairs it, in the cycle's worktree, changing the model only through Agentique's tools. */
+            :>> mode = Agents::AgentMode::deliberate;
+            port work : RolePort;
+        }
+        part def Reviewer :> Agents::Agent {
+            doc /* Reviews the change with fresh context and no write access; its approval never overrides a failing check. */
+            :>> mode = Agents::AgentMode::deliberate;
+            port work : RolePort;
+        }
+        part def Driver {
+            doc /* The Orchestrator's deterministic code (run.rs): it drives one objective through its cycles and decides each next phase from recorded results. A cycle plans and explores (when the objective explores; every exploration is planned, so the lead may delegate in each turn, unless the objective is a child at the maximum depth), replays what was found, proposes (a proposal whose names do not resolve is asked once more; a lead that judges every finding other than a defect proposes nothing), implements, checks, reviews, merges, builds and tries, and adopts; a failing check or gate, a rejected review or a failed merge goes to repair within the attempt budget; after a cycle, done or failed, the next one starts while cycles are left; a child objective explores once and returns its result. Folded, and so stricter or coarser than the code: Evaluate is part of Check (gatesPassed), and a user-facing change without a behavioural criterion is shown as a failing gate rather than an immediate end; Try is part of the build's answer (Built); every round of repair (a failing check or gate, a rejection, a failed merge) counts its failures, and a round without fewer failures than the last ends the cycle, where the code ends it on the same failures twice in a row or after two rounds without fewer failures, so the model ends some cycles earlier than the code and none later; host refusals at merge go to repair here; the lead's delegation while proposing, and the code's cap of five children per cycle, are not modelled. */
+            port objectives : ObjectivePort;
+            port explorer : ~RolePort;
+            port lead : ~RolePort;
+            port implementer : ~RolePort;
+            port reviewer : ~RolePort;
+            port instances : ~InstancePort;
+            port jobs : ~JobPort;
+            port launch : ~LaunchPort;
+            attribute depth : Natural = 0 {
+                doc /* 0 for the Operator's objective, one more than its parent's for a child. */
+            }
+            attribute maxDepth : Natural = 2 {
+                doc /* Children nest at most two deep; at that depth the lead is neither asked to plan nor offered delegate (C-54). */
+            }
+            attribute childBudget : Natural = 3 {
+                doc /* Children the lead may still start in its turn (the per-turn bound). */
+            }
+            attribute explores : Boolean = false {
+                doc /* Whether the objective's cycles start by exploring. */
+            }
+            attribute mayMerge : Boolean = false {
+                doc /* The objective's permission to push and merge. */
+            }
+            attribute mayAdopt : Boolean = false {
+                doc /* The objective's permission to build, try and adopt. */
+            }
+            attribute cyclesLeft : Natural = 0 {
+                doc /* The cycle budget left. */
+            }
+            attribute maxAttempts : Natural = 4 {
+                doc /* The attempt budget per phase. */
+            }
+            attribute attempts : Natural = 0 {
+                doc /* Attempts used in the current phase. */
+            }
+            attribute lastFailures : Natural = 1000 {
+                doc /* Failures in the previous round of checks; a round without fewer ends the cycle. */
+            }
+            attribute emptyInARow : Natural = 0 {
+                doc /* Explorations in a row that reproduced nothing new; the second ends the objective. */
+            }
+            attribute requiredChecks : Natural = 5 {
+                doc /* The required checks of the project, fixed at the proposal. */
+            }
+            attribute reproduced : Natural = 0 {
+                doc /* Findings the last replays reproduced. */
+            }
+            attribute merged : Boolean = false {
+                doc /* Whether this cycle merged. */
+            }
+            attribute adopted : Boolean = false {
+                doc /* Whether this cycle's build was adopted. */
+            }
+            exhibit state running {
+                entry;
+                then idle;
+                state idle;
+                state planning;
+                state exploring;
+                state reproducing;
+                state proposing;
+                state implementing;
+                state checking;
+                state reviewing;
+                state merging;
+                state building;
+                state adopting;
+                state between;
+                transition plan first idle accept g : ObjectiveRequest via objectives if g.explore and g.depth < maxDepth do action {
+                    assign depth := g.depth;
+                    then assign explores := g.explore;
+                    then assign mayMerge := g.mayMerge;
+                    then assign mayAdopt := g.mayAdopt;
+                    then assign cyclesLeft := g.cycles;
+                    then assign maxAttempts := g.attempts;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign emptyInARow := 0;
+                    then assign childBudget := 3;
+                    then assign merged := false;
+                    then assign adopted := false;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then planning;
+                transition exploreAtMaxDepth first idle accept g : ObjectiveRequest via objectives if g.explore and g.depth >= maxDepth do action {
+                    assign depth := g.depth;
+                    then assign explores := g.explore;
+                    then assign mayMerge := g.mayMerge;
+                    then assign mayAdopt := g.mayAdopt;
+                    then assign cyclesLeft := g.cycles;
+                    then assign maxAttempts := g.attempts;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign emptyInARow := 0;
+                    then assign childBudget := 3;
+                    then assign merged := false;
+                    then assign adopted := false;
+                    then send new Directive(delegates = false, refused = false) via explorer;
+                } then exploring;
+                transition propose first idle accept g : ObjectiveRequest via objectives if not g.explore do action {
+                    assign depth := g.depth;
+                    then assign explores := g.explore;
+                    then assign mayMerge := g.mayMerge;
+                    then assign mayAdopt := g.mayAdopt;
+                    then assign cyclesLeft := g.cycles;
+                    then assign maxAttempts := g.attempts;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign emptyInARow := 0;
+                    then assign childBudget := 3;
+                    then assign merged := false;
+                    then assign adopted := false;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then proposing;
+                transition planned first planning accept p : Plan via lead do send new Directive(delegates = false, refused = false) via explorer then exploring;
+                transition delegated first planning accept d : Delegation via lead if childBudget > 0 do action {
+                    assign childBudget := childBudget - 1;
+                    then send new Directive(delegates = true, refused = false) via objectives;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then planning;
+                transition delegationRefused first planning accept d : Delegation via lead if childBudget == 0 do action {
+                    send new Directive(delegates = true, refused = true) via objectives;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then planning;
+                transition explored first exploring accept e : Explored via explorer do send new ReplayRequest(found = e.found) via instances then reproducing;
+                transition childReturns first reproducing accept r : Replayed via instances if depth > 0 do send new CycleReport(reproduced = r.reproduced, merged = false, adopted = false) via objectives then idle;
+                transition reproducedSome first reproducing accept r : Replayed via instances if depth == 0 and r.reproduced > 0 do action {
+                    assign reproduced := r.reproduced;
+                    then assign emptyInARow := 0;
+                    then assign attempts := 0;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then proposing;
+                transition exploreAgain first reproducing accept r : Replayed via instances if depth == 0 and r.reproduced == 0 and emptyInARow + 1 < 2 do action {
+                    assign emptyInARow := emptyInARow + 1;
+                    then assign childBudget := 3;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then planning;
+                transition nothingNew first reproducing accept r : Replayed via instances if depth == 0 and r.reproduced == 0 and emptyInARow + 1 >= 2 do action {
+                    assign emptyInARow := emptyInARow + 1;
+                    then send new CycleReport(reproduced = 0, merged = false, adopted = false) via objectives;
+                } then idle;
+                transition proposed first proposing accept p : Proposal via lead if p.servesResolves do action {
+                    assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then send new Directive(delegates = false, refused = false) via implementer;
+                } then implementing;
+                transition proposalRefused first proposing accept p : Proposal via lead if not p.servesResolves and attempts == 0 do action {
+                    assign attempts := attempts + 1;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then proposing;
+                transition noProposal first proposing accept p : Proposal via lead if not p.servesResolves and attempts > 0 do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+                transition check first implementing accept w : Implemented via implementer do send new CheckRequest(required = requiredChecks) via jobs then checking;
+                transition toReview first checking accept c : CycleChecks via jobs if c.passed == c.required and c.evidenceOnBase and c.gatesPassed do send new Directive(delegates = false, refused = false) via reviewer then reviewing;
+                transition repair first checking accept c : CycleChecks via jobs if not (c.passed == c.required and c.evidenceOnBase and c.gatesPassed) and c.required - c.passed + (if c.evidenceOnBase ? 0 else 1) + (if c.gatesPassed ? 0 else 1) < lastFailures and attempts + 1 < maxAttempts do action {
+                    assign attempts := attempts + 1;
+                    then assign lastFailures := c.required - c.passed + (if c.evidenceOnBase ? 0 else 1) + (if c.gatesPassed ? 0 else 1);
+                    then send new Directive(delegates = false, refused = false) via implementer;
+                } then implementing;
+                transition noProgress first checking accept c : CycleChecks via jobs if not (c.passed == c.required and c.evidenceOnBase and c.gatesPassed) and (c.required - c.passed + (if c.evidenceOnBase ? 0 else 1) + (if c.gatesPassed ? 0 else 1) >= lastFailures or attempts + 1 >= maxAttempts) do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+                transition approvedToMerge first reviewing accept v : ReviewVerdict via reviewer if v.approved and mayMerge do send new Integrate(task = "cycle") via jobs then merging;
+                transition notPermitted first reviewing accept v : ReviewVerdict via reviewer if v.approved and not mayMerge do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+                transition changesRequested first reviewing accept v : ReviewVerdict via reviewer if not v.approved and 1 < lastFailures and attempts + 1 < maxAttempts do action {
+                    assign attempts := attempts + 1;
+                    then assign lastFailures := 1;
+                    then send new Directive(delegates = false, refused = false) via implementer;
+                } then implementing;
+                transition rejected first reviewing accept v : ReviewVerdict via reviewer if not v.approved and (1 >= lastFailures or attempts + 1 >= maxAttempts) do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+                transition build first merging accept i : Integrated via jobs if i.ok and mayAdopt do action {
+                    assign merged := true;
+                    then send new BuildRequest() via jobs;
+                } then building;
+                transition mergedOnly first merging accept i : Integrated via jobs if i.ok and not mayAdopt do action {
+                    assign merged := true;
+                    then send new CycleReport(reproduced = reproduced, merged = true, adopted = false) via objectives;
+                } then between;
+                transition mergeRepaired first merging accept i : Integrated via jobs if not i.ok and attempts + 1 < maxAttempts do action {
+                    assign attempts := attempts + 1;
+                    then assign lastFailures := 1;
+                    then send new Directive(delegates = false, refused = false) via implementer;
+                } then implementing;
+                transition notMerged first merging accept i : Integrated via jobs if not i.ok and attempts + 1 >= maxAttempts do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+                transition tried first building accept b : Built via jobs if b.ok do send new AdoptRequest() via launch then adopting;
+                transition notTried first building accept b : Built via jobs if not b.ok do send new CycleReport(reproduced = reproduced, merged = true, adopted = false) via objectives then between;
+                transition adoptedBuild first adopting accept r : Running via launch if r.build == Started::newBuild do action {
+                    assign adopted := true;
+                    then send new CycleReport(reproduced = reproduced, merged = true, adopted = true) via objectives;
+                } then between;
+                transition notTakenOver first adopting accept r : Running via launch if r.build == Started::lastKnownGood do send new CycleReport(reproduced = reproduced, merged = true, adopted = false) via objectives then idle;
+                transition nextExploring first between accept after 0 if cyclesLeft > 1 and explores do action {
+                    assign cyclesLeft := cyclesLeft - 1;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign merged := false;
+                    then assign adopted := false;
+                    then assign childBudget := 3;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then planning;
+                transition nextProposing first between accept after 0 if cyclesLeft > 1 and not explores do action {
+                    assign cyclesLeft := cyclesLeft - 1;
+                    then assign attempts := 0;
+                    then assign lastFailures := 1000;
+                    then assign merged := false;
+                    then assign adopted := false;
+                    then assign childBudget := 3;
+                    then send new Directive(delegates = false, refused = false) via lead;
+                } then proposing;
+                transition budgetUsed first between accept after 0 if cyclesLeft <= 1 do assign cyclesLeft := 0 then idle;
+                transition nothingToFix first proposing accept n : NothingToFix via lead do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
+            }
+        }
+        port jobs : ~JobPort;
+        port launch : ~LaunchPort;
+        port instances : ~InstancePort;
+        port observe : ~ControlPort {
+            doc /* The lead observes the running Studio through its control interface (observe_app), reading only. */
+        }
+        part driver : Driver;
+        part explorer : Explorer;
+        part lead : Lead;
+        part implementer : Implementer;
+        part reviewer : Reviewer;
+        connect objectives to driver.objectives;
+        connect jobs to driver.jobs;
+        connect launch to driver.launch;
+        connect instances to driver.instances;
+        connect observe to lead.app;
+        connect driver.explorer to explorer.work;
+        connect driver.lead to lead.work;
+        connect driver.implementer to implementer.work;
+        connect driver.reviewer to reviewer.work;
+        item def NothingToFix :> LeadAnswer {
+            doc /* The lead judged every reproduced finding other than a defect (adjudicate_finding, C-55) and proposes nothing: the cycle is done with nothing to fix. */
+        }
+        ref part testInstance : Agentique[0..1] {
+            doc /* The build under test, started as a test instance with its own app data: another occurrence of Agentique, which the explorer operates through its control interface. Referred to, not contained: a system that builds systems refers to them, itself included (C-55); containing it would be a composition cycle. */
+        }
+        connect explorer.app to testInstance.control;
     }
 
     part def Agentique {
@@ -815,7 +1122,11 @@ package AgentiqueArchitecture {
         connect studio.verifying to implementation.verdict;
         connect studio.launcher to launcher.launch;
         connect studio.objectives to orchestrator.objectives;
-        connect orchestrator.control to studio.control;
+        connect orchestrator.observe to studio.control;
+        port control : ControlPort {
+            doc /* The product's control interface, through which agents of another Agentique (the Orchestrator of the build that started it as a test instance) operate it (C-53, C-54). */
+        }
+        connect control to studio.control;
     }
 
     dependency from Studio to SystemState;
@@ -1311,4 +1622,410 @@ package AgentiqueArchitecture {
     }
 
     requirement purpose : Purpose;
+
+    verification def AnObjectiveAdoptsAndExploresAgain {
+        doc /* From one intent: the lead plans, the explorer finds two problems, the deterministic replays reproduce one, the lead proposes a fix whose names resolve in the model, the implementer makes it, the checks show the defect on the original implementation and pass with every gate, the reviewer approves, the change is merged, built, tried and adopted; the next cycle explores the adopted build, finds nothing new twice in a row, and the objective ends (Scenario K, C-54, C-55). The agents' answers and the environment's are stood in or sent by the scenario; the decisions are the model's own. */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify gatesDecide;
+            verify findingsReproduce;
+        }
+        part plans : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Plan();
+            :>> target = orchestrator.lead;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> call = 2;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part findsTwo : Scenarios::StandIn {
+            :>> call = 1;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Explored(found = 2);
+            :>> target = orchestrator.explorer;
+        }
+        part findsNothing : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Explored(found = 0);
+            :>> target = orchestrator.explorer;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part approves : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = true);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 2, explore = true, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 1) via orchestrator.instances;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept 'merge' : Integrate via orchestrator.jobs;
+        then send new Integrated(ok = true) via orchestrator.jobs;
+        then accept build : BuildRequest via orchestrator.jobs;
+        then send new Built(ok = true) via orchestrator.jobs;
+        then accept adopt : AdoptRequest via orchestrator.launch;
+        then send new Running(build = Started::newBuild) via orchestrator.launch;
+        then accept adopted : CycleReport via orchestrator.objectives;
+        then assert constraint mergedAndAdopted {
+            adopted.merged and adopted.adopted and adopted.reproduced == 1
+        }
+        then accept secondReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 0) via orchestrator.instances;
+        then accept thirdReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 0) via orchestrator.instances;
+        then accept ended : CycleReport via orchestrator.objectives;
+        then assert constraint endedAfterTwoEmptyExplorations {
+            ended.reproduced == 0 and not ended.merged and orchestrator.driver.emptyInARow == 2
+        }
+    }
+
+    verification def AFailingCheckIsRepaired {
+        doc /* A failure path recovered: one required check fails on the cycle's commit; the implementer repairs it within the attempt budget, the next round has fewer failures and passes, and the cycle is reviewed, merged and adopted (C-53). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify gatesDecide;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part approves : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = true);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstChecks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 4, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept 'merge' : Integrate via orchestrator.jobs;
+        then send new Integrated(ok = true) via orchestrator.jobs;
+        then accept build : BuildRequest via orchestrator.jobs;
+        then send new Built(ok = true) via orchestrator.jobs;
+        then accept adopt : AdoptRequest via orchestrator.launch;
+        then send new Running(build = Started::newBuild) via orchestrator.launch;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint mergedAfterRepair {
+            report.merged and report.adopted and orchestrator.driver.attempts == 1
+        }
+    }
+
+    verification def ARoundWithoutFewerFailuresEndsTheCycle {
+        doc /* A failure path: the same check fails again after a repair; a round without fewer failures is no progress, so the cycle ends with a report and nothing is merged (C-53). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify gatesDecide;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstChecks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 4, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 4, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint notMerged {
+            not report.merged and not orchestrator.driver.merged
+        }
+    }
+
+    verification def NoDefectShownOnTheBase {
+        doc /* A failure path: the checks pass on the change, but no criterion fails on the original implementation by its behaviour; that is no evidence, so the cycle goes to repair, and a second round without evidence ends it unmerged (C-54, DefectShownBefore). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify defectShownBefore;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstChecks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = false, gatesPassed = true) via orchestrator.jobs;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = false, gatesPassed = true) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint notMerged {
+            not report.merged
+        }
+    }
+
+    verification def TheGoverningTextStaysTheOperators {
+        doc /* A failure path: the change touches ROADMAP.md or the purpose requirement, so the gate "purpose and governance unchanged" fails on the commit whatever the objective names; the repair touches it again, and the cycle ends unmerged before any review (C-55). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify gatesDecide;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstChecks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = false) via orchestrator.jobs;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = false) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint notMerged {
+            not report.merged
+        }
+    }
+
+    verification def AMergeWithoutThePermissionToAdopt {
+        doc /* The objective may merge but not adopt: the reviewed change is merged and the cycle is done without a build (C-53). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify gatesDecide;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part approves : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = true);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = false, depth = 0, mayMerge = true, mayAdopt = false, attempts = 4) via orchestrator.objectives;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept 'merge' : Integrate via orchestrator.jobs;
+        then send new Integrated(ok = true) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint mergedNotAdopted {
+            report.merged and not report.adopted
+        }
+    }
+
+    verification def ANewBuildThatDoesNotTakeOver {
+        doc /* A failure path of adoption: the merged change's build does not take over, the launcher starts the last known good build, and that build ends the objective with the cycle merged but not adopted (C-53, RecoverableAdoption). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify recoverableAdoption;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part approves : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = true);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 2, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept 'merge' : Integrate via orchestrator.jobs;
+        then send new Integrated(ok = true) via orchestrator.jobs;
+        then accept build : BuildRequest via orchestrator.jobs;
+        then send new Built(ok = true) via orchestrator.jobs;
+        then accept adopt : AdoptRequest via orchestrator.launch;
+        then send new Running(build = Started::lastKnownGood) via orchestrator.launch;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint mergedNotAdoptedAndEnded {
+            report.merged and not report.adopted and not orchestrator.driver.adopted
+        }
+    }
+
+    verification def AChildExploresOnceAndReturns {
+        doc /* A child objective at the maximum depth is neither asked to plan nor offered delegate: it explores once, its findings are replayed, and its result returns to its parent; it never merges (C-54, ChildWorkBounded). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify childWorkBounded;
+        }
+        part findsOne : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Explored(found = 1);
+            :>> target = orchestrator.explorer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = true, depth = 2, mayMerge = false, mayAdopt = false, attempts = 4) via orchestrator.objectives;
+        then accept replays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 1) via orchestrator.instances;
+        then accept result : CycleReport via orchestrator.objectives;
+        then assert constraint returnedUnmerged {
+            result.reproduced == 1 and not result.merged
+        }
+    }
+
+    verification def TheReviewerRejectsTwice {
+        doc /* A failure path: the checks pass, but the independent reviewer asks for changes; the implementer repairs, the checks pass again, and the reviewer rejects again. A rejection that follows a rejection is the same failure twice, so the cycle ends unmerged with attempts left, whatever the checks said (C-53, GatesDecide). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify gatesDecide;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part rejects : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = false);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstChecks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint notMergedWithAttemptsLeft {
+            not report.merged and orchestrator.driver.attempts == 1
+        }
+    }
+
+    verification def ADelegationBeyondTheTurnsBoundIsRefused {
+        doc /* Delegation within bounds: the lead plans and delegates three children, which are recorded and started; a fourth in the same turn is recorded as refused; the lead then gives its plan (C-54, ChildWorkBounded). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify childWorkBounded;
+        }
+        part delegatesFirst : Scenarios::StandIn {
+            :>> call = 1;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Delegation(focus = "the Requirements panel");
+            :>> target = orchestrator.lead;
+        }
+        part delegatesSecond : Scenarios::StandIn {
+            :>> call = 2;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Delegation(focus = "the Inspector");
+            :>> target = orchestrator.lead;
+        }
+        part delegatesThird : Scenarios::StandIn {
+            :>> call = 3;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Delegation(focus = "the Run panel");
+            :>> target = orchestrator.lead;
+        }
+        part delegatesFourth : Scenarios::StandIn {
+            :>> call = 4;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Delegation(focus = "Settings");
+            :>> target = orchestrator.lead;
+        }
+        part plans : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Plan();
+            :>> target = orchestrator.lead;
+        }
+        part findsNothing : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Explored(found = 0);
+            :>> target = orchestrator.explorer;
+        }
+        send new ObjectiveRequest(cycles = 1, explore = true, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstChild : Directive via orchestrator.objectives;
+        then accept secondChild : Directive via orchestrator.objectives;
+        then accept thirdChild : Directive via orchestrator.objectives;
+        then accept fourthChild : Directive via orchestrator.objectives;
+        then assert constraint fourthRefused {
+            not firstChild.refused and not secondChild.refused and not thirdChild.refused and fourthChild.refused
+        }
+        then accept replays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 0) via orchestrator.instances;
+        then accept againReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 0) via orchestrator.instances;
+        then accept report : CycleReport via orchestrator.objectives;
+        then assert constraint nothingMerged {
+            not report.merged
+        }
+    }
+
+    verification def EveryFindingJudgedNotADefect {
+        doc /* The lead judges every reproduced finding other than a defect (a wrong expectation of the tester, say) and proposes nothing: the cycle is done with nothing to fix, nothing is implemented or merged, and the next exploration follows (C-55, Disposition). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify findingsReproduce;
+        }
+        part plans : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Plan();
+            :>> target = orchestrator.lead;
+        }
+        part judgesNotADefect : Scenarios::StandIn {
+            :>> call = 2;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::NothingToFix();
+            :>> target = orchestrator.lead;
+        }
+        part findsOne : Scenarios::StandIn {
+            :>> call = 1;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Explored(found = 1);
+            :>> target = orchestrator.explorer;
+        }
+        part findsNothing : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Explored(found = 0);
+            :>> target = orchestrator.explorer;
+        }
+        send new ObjectiveRequest(cycles = 2, explore = true, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept firstReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 1) via orchestrator.instances;
+        then accept nothingToFix : CycleReport via orchestrator.objectives;
+        then assert constraint doneWithNothingToFix {
+            not nothingToFix.merged and nothingToFix.reproduced == 1
+        }
+        then accept secondReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 0) via orchestrator.instances;
+        then accept thirdReplays : Orchestrator::ReplayRequest via orchestrator.instances;
+        then send new Orchestrator::Replayed(reproduced = 0) via orchestrator.instances;
+        then accept ended : CycleReport via orchestrator.objectives;
+        then assert constraint endedAfterTwoEmptyExplorations {
+            not ended.merged and ended.reproduced == 0
+        }
+    }
 }

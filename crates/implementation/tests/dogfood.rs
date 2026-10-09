@@ -137,3 +137,58 @@ fn agentiques_workflows_run_in_its_own_model_execution() {
         )
     );
 }
+
+/// Traceability (C-55): every implementation link of the self-model names an
+/// element that has that identity under that qualified name, a path that
+/// exists, and, for a symbol or a test, a function, type or constant of that
+/// name in its file. A link left behind by a rename, a move or a deleted
+/// test fails here instead of passing silently as drift nobody sees.
+#[test]
+fn agentiques_links_point_at_its_model_and_its_code() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let read = |path: &str| std::fs::read_to_string(root.join(path)).unwrap();
+    let ids: serde_json::Value = serde_json::from_str(&read("model/agentique.json")).unwrap();
+    let links: serde_json::Value = serde_json::from_str(&read("model/links.json")).unwrap();
+    let mut problems = Vec::new();
+    let links = links["links"].as_array().unwrap();
+    assert!(links.len() > 100, "{} links", links.len());
+    for link in links {
+        let element = link["element"].as_u64().unwrap();
+        let name = link["name"].as_str().unwrap();
+        let path = link["path"].as_str().unwrap();
+        match ids["elements"][element.to_string()].as_str() {
+            None => problems.push(format!(
+                "#{element} ({name}) is not an element of the model"
+            )),
+            Some(locator) if !locator.ends_with(&format!(" {name}")) => {
+                problems.push(format!("#{element} is `{locator}` now, not `{name}`"))
+            }
+            Some(_) => {}
+        }
+        if !root.join(path).exists() {
+            problems.push(format!("{name}: {path} does not exist"));
+            continue;
+        }
+        if let Some(symbol) = link["symbol"].as_str() {
+            let last = symbol.rsplit("::").next().unwrap();
+            let text = read(path);
+            let defined = [
+                "fn", "function", "struct", "enum", "trait", "const", "static", "type", "mod",
+            ]
+            .iter()
+            .any(|keyword| {
+                text.match_indices(&format!("{keyword} {last}"))
+                    .any(|(at, found)| {
+                        text[at + found.len()..]
+                            .chars()
+                            .next()
+                            .is_some_and(|next| !(next.is_alphanumeric() || next == '_'))
+                    })
+            });
+            if !defined {
+                problems.push(format!("{name}: {path} defines no `{last}`"));
+            }
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+}

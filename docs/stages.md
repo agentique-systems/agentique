@@ -2084,12 +2084,12 @@ it). Read against the code and the model before any change:
 
 | Item | Pull request | State |
 |---|---|---|
-| W13.1 Direction | #117 | In review |
-| W13.2 Referential usages | — | In review (`stage13/ref-parts`, below) |
-| W13.3 Requirement constraints and evidence | — | In progress |
-| W13.4 The self-model | — | In progress (`stage13/self-model`) |
-| W13.5 Alignment in the loop | — | In review (`stage13/alignment`, below) |
-| W13.6 A second system | — | Not started |
+| W13.1 Direction | #117 | Merged |
+| W13.2 Referential usages | #119 | Merged (below) |
+| W13.3 Requirement constraints and evidence | #121 | In review (below) |
+| W13.4 The self-model | #118 | In review (below); the purpose's subrequirements follow W13.3 |
+| W13.5 Alignment in the loop | #120 | Merged (below) |
+| W13.6 A second system | — | In progress (`stage13/drone`) |
 | W13.7 Proof | — | Not started |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
@@ -2174,3 +2174,68 @@ passed, 0 failed, 4 ignored; workspace clippy, fmt and the architecture
 check passed. Not verified: live models; the approved baseline against
 GitHub (tested with local bare remotes); reversing a disposition by an
 Operator command (not built).
+
+**W13.4, first part** (`stage13/self-model`, made through `apply_changes`;
+nothing here says the Operator accepted anything).
+
+- *The autonomous lifecycle, modelled and run.* The Orchestrator is its
+  deterministic `Driver` and its role agents, nested in it so its lock
+  covers them. The Driver's 34 transitions follow `run.rs` as merged with
+  W13.5: the lead plans
+  (and may delegate, three children a turn) unless the objective is a child
+  at the maximum depth; the explorer's run reports what failed, and the
+  Driver's deterministic replays decide what reproduced; a child explores
+  once and returns; nothing reproduced explores again, and two empty
+  explorations in a row end the objective; a proposal whose names do not
+  resolve in the model is asked again; the checks on the commit decide the
+  evidence on the base and the gates (the purpose's among them, W13.5), a
+  failure going to repair and a round without fewer failures ending the
+  cycle; the reviewer's rejection goes to repair; merging needs the
+  permission, adopting too (a merge without it is done); a build that does
+  not take over ends the objective; after a cycle, done or failed, the next
+  starts while cycles are left. Folded, as its doc says: Evaluate into Check,
+  Try into the build's answer, the same failure twice into a round without
+  fewer failures (the model ends some cycles earlier than the code, as
+  its doc says). Eleven scenarios run in model execution with the agents
+  stood in and the environment answering at the Orchestrator's boundary: an
+  objective that adopts and explores again until two empty explorations
+  end it; a failing check repaired; a round without fewer failures; no
+  defect shown on the base; a reviewer rejecting twice in a row;
+  the governing text kept the Operator's; a merge without the permission to
+  adopt; a build that does not take over; a fourth delegation in a turn
+  refused; a child that explores once and returns; every finding judged
+  not a defect (nothing to fix). They check the model's account; the code
+  is checked by the tests linked to 19 of the 34 transitions
+  (`tests/exploring.rs`, `tests/cycle.rs`, `gates.rs`, `run/children.rs`,
+  `record.rs`), W13.5's among them (a proposal serving a part refused; a
+  cycle that rewrites the purpose not merged even when a check hides the
+  model; a finding judged a wrong expectation). No test exercises a
+  rejected review, a merge, its repair or permission, a build, its try or
+  a build that does not take over as the Driver records them, a child at
+  the maximum depth, or the start and continuation of cycles, so those 15
+  transitions are not linked.
+- *Corrected after review.* The first version (an independent
+  architecture review asked for changes twice) had the lead declare its own
+  evidence and purpose verdicts, ended every failed cycle, linked tests that
+  did not exercise their transitions and left the new definitions outside
+  the lock; it was redone from the code, then reconciled with W13.5 (a
+  refused proposal gets two lead sessions; nothing to fix; two rejections in
+  a row end a cycle; every exploration is planned). The test instance the
+  explorer operates is `ref part testInstance : Agentique[0..1]`: the
+  Orchestrator refers to another Agentique, which as a composite part would
+  be a composition cycle.
+- *One mechanism where the code has one.* The Studio's state machine had a
+  second lock question, confirmation and two states for the Assistant's
+  changes (14 states, 29 transitions); it now remembers who asked
+  (`requester`) and has one change path and lock question for every actor
+  (12 states, 27 transitions). The five scenarios of edits and Assistant
+  actions pass unchanged, the question naming the Assistant when it asked.
+- *Tools.* `apply_changes` gains an effect of several steps, a composite
+  action created with its steps, and `set` moving a transition between
+  states; with the lookup of unnamed elements (W13.1) an agent can now write
+  and generalise behaviour while transitions keep their identities. Before,
+  a transition could have one `send` or `assign` only.
+- *Traceability.* A dogfood test checks every implementation link: the
+  element exists under that name, the path exists, the function is defined
+  there. It found two stale links on `main` (a test moved to the
+  Orchestrator in W11.5, a test renamed in W12.5), fixed.

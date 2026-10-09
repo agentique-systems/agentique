@@ -220,6 +220,67 @@ fn the_assistant_writes_a_state_machine() {
     assert!(result.contains("check sameSize: passed"), "{result}");
 }
 
+/// C-55: an effect of several steps (assign, then send) is one composite
+/// action whose steps run in the order given, so agents can write the
+/// behaviour model execution runs without editing text.
+#[test]
+fn the_assistant_writes_an_effect_of_several_steps() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Job { attribute size : ScalarValues::Integer; }
+    item def Ack { attribute size : ScalarValues::Integer; attribute count : ScalarValues::Integer; }
+    port def JobPort { in item job : Job; out item ack : Ack; }
+    part def Worker {
+        port jobs : JobPort;
+        attribute count : ScalarValues::Integer = 0;
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    apply(
+        &mut state,
+        json!({ "description": "The worker counts jobs and acknowledges each", "operations": [
+            { "op": "create", "parent": "Jobs::Worker", "kind": "state", "name": "working", "exhibit": true, "initial": "idle" },
+            { "op": "create", "parent": "Jobs::Worker::working", "kind": "state", "name": "idle" },
+            { "op": "create", "parent": "Jobs::Worker::working", "kind": "transition", "from": "idle", "to": "idle", "trigger": { "name": "job", "type": "Job", "via": "jobs" }, "effect": [
+                { "assign": "count", "value": "count + 1" },
+                { "send": "new Ack(size = job.size, count = count)", "via": "jobs" }
+            ] },
+            { "op": "create", "parent": "Jobs", "kind": "verification def", "name": "CountsJobs", "subject": "Worker" },
+            { "op": "create", "parent": "Jobs::CountsJobs", "kind": "send", "expression": "new Job(size = 3)", "via": "worker.jobs" },
+            { "op": "create", "parent": "Jobs::CountsJobs", "kind": "accept", "name": "one", "type": "Ack", "via": "worker.jobs" },
+            { "op": "create", "parent": "Jobs::CountsJobs", "kind": "send", "expression": "new Job(size = 5)", "via": "worker.jobs" },
+            { "op": "create", "parent": "Jobs::CountsJobs", "kind": "accept", "name": "two", "type": "Ack", "via": "worker.jobs" },
+            { "op": "create", "parent": "Jobs::CountsJobs", "kind": "assert constraint", "name": "countedInOrder", "expression": "one.count == 1 and two.count == 2 and two.size == 5" }
+        ]}),
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    let text_now = written(&state);
+    assert!(
+        text_now.contains("do action {")
+            && text_now.contains("assign count := count + 1;")
+            && text_now.contains("then send new Ack(size = job.size, count = count) via jobs;"),
+        "{text_now}"
+    );
+    let result = run(&state, "Jobs::CountsJobs", "model").unwrap();
+    assert!(result.contains("check countedInOrder: passed"), "{result}");
+    // An empty list is refused, and so is a step that is neither.
+    for effect in [json!([]), json!([{ "send": "x", "assign": "y" }])] {
+        let refused = tools::prepare(
+            &state,
+            &Library::built_in_only(),
+            APPLY_CHANGES,
+            &json!({ "description": "x", "operations": [
+                { "op": "create", "parent": "Jobs::Worker::working", "kind": "transition", "from": "idle", "to": "idle", "trigger": { "type": "Job", "via": "jobs" }, "effect": effect }
+            ]}),
+        );
+        assert!(matches!(refused, Prepared::Invalid(_)), "{refused:?}");
+    }
+}
+
 #[test]
 fn factory_inputs_are_checked_against_their_schemas() {
     for (tool, input) in [
@@ -332,5 +393,146 @@ fn an_unnamed_connection_is_deleted_by_its_shown_name() {
     assert!(
         matches!(gone, Prepared::Invalid(ref m) if m.contains("there is no element")),
         "{gone:?}"
+    );
+}
+
+/// C-55: an existing transition gets a new effect of several steps (its old
+/// effect deleted, a composite action created in its place), so a
+/// transition keeps its identity when its behaviour is generalised.
+#[test]
+fn a_transition_keeps_its_identity_when_its_effect_is_replaced_by_several_steps() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Job { attribute size : ScalarValues::Integer; }
+    item def Ack { attribute size : ScalarValues::Integer; }
+    port def JobPort { in item job : Job; out item ack : Ack; }
+    part def Worker {
+        port jobs : JobPort;
+        attribute last : ScalarValues::Integer = 0;
+        exhibit state working {
+            entry;
+            then idle;
+            state idle;
+            transition acknowledge first idle accept job : Job via jobs do send new Ack(size = job.size) via jobs then idle;
+        }
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    let transition = state
+        .tree()
+        .find("Jobs::Worker::working::acknowledge")
+        .unwrap();
+    apply(
+        &mut state,
+        json!({ "description": "Remember the last size before acknowledging", "operations": [
+            { "op": "delete", "element": "Jobs::Worker::working::acknowledge::(send)" },
+            { "op": "create", "parent": "Jobs::Worker::working::acknowledge", "kind": "action", "steps": [
+                { "assign": "last", "value": "job.size" },
+                { "send": "new Ack(size = last)", "via": "jobs" }
+            ] }
+        ]}),
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    assert_eq!(
+        state.tree().find("Jobs::Worker::working::acknowledge"),
+        Some(transition)
+    );
+    let text_now = written(&state);
+    assert!(
+        text_now.contains("assign last := job.size;")
+            && text_now.contains("then send new Ack(size = last) via jobs;"),
+        "{text_now}"
+    );
+}
+
+/// C-55: `set` moves a transition between states, keeping its identity.
+#[test]
+fn a_transition_is_moved_between_states_by_set() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Job;
+    port def JobPort { in item job : Job; }
+    part def Worker {
+        port jobs : JobPort;
+        exhibit state working {
+            entry;
+            then idle;
+            state idle;
+            state busy;
+            state spare;
+            transition start first idle accept j : Job via jobs then spare;
+        }
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    let start = state.tree().find("Jobs::Worker::working::start").unwrap();
+    apply(
+        &mut state,
+        json!({ "description": "Start goes to busy", "operations": [
+            { "op": "set", "element": "Jobs::Worker::working::start", "from": "idle", "to": "busy" },
+            { "op": "delete", "element": "Jobs::Worker::working::spare" }
+        ]}),
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    assert_eq!(
+        state.tree().find("Jobs::Worker::working::start"),
+        Some(start)
+    );
+    assert!(
+        written(&state).contains("transition start first idle accept j : Job via jobs then busy;"),
+        "{}",
+        written(&state)
+    );
+}
+
+/// An effect of several steps on a transition without a trigger (a
+/// completion transition is not in the subset, so it is reported, but the
+/// action and its steps are created in the right place).
+#[test]
+fn an_effect_list_without_a_trigger_keeps_its_steps_together() {
+    let mut state = SystemState::new(
+        parse(&[Source::new(
+            "Jobs.sysml",
+            "package Jobs {
+    item def Ack;
+    port def JobPort { out item ack : Ack; }
+    part def Worker {
+        port jobs : JobPort;
+        attribute count : ScalarValues::Integer = 0;
+        exhibit state working {
+            entry;
+            then idle;
+            state idle;
+        }
+    }
+}",
+        )]),
+        BTreeSet::new(),
+    );
+    let before = state.tree().len();
+    apply(
+        &mut state,
+        json!({ "description": "A transition without a trigger", "operations": [
+            { "op": "create", "parent": "Jobs::Worker::working", "kind": "transition", "name": "tick", "from": "idle", "to": "idle", "effect": [
+                { "assign": "count", "value": "count + 1" },
+                { "send": "new Ack()", "via": "jobs" }
+            ] }
+        ]}),
+    );
+    // The transition, its action and the two steps.
+    assert_eq!(state.tree().len(), before + 4);
+    let text_now = written(&state);
+    assert!(
+        text_now.contains("assign count := count + 1;")
+            && text_now.contains("then send new Ack() via jobs;"),
+        "{text_now}"
     );
 }
