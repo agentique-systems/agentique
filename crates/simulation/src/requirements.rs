@@ -419,14 +419,8 @@ impl Config<'_> {
             let aliases = compiler.aliases(feature);
             let name = self.name(feature);
             let feature_path = format!("{path}.{name}");
-            let part = element.kind == ElementKind::Part
-                || (element.kind == ElementKind::Reference
-                    && aliases.iter().any(|a| {
-                        self.semantics
-                            .element(*a)
-                            .is_some_and(|e| e.kind == ElementKind::Part)
-                    }));
-            if part {
+            let kind = kind_of(self.semantics, &aliases).unwrap_or(element.kind);
+            if kind == ElementKind::Part {
                 let multiplicity = aliases
                     .iter()
                     .find_map(|a| self.semantics.element(*a).and_then(|e| e.multiplicity));
@@ -455,7 +449,7 @@ impl Config<'_> {
                 };
                 self.nodes[index].children.push((aliases, child));
             } else if matches!(
-                element.kind,
+                kind,
                 ElementKind::Attribute | ElementKind::Reference | ElementKind::Item
             ) {
                 let init = compiler.value_of(feature);
@@ -722,45 +716,32 @@ impl Evaluator<'_, '_> {
         depth: usize,
     ) -> Evaluation {
         let owners = self.generals_in_order(requirement);
-        let features = self.semantics.features(requirement);
-        let subject_feature = features.iter().copied().find(|f| {
-            self.semantics
-                .element(*f)
-                .is_some_and(|e| e.kind == ElementKind::Subject)
-        });
-        let subject_aliases = subject_feature
-            .map(|f| self.compiler.aliases(f))
-            .unwrap_or_default();
         let requirement_name = self.name(requirement);
+        let mut subject_aliases = Vec::new();
         let mut attributes = Vec::new();
-        for feature in &features {
-            let Some(element) = self.semantics.element(*feature) else {
-                continue;
-            };
-            if matches!(
-                element.kind,
-                ElementKind::Attribute | ElementKind::Reference | ElementKind::Item
-            ) {
-                attributes.push(Slot {
-                    aliases: self.compiler.aliases(*feature),
-                    path: format!("{requirement_name}.{}", self.name(*feature)),
-                    init: self.compiler.value_of(*feature),
-                });
+        // Subrequirements are its requirement features (named ones replaced
+        // by their redefinitions), and its unnamed ones below.
+        let mut subrequirements: Vec<ElementId> = Vec::new();
+        for feature in self.semantics.features(requirement) {
+            let aliases = self.compiler.aliases(feature);
+            match kind_of(self.semantics, &aliases) {
+                Some(ElementKind::Subject) if subject_aliases.is_empty() => {
+                    subject_aliases = aliases;
+                }
+                Some(ElementKind::Attribute | ElementKind::Reference | ElementKind::Item) => {
+                    attributes.push(Slot {
+                        aliases,
+                        path: format!("{requirement_name}.{}", self.name(feature)),
+                        init: self.compiler.value_of(feature),
+                    });
+                }
+                Some(ElementKind::Requirement) => subrequirements.push(feature),
+                _ => {}
             }
         }
         // Constraints are found among the members of the requirement and
-        // its generals, the definition's first; subrequirements are its
-        // requirement features (named ones replaced by redefinitions).
+        // its generals, the most general first.
         let mut constraints: Vec<ElementId> = Vec::new();
-        let mut subrequirements: Vec<ElementId> = features
-            .iter()
-            .copied()
-            .filter(|f| {
-                self.semantics
-                    .element(*f)
-                    .is_some_and(|e| e.kind == ElementKind::Requirement)
-            })
-            .collect();
         for owner in owners.iter().rev() {
             let Some(element) = self.semantics.element(*owner) else {
                 continue;
@@ -913,9 +894,7 @@ impl Evaluator<'_, '_> {
             return result;
         }
         let subject_feature = self.semantics.features(sub).into_iter().find(|f| {
-            self.semantics
-                .element(*f)
-                .is_some_and(|e| e.kind == ElementKind::Subject)
+            kind_of(self.semantics, &self.compiler.aliases(*f)) == Some(ElementKind::Subject)
         });
         let own =
             subject_feature.filter(|f| self.tree.get(*f).is_some_and(|e| e.owner() == Some(sub)));
@@ -1001,6 +980,20 @@ impl Evaluator<'_, '_> {
         };
         (node, text)
     }
+}
+
+/// What a feature is: its own kind or, for a usage written without a kind
+/// keyword (`:>> x = ...;`), the kind of the feature it redefines.
+fn kind_of(semantics: &Semantics, aliases: &[ElementId]) -> Option<ElementKind> {
+    let kinds: Vec<ElementKind> = aliases
+        .iter()
+        .filter_map(|a| semantics.element(*a).map(|e| e.kind))
+        .collect();
+    kinds
+        .iter()
+        .copied()
+        .find(|k| *k != ElementKind::Reference)
+        .or(kinds.first().copied())
 }
 
 fn is_comparison(op: BinaryOp) -> bool {
