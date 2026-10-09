@@ -10,9 +10,11 @@ use agq_implementation::requirements::{
 };
 use agq_implementation::{CheckReport, Links};
 use agq_language::{Element, ElementId, ElementKind, Parent, Reference};
+use agq_simulation::{Mode, RunResult};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::{Operation, SystemState};
 use std::hash::{Hash, Hasher};
+use std::path::Path;
 
 #[derive(Clone)]
 pub struct Row {
@@ -27,28 +29,13 @@ pub struct Row {
 }
 
 impl Studio {
-    /// The Requirements Panel's rows for the current model, built once per
-    /// version of the model, the kept results and the implementation checks.
-    pub fn requirements(&mut self) -> Vec<Row> {
+    /// The Requirements Panel's rows, built once per version of the model,
+    /// the links, the kept results and the implementation checks, and kept
+    /// for the panel, the Inspector and the Assistant alike.
+    pub fn requirements(&self) -> Vec<Row> {
         let key = self.evidence_key();
-        if self
-            .requirement_rows
-            .as_ref()
-            .is_none_or(|(kept, _)| *kept != key)
-        {
-            let rows = self.requirement_rows_now();
-            self.requirement_rows = Some((key, rows));
-        }
-        self.requirement_rows
-            .as_ref()
-            .map(|(_, rows)| rows.clone())
-            .unwrap_or_default()
-    }
-
-    /// The rows, read now (or from the kept rows when they are still right).
-    pub fn requirement_rows_now(&self) -> Vec<Row> {
-        if let Some((kept, rows)) = &self.requirement_rows
-            && *kept == self.evidence_key()
+        if let Some((kept, rows)) = &*self.requirement_rows.borrow()
+            && *kept == key
         {
             return rows.clone();
         }
@@ -65,12 +52,14 @@ impl Studio {
                 .is_some_and(agq_simulation::Freshness::is_current);
             (report, current)
         });
-        rows(project.state(), &links, &runs, report)
+        let rows = rows(project.state(), &links, &runs, report);
+        *self.requirement_rows.borrow_mut() = Some((key, rows.clone()));
+        rows
     }
 
     /// One requirement's ladder, for the Inspector.
     pub fn requirement_ladder(&self, id: ElementId) -> Option<Ladder> {
-        self.requirement_rows_now()
+        self.requirements()
             .into_iter()
             .find(|row| row.id == id)
             .map(|row| row.ladder)
@@ -83,7 +72,7 @@ impl Studio {
             return "No project is open.".into();
         };
         let ladders: Vec<Ladder> = self
-            .requirement_rows_now()
+            .requirements()
             .into_iter()
             .map(|row| row.ladder)
             .collect();
@@ -98,12 +87,18 @@ impl Studio {
         self.mark(Dirty::LAYOUT);
     }
 
-    /// What the rows depend on besides the model: the kept results and
-    /// the newest implementation checks.
+    /// What the rows depend on besides the model: the links, the kept
+    /// results and the newest implementation checks. (A change to the code
+    /// alone is read when one of these changes, as the Run panel reads it
+    /// when a result is shown.)
     fn evidence_key(&self) -> u64 {
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
         self.generation.hash(&mut hasher);
         self.runs.saved_generation.hash(&mut hasher);
+        self.project
+            .as_ref()
+            .and_then(|p| p.links())
+            .hash(&mut hasher);
         self.implementation
             .report
             .as_ref()
@@ -117,8 +112,12 @@ impl Studio {
         hasher.finish()
     }
 
-    /// Every scenario's newest results, as the ladder reads them.
+    /// Every scenario's newest results, as the ladder reads them: an
+    /// implementation result is current only while the code is what it ran
+    /// (as the Run panel decides when it shows one).
     fn scenario_runs(&self) -> Vec<ScenarioRuns> {
+        let store = self.run_store();
+        let repository = self.implementation_repository();
         self.scenario_rows_now()
             .into_iter()
             .map(|row| ScenarioRuns {
@@ -126,11 +125,22 @@ impl Studio {
                 results: row
                     .latest
                     .iter()
-                    .map(|(mode, summary, current)| ScenarioResult {
-                        mode: *mode,
-                        status: summary.status,
-                        all_passed: summary.all_passed,
-                        current: *current,
+                    .map(|(mode, summary, current)| {
+                        let current = *current
+                            && (*mode != Mode::Implementation
+                                || store
+                                    .as_ref()
+                                    .and_then(|s| s.load(&summary.id))
+                                    .is_some_and(|result| {
+                                        code_current(&result, repository.as_deref())
+                                    }));
+                        ScenarioResult {
+                            mode: *mode,
+                            status: summary.status,
+                            tally: summary.tally.clone(),
+                            stop: summary.stop,
+                            current,
+                        }
                     })
                     .collect(),
             })
@@ -187,6 +197,14 @@ impl Studio {
     }
 }
 
+/// Whether an implementation result still describes the code: without a
+/// repository to compare with it stands, as in the Run panel.
+pub(crate) fn code_current(result: &RunResult, repository: Option<&Path>) -> bool {
+    repository.is_none_or(|repository| {
+        agq_implementation::harness::code_is_current(result, repository).is_ok()
+    })
+}
+
 /// The headline over the rows: what the requirement usages stand on.
 pub fn rows_headline(rows: &[Row]) -> String {
     let ladders: Vec<Ladder> = rows.iter().map(|row| row.ladder.clone()).collect();
@@ -200,9 +218,26 @@ pub fn tone(standing: Standing) -> Tone {
     match standing {
         Standing::Violated | Standing::FailingScenario => Tone::Danger,
         Standing::Verified | Standing::Holds => Tone::Success,
-        Standing::OnlyDeclared => Tone::Neutral,
+        Standing::HoldsPartly | Standing::OnlyDeclared | Standing::Inconclusive => Tone::Neutral,
         Standing::Nothing => Tone::Warning,
     }
+}
+
+/// A scenario result's chip in a ladder: the mode and what it says.
+pub fn result_chip(result: &ScenarioResult) -> (String, Tone) {
+    let tone = match result.word() {
+        "passed" => Tone::Success,
+        "failed" => Tone::Danger,
+        _ => Tone::Neutral,
+    };
+    (
+        format!(
+            "{} · {}",
+            crate::panels::scenarios::short_mode(result.mode),
+            result.word()
+        ),
+        tone,
+    )
 }
 
 /// The rows of the Requirements Panel: every requirement and requirement
@@ -214,7 +249,7 @@ pub fn rows(
     report: Option<(&CheckReport, bool)>,
 ) -> Vec<Row> {
     let tree = state.tree();
-    let ladders = ladders(tree, state.diagnostics(), links, runs, report);
+    let ladders = ladders(tree, state.diagnostics(), Some(links), Some(runs), report);
     ladders
         .into_iter()
         .map(|ladder| {
@@ -333,7 +368,8 @@ mod tests {
             results: vec![ScenarioResult {
                 mode: Mode::Model,
                 status: RunStatus::Completed,
-                all_passed: true,
+                tally: vec![(agq_simulation::Verdict::Passed, 1)],
+                stop: None,
                 current,
             }],
         };
@@ -390,5 +426,68 @@ mod tests {
             rows_headline(&app.requirements()),
             "1 verified by a current passing scenario · 1 only declared (of 2)"
         );
+    }
+
+    #[test]
+    fn an_implementation_pass_is_current_only_while_the_code_is_what_it_ran() {
+        let folder =
+            std::env::temp_dir().join(format!("agq-studio-code-current-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&folder);
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(
+            folder.join("lib.rs"),
+            "pub fn a() {}
+",
+        )
+        .unwrap();
+        agq_execution::git::init_and_commit(&folder, "code").unwrap();
+        let digest = agq_execution::git::tree_digest(&folder).unwrap();
+        let result = RunResult {
+            format: agq_simulation::result::FORMAT,
+            id: "run".into(),
+            scenario: 1,
+            scenario_name: "S".into(),
+            scenario_qualified_name: "P::S".into(),
+            mode: Mode::Implementation,
+            started: "2026-10-10T00:00:00Z".into(),
+            wall_ms: 0,
+            logical_ms: 0,
+            events_processed: 0,
+            status: RunStatus::Completed,
+            stop: None,
+            blockers: Vec::new(),
+            checks: Vec::new(),
+            verifies: Vec::new(),
+            trace: Vec::new(),
+            provenance: agq_simulation::result::Provenance {
+                runner: agq_simulation::RUNNER.into(),
+                model_digest: String::new(),
+                model_revision: 0,
+                seed: 0,
+                implementation: Some(agq_simulation::result::ImplementationProvenance {
+                    repository: folder.to_string_lossy().into_owned(),
+                    commit: String::new(),
+                    dirty: false,
+                    tree_digest: digest,
+                    harness: String::new(),
+                }),
+                live: None,
+                recordings: None,
+                binding: None,
+            },
+            live: None,
+        };
+        assert!(code_current(&result, Some(&folder)));
+        // The code changes: the pass no longer describes it.
+        std::fs::write(
+            folder.join("lib.rs"),
+            "pub fn b() {}
+",
+        )
+        .unwrap();
+        assert!(!code_current(&result, Some(&folder)));
+        // Without a repository to compare with, it stands (as in the Run panel).
+        assert!(code_current(&result, None));
+        let _ = std::fs::remove_dir_all(&folder);
     }
 }

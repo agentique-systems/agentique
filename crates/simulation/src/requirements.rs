@@ -9,7 +9,10 @@
 //! behaviour runs and no time passes. The effective constraint is the
 //! standard's implication (SysML 7.21.2): if every assumed constraint is
 //! true, every required constraint and every subrequirement (its subject
-//! bound to the container's unless it binds its own) must be true.
+//! bound to the container's unless it binds its own) must be true; where it
+//! is stricter than the standard is deviation 21. Members count whatever
+//! their visibility, and a requirement that contains itself is not
+//! evaluable.
 //!
 //! The result is a calculation on the model, not a test of a built system,
 //! and never says more than was calculated: an informal constraint, a value
@@ -32,11 +35,13 @@ use std::collections::HashMap;
 /// What a requirement's evaluation concludes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Status {
-    /// Every assumption and every required constraint is true.
+    /// Every assumption is true, and every required constraint and every
+    /// subrequirement that applies is true (at least one applies).
     Holds,
     /// The assumptions are true and a required constraint is false.
     Violated,
-    /// An assumption is false: the requirement claims nothing here.
+    /// An assumption is false, or none of what it requires applies: the
+    /// requirement claims nothing here.
     AssumptionsNotMet,
     /// It could not be calculated: an informal constraint, a value the model
     /// does not determine, or something unsupported (the reason says which).
@@ -80,6 +85,9 @@ impl ConstraintKind {
 pub enum Truth {
     True,
     False,
+    /// A subrequirement whose assumptions are not met: it claims nothing
+    /// here, so it neither satisfies nor violates its container.
+    DoesNotApply,
     /// Why it could not be calculated.
     NotEvaluable(String),
 }
@@ -114,7 +122,8 @@ pub struct Evaluation {
     pub assumptions: Vec<ConstraintResult>,
     pub required: Vec<ConstraintResult>,
     /// The digest of the model slice the evaluation read
-    /// ([`crate::digest::model_digest`] of the `satisfy`).
+    /// ([`crate::digest::model_digest`] of the `satisfy`, or of the part
+    /// or part def it is written in when the configuration is built there).
     pub digest: String,
 }
 
@@ -205,10 +214,13 @@ impl ConstraintResult {
         let truth = match &self.truth {
             Truth::True => "true".to_string(),
             Truth::False => "false".to_string(),
+            Truth::DoesNotApply => "does not apply (its assumptions are not met)".to_string(),
             Truth::NotEvaluable(why) => format!("not evaluable: {why}"),
         };
         let values = values_text(&self.values);
-        let values = if values.is_empty() || matches!(self.truth, Truth::NotEvaluable(_)) {
+        let values = if values.is_empty()
+            || matches!(self.truth, Truth::NotEvaluable(_) | Truth::DoesNotApply)
+        {
             String::new()
         } else {
             format!(" ({values})")
@@ -237,7 +249,6 @@ fn evaluate_with(
     satisfy: ElementId,
 ) -> Evaluation {
     let element = &tree[satisfy];
-    let digest = model_digest(tree, satisfy);
     let subject = element
         .by
         .as_ref()
@@ -248,6 +259,22 @@ fn evaluate_with(
         .as_ref()
         .and_then(|t| semantics.steps(satisfy, Role::Target, t).ok())
         .and_then(|steps| steps.last().copied());
+    let steps = element
+        .by
+        .as_ref()
+        .and_then(|by| semantics.steps(satisfy, Role::By, by).ok())
+        .filter(|steps| !steps.is_empty());
+    // A feature is configured in its context: the part or part def the
+    // satisfy is written in, when the feature belongs to it. The slice read
+    // is then the context's.
+    let context = element.owner().filter(|owner| {
+        matches!(tree[*owner].kind, ElementKind::PartDef | ElementKind::Part)
+            && steps
+                .as_ref()
+                .is_some_and(|steps| semantics.features(*owner).contains(&steps[0]))
+    });
+    let root = context.unwrap_or(satisfy);
+    let digest = model_digest(tree, root);
     let unevaluated = |requirement: ElementId, reason: String| Evaluation {
         requirement,
         satisfy: Some(satisfy),
@@ -266,7 +293,7 @@ fn evaluate_with(
     };
     // Problems the language core reports where the evaluation would read
     // keep it from being calculated, as they keep a scenario from running.
-    let slice = closure(tree, satisfy);
+    let slice = closure(tree, root);
     let problems: Vec<String> = diagnostics
         .iter()
         .filter(|d| slice.contains(&d.element))
@@ -294,14 +321,11 @@ fn evaluate_with(
             "the satisfy names no satisfying feature (`by`)".to_string(),
         );
     };
-    let steps = match semantics.steps(satisfy, Role::By, by) {
-        Ok(steps) if !steps.is_empty() => steps,
-        _ => {
-            return unevaluated(
-                requirement,
-                format!("the satisfying feature `{by}` cannot be found"),
-            );
-        }
+    let Some(steps) = steps else {
+        return unevaluated(
+            requirement,
+            format!("the satisfying feature `{by}` cannot be found"),
+        );
     };
     let mut compiler = ExpressionCompiler::new(tree, semantics);
     let mut config = Config {
@@ -309,17 +333,19 @@ fn evaluate_with(
         nodes: Vec::new(),
         memo: RefCell::default(),
     };
-    // A feature is configured in its context: the part or part def the
-    // satisfy is written in, when the feature belongs to it.
-    let context = element.owner().filter(|owner| {
-        matches!(tree[*owner].kind, ElementKind::PartDef | ElementKind::Part)
-            && semantics.features(*owner).contains(&steps[0])
-    });
-    let (root, path) = match context {
+    let (start, path) = match context {
         Some(owner) => (config.build(&mut compiler, owner, None, 0), &steps[..]),
-        None => (config.build(&mut compiler, steps[0], None, 0), &steps[1..]),
+        None => {
+            // The satisfying feature itself is one part, as each part read
+            // through is.
+            let aliases = compiler.aliases(steps[0]);
+            if let Some(why) = multiplicity_problem(&subject, multiplicity(semantics, &aliases)) {
+                return unevaluated(requirement, why);
+            }
+            (config.build(&mut compiler, steps[0], None, 0), &steps[1..])
+        }
     };
-    let node = match config.node_at(root, path) {
+    let node = match config.node_at(start, path) {
         Ok(node) => node,
         Err(why) => return unevaluated(requirement, why),
     };
@@ -328,10 +354,104 @@ fn evaluate_with(
         semantics,
         compiler,
         digest: &digest,
+        subrequirements: HashMap::new(),
+        recursive: HashMap::new(),
     };
+    // A subject the requirement binds itself must be what the satisfy binds.
+    if let Some(why) = evaluator.binding_conflict(requirement, &steps, &subject) {
+        return unevaluated(requirement, why);
+    }
     let mut evaluation = evaluator.requirement(&config, requirement, Ok(node), &subject, None, 0);
     evaluation.satisfy = Some(satisfy);
     evaluation
+}
+
+// ---- members, owned and inherited ----
+
+/// A member of a namespace: owned, or inherited from one of its generals.
+struct Member {
+    id: ElementId,
+    /// The member and every feature it redefines.
+    aliases: Vec<ElementId>,
+    /// What it is ([`kind_of`]).
+    kind: ElementKind,
+    /// Where its owner comes in the generals, nearest first (0: owned).
+    rank: usize,
+}
+
+/// `id` and its generals, transitively, nearest first.
+fn generals_in_order(semantics: &Semantics, id: ElementId) -> Vec<ElementId> {
+    let mut order = vec![id];
+    let mut i = 0;
+    while i < order.len() {
+        for general in semantics.generals(order[i]) {
+            if !order.contains(&general) {
+                order.push(general);
+            }
+        }
+        i += 1;
+    }
+    order
+}
+
+/// Every member of a namespace, owned and inherited, whatever its
+/// visibility (a private attribute or subrequirement is still part of what
+/// is calculated): those of it and its generals, the nearest first, without
+/// the ones a nearer member redefines.
+fn members(
+    semantics: &Semantics,
+    compiler: &ExpressionCompiler,
+    namespace: ElementId,
+) -> Vec<Member> {
+    let mut out: Vec<Member> = Vec::new();
+    for (rank, owner) in generals_in_order(semantics, namespace)
+        .into_iter()
+        .enumerate()
+    {
+        let Some(element) = semantics.element(owner) else {
+            continue;
+        };
+        for child in element.children() {
+            if out.iter().any(|m| m.aliases.contains(child)) {
+                continue;
+            }
+            let Some(c) = semantics.element(*child) else {
+                continue;
+            };
+            let aliases = compiler.aliases(*child);
+            let kind = kind_of(semantics, &aliases).unwrap_or(c.kind);
+            out.push(Member {
+                id: *child,
+                aliases,
+                kind,
+                rank,
+            });
+        }
+    }
+    out
+}
+
+/// The multiplicity a feature has: its own or that of a feature it
+/// redefines.
+fn multiplicity(semantics: &Semantics, aliases: &[ElementId]) -> Option<Multiplicity> {
+    aliases
+        .iter()
+        .find_map(|a| semantics.element(*a).and_then(|e| e.multiplicity))
+}
+
+/// Why a part with this multiplicity cannot be read through: a calculation
+/// reads exactly one part.
+fn multiplicity_problem(path: &str, multiplicity: Option<Multiplicity>) -> Option<String> {
+    match multiplicity {
+        None
+        | Some(Multiplicity {
+            lower: 1,
+            upper: Some(1),
+        }) => None,
+        Some(m) => Some(format!(
+            "`{path}` has the multiplicity {m}; a calculation reads through exactly one part"
+        )),
+    }
 }
 
 // ---- the modelled configuration ----
@@ -412,52 +532,40 @@ impl Config<'_> {
             children: Vec::new(),
             slots: Vec::new(),
         });
-        for feature in self.semantics.features(usage) {
-            let Some(element) = self.semantics.element(feature) else {
+        for member in members(self.semantics, compiler, usage) {
+            let Some(name) = self.semantics.name(member.id) else {
                 continue;
             };
-            let aliases = compiler.aliases(feature);
-            let name = self.name(feature);
             let feature_path = format!("{path}.{name}");
-            let kind = kind_of(self.semantics, &aliases).unwrap_or(element.kind);
-            if kind == ElementKind::Part {
-                let multiplicity = aliases
-                    .iter()
-                    .find_map(|a| self.semantics.element(*a).and_then(|e| e.multiplicity));
-                let child = match multiplicity {
-                    Some(Multiplicity { upper: Some(0), .. }) => continue,
-                    None
-                    | Some(Multiplicity {
-                        lower: 1,
-                        upper: Some(1),
-                    }) if depth < MAX_DEPTH => Child::Node(self.build(
-                        compiler,
-                        feature,
-                        Some((index, feature_path)),
-                        depth + 1,
-                    )),
-                    None
-                    | Some(Multiplicity {
-                        lower: 1,
-                        upper: Some(1),
-                    }) => Child::Unsupported(format!(
-                        "`{feature_path}`: parts nest too deeply to calculate"
-                    )),
-                    Some(m) => Child::Unsupported(format!(
-                        "`{feature_path}` has the multiplicity {m}; a calculation reads through exactly one part"
-                    )),
-                };
-                self.nodes[index].children.push((aliases, child));
-            } else if matches!(
-                kind,
-                ElementKind::Attribute | ElementKind::Reference | ElementKind::Item
-            ) {
-                let init = compiler.value_of(feature);
-                self.nodes[index].slots.push(Slot {
-                    aliases,
-                    path: feature_path,
-                    init,
-                });
+            match member.kind {
+                ElementKind::Part => {
+                    let multiplicity = multiplicity(self.semantics, &member.aliases);
+                    if multiplicity.is_some_and(|m| m.upper == Some(0)) {
+                        continue;
+                    }
+                    let child = match multiplicity_problem(&feature_path, multiplicity) {
+                        Some(why) => Child::Unsupported(why),
+                        None if depth >= MAX_DEPTH => Child::Unsupported(format!(
+                            "`{feature_path}`: parts nest too deeply to calculate"
+                        )),
+                        None => Child::Node(self.build(
+                            compiler,
+                            member.id,
+                            Some((index, feature_path)),
+                            depth + 1,
+                        )),
+                    };
+                    self.nodes[index].children.push((member.aliases, child));
+                }
+                ElementKind::Attribute | ElementKind::Reference | ElementKind::Item => {
+                    let init = compiler.value_of(member.id);
+                    self.nodes[index].slots.push(Slot {
+                        aliases: member.aliases,
+                        path: feature_path,
+                        init,
+                    });
+                }
+                _ => {}
             }
         }
         index
@@ -668,24 +776,13 @@ struct Evaluator<'a, 'd> {
     semantics: &'a Semantics<'a>,
     compiler: ExpressionCompiler<'a>,
     digest: &'d str,
+    /// The subrequirements of each requirement worked out so far.
+    subrequirements: HashMap<ElementId, Vec<ElementId>>,
+    /// Whether a requirement contains itself, worked out once.
+    recursive: HashMap<ElementId, bool>,
 }
 
 impl Evaluator<'_, '_> {
-    /// `id` and its generals, nearest first.
-    fn generals_in_order(&self, id: ElementId) -> Vec<ElementId> {
-        let mut order = vec![id];
-        let mut i = 0;
-        while i < order.len() {
-            for general in self.semantics.generals(order[i]) {
-                if !order.contains(&general) {
-                    order.push(general);
-                }
-            }
-            i += 1;
-        }
-        order
-    }
-
     fn name(&self, id: ElementId) -> String {
         self.semantics
             .name(id)
@@ -705,6 +802,73 @@ impl Evaluator<'_, '_> {
             .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
     }
 
+    /// The subrequirements of a requirement, owned and inherited, the
+    /// most general definition's first.
+    fn subrequirements_of(&mut self, requirement: ElementId) -> Vec<ElementId> {
+        if let Some(known) = self.subrequirements.get(&requirement) {
+            return known.clone();
+        }
+        let mut found: Vec<Member> = members(self.semantics, &self.compiler, requirement)
+            .into_iter()
+            .filter(|m| m.kind == ElementKind::Requirement)
+            .collect();
+        found.sort_by_key(|m| std::cmp::Reverse(m.rank));
+        let ids: Vec<ElementId> = found.into_iter().map(|m| m.id).collect();
+        self.subrequirements.insert(requirement, ids.clone());
+        ids
+    }
+
+    /// Whether a requirement is among its own subrequirements, at any depth:
+    /// then evaluating it would never end.
+    fn contains_itself(&mut self, requirement: ElementId) -> bool {
+        if let Some(known) = self.recursive.get(&requirement) {
+            return *known;
+        }
+        let mut seen = std::collections::HashSet::new();
+        let mut pending = self.subrequirements_of(requirement);
+        let mut found = false;
+        while let Some(next) = pending.pop() {
+            if next == requirement {
+                found = true;
+                break;
+            }
+            if seen.insert(next) {
+                pending.extend(self.subrequirements_of(next));
+            }
+        }
+        self.recursive.insert(requirement, found);
+        found
+    }
+
+    /// Why the subject a requirement binds itself (`subject s = x;`)
+    /// disagrees with what the satisfy binds, if it does.
+    fn binding_conflict(
+        &mut self,
+        requirement: ElementId,
+        satisfying: &[ElementId],
+        satisfying_text: &str,
+    ) -> Option<String> {
+        let subject = members(self.semantics, &self.compiler, requirement)
+            .into_iter()
+            .find(|m| m.kind == ElementKind::Subject)?;
+        let tree = self.tree;
+        let element = tree.get(subject.id)?;
+        let name = self.name(subject.id);
+        if element.value.is_some() {
+            return Some(format!(
+                "its subject `{name}` is bound to a value, but the satisfy binds `{satisfying_text}`"
+            ));
+        }
+        let expression = element.expression.as_ref()?;
+        let text = print_expression(tree, subject.id, expression);
+        match self.compiler.expr(subject.id, expression) {
+            Ok(Expr::Path { steps, .. }) if steps == satisfying => None,
+            _ => Some(format!(
+                "its subject `{name}` is bound to `{text}` in the model, but the satisfy binds `{satisfying_text}`"
+            )),
+        }
+    }
+
     /// Evaluates `requirement` with its subject bound to `subject`.
     fn requirement(
         &mut self,
@@ -715,52 +879,32 @@ impl Evaluator<'_, '_> {
         parent: Option<&Context>,
         depth: usize,
     ) -> Evaluation {
-        let owners = self.generals_in_order(requirement);
         let requirement_name = self.name(requirement);
         let mut subject_aliases = Vec::new();
         let mut attributes = Vec::new();
-        // Subrequirements are its requirement features (named ones replaced
-        // by their redefinitions), and its unnamed ones below.
-        let mut subrequirements: Vec<ElementId> = Vec::new();
-        for feature in self.semantics.features(requirement) {
-            let aliases = self.compiler.aliases(feature);
-            match kind_of(self.semantics, &aliases) {
-                Some(ElementKind::Subject) if subject_aliases.is_empty() => {
-                    subject_aliases = aliases;
+        let mut constraints: Vec<Member> = Vec::new();
+        for member in members(self.semantics, &self.compiler, requirement) {
+            match member.kind {
+                ElementKind::Subject if subject_aliases.is_empty() => {
+                    subject_aliases = member.aliases;
                 }
-                Some(ElementKind::Attribute | ElementKind::Reference | ElementKind::Item) => {
+                ElementKind::Attribute | ElementKind::Reference | ElementKind::Item => {
+                    let Some(name) = self.semantics.name(member.id) else {
+                        continue;
+                    };
                     attributes.push(Slot {
-                        aliases,
-                        path: format!("{requirement_name}.{}", self.name(feature)),
-                        init: self.compiler.value_of(feature),
+                        path: format!("{requirement_name}.{name}"),
+                        init: self.compiler.value_of(member.id),
+                        aliases: member.aliases,
                     });
                 }
-                Some(ElementKind::Requirement) => subrequirements.push(feature),
+                kind if kind.is_requirement_constraint() => constraints.push(member),
                 _ => {}
             }
         }
-        // Constraints are found among the members of the requirement and
-        // its generals, the most general first.
-        let mut constraints: Vec<ElementId> = Vec::new();
-        for owner in owners.iter().rev() {
-            let Some(element) = self.semantics.element(*owner) else {
-                continue;
-            };
-            for child in element.children() {
-                let Some(c) = self.semantics.element(*child) else {
-                    continue;
-                };
-                if c.kind.is_requirement_constraint() && !constraints.contains(child) {
-                    constraints.push(*child);
-                }
-                if c.kind == ElementKind::Requirement
-                    && self.semantics.name(*child).is_none()
-                    && !subrequirements.contains(child)
-                {
-                    subrequirements.push(*child);
-                }
-            }
-        }
+        // The most general definition's constraints first.
+        constraints.sort_by_key(|m| std::cmp::Reverse(m.rank));
+        let subrequirements = self.subrequirements_of(requirement);
         let context = Context {
             config,
             subject,
@@ -773,15 +917,44 @@ impl Evaluator<'_, '_> {
         let mut assumptions = Vec::new();
         let mut required = Vec::new();
         for constraint in constraints {
-            let result = self.constraint(&context, constraint);
+            let result = self.constraint(&context, constraint.id);
             if result.kind == ConstraintKind::Assumption {
                 assumptions.push(result);
             } else {
                 required.push(result);
             }
         }
-        for sub in subrequirements {
-            required.push(self.subrequirement(config, &context, sub, subject_text, depth));
+        for sub in &subrequirements {
+            // Two inherited subrequirements with one name, neither
+            // redefining the other: which is meant cannot be told.
+            let name = self.semantics.name(*sub);
+            let same: Vec<ElementId> = subrequirements
+                .iter()
+                .copied()
+                .filter(|other| name.is_some() && self.semantics.name(*other) == name)
+                .collect();
+            if same.len() > 1 {
+                if same[0] != *sub {
+                    continue; // said once, at the first
+                }
+                let names: Vec<String> = same
+                    .iter()
+                    .map(|id| format!("`{}`", self.semantics.qualified_name(*id)))
+                    .collect();
+                required.push(ConstraintResult {
+                    element: *sub,
+                    kind: ConstraintKind::Subrequirement,
+                    text: self.name(*sub),
+                    truth: Truth::NotEvaluable(format!(
+                        "its name is ambiguous: it names {}, and neither redefines the other",
+                        names.join(" and ")
+                    )),
+                    values: Vec::new(),
+                    subrequirement: None,
+                });
+                continue;
+            }
+            required.push(self.subrequirement(config, &context, *sub, subject_text, depth));
         }
         let (status, reason) = conclude(&assumptions, &required);
         Evaluation {
@@ -887,15 +1060,21 @@ impl Evaluator<'_, '_> {
             values: Vec::new(),
             subrequirement: None,
         };
-        if depth + 1 > MAX_REQUIREMENT_DEPTH {
+        if self.contains_itself(sub) {
             result.truth = Truth::NotEvaluable(
-                "subrequirements nest too deeply (does a requirement contain itself?)".into(),
+                "it contains itself (it is among its own subrequirements), so its evaluation would never end"
+                    .into(),
             );
             return result;
         }
-        let subject_feature = self.semantics.features(sub).into_iter().find(|f| {
-            kind_of(self.semantics, &self.compiler.aliases(*f)) == Some(ElementKind::Subject)
-        });
+        if depth + 1 > MAX_REQUIREMENT_DEPTH {
+            result.truth = Truth::NotEvaluable("subrequirements nest too deeply".into());
+            return result;
+        }
+        let subject_feature = members(self.semantics, &self.compiler, sub)
+            .into_iter()
+            .find(|m| m.kind == ElementKind::Subject)
+            .map(|m| m.id);
         let own =
             subject_feature.filter(|f| self.tree.get(*f).is_some_and(|e| e.owner() == Some(sub)));
         let (subject, text) = match own {
@@ -931,7 +1110,10 @@ impl Evaluator<'_, '_> {
         });
         let evaluation = self.requirement(config, sub, subject, &text, Some(context), depth + 1);
         result.truth = match evaluation.status {
-            Status::Holds | Status::AssumptionsNotMet => Truth::True,
+            Status::Holds => Truth::True,
+            // Its assumptions are not met: it claims nothing here, so it
+            // neither satisfies nor violates its container (deviation 21).
+            Status::AssumptionsNotMet => Truth::DoesNotApply,
             Status::Violated => Truth::False,
             Status::NotEvaluable => Truth::NotEvaluable(evaluation.reason.clone()),
         };
@@ -1008,7 +1190,8 @@ fn is_comparison(op: BinaryOp) -> bool {
     )
 }
 
-/// The implication: assumptions first, then the required constraints.
+/// The implication (deviation 21 for what is stricter than the standard):
+/// assumptions first, then the required constraints and subrequirements.
 fn conclude(assumptions: &[ConstraintResult], required: &[ConstraintResult]) -> (Status, String) {
     let described = |result: &ConstraintResult| {
         let values = values_text(&result.values);
@@ -1028,6 +1211,10 @@ fn conclude(assumptions: &[ConstraintResult], required: &[ConstraintResult]) -> 
                     .unwrap_or_default();
                 format!("the subrequirement `{}` is violated: {why}", result.text)
             }
+            Truth::DoesNotApply => format!(
+                "the subrequirement `{}` does not apply (its assumptions are not met)",
+                result.text
+            ),
             _ => format!("the {label} `{}` is false{values}", result.text),
         }
     };
@@ -1085,17 +1272,33 @@ fn conclude(assumptions: &[ConstraintResult], required: &[ConstraintResult]) -> 
                 .into(),
         );
     }
-    let count = assumptions.len() + required.len();
-    (
-        Status::Holds,
-        if assumptions.is_empty() {
-            format!("all {count} required constraint(s) are true")
-        } else {
+    let not_applying: Vec<&ConstraintResult> = required
+        .iter()
+        .filter(|r| r.truth == Truth::DoesNotApply)
+        .collect();
+    let applying = required.len() - not_applying.len();
+    if applying == 0 {
+        return (
+            Status::AssumptionsNotMet,
             format!(
-                "its {} assumption(s) are true and its {} required constraint(s) are true",
-                assumptions.len(),
-                required.len()
-            )
-        },
-    )
+                "none of what it requires applies: {}, so the requirement claims nothing for this configuration",
+                joined(not_applying)
+            ),
+        );
+    }
+    let mut reason = if assumptions.is_empty() {
+        format!("the {applying} required item(s) that apply are true")
+    } else {
+        format!(
+            "its {} assumption(s) are true and the {applying} required item(s) that apply are true",
+            assumptions.len()
+        )
+    };
+    if !not_applying.is_empty() {
+        reason.push_str(&format!(
+            " ({} subrequirement(s) do not apply: their assumptions are not met)",
+            not_applying.len()
+        ));
+    }
+    (Status::Holds, reason)
 }

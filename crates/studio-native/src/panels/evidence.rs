@@ -463,9 +463,9 @@ fn evidence(
     Some(
         section
             .child(
-                div().flex().child(
-                    ui::Chip::new(standing.label()).tone(crate::requirements::tone(standing)),
-                ),
+                div()
+                    .flex()
+                    .child(ui::Chip::new(ladder.label()).tone(crate::requirements::tone(standing))),
             )
             .child(super::requirements::ladder(
                 &ladder,

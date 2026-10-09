@@ -370,3 +370,310 @@ fn a_subrequirement_can_bind_its_own_subject_to_a_part_of_the_containers() {
         hauler.reason
     );
 }
+
+#[test]
+fn a_private_subrequirement_is_still_required() {
+    let tree = model(
+        "    requirement def Limits {
+        subject d : Drone;
+        require constraint { d.mass > 0 }
+        private requirement heavy { require constraint { d.mass <= 1000 } }
+    }
+    requirement limits : Limits;
+    satisfy limits by hauler;",
+    );
+    let all = evaluate_all(&tree);
+    let limits = of(&tree, &all, "limits");
+    assert_eq!(limits.status, Status::Violated, "{}", limits.reason);
+    assert!(
+        limits
+            .reason
+            .starts_with("the subrequirement `heavy` is violated"),
+        "{}",
+        limits.reason
+    );
+}
+
+#[test]
+fn an_ambiguous_subrequirement_name_is_not_evaluable() {
+    let tree = model(
+        "    requirement def Upper {
+        subject d : Drone;
+        requirement share { require constraint { d.mass > 0 } }
+    }
+    requirement def Lower {
+        subject d : Drone;
+        requirement share { require constraint { d.mass < 0 } }
+    }
+    requirement def Both :> Upper, Lower;
+    requirement both : Both;
+    satisfy both by scout;",
+    );
+    let all = evaluate_all(&tree);
+    let both = of(&tree, &all, "both");
+    assert_eq!(both.status, Status::NotEvaluable);
+    assert!(
+        both.reason.contains(
+            "its name is ambiguous: it names `Drones::Lower::share` and `Drones::Upper::share`"
+        ),
+        "{}",
+        both.reason
+    );
+}
+
+#[test]
+fn a_subrequirement_whose_assumptions_are_not_met_does_not_apply() {
+    let tree = model(
+        "    requirement def Conditional {
+        subject d : Drone;
+        attribute cap : Real;
+        assume constraint { cap > 0 }
+        require constraint { d.mass <= cap }
+    }
+    requirement def Group {
+        subject d : Drone;
+        requirement off : Conditional { attribute :>> cap = 0; }
+        requirement on : Conditional { attribute :>> cap = 9000; }
+    }
+    requirement def AllOff {
+        subject d : Drone;
+        requirement off : Conditional { attribute :>> cap = 0; }
+    }
+    requirement group : Group;
+    requirement allOff : AllOff;
+    satisfy group by hauler;
+    satisfy allOff by hauler;",
+    );
+    let all = evaluate_all(&tree);
+    let group = of(&tree, &all, "group");
+    assert_eq!(group.status, Status::Holds, "{}", group.reason);
+    assert_eq!(group.required[0].truth, Truth::DoesNotApply);
+    assert_eq!(
+        group.required[0].line(),
+        "subrequirement `off`: does not apply (its assumptions are not met)"
+    );
+    assert!(
+        group.reason.contains("1 subrequirement(s) do not apply"),
+        "{}",
+        group.reason
+    );
+    // Nothing it requires applies: it claims nothing, it does not hold.
+    let all_off = of(&tree, &all, "allOff");
+    assert_eq!(all_off.status, Status::AssumptionsNotMet);
+    assert!(
+        all_off.reason.starts_with(
+            "none of what it requires applies: the subrequirement `off` does not apply"
+        ),
+        "{}",
+        all_off.reason
+    );
+}
+
+#[test]
+fn a_requirement_that_contains_itself_is_not_evaluable_and_ends_at_once() {
+    let tree = model(
+        "    requirement def R {
+        subject s : Drone;
+        requirement a : R;
+        requirement b : R;
+        requirement c : R;
+    }
+    requirement r : R;
+    satisfy r by scout;",
+    );
+    let started = std::time::Instant::now();
+    let all = evaluate_all(&tree);
+    assert!(started.elapsed().as_secs() < 2, "no exponential walk");
+    let r = of(&tree, &all, "r");
+    assert_eq!(r.status, Status::NotEvaluable);
+    assert!(r.reason.contains("it contains itself"), "{}", r.reason);
+}
+
+/// A drone configured inside a fleet, reading the fleet's own value, and
+/// one configured inside a part usage.
+fn fleet(extra: u32) -> Tree {
+    model(&format!(
+        "    part def Fleet {{
+        attribute extra : Real = {extra};
+        part scout2 : Drone {{
+            part :>> airframe {{ attribute :>> mass = extra + 1000; }}
+            part :>> battery {{ attribute :>> mass = 2000; }}
+        }}
+        satisfy fleetMass by scout2;
+    }}
+    part hub {{
+        part scout3 : Drone {{
+            part :>> airframe {{ attribute :>> mass = 1000; }}
+            part :>> battery {{ attribute :>> mass = 1000; }}
+        }}
+        satisfy fleetMass by scout3;
+    }}
+    requirement fleetMass : MassLimit {{ attribute :>> limit = 7000; }}"
+    ))
+}
+
+#[test]
+fn a_satisfy_inside_a_part_is_calculated_in_that_context() {
+    let tree = fleet(100);
+    let all = evaluate_all(&tree);
+    assert_eq!(all.len(), 2);
+    let in_def = &all[0];
+    assert_eq!(in_def.status, Status::Holds, "{}", in_def.reason);
+    assert_eq!(
+        in_def.required[0].values[0],
+        ("s.mass".to_string(), "3100".to_string())
+    );
+    let fleet_def = tree.find("Drones::Fleet").unwrap();
+    assert_eq!(
+        in_def.digest,
+        model_digest(&tree, fleet_def),
+        "the context's slice"
+    );
+    let in_usage = &all[1];
+    assert_eq!(in_usage.status, Status::Holds, "{}", in_usage.reason);
+    let hub = tree.find("Drones::hub").unwrap();
+    assert_eq!(in_usage.digest, model_digest(&tree, hub));
+    // A value read through the context changes the digest and the result.
+    let changed = fleet(5000);
+    let again = evaluate_all(&changed);
+    assert_ne!(again[0].digest, in_def.digest);
+    assert_eq!(again[0].status, Status::Violated);
+    assert_eq!(
+        again[1].digest, in_usage.digest,
+        "the hub reads nothing that changed"
+    );
+}
+
+#[test]
+fn cycles_division_by_zero_and_a_value_that_is_not_true_or_false_are_not_evaluable() {
+    let tree = model(
+        "    part def Loop {
+        attribute a : Real = b + 1;
+        attribute b : Real = a + 1;
+    }
+    part looped : Loop;
+    requirement def LoopLimit { subject l : Loop; require constraint { l.a < 10 } }
+    requirement loopLimit : LoopLimit;
+    requirement def Divided { subject s : Drone; require constraint { s.mass / 0 > 1 } }
+    requirement divided : Divided;
+    requirement def Sum { subject s : Drone; require constraint { s.mass + 1 } }
+    requirement sum : Sum;
+    satisfy loopLimit by looped;
+    satisfy divided by scout;
+    satisfy sum by scout;",
+    );
+    let all = evaluate_all(&tree);
+    let cycle = of(&tree, &all, "loopLimit");
+    assert_eq!(cycle.status, Status::NotEvaluable);
+    assert!(
+        cycle.reason.contains("`looped.a` depends on its own value"),
+        "{}",
+        cycle.reason
+    );
+    let divided = of(&tree, &all, "divided");
+    assert_eq!(divided.status, Status::NotEvaluable);
+    assert!(
+        divided.reason.contains("division by zero"),
+        "{}",
+        divided.reason
+    );
+    let sum = of(&tree, &all, "sum");
+    assert_eq!(sum.status, Status::NotEvaluable);
+    assert!(
+        sum.reason
+            .contains("it is a whole number, not true or false"),
+        "{}",
+        sum.reason
+    );
+}
+
+#[test]
+fn enum_values_compare_by_identity() {
+    let tree = model(
+        "    enum def Speed { enum fast; enum slow; }
+    part def Craft { attribute speed : Speed; }
+    part racer : Craft { attribute :>> speed = Speed::fast; }
+    part barge : Craft { attribute :>> speed = Speed::slow; }
+    requirement def Quick { subject c : Craft; require constraint { c.speed == Speed::fast } }
+    requirement racerQuick : Quick;
+    requirement bargeQuick : Quick;
+    satisfy racerQuick by racer;
+    satisfy bargeQuick by barge;",
+    );
+    let all = evaluate_all(&tree);
+    assert_eq!(of(&tree, &all, "racerQuick").status, Status::Holds);
+    let barge = of(&tree, &all, "bargeQuick");
+    assert_eq!(barge.status, Status::Violated);
+    assert!(barge.reason.contains("c.speed = slow"), "{}", barge.reason);
+}
+
+#[test]
+fn a_subrequirements_subject_must_be_bound_and_of_its_type() {
+    let tree = model(
+        "    requirement def BatteryLimit {
+        subject b : Battery;
+        require constraint { b.mass <= 5000 }
+    }
+    requirement def Unbound {
+        subject d : Drone;
+        requirement inner { subject x : Drone; require constraint { x.mass > 0 } }
+    }
+    requirement def Mistyped {
+        subject d : Drone;
+        requirement wrong : BatteryLimit;
+    }
+    requirement unbound : Unbound;
+    requirement mistyped : Mistyped;
+    satisfy unbound by scout;
+    satisfy mistyped by scout;",
+    );
+    let all = evaluate_all(&tree);
+    let unbound = of(&tree, &all, "unbound");
+    assert_eq!(unbound.status, Status::NotEvaluable);
+    assert!(
+        unbound
+            .reason
+            .contains("its subject `x` is declared but not bound to anything"),
+        "{}",
+        unbound.reason
+    );
+    let mistyped = of(&tree, &all, "mistyped");
+    assert_eq!(mistyped.status, Status::NotEvaluable);
+    assert!(
+        mistyped
+            .reason
+            .contains("its subject `b` is bound to `scout`, which is not a `Battery`"),
+        "{}",
+        mistyped.reason
+    );
+}
+
+#[test]
+fn the_satisfying_feature_is_one_part_and_the_subject_is_bound_once() {
+    let tree = model(
+        "    part pair : Drone[2];
+    requirement pairMass : MassLimit { attribute :>> limit = 7000; }
+    satisfy pairMass by pair;
+    requirement bound : MassLimit { subject s = hauler; attribute :>> limit = 9000; }
+    satisfy bound by scout;
+    satisfy bound by hauler;",
+    );
+    let all = evaluate_all(&tree);
+    let pair = of(&tree, &all, "pairMass");
+    assert_eq!(pair.status, Status::NotEvaluable);
+    assert!(
+        pair.reason.contains("`pair` has the multiplicity [2]"),
+        "{}",
+        pair.reason
+    );
+    let bound: Vec<&Evaluation> = all
+        .iter()
+        .filter(|e| Some(e.requirement) == tree.find("Drones::bound"))
+        .collect();
+    assert_eq!(bound[0].status, Status::NotEvaluable);
+    assert_eq!(
+        bound[0].reason,
+        "its subject `s` is bound to `hauler` in the model, but the satisfy binds `scout`"
+    );
+    assert_eq!(bound[1].status, Status::Holds, "{}", bound[1].reason);
+}

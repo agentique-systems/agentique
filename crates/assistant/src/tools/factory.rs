@@ -677,14 +677,14 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
         )
         .map(|r| r.describe(tree))
         .ok_or_else(|| "Only a part def or a part can be explained.".into()),
-        // No results are kept here: every scenario reads as not run, and no
-        // code is linked.
+        // No results or links are kept here: the ladder says so rather than
+        // reading them as not run or not linked.
         StudioRequest::CheckRequirements { requirement } => {
             let ladders = agq_implementation::requirements::ladders(
                 tree,
                 &agq_language::validate(tree),
-                &agq_implementation::Links::default(),
-                &[],
+                None,
+                None,
                 None,
             );
             Ok(agq_implementation::requirements::describe(

@@ -24,7 +24,7 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
             .child(super::note("Open a project to see its requirements.", cx))
             .into_any_element();
     }
-    let rows = studio.update(cx, |studio, _| studio.requirements());
+    let rows = studio.read(cx).requirements();
     let studio_ref = studio.read(cx);
     let editable = studio_ref.editable();
     let part = studio_ref.satisfying_part();
@@ -163,7 +163,7 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                         .min_w_0()
                         .when(!row.ladder.definition, |this| {
                             this.child(
-                                Chip::new(standing.label())
+                                Chip::new(row.ladder.label())
                                     .tone(crate::requirements::tone(standing)),
                             )
                         })
@@ -383,13 +383,10 @@ pub(crate) fn ladder(ladder: &Ladder, id: &str, studio: &Entity<Studio>, cx: &Ap
                     .when(scenario.results.is_empty(), |this| {
                         this.child(ui::Badge::new("not run"))
                     })
+                    // Only a failed check or the model's own stop is a
+                    // failure; anything undecided is inconclusive.
                     .children(scenario.results.iter().map(|result| {
-                        let (label, tone) = super::scenarios::result_chip(
-                            result.mode,
-                            result.status,
-                            result.all_passed,
-                            result.current,
-                        );
+                        let (label, tone) = crate::requirements::result_chip(result);
                         ui::Badge::new(label).tone(tone)
                     }))
                     .into_any_element()

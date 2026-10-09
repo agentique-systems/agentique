@@ -90,7 +90,15 @@ impl Field {
                 plain
                     || matches!(
                         kind,
-                        Package | Import | Satisfy | Dependency | State | Transition
+                        Package
+                            | Import
+                            | Satisfy
+                            | Dependency
+                            | State
+                            | Transition
+                            | AssertConstraint
+                            | AssumeConstraint
+                            | RequireConstraint
                     )
             }
             Field::Abstract | Field::Specializes => plain,

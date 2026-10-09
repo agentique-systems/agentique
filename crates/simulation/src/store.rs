@@ -2,7 +2,7 @@
 //! file per run, written atomically, never committed. They survive
 //! reopening the project; their freshness is computed when they are shown.
 
-use crate::result::{FORMAT, Mode, RunResult, RunStatus, Verdict};
+use crate::result::{FORMAT, Mode, RunResult, RunStatus, StopReason, Verdict};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -31,6 +31,11 @@ pub struct RunSummary {
     /// Replay: the recordings' digest.
     #[serde(default)]
     pub recordings: Option<String>,
+    /// Why it stopped, when it stopped early: whether the model's own
+    /// behaviour failed or a limit, the harness or a missing recording
+    /// ended it (C-55: only the first is a failure).
+    #[serde(default)]
+    pub stop: Option<StopReason>,
 }
 
 impl RunStore {
@@ -93,6 +98,7 @@ impl RunStore {
                 all_passed: r.all_passed(),
                 binding: r.provenance.binding.clone(),
                 recordings: r.provenance.recordings.clone(),
+                stop: r.stop.as_ref().map(|stop| stop.reason),
             })
             .collect();
         out.sort_by(|a, b| b.started.cmp(&a.started).then(b.id.cmp(&a.id)));

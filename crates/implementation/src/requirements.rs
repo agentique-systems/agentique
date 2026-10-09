@@ -8,7 +8,9 @@
 //!   configuration of each satisfying feature (an analysis of the model,
 //!   not a test of a built system);
 //! - scenarios: the verification defs whose objective verifies it, with
-//!   their newest result per mode and whether it is still current;
+//!   their newest result per mode and whether it is still current; only a
+//!   failed check, or a stop the model's own behaviour caused, is a
+//!   failure, and anything undecided is inconclusive;
 //! - implementation: the tests linked to it and their last outcome.
 //!
 //! Everything is computed from the model, the links and the kept results
@@ -20,53 +22,135 @@ use crate::checks::CheckKind;
 use crate::links::{LinkKind, Links};
 use agq_language::{Diagnostic, ElementId, ElementKind, Role, Tree, printed_reference};
 use agq_simulation::requirements::{Evaluation, Status, evaluate_satisfies};
-use agq_simulation::{Mode, RunStatus, Verdict};
+use agq_simulation::{Mode, RunStatus, StopReason, Verdict};
 
 /// The newest result of a scenario in one mode.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScenarioResult {
     pub mode: Mode,
     pub status: RunStatus,
-    pub all_passed: bool,
-    /// Whether it still describes the model (and code) as they are now.
+    /// How many checks ended with each verdict.
+    pub tally: Vec<(Verdict, usize)>,
+    /// Why it stopped, when it stopped early.
+    pub stop: Option<StopReason>,
+    /// Whether it still describes the model (and, for an implementation
+    /// run, the code) as they are now.
     pub current: bool,
 }
 
+/// What a scenario result says about the requirements it verifies.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Outcome {
+    /// Every check passed, and it has checks.
+    Passed,
+    /// A check failed, or the model's own behaviour stopped it: why.
+    Failed(String),
+    /// Nothing decided: a limit, the harness, a missing recording, a
+    /// budget, no checks, or checks not decided. Why.
+    Inconclusive(String),
+    /// A walkthrough: it shows the steps and verifies nothing.
+    Shown,
+}
+
+/// Stops the model's own behaviour causes: a failure of the model, not of
+/// the run.
+const MODEL_STOPS: [StopReason; 3] = [
+    StopReason::UnhandledMessage,
+    StopReason::AmbiguousTransition,
+    StopReason::MissingBehaviour,
+];
+
 impl ScenarioResult {
-    /// It verified: it completed with every check passed, and is current.
-    pub fn passes(&self) -> bool {
-        self.current
-            && self.status == RunStatus::Completed
-            && self.all_passed
-            && self.mode != Mode::Walkthrough
+    fn count(&self, verdict: Verdict) -> usize {
+        self.tally
+            .iter()
+            .filter(|(v, _)| *v == verdict)
+            .map(|(_, n)| n)
+            .sum()
     }
 
-    /// It found a failure and is current.
+    /// What it says, whether or not it is current.
+    pub fn outcome(&self) -> Outcome {
+        if self.mode == Mode::Walkthrough || self.status == RunStatus::Walkthrough {
+            return Outcome::Shown;
+        }
+        let failed = self.count(Verdict::Failed);
+        if failed > 0 {
+            return Outcome::Failed(format!("{failed} check(s) failed"));
+        }
+        if self.status == RunStatus::Stopped
+            && let Some(stop) = self.stop.filter(|s| MODEL_STOPS.contains(s))
+        {
+            return Outcome::Failed(format!(
+                "the model's behaviour stopped it ({})",
+                stop.code()
+            ));
+        }
+        let checks: usize = self.tally.iter().map(|(_, n)| n).sum();
+        let passed = self.count(Verdict::Passed);
+        match self.status {
+            RunStatus::Completed if checks > 0 && passed == checks => Outcome::Passed,
+            RunStatus::Completed if checks == 0 => Outcome::Inconclusive("it has no checks".into()),
+            RunStatus::Completed => Outcome::Inconclusive(format!(
+                "{} of its {checks} check(s) were not decided",
+                checks - passed
+            )),
+            RunStatus::Stopped => Outcome::Inconclusive(format!(
+                "it stopped before deciding ({})",
+                self.stop.map_or("no reason recorded", StopReason::code)
+            )),
+            RunStatus::Blocked => Outcome::Inconclusive("it could not start".into()),
+            RunStatus::Cancelled => Outcome::Inconclusive("it was cancelled".into()),
+            RunStatus::Walkthrough => Outcome::Shown,
+        }
+    }
+
+    /// It verified: every check passed, and it is current.
+    pub fn passes(&self) -> bool {
+        self.current && self.outcome() == Outcome::Passed
+    }
+
+    /// It found a failure, and it is current.
     pub fn fails(&self) -> bool {
-        self.current
-            && self.mode != Mode::Walkthrough
-            && (self.status == RunStatus::Stopped
-                || (self.status == RunStatus::Completed && !self.all_passed))
+        self.current && matches!(self.outcome(), Outcome::Failed(_))
+    }
+
+    /// It is current and decided nothing.
+    pub fn inconclusive(&self) -> bool {
+        self.current && matches!(self.outcome(), Outcome::Inconclusive(_))
+    }
+
+    /// One word for a chip: passed, failed, inconclusive, shown, outdated.
+    pub fn word(&self) -> &'static str {
+        if !self.current {
+            return "outdated";
+        }
+        match self.outcome() {
+            Outcome::Passed => "passed",
+            Outcome::Failed(_) => "failed",
+            Outcome::Inconclusive(_) => "inconclusive",
+            Outcome::Shown => "shown",
+        }
     }
 
     /// `Model execution: passed (current)`.
     pub fn describe(&self) -> String {
-        let outcome = match self.status {
-            RunStatus::Completed if self.all_passed => "passed",
-            RunStatus::Completed => "failed",
-            other => other.label(),
+        let outcome = match self.outcome() {
+            Outcome::Passed => "passed".to_string(),
+            Outcome::Failed(why) => format!("failed: {why}"),
+            Outcome::Inconclusive(why) => format!("inconclusive: {why}"),
+            Outcome::Shown => "a walkthrough, which verifies nothing".to_string(),
         };
         let currency = if self.current {
             "current"
         } else {
-            "outdated: it no longer describes the model"
+            "outdated: it no longer describes the model or the code"
         };
         format!("{}: {outcome} ({currency})", self.mode.label())
     }
 }
 
-/// A scenario's newest results, one per mode (none: never run). The caller
-/// says what it keeps; without kept results, every scenario is not run.
+/// A scenario's newest results, one per mode (none: never run).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScenarioRuns {
     pub scenario: ElementId,
@@ -116,13 +200,17 @@ pub struct Ladder {
     pub name: String,
     /// A requirement def: a template whose usages carry the evidence.
     pub definition: bool,
-    /// A subrequirement written in a requirement def: evaluated within
-    /// each requirement that uses the def, and counted with them.
-    pub in_definition: bool,
+    /// A subrequirement (owned by a requirement or requirement def):
+    /// evaluated within what contains it, and counted with it.
+    pub nested: bool,
     pub declared: Vec<Declared>,
     pub calculated: Vec<Calculated>,
     pub scenarios: Vec<Scenario>,
     pub tests: Vec<Test>,
+    /// Whether the kept scenario results were available to read.
+    pub runs_known: bool,
+    /// Whether the implementation links were available to read.
+    pub links_known: bool,
 }
 
 /// The strongest thing that can be said of a requirement usage, in the
@@ -135,21 +223,27 @@ pub enum Standing {
     FailingScenario,
     /// A current result of a scenario that verifies it passed.
     Verified,
-    /// The calculation from the model holds.
+    /// Every calculation from the model that applies holds.
     Holds,
+    /// Some calculations hold, others could not be calculated.
+    HoldsPartly,
     /// Only `satisfy` says so: nothing calculated or verified concludes.
     OnlyDeclared,
+    /// Only scenario results that decide nothing.
+    Inconclusive,
     /// Nothing says anything about it yet.
     Nothing,
 }
 
 impl Standing {
-    pub const ALL: [Standing; 6] = [
+    pub const ALL: [Standing; 8] = [
         Standing::Violated,
         Standing::FailingScenario,
         Standing::Verified,
         Standing::Holds,
+        Standing::HoldsPartly,
         Standing::OnlyDeclared,
+        Standing::Inconclusive,
         Standing::Nothing,
     ];
 
@@ -160,7 +254,9 @@ impl Standing {
             Standing::FailingScenario => "fails a current scenario",
             Standing::Verified => "verified by a current passing scenario",
             Standing::Holds => "holds by calculation",
+            Standing::HoldsPartly => "holds for some calculations",
             Standing::OnlyDeclared => "only declared",
+            Standing::Inconclusive => "only inconclusive scenario results",
             Standing::Nothing => "no evidence",
         }
     }
@@ -174,7 +270,10 @@ impl Standing {
             (Standing::Verified, _) => "verified by a current passing scenario",
             (Standing::Holds, 1) => "holds by calculation",
             (Standing::Holds, _) => "hold by calculation",
+            (Standing::HoldsPartly, 1) => "holds for some calculations",
+            (Standing::HoldsPartly, _) => "hold for some calculations",
             (Standing::OnlyDeclared, _) => "only declared",
+            (Standing::Inconclusive, _) => "with only inconclusive scenario results",
             (Standing::Nothing, _) => "with no evidence",
         };
         format!("{count} {words}")
@@ -182,22 +281,55 @@ impl Standing {
 }
 
 impl Ladder {
+    /// The calculations that hold and those that apply (an evaluation
+    /// whose assumptions are not met claims nothing and is left out).
+    pub fn calculations(&self) -> (usize, usize) {
+        let applying: Vec<Status> = self
+            .calculated
+            .iter()
+            .map(|c| c.evaluation.status)
+            .filter(|s| *s != Status::AssumptionsNotMet)
+            .collect();
+        let holding = applying.iter().filter(|s| **s == Status::Holds).count();
+        (holding, applying.len())
+    }
+
     /// The strongest thing that can be said, a violation or failure first.
     pub fn standing(&self) -> Standing {
-        let statuses = || self.calculated.iter().map(|c| c.evaluation.status);
         let results = || self.scenarios.iter().flat_map(|s| &s.results);
-        if statuses().any(|s| s == Status::Violated) {
+        let (holding, applying) = self.calculations();
+        if self
+            .calculated
+            .iter()
+            .any(|c| c.evaluation.status == Status::Violated)
+        {
             Standing::Violated
         } else if results().any(ScenarioResult::fails) {
             Standing::FailingScenario
         } else if results().any(ScenarioResult::passes) {
             Standing::Verified
-        } else if statuses().any(|s| s == Status::Holds) {
+        } else if holding > 0 && holding == applying {
             Standing::Holds
+        } else if holding > 0 {
+            Standing::HoldsPartly
         } else if !self.declared.is_empty() {
             Standing::OnlyDeclared
+        } else if results().any(ScenarioResult::inconclusive) {
+            Standing::Inconclusive
         } else {
             Standing::Nothing
+        }
+    }
+
+    /// The standing in words, with how many calculations hold when only
+    /// some do.
+    pub fn label(&self) -> String {
+        match self.standing() {
+            Standing::HoldsPartly => {
+                let (holding, applying) = self.calculations();
+                format!("holds for {holding} of {applying} calculations")
+            }
+            other => other.label().to_string(),
         }
     }
 
@@ -212,10 +344,10 @@ impl Ladder {
             ));
             return lines.join("\n");
         }
-        lines.push(format!("{}: {}.", self.name, self.standing().label()));
-        if self.in_definition {
+        lines.push(format!("{}: {}.", self.name, self.label()));
+        if self.nested {
             lines.push(
-                "  It is part of a requirement def: it is evaluated within each requirement that uses the def, and counted with them."
+                "  It is a subrequirement: it is evaluated within the requirement that contains it (in a requirement def, within each requirement that uses the def) and counted with it."
                     .into(),
             );
         }
@@ -234,7 +366,7 @@ impl Ladder {
         }
         if self.calculated.is_empty() {
             lines.push(
-                "  Calculated from the model: nothing (no satisfy to bind its subject).".into(),
+                "  Calculated from the model: nothing (no satisfy binds its subject).".into(),
             );
         } else {
             lines.push(
@@ -254,7 +386,9 @@ impl Ladder {
             lines.push("  Scenarios: none verifies it.".into());
         } else {
             for scenario in &self.scenarios {
-                let results = if scenario.results.is_empty() {
+                let results = if !self.runs_known {
+                    "its results are not available here (the Studio keeps them)".to_string()
+                } else if scenario.results.is_empty() {
                     "not run".to_string()
                 } else {
                     scenario
@@ -270,7 +404,11 @@ impl Ladder {
                 ));
             }
         }
-        if self.tests.is_empty() {
+        if !self.links_known {
+            lines.push(
+                "  Implementation: the implementation links are not available here (the Studio reads them).".into(),
+            );
+        } else if self.tests.is_empty() {
             lines.push("  Implementation: no tests are linked to it.".into());
         } else {
             for test in &self.tests {
@@ -309,6 +447,10 @@ impl Ladder {
             ));
         }
         for scenario in &self.scenarios {
+            if !self.runs_known {
+                parts.push(format!("{}: results not available here", scenario.name));
+                continue;
+            }
             let best = scenario
                 .results
                 .iter()
@@ -331,12 +473,13 @@ impl Ladder {
     }
 }
 
-/// The headline over requirement usages: how many stand where, the
-/// strongest first, leaving out what no requirement is.
+/// The headline over requirement usages, subrequirements left to the
+/// requirements that contain them: how many stand where, the strongest
+/// first, leaving out what no requirement is.
 pub fn headline(ladders: &[Ladder]) -> String {
     let usages: Vec<&Ladder> = ladders
         .iter()
-        .filter(|l| !l.definition && !l.in_definition)
+        .filter(|l| !l.definition && !l.nested)
         .collect();
     if usages.is_empty() {
         return "No requirement usages yet: a requirement def is satisfied and verified through its usages.".into();
@@ -357,13 +500,14 @@ pub fn headline(ladders: &[Ladder]) -> String {
 
 /// The ladder of every requirement (definitions too, marked), in document
 /// order. `diagnostics` are the model's (`agq_language::validate`, or the
-/// System State's); `runs` the kept scenario results the caller knows;
-/// `report` the newest implementation checks and whether they are current.
+/// System State's); `links` the implementation links and `runs` the kept
+/// scenario results, `None` where the caller cannot read them; `report`
+/// the newest implementation checks and whether they are current.
 pub fn ladders(
     tree: &Tree,
     diagnostics: &[Diagnostic],
-    links: &Links,
-    runs: &[ScenarioRuns],
+    links: Option<&Links>,
+    runs: Option<&[ScenarioRuns]>,
     report: Option<(&CheckReport, bool)>,
 ) -> Vec<Ladder> {
     let evaluations = evaluate_satisfies(tree, diagnostics);
@@ -415,6 +559,7 @@ pub fn ladders(
                 scenario,
                 name: tree.qualified_name(scenario),
                 results: runs
+                    .unwrap_or_default()
                     .iter()
                     .find(|r| r.scenario == scenario)
                     .map(|r| r.results.clone())
@@ -422,7 +567,8 @@ pub fn ladders(
             })
             .collect();
         let tests = links
-            .for_element(id)
+            .map(|links| links.for_element(id))
+            .unwrap_or_default()
             .into_iter()
             .filter(|link| link.kind == LinkKind::Test)
             .map(|link| {
@@ -442,20 +588,25 @@ pub fn ladders(
             })
             .collect();
         let mut owner = tree[id].owner();
-        let mut in_definition = false;
+        let mut nested = false;
         while let Some(o) = owner {
-            in_definition |= tree[o].kind == ElementKind::RequirementDef;
+            nested |= matches!(
+                tree[o].kind,
+                ElementKind::RequirementDef | ElementKind::Requirement
+            );
             owner = tree[o].owner();
         }
         out.push(Ladder {
             requirement: id,
             name: tree.qualified_name(id),
             definition: kind == ElementKind::RequirementDef,
-            in_definition: kind == ElementKind::Requirement && in_definition,
+            nested: kind == ElementKind::Requirement && nested,
             declared,
             calculated,
             scenarios,
             tests,
+            runs_known: runs.is_some(),
+            links_known: links.is_some(),
         });
     }
     out
@@ -485,6 +636,11 @@ pub fn describe(tree: &Tree, ladders: &[Ladder], only: Option<ElementId>) -> Str
             lines.push(
                 "Each requirement keeps apart what is declared (satisfy: a claim, not evidence), calculated from the model, verified by a scenario, and tested in code.".into(),
             );
+            if ladders.iter().any(|l| !l.runs_known || !l.links_known) {
+                lines.push(
+                    "Kept scenario results and implementation links are not available here: the scenario and implementation rungs say nothing about them.".into(),
+                );
+            }
         }
         Some(id) if !ladders.iter().any(|l| l.requirement == id) => {
             return format!("`{}` is not a requirement.", tree.qualified_name(id));
@@ -516,17 +672,32 @@ mod tests {
     }
     part light : Drone { part :>> battery { attribute :>> mass = 1000; } }
     part heavy : Drone { part :>> battery { attribute :>> mass = 9000; } }
+    part unknown : Drone;
     requirement lightMass : MassLimit { attribute :>> limit = 2000; }
     requirement heavyMass : MassLimit { attribute :>> limit = 2000; }
     requirement verifiedMass : MassLimit { attribute :>> limit = 2000; }
     requirement wordsOnly { doc /* It shall be pleasant to fly. */ }
     requirement unsatisfied : MassLimit;
+    requirement mixed : MassLimit { attribute :>> limit = 2000; }
+    requirement def Group {
+        subject s : Drone;
+        requirement part1 : MassLimit { attribute :>> limit = 2000; }
+    }
+    requirement group : Group;
+    requirement outer : MassLimit {
+        requirement inner : MassLimit { attribute :>> limit = 2000; }
+    }
+    satisfy outer by light;
     satisfy lightMass by light;
     satisfy heavyMass by heavy;
     satisfy wordsOnly by light;
+    satisfy mixed by light;
+    satisfy mixed by unknown;
+    satisfy group by light;
+    satisfy group by heavy;
     verification def FlyLight {
         subject drone : Drone;
-        objective { verify verifiedMass; }
+        objective { verify verifiedMass; verify unsatisfied; }
     }
 }";
 
@@ -536,30 +707,42 @@ mod tests {
         tree
     }
 
-    fn standing(ladders: &[Ladder], tree: &Tree, name: &str) -> Standing {
+    fn ladder<'a>(ladders: &'a [Ladder], tree: &Tree, name: &str) -> &'a Ladder {
         let id = tree.find(&format!("D::{name}")).unwrap();
-        ladders
-            .iter()
-            .find(|l| l.requirement == id)
-            .unwrap()
-            .standing()
+        ladders.iter().find(|l| l.requirement == id).unwrap()
+    }
+
+    fn standing(ladders: &[Ladder], tree: &Tree, name: &str) -> Standing {
+        ladder(ladders, tree, name).standing()
+    }
+
+    fn result(
+        status: RunStatus,
+        tally: &[(Verdict, usize)],
+        stop: Option<StopReason>,
+    ) -> ScenarioResult {
+        ScenarioResult {
+            mode: Mode::Model,
+            status,
+            tally: tally.to_vec(),
+            stop,
+            current: true,
+        }
+    }
+
+    fn runs(tree: &Tree, result: ScenarioResult) -> Vec<ScenarioRuns> {
+        vec![ScenarioRuns {
+            scenario: tree.find("D::FlyLight").unwrap(),
+            results: vec![result],
+        }]
     }
 
     #[test]
     fn each_requirement_stands_on_its_strongest_evidence_and_no_further() {
         let tree = tree();
-        let scenario = tree.find("D::FlyLight").unwrap();
-        let passed = ScenarioResult {
-            mode: Mode::Model,
-            status: RunStatus::Completed,
-            all_passed: true,
-            current: true,
-        };
-        let runs = [ScenarioRuns {
-            scenario,
-            results: vec![passed.clone()],
-        }];
-        let ladders = ladders(&tree, &[], &Links::default(), &runs, None);
+        let passed = result(RunStatus::Completed, &[(Verdict::Passed, 2)], None);
+        let runs = runs(&tree, passed.clone());
+        let ladders = ladders(&tree, &[], Some(&Links::default()), Some(&runs), None);
         assert_eq!(standing(&ladders, &tree, "lightMass"), Standing::Holds);
         assert_eq!(standing(&ladders, &tree, "heavyMass"), Standing::Violated);
         assert_eq!(
@@ -571,27 +754,105 @@ mod tests {
             standing(&ladders, &tree, "wordsOnly"),
             Standing::OnlyDeclared
         );
-        assert_eq!(standing(&ladders, &tree, "unsatisfied"), Standing::Nothing);
+        // One satisfying feature holds, the other cannot be calculated.
+        assert_eq!(standing(&ladders, &tree, "mixed"), Standing::HoldsPartly);
+        assert_eq!(
+            ladder(&ladders, &tree, "mixed").label(),
+            "holds for 1 of 2 calculations"
+        );
+        // A def's subrequirement within two usages: one holds, one violated.
+        assert_eq!(
+            standing(&ladders, &tree, "Group::part1"),
+            Standing::Violated
+        );
+        assert!(ladder(&ladders, &tree, "Group::part1").nested);
+        // A usage's own subrequirement is counted with it, not apart.
+        let inner = ladder(&ladders, &tree, "outer::inner");
+        assert!(inner.nested);
+        assert_eq!(inner.standing(), Standing::Holds);
+        assert_eq!(standing(&ladders, &tree, "outer"), Standing::OnlyDeclared);
         assert_eq!(
             headline(&ladders),
-            "1 violated by calculation · 1 verified by a current passing scenario · 1 holds by calculation · 1 only declared · 1 with no evidence (of 5)"
+            "2 violated by calculation · 2 verified by a current passing scenario · 1 holds by calculation · 1 holds for some calculations · 2 only declared (of 8)"
         );
         // An outdated pass verifies nothing.
-        let outdated = [ScenarioRuns {
-            scenario,
-            results: vec![ScenarioResult {
+        let outdated = super::tests::runs(
+            &tree,
+            ScenarioResult {
                 current: false,
                 ..passed
-            }],
-        }];
-        let again = super::ladders(&tree, &[], &Links::default(), &outdated, None);
+            },
+        );
+        let again = super::ladders(&tree, &[], Some(&Links::default()), Some(&outdated), None);
         assert_eq!(standing(&again, &tree, "verifiedMass"), Standing::Nothing);
+    }
+
+    #[test]
+    fn only_a_failed_check_or_the_models_own_stop_is_a_failure() {
+        let tree = tree();
+        let standing_with = |result: ScenarioResult| {
+            let runs = runs(&tree, result);
+            let ladders = ladders(&tree, &[], Some(&Links::default()), Some(&runs), None);
+            standing(&ladders, &tree, "verifiedMass")
+        };
+        let failed = result(
+            RunStatus::Completed,
+            &[(Verdict::Passed, 1), (Verdict::Failed, 1)],
+            None,
+        );
+        assert_eq!(standing_with(failed), Standing::FailingScenario);
+        let unhandled = result(
+            RunStatus::Stopped,
+            &[(Verdict::NotRun, 1)],
+            Some(StopReason::UnhandledMessage),
+        );
+        assert_eq!(standing_with(unhandled.clone()), Standing::FailingScenario);
+        assert_eq!(
+            unhandled.describe(),
+            "Model execution: failed: the model's behaviour stopped it (unhandled-message) (current)"
+        );
+        // A limit, an evaluation error, a missing recording: nothing decided.
+        for stop in [
+            StopReason::EventLimit,
+            StopReason::EvaluationError,
+            StopReason::MissingRecording,
+            StopReason::HarnessFailed,
+            StopReason::BudgetExhausted,
+        ] {
+            let stopped = result(RunStatus::Stopped, &[(Verdict::NotRun, 1)], Some(stop));
+            assert_eq!(
+                standing_with(stopped.clone()),
+                Standing::Inconclusive,
+                "{stop:?}"
+            );
+            assert!(stopped.describe().contains("inconclusive"));
+        }
+        // A run with no checks, or with undecided checks, verifies nothing.
+        let empty = result(RunStatus::Completed, &[], None);
+        assert_eq!(standing_with(empty.clone()), Standing::Inconclusive);
+        assert_eq!(
+            empty.describe(),
+            "Model execution: inconclusive: it has no checks (current)"
+        );
+        let undecided = result(
+            RunStatus::Completed,
+            &[(Verdict::Passed, 1), (Verdict::Inconclusive, 1)],
+            None,
+        );
+        assert_eq!(standing_with(undecided), Standing::Inconclusive);
+        // An inconclusive result never outranks a declaration.
+        let runs = runs(&tree, result(RunStatus::Completed, &[], None));
+        let ladders = ladders(&tree, &[], Some(&Links::default()), Some(&runs), None);
+        assert_eq!(
+            standing(&ladders, &tree, "unsatisfied"),
+            Standing::Inconclusive
+        );
     }
 
     #[test]
     fn the_words_keep_declared_and_calculated_apart() {
         let tree = tree();
-        let ladders = ladders(&tree, &[], &Links::default(), &[], None);
+        let ladders = ladders(&tree, &[], Some(&Links::default()), Some(&[]), None);
         let heavy = tree.find("D::heavyMass").unwrap();
         let text = describe(&tree, &ladders, Some(heavy));
         assert!(
@@ -623,10 +884,22 @@ mod tests {
         assert!(text.contains("not evaluable"), "{text}");
         let all = describe(&tree, &ladders, None);
         assert!(
-            all.starts_with("Requirements: 1 violated by calculation"),
+            all.starts_with("Requirements: 2 violated by calculation"),
             "{all}"
         );
         let def = tree.find("D::MassLimit").unwrap();
         assert!(describe(&tree, &ladders, Some(def)).contains("a definition"));
+        // Without the Studio's results and links, it says so.
+        let headless = super::ladders(&tree, &[], None, None, None);
+        let verified = tree.find("D::verifiedMass").unwrap();
+        let text = describe(&tree, &headless, Some(verified));
+        assert!(
+            text.contains("Scenario D::FlyLight verifies it: its results are not available here"),
+            "{text}"
+        );
+        assert!(
+            text.contains("the implementation links are not available here"),
+            "{text}"
+        );
     }
 }

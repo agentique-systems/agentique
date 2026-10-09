@@ -1069,10 +1069,14 @@ impl<'a> Parser<'a> {
     /// `then S;` after an entry action (the state entered first), or
     /// `then` before the next step of an action body.
     fn then(&mut self, owner: Option<ElementKind>) -> Result<Node> {
-        if matches!(
-            self.peek_text(1),
-            "send" | "assign" | "if" | "accept" | "action" | "assert"
-        ) {
+        let step = |word: &str| {
+            matches!(
+                word,
+                "send" | "assign" | "if" | "accept" | "action" | "assert"
+            )
+        };
+        let visibility = matches!(self.peek_text(1), "public" | "private" | "protected");
+        if step(self.peek_text(1)) || (visibility && step(self.peek_text(2))) {
             self.bump();
             return self.declaration(owner);
         }
@@ -1234,6 +1238,9 @@ impl<'a> Parser<'a> {
         self.bump();
         self.bump();
         let mut element = Element::new(kind);
+        if self.at("<") {
+            return self.unsupported("short name `<...>`");
+        }
         element.name = self.name();
         if matches!(self.peek_text(0), ":" | ":>" | ":>>" | "[" | "=") {
             return self.unsupported("a typed constraint");

@@ -127,13 +127,14 @@ impl Printer<'_> {
             ElementKind::Comment => return print_comment("", e.text.as_deref(), &indent, out),
             _ => {}
         }
+        // `then private assert constraint ...`: `then` leads a step.
+        if then {
+            out.push_str("then ");
+        }
         match e.visibility {
             Visibility::Public => {}
             Visibility::Private => out.push_str("private "),
             Visibility::Protected => out.push_str("protected "),
-        }
-        if then {
-            out.push_str("then ");
         }
         if let Some(which) = e.state_action {
             out.push_str(which.keyword());

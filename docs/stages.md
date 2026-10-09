@@ -2250,24 +2250,37 @@ nothing here says the Operator accepted anything).
 nothing here says the Operator accepted anything). Before: requirements had
 a subject, doc text, attributes and `satisfy`; the Requirements panel
 headlined "N of M satisfied" from declarations. Now: assumed and required
-constraints (formal or informal) and subrequirements on the whole path
-(language, System State, `apply_changes`, `read_model`), their evaluation on
-the modelled configuration of each satisfying feature (`agq-simulation`,
-`requirements`: roll-ups through feature chains, values worked out once with
-cycle detection, a redefinition in a usage winning over its definition;
-problems in the model slice, parts with a multiplicity other than one,
-informal or undetermined values give "not evaluable", never a pass), and the
-evidence ladder (`agq-implementation`, `requirements`): declared, calculated,
-scenarios with their freshness, linked tests. The panel's headline counts
-standings ("1 violated by calculation · 1 holds by calculation · 1 only
-declared · 1 with no evidence (of 4)"), each row opens its ladder, the
-Inspector shows the same, and the button says "Declare satisfied by …". The
-Assistant's `check_requirements` answers the ladder as text. Tested:
-language, System State, simulation (a mass budget that holds, is violated
-with its values, has assumptions not met, is informal or undetermined, a
-violated subrequirement, one definition reused by two usages with different
-limits), assistant, implementation and Studio tests: 352 passed after
-rebasing on `main`; the Studio's own 185 passed on the branch's base. Not
-verified: the panel by eye, the reference run, a real model calling
-`check_requirements`. Limits: no units; package-level constants are not
-read; scenario runs still read only earlier attributes of the same part.
+constraints (formal or informal, private if wanted) and subrequirements on
+the whole path (language, System State, `apply_changes`, `read_model`),
+their evaluation on the modelled configuration of each satisfying feature
+(`agq-simulation`, `requirements`: built in the part or part def the
+satisfy is written in, members counted whatever their visibility, roll-ups
+through feature chains, values worked out once with cycle detection, a
+redefinition in a usage winning over its definition; a subrequirement whose
+assumptions are not met does not apply; problems in the slice read, parts
+or a satisfying feature with a multiplicity other than one, informal or
+undetermined values, ambiguous subrequirement names, a subject bound twice
+and a requirement that contains itself give "not evaluable", never a pass;
+deviations 21 to 23), and the evidence ladder (`agq-implementation`,
+`requirements`): declared, calculated, scenarios with their freshness (an
+implementation run current only while the code is what it ran; only a
+failed check or a stop by the model's own behaviour is a failure, anything
+undecided inconclusive), linked tests. The panel's headline counts the
+standings of requirement usages, subrequirements with their container ("1
+violated by calculation · 1 holds by calculation · 1 holds for some
+calculations · 1 only declared · 1 with no evidence (of 5)"), each row
+opens its ladder, the Inspector shows the same, and the button says
+"Declare satisfied by …". The Assistant's `check_requirements` answers the
+ladder as text and, headless, says that kept results and links are not
+available. Tested: language, System State, simulation (a mass budget that
+holds, is violated with its values, has assumptions not met, is informal or
+undetermined; violated, private, ambiguous, non-applying, self-containing
+and mistyped subrequirements; contexts and their digest; cycles, division
+by zero, enums), assistant, implementation (stopped and empty runs, mixed
+calculations) and Studio (a stale implementation pass) tests: the core
+crates 364 passed, the Studio 186 passed, the dogfood test and the
+architecture check pass. Not verified: the panel by eye, the reference run,
+a real model calling `check_requirements`. Limits: no units; package-level
+constants are not read; scenario runs still work attribute values out
+differently (deviation 23); a change to the code alone reaches the ladder
+when the model, the links, the kept results or the checks next change.

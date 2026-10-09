@@ -631,6 +631,16 @@ fn the_assistant_writes_requirement_constraints_and_reads_what_supports_them() {
     );
     assert!(scout.contains("s.mass = 4500, limit = 5000"), "{scout}");
     assert!(scout.contains("Scenarios: none verifies it."), "{scout}");
+    // Headless, the kept results and the links cannot be read: it says so
+    // rather than reading them as not run or not linked.
+    assert!(
+        scout.contains("Implementation: the implementation links are not available here"),
+        "{scout}"
+    );
+    assert!(
+        all.contains("Kept scenario results and implementation links are not available here"),
+        "{all}"
+    );
     let hauler = check(Some("Drones::haulerMass"));
     assert!(
         hauler.contains(

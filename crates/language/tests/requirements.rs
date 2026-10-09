@@ -198,3 +198,53 @@ fn an_informal_constraint_without_a_body_reads_back() {
     assert!(print(&tree)[0].text.contains("require constraint c;"));
     round_trips(&tree);
 }
+
+#[test]
+fn a_short_name_on_a_constraint_is_unsupported_not_a_syntax_error() {
+    let text = "package P {
+    requirement def R {
+        require constraint <'1'> { true }
+    }
+}
+";
+    let tree = load(text);
+    assert_eq!(
+        codes(&tree),
+        [("P::R::(unsupported)".to_string(), "unsupported")]
+    );
+    assert_eq!(print(&tree)[0].text, text);
+}
+
+#[test]
+fn private_constraints_and_checks_are_written_and_read_back() {
+    let text = "package P {
+    part def D;
+
+    requirement def R {
+        subject d : D;
+        private require constraint hidden {
+            true
+        }
+    }
+
+    verification def S {
+        subject d : D;
+        assert constraint opening {
+            true
+        }
+        then private assert constraint second {
+            false
+        }
+    }
+}
+";
+    let tree = load(text);
+    assert_eq!(codes(&tree), []);
+    assert_eq!(print(&tree)[0].text, text);
+    round_trips(&tree);
+    for name in ["P::R::hidden", "P::S::second"] {
+        let id = tree.find(name).unwrap();
+        assert_eq!(tree[id].visibility, agq_language::Visibility::Private);
+        assert_eq!(agq_language::writable(&tree, id), Ok(()), "{name}");
+    }
+}
