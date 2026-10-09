@@ -9,6 +9,7 @@
 //! outcome.
 
 use crate::record::{Outcome, Proposal, Review};
+use crate::traceability::PurposeCheck;
 use agq_execution::git::{FileChange, Patch};
 
 /// Paths no cycle writes (the task rule, §4.15), besides the links' own.
@@ -216,18 +217,38 @@ pub fn paths(patch: &Patch, protected: &[String], configuration: &[String]) -> O
 }
 
 /// The Operator's statement of Agentique's purpose and of how it is
-/// governed (C-55): no cycle changes it.
+/// governed (C-55): no cycle of a governed project changes it.
 pub const GOVERNANCE: &str = "ROADMAP.md";
 
-/// Purpose and governance stay the Operator's (C-55): a change to
-/// [`GOVERNANCE`], or to the model's purpose requirement (`purpose`: what it
-/// changes of it, found by identity, `traceability::purpose_changes`; why it
-/// could not be checked), fails, even when the objective names it, as no
-/// objective unlocks the stable core. A proposal may describe a desired
-/// change to the purpose for the Operator; a cycle cannot make it. The
-/// agent configuration keeps its own rule ([`paths`]).
-pub fn purpose(patch: &Patch, changed: &Result<Vec<String>, String>) -> Outcome {
+/// Purpose and governance stay the Operator's (C-55), in a project whose
+/// model declares a root purpose requirement (Agentique's does; a project
+/// without one is not governed by this gate): a change to [`GOVERNANCE`],
+/// or to the purpose requirement (`purpose`: what the change does to it,
+/// found by identity, `traceability::purpose_changes`; or why it could not
+/// be checked, which is no pass) fails, even when the objective names it,
+/// as no objective unlocks the stable core. A failure goes to repair like
+/// any gate's. A proposal may describe a desired change to the purpose for
+/// the Operator; a cycle cannot make it. The agent configuration keeps its
+/// own rule ([`paths`]).
+pub fn purpose(patch: &Patch, purpose: &Result<PurposeCheck, String>) -> Outcome {
     let name = "purpose and governance unchanged";
+    let check = match purpose {
+        Ok(check) => check,
+        Err(error) => {
+            return Outcome::new(
+                name,
+                "not run",
+                format!("the purpose requirement could not be checked: {error}"),
+            );
+        }
+    };
+    if !check.governed {
+        return Outcome::new(
+            name,
+            "passed",
+            "the project's model declares no root purpose requirement: nothing is protected",
+        );
+    }
     let mut problems = Vec::new();
     for file in &patch.files {
         let path = file.path.replace('\\', "/");
@@ -237,24 +258,10 @@ pub fn purpose(patch: &Patch, changed: &Result<Vec<String>, String>) -> Outcome 
             ));
         }
     }
-    match changed {
-        Ok(changed) => {
-            for change in changed {
-                problems.push(format!(
-                    "the model's purpose requirement changes ({change}): it is the Operator's (C-55), and no cycle changes it, even when the objective names it"
-                ));
-            }
-        }
-        Err(error) if problems.is_empty() => {
-            return Outcome::new(
-                name,
-                "not run",
-                format!("the purpose requirement could not be checked: {error}"),
-            );
-        }
-        Err(error) => problems.push(format!(
-            "the purpose requirement could not be checked: {error}"
-        )),
+    for change in &check.changes {
+        problems.push(format!(
+            "the model's purpose requirement changes ({change}): it is the Operator's (C-55), and no cycle changes it, even when the objective names it"
+        ));
     }
     outcome(name, problems)
 }
@@ -560,6 +567,12 @@ mod tests {
     /// when named.
     #[test]
     fn purpose_and_governance_fail_even_when_the_objective_names_them() {
+        let governed = |changes: &[&str]| -> Result<PurposeCheck, String> {
+            Ok(PurposeCheck {
+                governed: true,
+                changes: changes.iter().map(|c| c.to_string()).collect(),
+            })
+        };
         let roadmap = Patch {
             files: vec![change("ROADMAP.md", "modified", "-old\n+new")],
         };
@@ -567,22 +580,24 @@ mod tests {
         // Named by the objective, the paths gate lets it through; the
         // purpose gate does not read what the objective names at all.
         assert!(paths(&roadmap, &[], &named).passed());
-        let failed = purpose(&roadmap, &Ok(Vec::new()));
+        let failed = purpose(&roadmap, &governed(&[]));
         assert!(!failed.passed());
         assert!(failed.detail.contains("ROADMAP.md"), "{}", failed.detail);
         let deleted = Patch {
             files: vec![change("roadmap.md", "deleted", "-old")],
         };
-        assert!(!purpose(&deleted, &Ok(Vec::new())).passed());
+        assert!(!purpose(&deleted, &governed(&[])).passed());
         let elsewhere = Patch {
             files: vec![change("docs/ROADMAP.md", "added", "+notes")],
         };
-        assert!(purpose(&elsewhere, &Ok(Vec::new())).passed());
+        assert!(purpose(&elsewhere, &governed(&[])).passed());
         let ordinary = Patch {
             files: vec![change("crates/a/src/lib.rs", "modified", "+x")],
         };
-        let changed = Ok(vec!["Shop::Purpose::(doc) (doc, updated)".to_string()]);
-        let failed = purpose(&ordinary, &changed);
+        let failed = purpose(
+            &ordinary,
+            &governed(&["Shop::Purpose::(doc) (doc, updated)"]),
+        );
         assert!(!failed.passed());
         assert!(
             failed.detail.contains("Shop::Purpose::(doc)"),
@@ -592,14 +607,19 @@ mod tests {
         let unknown = purpose(&ordinary, &Err("the model cannot be read".into()));
         assert_eq!(unknown.verdict, "not run");
         assert!(!unknown.passed());
-        assert!(purpose(&ordinary, &Ok(Vec::new())).passed());
+        assert!(purpose(&roadmap, &Err("x".into())).verdict == "not run");
+        assert!(purpose(&ordinary, &governed(&[])).passed());
+        // A project that declares no purpose is not governed by it.
+        let user = purpose(&roadmap, &Ok(PurposeCheck::default()));
+        assert!(user.passed(), "{user:?}");
+        assert!(user.detail.contains("nothing is protected"));
         // AGENTS.md: allowed only when named, as before.
         let agents = Patch {
             files: vec![change("AGENTS.md", "modified", "-a\n+b")],
         };
         assert!(!paths(&agents, &[], &[]).passed());
         assert!(paths(&agents, &[], &["AGENTS.md".into()]).passed());
-        assert!(purpose(&agents, &Ok(Vec::new())).passed());
+        assert!(purpose(&agents, &governed(&[])).passed());
     }
 
     #[test]

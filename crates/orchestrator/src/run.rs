@@ -1020,7 +1020,7 @@ impl Driver {
         };
         let repository = self.objective.repository.clone();
         let id = self.id();
-        for name in ["lead", "base", "base-tests", "verify", "trial"] {
+        for name in ["lead", "base", "base-tests", "verify", "trial", "model"] {
             let _ = git::remove_worktree(&repository, &format!("{id}-{n}-{name}"));
         }
         let cycle_folder = self.folder("work");
@@ -1284,6 +1284,13 @@ impl Driver {
                 | roles::SUBMIT_IMPLEMENTATION
                 | roles::SUBMIT_REVIEW
                 | roles::SUBMIT_EVALUATION => {
+                    if call.name == roles::SUBMIT_REVIEW
+                        && let Err(problem) = roles::read_review(&call.input)
+                    {
+                        return ToolResult::error(format!(
+                            "Not accepted: {problem}. Submit your review again."
+                        ));
+                    }
                     if call.name == roles::SUBMIT_PROPOSAL {
                         let read = roles::read_proposal(
                             &call.input,
@@ -1331,6 +1338,14 @@ impl Driver {
                             return ToolResult::error(format!("Not recorded: {problem}."));
                         }
                     };
+                    if disposition.kind != crate::findings::DispositionKind::Defect
+                        && accepted.borrow().as_ref().and_then(|p| p.finding.as_ref())
+                            == Some(&identity)
+                    {
+                        return ToolResult::error(
+                            "Not recorded: your accepted proposal fixes this finding as a defect; it stays judged a defect for this cycle.",
+                        );
+                    }
                     let Some(finding) = cycle_findings.iter().find(|f| f.identity == identity)
                     else {
                         return ToolResult::error(
@@ -1813,14 +1828,31 @@ impl Driver {
         }
         let lead = self.checkout("lead", &base)?;
         // The base commit's model, read before the lead's session opens it
-        // (C-55): the proposal's `serves` and `parts` are resolved in it.
-        let model = crate::traceability::base_model(&lead, &base);
+        // (C-55): the proposal's `serves` and `parts` are resolved in it. A
+        // model that cannot be read stops the cycle; none resolves nothing.
+        let model = match crate::traceability::base_model(&repository, &lead, &base)? {
+            Some(model) => Ok(model),
+            None => Err(crate::traceability::NO_MODEL.to_string()),
+        };
+        let reading = match &model {
+            Err(_) => Some(
+                "This project has no model: `serves` and `parts` are recorded as you state them, not resolved.",
+            ),
+            Ok(model) if !crate::traceability::has_requirements(model) => Some(
+                "This project's model declares no requirement yet: `serves` is recorded as you state it (say what the change is for); `parts` are resolved in its model.",
+            ),
+            Ok(_) => None,
+        };
         let policy = self.policy(&lead, false, false);
         let kit = Toolset {
             system: roles::instructions(Role::Lead),
             definitions: roles::lead_tools(false, self.objective.explore && self.may_delegate()),
         };
-        let mut brief = roles::brief(Role::Lead, &self.objective, &self.findings_brief());
+        let mut context = self.findings_brief();
+        if let Some(reading) = reading {
+            context = format!("{reading}\n\n{context}");
+        }
+        let mut brief = roles::brief(Role::Lead, &self.objective, &context);
         for attempt in 0..2 {
             let session = self.lead(
                 &lead,
@@ -1876,25 +1908,31 @@ impl Driver {
                 }
                 None if self.nothing_to_fix() => {
                     // Every reproduced finding was judged other than a
-                    // defect (C-55): nothing to fix, an outcome.
-                    self.event(
-                        "Nothing to fix in this cycle: the lead judged every reproduced finding other than a defect",
-                    );
+                    // defect (C-55): nothing to fix, an outcome, and the
+                    // cycle's directives end saying so.
+                    let why = "nothing to fix: the lead judged every reproduced finding other than a defect";
+                    self.objective.settle_running(DirectiveStatus::Done, why);
+                    self.event(format!("Nothing to fix in this cycle: {why}"));
                     let _ = git::remove_worktree(
                         &repository,
                         &format!("{}-{}-lead", self.id(), self.cycle().n),
                     );
                     return Ok(Phase::Done);
                 }
-                None => brief = match &session.refusal {
-                    Some(problem) => format!(
-                        "Your proposal was not accepted: {problem}. Submit a corrected one."
-                    ),
-                    None => {
-                        "You ended without submit_proposal. Choose one improvement and submit it."
-                            .into()
+                None => {
+                    brief = match &session.refusal {
+                        Some(problem) => format!(
+                            "Your proposal was not accepted: {problem}. Submit a corrected one."
+                        ),
+                        None => "You ended without submit_proposal. Choose one improvement and submit it."
+                            .into(),
+                    };
+                    // The findings again, by the same ids (C-55).
+                    let findings = self.findings_brief();
+                    if !findings.is_empty() {
+                        brief = format!("{brief}\n\n{findings}");
                     }
-                },
+                }
             }
             if self.over().is_some() {
                 break;
@@ -2259,96 +2297,68 @@ impl Driver {
             ),
             gates::keys(&patch, &self.setup.keys),
         ];
-        // A repository without a model has nothing locked, unless the
-        // change removed the model.
-        let removes_model = patch
-            .files
-            .iter()
-            .any(|f| f.path.starts_with("model/") && f.status == "deleted");
-        let unlocked = if verify.join("model").is_dir() {
-            agq_assistant::model_tools::locked_changes(
-                &verify,
-                &base,
-                &self.objective.permissions.locked,
-            )
-        } else if removes_model {
-            Ok(vec!["the model (the change removes it)".to_string()])
-        } else {
-            Ok(Vec::new())
+        // The model is read by the commits' trees, through a clean checkout
+        // made now in which nothing ran: never `verify`, where the checks
+        // just ran the change's code (C-55). A repository without a model
+        // has nothing locked, unless the change removed the model.
+        let commit_model = crate::traceability::has_model(&repository, &commit)?;
+        let base_model = crate::traceability::has_model(&repository, &base)?;
+        let reader = self.reader(&[&commit, &base])?;
+        let locked = self.objective.permissions.locked.clone();
+        let unlocked = match (&reader, commit_model, base_model) {
+            (Some(folder), true, _) => {
+                agq_assistant::model_tools::locked_changes(folder, &base, &locked)
+            }
+            (_, false, true) => Ok(vec!["the model (the change removes it)".to_string()]),
+            _ => Ok(Vec::new()),
         };
         gates.push(match unlocked {
-            Ok(found) if found.is_empty() => Outcome {
-                name: "locked elements unchanged".into(),
-                verdict: "passed".into(),
-                detail: String::new(),
-                judged: false,
-            },
-            Ok(found) => Outcome {
-                name: "locked elements unchanged".into(),
-                verdict: "failed".into(),
-                detail: format!(
+            Ok(found) if found.is_empty() => {
+                Outcome::new("locked elements unchanged", "passed", "")
+            }
+            Ok(found) => Outcome::new(
+                "locked elements unchanged",
+                "failed",
+                format!(
                     "the change touches locked elements the objective does not name: {}",
                     found.join(", ")
                 ),
-                judged: false,
-            },
-            Err(error) => Outcome {
-                name: "locked elements unchanged".into(),
-                verdict: "not run".into(),
-                detail: error,
-                judged: false,
-            },
+            ),
+            Err(error) => Outcome::new("locked elements unchanged", "not run", error),
         });
         // The code of locked parts, by the links (the change's and the
-        // base's), unless the objective names the part.
+        // base's, by their trees), unless the objective names the part.
         let files: Vec<String> = patch
             .files
             .iter()
             .map(|f| f.path.replace('\\', "/"))
             .collect();
-        let links = crate::traceability::links_of(&repository, &verify, &base);
-        gates.push(if verify.join("model").is_dir() {
-            match agq_assistant::model_tools::locked_code(
-                &verify,
-                &base,
-                &files,
-                &links,
-                &self.objective.permissions.locked,
+        let links = crate::traceability::links_of(&repository, &base, &commit);
+        let name = "code of locked parts unchanged";
+        gates.push(match &reader {
+            Some(folder) => match agq_assistant::model_tools::locked_code(
+                folder, &base, &files, &links, &locked,
             ) {
-                Ok(found) if found.is_empty() => Outcome {
-                    name: "code of locked parts unchanged".into(),
-                    verdict: "passed".into(),
-                    detail: String::new(),
- judged: false,
-                },
-                Ok(found) => Outcome {
-                    name: "code of locked parts unchanged".into(),
-                    verdict: "failed".into(),
-                    detail: format!(
+                Ok(found) if found.is_empty() => Outcome::new(name, "passed", ""),
+                Ok(found) => Outcome::new(
+                    name,
+                    "failed",
+                    format!(
                         "the change touches the code of locked parts the objective does not name: {}",
                         found.join(", ")
                     ),
- judged: false,
-                },
-                Err(error) => Outcome {
-                    name: "code of locked parts unchanged".into(),
-                    verdict: "not run".into(),
-                    detail: error,
- judged: false,
-                },
-            }
-        } else {
-            Outcome {
-                name: "code of locked parts unchanged".into(),
-                verdict: "passed".into(),
-                detail: "no model, so nothing is locked".into(),
- judged: false,
-            }
+                ),
+                Err(error) => Outcome::new(name, "not run", error),
+            },
+            None => Outcome::new(name, "passed", "no model, so nothing is locked"),
         });
         // Purpose and governance stay the Operator's (C-55), whatever the
-        // objective names.
-        let purpose = crate::traceability::purpose_in(&verify, &base, &commit, &patch);
+        // objective names, as the base and the commits the objective
+        // protects (its start, the approved baseline) declare them.
+        let earlier = self.protected_commits();
+        let purpose = crate::traceability::purpose_in(reader.as_deref(), &base, &commit, &earlier);
         gates.push(gates::purpose(&patch, &purpose));
+
         // The criteria show the defect on the base (C-54), by their own
         // outcomes there, made with this commit's test files.
         let mut ids: Vec<String> = proposal.criteria.iter().map(|c| c.id.clone()).collect();
@@ -2421,7 +2431,7 @@ impl Driver {
             .iter()
             .map(|f| f.path.replace('\\', "/"))
             .collect();
-        let links = crate::traceability::links_of(&self.objective.repository, &verify, &base);
+        let links = crate::traceability::links_of(&self.objective.repository, &base, &commit);
         let user_facing = gates::user_facing(&files, &links);
         let observed: Vec<&Criterion> = proposal
             .criteria
@@ -2641,7 +2651,20 @@ impl Driver {
         // What the commit changed against what the proposal named, and the
         // cumulative change since the approved baseline (C-55).
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
-        let traced = self.trace_for_review(&verify, &base, &commit, &patch, &proposal);
+        let mut traced = self.trace_for_review(&base, &commit, &patch, &proposal)?;
+        // How the lead judged the finding it fixes, for the reviewer to
+        // check against the requirement (C-55).
+        if let Some(finding) = &self.cycle().replay {
+            traced = format!(
+                "The finding it fixes: {}; {}.\n\n{traced}",
+                explore::finding_line(finding),
+                finding
+                    .disposition
+                    .as_ref()
+                    .map(explore::disposition_line)
+                    .unwrap_or_else(|| "not adjudicated".into())
+            );
+        }
         let context = format!(
             "The implementer's summary: {}\n\nOutcomes:\n{outcomes}\n\nChanges to tests, checks or budgets the baseline guard lists: {}\n\n{traced}\n\nThe diff against {}:\n{diff}",
             attempt.summary,

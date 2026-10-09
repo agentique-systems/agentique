@@ -364,13 +364,13 @@ fn earlier(objective: &Objective) -> String {
 pub fn instructions(role: Role) -> String {
     let specific = match role {
         Role::Lead => {
-            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Say what it is for (C-55): `serves` names the requirements of the project's model it serves (requirement defs or usages, by qualified name; read_model shows them), `benefit` what the Operator will see, `complexity` what it adds, removes or generalises at the root (a root part, a dependency, a crate); `parts` names the existing elements and contracts it affects (for elements it creates, their future owner), and the review compares them with what the change touches; its evidence is its acceptance criteria, frozen with it (and the replay of the finding it fixes). Agentique's purpose (ROADMAP §1.1) and the model's requirements bound what any cycle changes: ROADMAP.md and the model's purpose requirement (`Purpose`, `purpose`) are the Operator's, and a change to them fails the gates even when the objective names them; describe a change you think the purpose needs in `why`, for the Operator. When the brief lists reproduced findings (C-54), judge each you consider with adjudicate_finding before choosing one (C-55): against the requirements and the intended semantics, never by how often its check failed (an explorer's expectation is a model's guess, and repeated disagreement with it does not establish a defect). Only a finding judged a defect is fixed (`finding`), and its replay becomes a frozen criterion; a wrong expectation or an unreliable reproduction is set aside, and an ambiguous requirement goes to the Operator as a question; when you judge none a defect, end without a proposal. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
+            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Say what it is for (C-55): `serves` names the requirements of the project's model it serves (requirement defs or usages, by qualified name; read_model shows them), `benefit` what the Operator will see, `complexity` what it adds, removes or generalises at the root (a root part, a dependency, a crate); `parts` names the existing elements and contracts it affects (for elements it creates, their future owner), and the review compares them with what the change touches; its evidence is its acceptance criteria, frozen with it (and the replay of the finding it fixes). The purpose and the model's requirements bound what any cycle changes: in a project whose model declares a root purpose requirement (`Purpose`, `purpose`; Agentique's does, for ROADMAP §1.1), that requirement, everything it owns and ROADMAP.md are the Operator's, and a change to them fails the gates even when the objective names them; describe a change you think the purpose needs in `why`, for the Operator. When the brief lists reproduced findings (C-54), judge each you consider with adjudicate_finding before choosing one (C-55): against the requirements and the intended semantics, never by how often its check failed (an explorer's expectation is a model's guess, and repeated disagreement with it does not establish a defect). Only a finding judged a defect is fixed (`finding`), and its replay becomes a frozen criterion; a wrong expectation or an unreliable reproduction is set aside, and an ambiguous requirement goes to the Operator as a question; when you judge none a defect, end without a proposal. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
         }
         Role::Implementer => {
-            "Your role: implementer. Implement the frozen proposal in this worktree, and only it: the review compares what you change with the elements it names. Add tests for the criteria; keep every existing test and check (rule 10). Never change ROADMAP.md or the model's purpose requirement (C-55): that fails the gates, whatever the objective names. Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
+            "Your role: implementer. Implement the frozen proposal in this worktree, and only it: the review compares what you change with the elements it names. Add tests for the criteria; keep every existing test and check (rule 10). Never change the model's root purpose requirement (`Purpose`, `purpose`) or, in a project that declares one (Agentique does), ROADMAP.md (C-55): that fails the gates, whatever the objective names. Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
         }
         Role::Reviewer => {
-            "Your role: independent reviewer. You did not write this change. Review it against the frozen proposal and its criteria, the check results and the evaluation below, reading the code in this checkout (you write nothing). Judge correctness, scope (nothing unrelated), simplicity and naming (ROADMAP §1.3, §8.4), whether the tests really check the criteria, and every change to tests, checks or budgets the baseline guard lists. For each criterion counted as evidence on the original build, check that its failing test asserts the defect itself, not merely that the change exists (a test asserting that a new file, function or control exists fails on the base for any change); request changes when it does not. Judge traceability explicitly, as you judge test changes (C-55): each change listed as changed but not named in the proposal's `parts` either belongs to the proposal or is scope creep (request changes), and each element named but not changed says whether the proposal still holds. Judge the cumulative change since the approved baseline: does it still serve Agentique's purpose (ROADMAP §1.1) and the requirements the proposal serves, or do small changes add up to redefining the product? The counts inform; they do not decide, and neither does any agent's approval. Then call submit_review with both judgments: approve only a change you would merge as it is."
+            "Your role: independent reviewer. You did not write this change. Review it against the frozen proposal and its criteria, the check results and the evaluation below, reading the code in this checkout (you write nothing). Judge correctness, scope (nothing unrelated), simplicity and naming (ROADMAP §1.3, §8.4), whether the tests really check the criteria, and every change to tests, checks or budgets the baseline guard lists. For each criterion counted as evidence on the original build, check that its failing test asserts the defect itself, not merely that the change exists (a test asserting that a new file, function or control exists fails on the base for any change); request changes when it does not. Judge traceability explicitly, as you judge test changes (C-55): each change listed as changed but not named in the proposal's `parts` either belongs to the proposal or is scope creep (request changes), and each element named but not changed says whether the proposal still holds. Judge the cumulative change since the approved baseline: does it still serve the project's purpose (Agentique's is ROADMAP §1.1, its model's requirement `purpose`) and the requirements the proposal serves, or do small changes add up to redefining the product? When the proposal fixes a finding, the brief says how the lead judged it: check that judgment against the requirement too. The counts inform; they do not decide, and neither does any agent's approval. Then call submit_review with both judgments: approve only a change you would merge as it is."
         }
         Role::Evaluator => {
             "Your role: evaluator. A test instance of Agentique built from the change is running; observe_app and act_in_app operate it (not the Operator's Studio). Check each behavioural criterion (observation and judgment ones) by operating it as the Operator would, and report each with submit_evaluation: the outcome and the observations it rests on (controls, labels, values, status). If a criterion cannot be checked, say not run and why."
@@ -563,6 +563,26 @@ fn finding_of(given: &Given, id: &str) -> Result<String, String> {
                     .join(", ")
             )
         })
+}
+
+/// A review from `submit_review`'s input, checked (C-55): its verdict one
+/// of the two, and its judgments of traceability and of the cumulative
+/// change stated, never blank (a judgment left out is no judgment).
+pub fn read_review(input: &Value) -> Result<(), String> {
+    if !matches!(
+        input["verdict"].as_str(),
+        Some("approve" | "request_changes")
+    ) {
+        return Err("`verdict` is approve or request_changes".into());
+    }
+    for field in ["traceability", "purpose"] {
+        if input[field].as_str().is_none_or(|t| t.trim().is_empty()) {
+            return Err(format!(
+                "`{field}` states your judgment: it cannot be left blank"
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// A disposition from `adjudicate_finding`'s input (C-55), by the lead of
@@ -1143,6 +1163,89 @@ mod tests {
         };
         assert!(names(lead_tools(false, false)).contains(&ADJUDICATE_FINDING.to_string()));
         assert!(!names(lead_tools(true, false)).contains(&ADJUDICATE_FINDING.to_string()));
+    }
+
+    /// C-55: ids are places among the cycle's findings, never renumbered:
+    /// once the first finding is set aside, a later session is offered `f2`
+    /// and `f3`, so `f1` binds nothing and `f2` still binds the second.
+    #[test]
+    fn finding_ids_bind_the_same_finding_in_every_session() {
+        use crate::findings::{Check, Failed, Finding, State};
+        use crate::knowledge::{Knowledge, finding_id};
+        let findings: Vec<Finding> = ["a", "b", "c"]
+            .iter()
+            .map(|control| {
+                let mut f = Finding::new(
+                    Failed {
+                        check: Check::ReadableLabels,
+                        control: control.to_string(),
+                        message: "no label".into(),
+                        evidence: json!({}),
+                    },
+                    Vec::new(),
+                    "b1",
+                    "abc",
+                    "model",
+                );
+                f.state = State::Reproduced;
+                f
+            })
+            .collect();
+        let mut knowledge = Knowledge::new("p");
+        knowledge.adjudicate(&findings[0], disposition(DispositionKind::WrongExpectation));
+        let offered: Vec<(String, String)> = knowledge
+            .offered(&findings)
+            .into_iter()
+            .map(|(i, f)| (finding_id(i), f.identity.clone()))
+            .collect();
+        assert_eq!(
+            offered
+                .iter()
+                .map(|(id, _)| id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["f2", "f3"]
+        );
+        let none = BTreeMap::new();
+        let model = Err("the project has no model".to_string());
+        let given = Given {
+            findings: &offered,
+            dispositions: &none,
+            model: &model,
+        };
+        let judge = |id: &str| {
+            read_disposition(
+                &json!({ "finding": id, "disposition": "defect", "reason": "x" }),
+                &given,
+                "o",
+                1,
+            )
+        };
+        assert!(
+            judge("f1").is_err(),
+            "set aside, not renumbered onto another"
+        );
+        assert_eq!(judge("f2").unwrap().0, findings[1].identity);
+        assert_eq!(judge("f3").unwrap().0, findings[2].identity);
+    }
+
+    /// C-55: a review states both judgments; a blank one is refused.
+    #[test]
+    fn a_review_states_its_judgments() {
+        let review = json!({
+            "verdict": "approve", "findings": [], "test_changes_accepted": false,
+            "traceability": "none listed", "purpose": "It still serves the purpose."
+        });
+        assert!(read_review(&review).is_ok());
+        for (field, value) in [
+            ("traceability", json!("  ")),
+            ("purpose", json!("")),
+            ("purpose", Value::Null),
+            ("verdict", json!("maybe")),
+        ] {
+            let mut wrong = review.clone();
+            wrong[field] = value;
+            assert!(read_review(&wrong).unwrap_err().contains(field), "{field}");
+        }
     }
 
     #[test]

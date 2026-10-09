@@ -72,6 +72,8 @@ const SHOP: &str =
 fn an_undeclared_change_is_listed_as_changed_but_not_named() {
     let dir = tempfile::tempdir().unwrap();
     let repository = repository(dir.path());
+    write(&repository, "README.md", "A shop.\n");
+    let empty = commit(&repository, "Empty");
     write(&repository, "model/Shop.sysml", SHOP);
     write(&repository, "src/store.rs", "fn store() {}\n");
     write(&repository, "src/cart.rs", "fn cart() {}\n");
@@ -84,7 +86,17 @@ fn an_undeclared_change_is_listed_as_changed_but_not_named() {
     write(&repository, "model/links.json", &links);
     let base = commit(&repository, "Links");
     // The proposal, resolved in the base commit's model.
-    let model = traceability::base_model(&repository, &base).unwrap();
+    let model = traceability::base_model(&repository, &repository, &base)
+        .unwrap()
+        .expect("a model");
+    // A commit without a model folder (by its tree) resolves nothing.
+    assert!(!traceability::has_model(&repository, &empty).unwrap());
+    assert!(traceability::has_model(&repository, &base).unwrap());
+    assert!(
+        traceability::base_model(&repository, &repository, &empty)
+            .unwrap()
+            .is_none()
+    );
     let names = |n: &[&str]| n.iter().map(|s| s.to_string()).collect::<Vec<_>>();
     let resolved = traceability::resolve(
         &names(&["Shop::Fast"]),
@@ -115,8 +127,14 @@ fn an_undeclared_change_is_listed_as_changed_but_not_named() {
     write(&repository, "src/cart.rs", "fn cart() { checkout(); }\n");
     let change = commit(&repository, "Change");
     let patch = agq_execution::git::patch_of(&repository, &base, &change).unwrap();
-    let traced =
-        traceability::traced_in(&repository, &repository, &base, &change, &patch, &proposal);
+    let traced = traceability::traced_in(
+        &repository,
+        Some(&repository),
+        &base,
+        &change,
+        &patch,
+        &proposal,
+    );
     assert_eq!(
         traced.not_named,
         vec!["Shop::Cart (part def, its linked code changed)".to_string()],
@@ -141,7 +159,14 @@ fn an_undeclared_change_is_listed_as_changed_but_not_named() {
         parts: names(&["Shop::Store", "Shop::Cart"]),
         ..Proposal::default()
     };
-    let traced = traceability::traced_in(&repository, &repository, &base, &change, &patch, &both);
+    let traced = traceability::traced_in(
+        &repository,
+        Some(&repository),
+        &base,
+        &change,
+        &patch,
+        &both,
+    );
     assert!(
         traced.not_named.is_empty() && traced.not_changed.is_empty(),
         "{traced:?}"
@@ -195,13 +220,28 @@ fn the_cumulative_change_counts_since_the_approved_baseline() {
         "package Shop {\n    part def Store;\n    part def Cart;\n    part def Basket;\n    requirement def Fast;\n    dependency from Cart to Store;\n}\n",
     );
     let reviewed = commit(&repository, "Basket");
-    // An agent moved the local tag: it is not what is read.
+    // The URL recorded when the objective was created.
+    let recorded = origin.display().to_string();
+    // An agent moved the local tag, and pointed `origin` elsewhere: neither
+    // is what is read.
     git(&repository, &["tag", "-f", APPROVED_BASELINE, &reviewed]);
+    let decoy = dir.path().join("decoy.git");
+    git(dir.path(), &["init", "-q", "--bare", "decoy.git"]);
+    git(
+        &repository,
+        &["remote", "set-url", "origin", &decoy.display().to_string()],
+    );
     assert_eq!(
-        traceability::approved_baseline(&repository).unwrap(),
+        traceability::approved_baseline(&repository, &recorded).unwrap(),
         Some(approved.clone())
     );
-    let cumulative = traceability::cumulative_in(&repository, &repository, &start, &reviewed);
+    let cumulative = traceability::cumulative_in(
+        &repository,
+        Some(&repository),
+        Some(&recorded),
+        &start,
+        &reviewed,
+    );
     assert!(cumulative.approved);
     assert_eq!(cumulative.since, approved);
     let group = |what: &str| {
@@ -246,12 +286,21 @@ fn the_cumulative_change_counts_since_the_approved_baseline() {
         &[
             "push",
             "-q",
-            "origin",
+            &recorded,
             &format!(":refs/tags/{APPROVED_BASELINE}"),
         ],
     );
-    assert_eq!(traceability::approved_baseline(&repository).unwrap(), None);
-    let fallback = traceability::cumulative_in(&repository, &repository, &start, &reviewed);
+    assert_eq!(
+        traceability::approved_baseline(&repository, &recorded).unwrap(),
+        None
+    );
+    let fallback = traceability::cumulative_in(
+        &repository,
+        Some(&repository),
+        Some(&recorded),
+        &start,
+        &reviewed,
+    );
     assert!(!fallback.approved);
     assert_eq!(fallback.since, start);
     assert_eq!(
@@ -271,15 +320,72 @@ fn the_cumulative_change_counts_since_the_approved_baseline() {
         "{}",
         fallback.text()
     );
-    // Without a remote at all: the start, with why no baseline was read.
-    git(&repository, &["remote", "remove", "origin"]);
-    let unread = traceability::cumulative_in(&repository, &repository, &start, &reviewed);
-    assert!(!unread.approved && unread.since == start);
-    assert!(
-        unread.notes.iter().any(|n| n.contains("remote `origin`")),
-        "{:?}",
-        unread.notes
+    // A remote that cannot be read: the start, saying why, not that no
+    // baseline was recorded.
+    let gone = dir.path().join("gone.git").display().to_string();
+    let unread = traceability::cumulative_in(
+        &repository,
+        Some(&repository),
+        Some(&gone),
+        &start,
+        &reviewed,
     );
+    assert!(!unread.approved && unread.since == start);
+    assert!(unread.unread.is_some());
+    assert!(
+        unread
+            .text()
+            .starts_with("The approved baseline could not be read"),
+        "{}",
+        unread.text()
+    );
+    // No remote recorded: the same, saying so.
+    let none = traceability::cumulative_in(&repository, Some(&repository), None, &start, &reviewed);
+    assert!(
+        none.unread
+            .as_deref()
+            .unwrap_or_default()
+            .contains("no remote")
+    );
+    // A baseline the local repository does not have: said so, never as
+    // "not an ancestor".
+    let elsewhere = dir.path().join("elsewhere");
+    git(dir.path(), &["init", "-q", "-b", "main", "elsewhere"]);
+    git(&elsewhere, &["config", "user.name", "Agentique test"]);
+    git(
+        &elsewhere,
+        &["config", "user.email", "test@example.invalid"],
+    );
+    write(&elsewhere, "README.md", "elsewhere\n");
+    git(&elsewhere, &["add", "-A"]);
+    git(&elsewhere, &["commit", "-q", "-m", "Elsewhere"]);
+    git(&elsewhere, &["tag", APPROVED_BASELINE]);
+    git(
+        &elsewhere,
+        &[
+            "push",
+            "-q",
+            &recorded,
+            &format!("refs/tags/{APPROVED_BASELINE}"),
+        ],
+    );
+    let missing = traceability::cumulative_in(
+        &repository,
+        Some(&repository),
+        Some(&recorded),
+        &start,
+        &reviewed,
+    );
+    assert!(missing.approved);
+    assert!(
+        missing
+            .notes
+            .iter()
+            .any(|n| n.contains("is not in the local repository")),
+        "{:?}",
+        missing.notes
+    );
+    assert!(!missing.notes.iter().any(|n| n.contains("not an ancestor")));
 }
 
 /// C-55: a change to the model's purpose requirement, found by identity
@@ -321,13 +427,11 @@ fn a_change_to_the_purpose_requirement_fails_even_when_named() {
             .is_empty(),
         "named, the locked-elements gate lets it through"
     );
-    let changed = traceability::purpose_in(&repository, &base, &change, &patch);
+    let changed = traceability::purpose_in(Some(&repository), &base, &change, &[]);
+    let check = changed.as_ref().unwrap();
+    assert!(check.governed);
     assert!(
-        changed
-            .as_ref()
-            .unwrap()
-            .iter()
-            .any(|c| c.contains("Shop::Purpose")),
+        check.changes.iter().any(|c| c.contains("Shop::Purpose")),
         "{changed:?}"
     );
     let gate = gates::purpose(&patch, &changed);
@@ -347,7 +451,71 @@ fn a_change_to_the_purpose_requirement_fails_even_when_named() {
     );
     let beside = commit(&repository, "Cart");
     let patch = agq_execution::git::patch_of(&repository, &change, &beside).unwrap();
-    let changed = traceability::purpose_in(&repository, &change, &beside, &patch);
-    assert_eq!(changed, Ok(Vec::new()));
+    let changed = traceability::purpose_in(Some(&repository), &change, &beside, &[]);
+    assert!(changed.as_ref().unwrap().changes.is_empty());
     assert!(gates::purpose(&patch, &changed).passed());
+}
+
+/// C-55: a base whose model cannot be read is an error that stops the
+/// cycle, never a proposal resolved against nothing; only a base without a
+/// model folder resolves nothing.
+#[test]
+fn a_model_that_cannot_be_read_is_an_error_not_a_skip() {
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository(dir.path());
+    write(&repository, "model/Shop.sysml", SHOP);
+    let readable = commit(&repository, "Start");
+    write(
+        &repository,
+        "model/Shop.sysml",
+        "<<<<<<< ours\npackage Shop;\n=======\npackage Store;\n>>>>>>> theirs\n",
+    );
+    git(&repository, &["add", "-A"]);
+    git(&repository, &["commit", "-q", "-m", "A conflict"]);
+    let broken = git(&repository, &["rev-parse", "HEAD"]);
+    // Read through a clean checkout of the readable commit.
+    let reader = dir.path().join("reader");
+    git(
+        &repository,
+        &[
+            "worktree",
+            "add",
+            "-q",
+            &reader.display().to_string(),
+            &readable,
+        ],
+    );
+    assert!(
+        traceability::base_model(&repository, &reader, &readable)
+            .unwrap()
+            .is_some()
+    );
+    let error = traceability::base_model(&repository, &reader, &broken).unwrap_err();
+    assert!(error.contains("could not be read"), "{error}");
+}
+
+/// C-55: a project whose model declares no root purpose requirement (a
+/// user's) is not governed: ROADMAP.md and its model change freely.
+#[test]
+fn a_project_without_a_purpose_is_not_governed() {
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository(dir.path());
+    write(&repository, "model/Shop.sysml", SHOP);
+    write(&repository, "ROADMAP.md", "Plans.\n");
+    let base = commit(&repository, "Start");
+    write(&repository, "ROADMAP.md", "Other plans.\n");
+    write(
+        &repository,
+        "model/Shop.sysml",
+        &SHOP.replace(
+            "requirement def Fast;",
+            "requirement def Fast;\n    requirement def Purpose;",
+        ),
+    );
+    let change = commit(&repository, "Plans and a purpose");
+    let patch = agq_execution::git::patch_of(&repository, &base, &change).unwrap();
+    let check = traceability::purpose_in(Some(&repository), &base, &change, &[]);
+    assert!(!check.as_ref().unwrap().governed);
+    let gate = gates::purpose(&patch, &check);
+    assert!(gate.passed(), "{gate:?}");
 }

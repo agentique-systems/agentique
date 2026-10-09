@@ -7,11 +7,16 @@
 //! elements by identity, and the parts whose linked code changed) is
 //! compared with what the proposal named ([`trace`]), and the cumulative
 //! change since the Operator's approved baseline (the tag
-//! [`APPROVED_BASELINE`] on the remote `origin`, which only the Operator
-//! creates or moves) is counted at the root ([`cumulative`]). The reviewer judges both: the lists
-//! and the numbers inform, they do not decide. The model's purpose
-//! requirement is found by identity ([`purpose_changes`]) for the gate no
-//! cycle passes when it changes it (`gates::purpose`).
+//! [`APPROVED_BASELINE`], read on the remote whose URL the objective
+//! recorded when it was created, which only the Operator moves) is counted
+//! at the root ([`cumulative`]). The reviewer judges both: the lists and the
+//! numbers inform, they do not decide. The model's purpose requirement is
+//! found by identity ([`purpose_changes`]), as the base and the commits the
+//! objective protects declare it, for the gate no cycle passes when it
+//! changes it (`gates::purpose`); a project that declares none is not
+//! governed by it. Models, links and their presence are read by the
+//! commits' trees, through a clean checkout in which nothing ran, never
+//! through a checkout where the change's code ran.
 
 use crate::builds::short;
 use crate::record::Proposal;
@@ -28,8 +33,9 @@ pub type Elements = BTreeMap<u64, Described>;
 /// The git tag of the Operator's approved baseline: the commit whose
 /// product the Operator last approved as a whole. Only the Operator creates
 /// or moves it, and pushes it to the remote `origin`, where the
-/// Orchestrator reads it ([`approved_baseline`]); agents' worktree sessions
-/// are refused `git tag`.
+/// Orchestrator reads it at the URL the objective recorded
+/// ([`approved_baseline`]); agents' worktree sessions are refused `git tag`
+/// and changes to the remotes.
 pub const APPROVED_BASELINE: &str = "approved-baseline";
 
 /// The kinds a requirement of the model has: a definition or a usage.
@@ -74,7 +80,8 @@ impl Resolved {
 }
 
 /// What a proposal's `serves` and `parts` resolved to in the base commit's
-/// model, or why nothing was resolved (the project has no model).
+/// model, or why `serves` was not resolved: the project has no model (and
+/// nothing was resolved), or its model declares no requirement yet.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Resolution {
@@ -89,27 +96,34 @@ pub struct Resolution {
 impl Resolution {
     /// In a line, for the proposal's text.
     pub fn text(&self) -> String {
-        match &self.skipped {
-            Some(why) => format!("not resolved: {why}"),
-            None => {
-                let ids = |list: &[Resolved]| {
-                    list.iter()
-                        .map(|r| format!("{} (#{})", r.name, r.element))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                };
-                format!(
-                    "serves {}; parts {}",
-                    ids(&self.serves),
-                    if self.parts.is_empty() {
-                        "none".to_string()
-                    } else {
-                        ids(&self.parts)
-                    }
-                )
-            }
-        }
+        let ids = |list: &[Resolved]| {
+            list.iter()
+                .map(|r| format!("{} (#{})", r.name, r.element))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        let serves = match &self.skipped {
+            Some(why) => format!("not resolved ({why})"),
+            None => ids(&self.serves),
+        };
+        let parts = match (self.parts.is_empty(), &self.skipped) {
+            (false, _) => ids(&self.parts),
+            (true, Some(_)) => "not resolved".to_string(),
+            (true, None) => "none".to_string(),
+        };
+        format!("serves {serves}; parts {parts}")
     }
+}
+
+/// Why `serves` is not resolved in a model that declares no requirement
+/// yet (a project's own, before its requirements are written): it is
+/// recorded as the lead states it (C-55).
+pub const NO_REQUIREMENTS: &str =
+    "the base commit's model declares no requirement yet, so `serves` is recorded as stated";
+
+/// Whether `model` declares a requirement.
+pub fn has_requirements(model: &Elements) -> bool {
+    model.values().any(is_requirement)
 }
 
 /// The requirement named `name` in `model`, or why it is none.
@@ -131,7 +145,9 @@ pub fn requirement<'a>(model: &'a Elements, name: &str) -> Result<&'a Described,
 /// `serves` and `parts` resolved in `model`, the base commit's (C-55): each
 /// name of `serves` a requirement (a requirement def or usage), each of
 /// `parts` an existing element; or what does not resolve, with the
-/// requirements there are, for the lead to correct.
+/// requirements there are, for the lead to correct. A model that declares
+/// no requirement yet resolves `parts` only, and says why
+/// ([`NO_REQUIREMENTS`]).
 pub fn resolve(
     serves: &[String],
     parts: &[String],
@@ -139,7 +155,10 @@ pub fn resolve(
 ) -> Result<Resolution, String> {
     let mut resolution = Resolution::default();
     let mut problems = Vec::new();
-    for name in serves {
+    if !has_requirements(model) {
+        resolution.skipped = Some(NO_REQUIREMENTS.into());
+    }
+    for name in serves.iter().filter(|_| resolution.skipped.is_none()) {
         match requirement(model, name) {
             Ok(element) => resolution.serves.push(Resolved::of(element)),
             Err(problem) => problems.push(problem),
@@ -281,6 +300,11 @@ struct Item<'a> {
     how: &'static str,
     /// The part that owns it (itself, for a part).
     part: Option<&'a Described>,
+    /// What changed may be what it holds: its linked code, or an update of
+    /// an element that holds a created or deleted one. A named element it
+    /// holds may then be what changed; an update of its own properties is
+    /// its own.
+    holds: bool,
 }
 
 /// The part that owns `element` in `model`: itself when it is a part, else
@@ -291,14 +315,15 @@ fn owning_part<'a>(model: &'a Elements, element: &'a Described) -> Option<&'a De
         .find(|e| PART_KINDS.contains(&e.kind.as_str()))
 }
 
-/// Whether a change `changed` and a named element `named` are the same, or
-/// one owns the other: what a named element owns is named with it, and a
-/// named element is changed when its part (never a package, which only
-/// holds) changed.
-fn related(changed: &Described, named: &Described) -> bool {
+/// Whether a change and a named element are related: the same element, or
+/// the change inside it (what a named element owns is named with it), or a
+/// change that may be what a non-package owner of it holds (its code, or a
+/// member added or removed).
+fn related(item: &Item, named: &Described) -> bool {
+    let changed = item.element;
     changed.id == named.id
         || changed.owners.contains(&named.id)
-        || (named.owners.contains(&changed.id) && changed.kind != "package")
+        || (item.holds && named.owners.contains(&changed.id) && changed.kind != "package")
 }
 
 /// The changed elements of `ids` in `model` that no other of them owns.
@@ -324,12 +349,21 @@ pub fn trace(
     parts: &[String],
     resolved: Option<&Resolution>,
 ) -> Traced {
+    let created = outermost(&compared.created, &compared.after);
+    let deleted = outermost(&compared.deleted, &compared.before);
+    // The elements that hold a created or deleted one directly.
+    let holding: BTreeSet<u64> = created
+        .iter()
+        .chain(&deleted)
+        .filter_map(|e| e.owners.first().copied())
+        .collect();
     let mut items: Vec<Item> = Vec::new();
-    for element in outermost(&compared.created, &compared.after) {
+    for element in created {
         items.push(Item {
             element,
             how: "created",
             part: owning_part(&compared.after, element),
+            holds: false,
         });
     }
     for element in compared
@@ -348,13 +382,15 @@ pub fn trace(
             element,
             how: "updated",
             part: owning_part(&compared.after, element),
+            holds: holding.contains(&element.id),
         });
     }
-    for element in outermost(&compared.deleted, &compared.before) {
+    for element in deleted {
         items.push(Item {
             element,
             how: "deleted",
             part: owning_part(&compared.before, element),
+            holds: false,
         });
     }
     // The parts whose linked code changed (a link's path covering a file).
@@ -385,6 +421,7 @@ pub fn trace(
                 element: part,
                 how: "code",
                 part: Some(part),
+                holds: true,
             });
         }
     }
@@ -392,7 +429,6 @@ pub fn trace(
     let mut named: Vec<&Described> = Vec::new();
     let mut not_changed: Vec<String> = Vec::new();
     let ids: Vec<u64> = resolved
-        .filter(|r| r.skipped.is_none() && !r.parts.is_empty())
         .map(|r| r.parts.iter().map(|p| p.element).collect())
         .unwrap_or_default();
     if ids.is_empty() {
@@ -411,7 +447,7 @@ pub fn trace(
     }
     let mut not_named: Vec<String> = items
         .iter()
-        .filter(|item| !named.iter().any(|n| related(item.element, n)))
+        .filter(|item| !named.iter().any(|n| related(item, n)))
         .map(|item| {
             let what = if item.how == "code" {
                 "its linked code changed".to_string()
@@ -433,7 +469,7 @@ pub fn trace(
         ));
     }
     for n in &named {
-        if !items.iter().any(|item| related(item.element, n)) {
+        if !items.iter().any(|item| related(item, n)) {
             not_changed.push(format!("{} ({})", n.name, n.kind));
         }
     }
@@ -450,7 +486,7 @@ pub fn trace(
 /// The ids of the model's purpose requirement in `model`: the requirement
 /// def `Purpose` and the requirement usage `purpose` directly in a root
 /// package.
-fn purpose_ids(model: &Elements) -> impl Iterator<Item = u64> + '_ {
+pub fn purpose_ids(model: &Elements) -> BTreeSet<u64> {
     model
         .values()
         .filter(|e| {
@@ -463,33 +499,74 @@ fn purpose_ids(model: &Elements) -> impl Iterator<Item = u64> + '_ {
                     || (e.kind == "requirement" && last == "purpose"))
         })
         .map(|e| e.id)
+        .collect()
 }
 
-/// What a change does to the model's purpose requirement (C-55), found by
-/// identity in the base's model (renaming it hides nothing) and in the
-/// commit's (creating one is changing it): each of its elements, and
-/// everything they own, created, updated or deleted. Empty when there is
-/// none on either side, or it is unchanged.
-pub fn purpose_changes(compared: &Compared) -> Vec<String> {
-    let protected: BTreeSet<u64> = purpose_ids(&compared.before)
+/// What a change does to the model's purpose (C-55), for its gate.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PurposeCheck {
+    /// The project declares a root purpose requirement (in the base's model,
+    /// or in an earlier one the objective protects: its start's, the
+    /// approved baseline's). Only then are the purpose and `ROADMAP.md`
+    /// protected: a project without one (a user's, before its purpose is
+    /// modelled) is not governed by them.
+    pub governed: bool,
+    /// What the change does to it, each in a line.
+    pub changes: Vec<String>,
+}
+
+/// What a change (`compared`: the base's model and the commit's) does to
+/// the model's purpose requirement (C-55), found by identity: the elements
+/// `protected` (taken from the base's model and from earlier ones, so that
+/// moving it out of a root package in one cycle hides nothing in the next)
+/// and those the commit's model declares (creating one is changing it).
+/// Each of them, and everything they own, created, updated or deleted, and
+/// each whose owners or qualified name changed (the root package wrapped in
+/// another, say), is a change. A project whose base and earlier models
+/// declare none is not governed: nothing to protect.
+pub fn purpose_changes(compared: &Compared, earlier: &BTreeSet<u64>) -> PurposeCheck {
+    let declared: BTreeSet<u64> = purpose_ids(&compared.before)
+        .into_iter()
+        .chain(earlier.iter().copied())
+        .collect();
+    if declared.is_empty() {
+        return PurposeCheck::default();
+    }
+    let protected: BTreeSet<u64> = declared
+        .into_iter()
         .chain(purpose_ids(&compared.after))
         .collect();
     let hit =
         |e: &Described| protected.contains(&e.id) || e.owners.iter().any(|o| protected.contains(o));
-    let mut found = Vec::new();
+    let mut changes = Vec::new();
     for (ids, model, how) in [
         (&compared.created, &compared.after, "created"),
         (&compared.updated, &compared.after, "updated"),
         (&compared.deleted, &compared.before, "deleted"),
     ] {
         for element in ids.iter().filter_map(|id| model.get(id)).filter(|e| hit(e)) {
-            found.push(format!("{} ({}, {how})", element.name, element.kind));
+            changes.push(format!("{} ({}, {how})", element.name, element.kind));
         }
     }
-    found
+    // Moved or renamed without being updated itself: an owner of it moved.
+    for id in &protected {
+        if let (Some(before), Some(after)) = (compared.before.get(id), compared.after.get(id))
+            && (before.owners != after.owners || before.name != after.name)
+            && !compared.updated.contains(id)
+        {
+            changes.push(format!(
+                "{} ({}, moved from {})",
+                after.name, after.kind, before.name
+            ));
+        }
+    }
+    PurposeCheck {
+        governed: true,
+        changes,
+    }
 }
 
-/// One group of the cumulative change, counted at the root.
+// One group of the cumulative change, counted at the root.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Group {
@@ -535,8 +612,13 @@ pub struct Cumulative {
     /// Why the model was not compared, when it was not.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skipped: Option<String>,
+    /// Why the approved baseline could not be read, when it could not (the
+    /// objective's start stands in for it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unread: Option<String>,
     /// Anything else the reviewer should know of the range (the baseline is
-    /// not an ancestor of the commit; the test changes could not be read).
+    /// not an ancestor of the commit, or not in the local repository; the
+    /// test changes could not be read).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub notes: Vec<String>,
 }
@@ -544,18 +626,23 @@ pub struct Cumulative {
 impl Cumulative {
     /// Since what, in words.
     fn since_text(&self) -> String {
-        if self.approved {
-            format!(
+        let range = format!(
+            "cumulative change since {} to {}",
+            short(&self.since),
+            short(&self.commit)
+        );
+        match (self.approved, &self.unread) {
+            (true, _) => format!(
                 "Cumulative change since the approved baseline at {} (the tag {APPROVED_BASELINE} on origin) to {}",
                 short(&self.since),
                 short(&self.commit)
-            )
-        } else {
-            format!(
-                "No approved baseline recorded; compared with the objective's start: cumulative change since {} to {}",
-                short(&self.since),
-                short(&self.commit)
-            )
+            ),
+            (false, Some(why)) => format!(
+                "The approved baseline could not be read ({why}); compared with the objective's start: {range}"
+            ),
+            (false, None) => format!(
+                "No approved baseline recorded; compared with the objective's start: {range}"
+            ),
         }
     }
 
@@ -755,16 +842,20 @@ pub fn cumulative(
     cumulative
 }
 
-/// The commit the tag [`APPROVED_BASELINE`] points at on `repository`'s
-/// remote `origin`, where the Operator pushes it, if they did. The local
-/// tag is never read: a cycle's worktree shares the repository's local
-/// refs, so only the remote's tag is the Operator's for certain. An error
-/// says why the remote could not be read.
-pub fn approved_baseline(repository: &Path) -> Result<Option<String>, String> {
+/// The commit the tag [`APPROVED_BASELINE`] points at on the remote at
+/// `origin` (the URL recorded when the objective was created, so an agent
+/// that redirects the remote `origin` redirects nothing), if the Operator
+/// pushed it there. The local tag is never read: a cycle's worktree shares
+/// the repository's local refs. An error says why the remote could not be
+/// read.
+pub fn approved_baseline(repository: &Path, origin: &str) -> Result<Option<String>, String> {
+    if origin.trim().is_empty() || origin.starts_with('-') {
+        return Err(format!("`{origin}` is not a remote's URL"));
+    }
     let tag = format!("refs/tags/{APPROVED_BASELINE}");
     let listed = crate::forge::run(
         repository,
-        &["git", "ls-remote", "--tags", "origin", &tag],
+        &["git", "ls-remote", "--tags", origin, &tag],
         Duration::from_secs(120),
     )?;
     // `<id>\t<ref>` lines; an annotated tag also lists its commit, peeled,
@@ -784,75 +875,107 @@ pub fn approved_baseline(repository: &Path) -> Result<Option<String>, String> {
     Ok(peeled.or(plain).filter(|id| !id.is_empty()))
 }
 
-/// The base commit's model, read from `folder` (a clean checkout of
-/// `base`), as a proposal's `serves` and `parts` are resolved in it; or why
-/// there is none: a project without a model resolves nothing, and its
-/// proposals say so.
-pub fn base_model(folder: &Path, base: &str) -> Result<Elements, String> {
-    if !folder.join("model").is_dir() {
-        return Err("the project has no model, so `serves` and `parts` are not resolved".into());
-    }
-    agq_assistant::model_tools::model_at(folder, base).map_err(|e| {
-        format!(
-            "the base commit's model could not be read ({e}), so `serves` and `parts` are not resolved"
-        )
-    })
-}
-
-/// The implementation links' texts to read for a change in `folder` (a
-/// checkout of `repository`): the checkout's and the base's, so dropping a
-/// link hides nothing.
-pub fn links_of(repository: &Path, folder: &Path, base: &str) -> Vec<String> {
-    let mut links = Vec::new();
-    if let Ok(text) = std::fs::read_to_string(folder.join("model").join("links.json")) {
-        links.push(text);
-    }
-    if let Ok(shown) = crate::forge::run(
+/// Whether `commit` of `repository` has a model folder, by its tree: never
+/// by a checkout's files, which code run in that checkout may have changed.
+pub fn has_model(repository: &Path, commit: &str) -> Result<bool, String> {
+    let listed = crate::forge::run(
         repository,
-        &["git", "show", &format!("{base}:model/links.json")],
+        &["git", "ls-tree", "-d", "--name-only", commit, "--", "model"],
         Duration::from_secs(60),
-    ) {
-        links.push(shown.stdout);
-    }
-    links
+    )?;
+    Ok(listed.stdout.lines().any(|line| line.trim() == "model"))
 }
 
-/// What the change from `base` to `commit` (checked out clean in `folder`)
-/// does to the model's purpose requirement, by identity, for its gate; a
-/// change that removes the model removes any purpose requirement with it.
+/// Whether `commit` is in `repository` (an approved baseline may not have
+/// been fetched).
+fn present(repository: &Path, commit: &str) -> bool {
+    crate::forge::run(
+        repository,
+        &["git", "cat-file", "-e", &format!("{commit}^{{commit}}")],
+        Duration::from_secs(60),
+    )
+    .is_ok()
+}
+
+/// The base commit's model, by identity, read through `reader` (a clean
+/// checkout in which nothing ran), as a proposal's `serves` and `parts` are
+/// resolved in it: none when the base has no model folder (by its tree);
+/// an error, which stops the cycle, when it has one that cannot be read.
+pub fn base_model(
+    repository: &Path,
+    reader: &Path,
+    base: &str,
+) -> Result<Option<Elements>, String> {
+    if !has_model(repository, base)? {
+        return Ok(None);
+    }
+    agq_assistant::model_tools::model_at(reader, base)
+        .map(Some)
+        .map_err(|e| format!("the base commit's model could not be read ({e})"))
+}
+
+/// Why a project's proposals resolve nothing: it has no model.
+pub const NO_MODEL: &str = "the project has no model, so `serves` and `parts` are not resolved";
+
+/// The implementation links' texts of `base` and `commit` of `repository`,
+/// by their trees (dropping a link hides nothing, and no checkout's files
+/// count).
+pub fn links_of(repository: &Path, base: &str, commit: &str) -> Vec<String> {
+    [base, commit]
+        .iter()
+        .filter_map(|at| {
+            crate::forge::run(
+                repository,
+                &["git", "show", &format!("{at}:model/links.json")],
+                Duration::from_secs(60),
+            )
+            .ok()
+        })
+        .map(|shown| shown.stdout)
+        .collect()
+}
+
+/// What the change from `base` to `commit` does to the model's purpose
+/// requirement (C-55), for its gate, read through `reader` (a clean
+/// checkout of a commit that has a model, in which nothing ran; none when
+/// no commit concerned has one): protected by identity as the base's model
+/// and the `earlier` commits' (the objective's start, the approved
+/// baseline) declare it. An earlier commit that cannot be read protects
+/// nothing more; the base or the commit that cannot be read is an error.
 pub fn purpose_in(
-    folder: &Path,
+    reader: Option<&Path>,
     base: &str,
     commit: &str,
-    patch: &Patch,
-) -> Result<Vec<String>, String> {
-    if folder.join("model").is_dir() {
-        agq_assistant::model_tools::compare_commits(folder, base, commit)
-            .map(|compared| purpose_changes(&compared))
-    } else if patch
-        .files
-        .iter()
-        .any(|f| f.path.starts_with("model/") && f.status == "deleted")
-    {
-        Ok(vec!["the model, which the change removes".into()])
-    } else {
-        Ok(Vec::new())
+    earlier: &[String],
+) -> Result<PurposeCheck, String> {
+    let Some(reader) = reader else {
+        return Ok(PurposeCheck::default());
+    };
+    let compared = agq_assistant::model_tools::compare_commits(reader, base, commit)
+        .map_err(|e| format!("the model could not be compared ({e})"))?;
+    let mut protected = BTreeSet::new();
+    for at in earlier.iter().filter(|at| at.as_str() != base) {
+        if let Ok(model) = agq_assistant::model_tools::model_at(reader, at) {
+            protected.extend(purpose_ids(&model));
+        }
     }
+    Ok(purpose_changes(&compared, &protected))
 }
 
-/// What `commit` of `repository` (checked out clean in `folder`) changed
-/// against its `base` (`patch`), compared with what `proposal` named in
-/// `parts`.
+/// What `commit` of `repository` changed against its `base` (`patch`),
+/// compared with what `proposal` named in `parts`, read through `reader` (a
+/// clean checkout of a commit that has a model; none when neither has
+/// one).
 pub fn traced_in(
     repository: &Path,
-    folder: &Path,
+    reader: Option<&Path>,
     base: &str,
     commit: &str,
     patch: &Patch,
     proposal: &Proposal,
 ) -> Traced {
-    let mut traced = if folder.join("model").is_dir() {
-        match agq_assistant::model_tools::compare_commits(folder, base, commit) {
+    let mut traced = match reader {
+        Some(reader) => match agq_assistant::model_tools::compare_commits(reader, base, commit) {
             Ok(compared) => {
                 let files: Vec<String> = patch
                     .files
@@ -862,7 +985,7 @@ pub fn traced_in(
                 trace(
                     &compared,
                     &files,
-                    &links_of(repository, folder, base),
+                    &links_of(repository, base, commit),
                     &proposal.parts,
                     proposal.resolved.as_ref(),
                 )
@@ -871,39 +994,72 @@ pub fn traced_in(
                 skipped: Some(format!("the model could not be compared ({error})")),
                 ..Traced::default()
             },
-        }
-    } else {
-        Traced {
+        },
+        None => Traced {
             skipped: Some("the project has no model".into()),
             ..Traced::default()
-        }
+        },
     };
     traced.commit = commit.to_string();
     traced.base = base.to_string();
     traced
 }
 
-/// The cumulative change to `commit` of `repository` (checked out clean in
-/// `folder`) since the Operator's approved baseline (the tag on `origin`),
-/// or, without one, since `start` (the objective's start): its model, and
-/// the tests and checks the baseline guard lists over the range.
-pub fn cumulative_in(repository: &Path, folder: &Path, start: &str, commit: &str) -> Cumulative {
-    let mut notes = Vec::new();
-    let (since, approved) = match approved_baseline(repository) {
-        Ok(Some(baseline)) => (baseline, true),
-        Ok(None) => (start.to_string(), false),
-        Err(error) => {
-            notes.push(format!(
-                "the approved baseline is read from the remote `origin`, which could not be read ({error})"
-            ));
-            (start.to_string(), false)
-        }
+/// Where the cumulative change of a review starts (C-55): the approved
+/// baseline on the remote at `origin`, when there is one, else `start`
+/// (the objective's), with why no baseline was read when one could not be.
+pub fn since(
+    repository: &Path,
+    origin: Option<&str>,
+    start: &str,
+) -> (String, bool, Option<String>) {
+    let Some(origin) = origin else {
+        return (
+            start.to_string(),
+            false,
+            Some("no remote `origin` was recorded when the objective was created".into()),
+        );
     };
-    let compared = if folder.join("model").is_dir() {
-        agq_assistant::model_tools::compare_commits(folder, &since, commit)
-            .map_err(|e| format!("the model could not be compared ({e})"))
-    } else {
-        Err("the project has no model".to_string())
+    match approved_baseline(repository, origin) {
+        Ok(Some(baseline)) => (baseline, true, None),
+        Ok(None) => (start.to_string(), false, None),
+        Err(error) => (
+            start.to_string(),
+            false,
+            Some(format!(
+                "the remote at {origin} could not be read ({error})"
+            )),
+        ),
+    }
+}
+
+/// The cumulative change to `commit` of `repository` since the Operator's
+/// approved baseline on the remote at `origin`, or, without one, since
+/// `start` (the objective's start): its model, read through `reader` (a
+/// clean checkout of a commit that has a model; none when none has), and
+/// the tests and checks the baseline guard lists over the range.
+pub fn cumulative_in(
+    repository: &Path,
+    reader: Option<&Path>,
+    origin: Option<&str>,
+    start: &str,
+    commit: &str,
+) -> Cumulative {
+    let (since, approved, unread) = since(repository, origin, start);
+    let mut notes = Vec::new();
+    let here = present(repository, &since);
+    if !here {
+        notes.push(format!(
+            "the commit {} is not in the local repository (fetch it to compare with it)",
+            short(&since)
+        ));
+    } else if approved && !crate::forge::is_ancestor(repository, &since, commit).unwrap_or(false) {
+        notes.push("the approved baseline is not an ancestor of the reviewed commit".into());
+    }
+    let compared = match reader {
+        Some(reader) => agq_assistant::model_tools::compare_commits(reader, &since, commit)
+            .map_err(|e| format!("the model could not be compared ({e})")),
+        None => Err("the project has no model".to_string()),
     };
     let mut cumulative = cumulative(
         compared.as_ref().map_err(String::as_str),
@@ -911,17 +1067,14 @@ pub fn cumulative_in(repository: &Path, folder: &Path, start: &str, commit: &str
         commit,
         approved,
     );
+    cumulative.unread = unread;
     cumulative.notes = notes;
     match agq_execution::git::patch_of(repository, &since, commit) {
         Ok(range) => cumulative.test_changes = crate::gates::listed_test_changes(&range),
-        Err(error) => cumulative.notes.push(format!(
+        Err(error) if here => cumulative.notes.push(format!(
             "the tests and checks over the range could not be read ({error})"
         )),
-    }
-    if approved && !crate::forge::is_ancestor(repository, &since, commit).unwrap_or(false) {
-        cumulative
-            .notes
-            .push("the approved baseline is not an ancestor of the reviewed commit".into());
+        Err(_) => {}
     }
     cumulative
 }
@@ -1029,72 +1182,221 @@ mod tests {
         assert_eq!(traced.changed, 4);
     }
 
-    #[test]
-    fn the_purpose_requirement_is_found_by_identity_in_the_root_package() {
-        let mut before = base();
-        before.insert(10, element(10, "Shop::Purpose", "requirement def", &[1]));
-        before.insert(11, element(11, "Shop::Purpose::(doc)", "doc", &[10, 1]));
-        before.insert(12, element(12, "Shop::purpose", "requirement", &[1]));
-        // Not in the root package: not the purpose requirement.
-        before.insert(
+    /// The base model with a root purpose requirement: `Purpose` (10) with
+    /// its doc (11), and `purpose` (12); and a `Purpose` that is not at the
+    /// root (13).
+    fn governed() -> Elements {
+        let mut model = base();
+        model.insert(10, element(10, "Shop::Purpose", "requirement def", &[1]));
+        model.insert(11, element(11, "Shop::Purpose::(doc)", "doc", &[10, 1]));
+        model.insert(12, element(12, "Shop::purpose", "requirement", &[1]));
+        model.insert(
             13,
             element(13, "Shop::Store::Purpose", "requirement def", &[2, 1]),
         );
-        let mut after = before.clone();
-        // Renamed: still itself, by identity.
-        after.insert(10, element(10, "Shop::Aim", "requirement def", &[1]));
-        let changed = |updated: Vec<u64>| Compared {
-            before: before.clone(),
-            after: after.clone(),
-            created: vec![],
+        model
+    }
+
+    fn compared(before: Elements, after: Elements, changes: [Vec<u64>; 3]) -> Compared {
+        let [created, updated, deleted] = changes;
+        Compared {
+            before,
+            after,
+            created,
             updated,
-            deleted: vec![],
-        };
+            deleted,
+        }
+    }
+
+    /// C-55: the purpose requirement and everything it owns, by identity,
+    /// in a root package: renamed it is still itself; a `Purpose` elsewhere
+    /// is not it.
+    #[test]
+    fn the_purpose_requirement_is_found_by_identity_in_the_root_package() {
+        let none = BTreeSet::new();
+        let check = |c: &Compared| purpose_changes(c, &none);
+        let doc = check(&compared(
+            governed(),
+            governed(),
+            [vec![], vec![11], vec![]],
+        ));
+        assert!(doc.governed);
+        assert_eq!(doc.changes, vec!["Shop::Purpose::(doc) (doc, updated)"]);
+        let mut renamed = governed();
+        renamed.insert(10, element(10, "Shop::Aim", "requirement def", &[1]));
+        renamed.insert(11, element(11, "Shop::Aim::(doc)", "doc", &[10, 1]));
         assert_eq!(
-            purpose_changes(&changed(vec![11])),
-            vec!["Shop::Purpose::(doc) (doc, updated)"]
-        );
-        assert_eq!(
-            purpose_changes(&changed(vec![10])),
+            check(&compared(
+                governed(),
+                renamed.clone(),
+                [vec![], vec![10], vec![]]
+            ))
+            .changes,
             vec!["Shop::Aim (requirement def, updated)"]
         );
-        assert!(purpose_changes(&changed(vec![13, 2])).is_empty());
+        assert!(
+            check(&compared(
+                governed(),
+                governed(),
+                [vec![], vec![13, 2], vec![]]
+            ))
+            .changes
+            .is_empty()
+        );
         // Everything it owns: a subrequirement and a satisfy relationship
         // created inside it, a doc deleted from it.
-        let mut owning = after.clone();
-        owning.insert(14, element(14, "Shop::Aim::sells", "requirement", &[10, 1]));
+        let mut owning = governed();
+        owning.remove(&11);
+        owning.insert(
+            14,
+            element(14, "Shop::Purpose::sells", "requirement", &[10, 1]),
+        );
         owning.insert(
             15,
             element(15, "Shop::purpose::(satisfy Store)", "satisfy", &[12, 1]),
         );
-        let compared = Compared {
-            before: before.clone(),
-            after: owning,
-            created: vec![14, 15],
-            updated: vec![],
-            deleted: vec![11],
-        };
         assert_eq!(
-            purpose_changes(&compared),
+            check(&compared(
+                governed(),
+                owning,
+                [vec![14, 15], vec![], vec![11]]
+            ))
+            .changes,
             vec![
-                "Shop::Aim::sells (requirement, created)",
+                "Shop::Purpose::sells (requirement, created)",
                 "Shop::purpose::(satisfy Store) (satisfy, created)",
                 "Shop::Purpose::(doc) (doc, deleted)"
             ]
         );
-        // Created where there was none: changing the purpose too.
+    }
+
+    /// C-55: only a project whose base (or an earlier commit the objective
+    /// protects) declares a root purpose requirement is governed: a user's
+    /// project without one is not, and creating one there changes nothing
+    /// protected; in a governed one, a second one created is a change.
+    #[test]
+    fn only_a_project_that_declares_its_purpose_is_governed() {
+        let none = BTreeSet::new();
         let mut created = base();
         created.insert(20, element(20, "Shop::purpose", "requirement", &[1]));
-        let compared = Compared {
-            before: base(),
-            after: created,
-            created: vec![20],
-            updated: vec![],
-            deleted: vec![],
-        };
-        assert_eq!(
-            purpose_changes(&compared),
-            vec!["Shop::purpose (requirement, created)"]
+        let ungoverned = purpose_changes(
+            &compared(base(), created, [vec![20], vec![], vec![]]),
+            &none,
         );
+        assert!(!ungoverned.governed && ungoverned.changes.is_empty());
+        let mut second = governed();
+        second.insert(21, element(21, "Shop::Purpose#2", "requirement def", &[1]));
+        let mut second_named = second.clone();
+        second_named.insert(21, element(21, "Shop::Purpose", "requirement def", &[1]));
+        let check = purpose_changes(
+            &compared(governed(), second_named, [vec![21], vec![], vec![]]),
+            &none,
+        );
+        assert!(check.governed);
+        assert_eq!(
+            check.changes,
+            vec!["Shop::Purpose (requirement def, created)"]
+        );
+    }
+
+    /// C-55, the two-step bypass: wrapping the root package in another moves
+    /// the purpose without updating it, which is a change; and once it is
+    /// out of a root package, the earlier commits' models still protect it
+    /// by identity.
+    #[test]
+    fn moving_the_purpose_out_of_the_root_is_a_change_and_hides_it_from_nothing() {
+        let none = BTreeSet::new();
+        // Shop wrapped in Outer (30): Purpose's owners and name change.
+        let mut wrapped = Elements::new();
+        wrapped.insert(30, element(30, "Outer", "package", &[]));
+        for (id, e) in governed() {
+            let mut owners = e.owners.clone();
+            owners.push(30);
+            wrapped.insert(
+                id,
+                element(id, &format!("Outer::{}", e.name), &e.kind, &owners),
+            );
+        }
+        let moved = purpose_changes(
+            &compared(governed(), wrapped.clone(), [vec![30], vec![1], vec![]]),
+            &none,
+        );
+        assert!(moved.governed);
+        assert!(
+            moved.changes.contains(
+                &"Outer::Shop::Purpose (requirement def, moved from Shop::Purpose)".to_string()
+            ),
+            "{:?}",
+            moved.changes
+        );
+        // The next cycle: its base has no root purpose any more, but the
+        // objective's start does.
+        let earlier = purpose_ids(&governed());
+        assert_eq!(earlier, BTreeSet::from([10, 12]));
+        let mut rewritten = wrapped.clone();
+        rewritten.insert(
+            11,
+            element(11, "Outer::Shop::Purpose::(doc)", "doc", &[10, 1, 30]),
+        );
+        let next = compared(wrapped, rewritten, [vec![], vec![11], vec![]]);
+        assert!(
+            !purpose_changes(&next, &none).governed,
+            "the base alone no longer shows it"
+        );
+        let protected = purpose_changes(&next, &earlier);
+        assert!(protected.governed);
+        assert_eq!(
+            protected.changes,
+            vec!["Outer::Shop::Purpose::(doc) (doc, updated)"]
+        );
+    }
+
+    /// C-55: a named element's owner whose own properties changed is not
+    /// named by it; one whose change is a member added, or its code, is.
+    #[test]
+    fn a_named_member_does_not_name_its_owners_own_change() {
+        let mut after = base();
+        after.insert(7, element(7, "Shop::Store::close", "attribute", &[2, 1]));
+        let names = vec!["Shop::Store::open".to_string()];
+        // Store's own properties changed: not named by its member.
+        let own = trace(
+            &compared(base(), base(), [vec![], vec![2], vec![]]),
+            &[],
+            &[],
+            &names,
+            None,
+        );
+        assert_eq!(own.not_named, vec!["Shop::Store (part def, updated)"]);
+        // Store holds a new member: its update may be that.
+        let held = trace(
+            &compared(base(), after, [vec![7], vec![2], vec![]]),
+            &[],
+            &[],
+            &names,
+            None,
+        );
+        assert_eq!(
+            held.not_named,
+            vec!["Shop::Store::close (attribute, created; in part Shop::Store)"]
+        );
+    }
+
+    /// C-55: a model that declares no requirement yet resolves `parts` and
+    /// records `serves` as stated, saying why.
+    #[test]
+    fn a_model_without_requirements_records_serves_as_stated() {
+        let mut model = base();
+        model.remove(&4);
+        model.remove(&5);
+        let resolved = resolve(
+            &["Shop::Fast".to_string()],
+            &["Shop::Store".to_string()],
+            &model,
+        )
+        .unwrap();
+        assert!(resolved.serves.is_empty());
+        assert_eq!(resolved.parts[0].element, 2);
+        assert_eq!(resolved.skipped.as_deref(), Some(NO_REQUIREMENTS));
+        assert!(resolve(&[], &["Shop::Basket".to_string()], &model).is_err());
     }
 }

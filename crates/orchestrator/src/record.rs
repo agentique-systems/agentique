@@ -896,6 +896,11 @@ pub struct Objective {
     /// `lead`) given to it: the later ones go to its next turn.
     #[serde(default, skip_serializing_if = "is_zero_u64")]
     pub delivered: u64,
+    /// The URL of the repository's remote `origin` when the objective was
+    /// created (C-55): where the approved baseline is read, whatever an
+    /// agent does to the remote later. None without a remote.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
 }
 
 fn is_zero_u32(value: &u32) -> bool {
@@ -1095,6 +1100,7 @@ impl Store {
             interrupted: false,
             resumes: 0,
             delivered: 0,
+            origin: crate::forge::origin_url(repository),
         };
         self.save(&objective)?;
         Ok(objective)
@@ -1419,6 +1425,7 @@ mod tests {
             interrupted: false,
             resumes: 0,
             delivered: 0,
+            origin: None,
         };
         objective.spent.add(
             "lead",

@@ -2147,11 +2147,21 @@ refused).
 Operator accepted anything). As the §7.6 entry of 2026-10-10 describes:
 proposals name what they serve, benefit and cost, checked against the base's
 model; traceability and the cumulative change since the approved baseline
-for the reviewer, who answers both explicitly; the purpose gate; no tags in
-worktrees; dispositions of findings. Tested with the scripted stand-ins
-(`tests/traceability.rs` new, `tests/cycle.rs`, `tests/exploring.rs`, unit
-tests in `roles.rs`, `gates.rs`, `knowledge.rs`, `forge.rs`, and the
-assistant's `policy.rs`): agq-orchestrator and agq-assistant 239 passed, 0
-failed (after rebasing on `main` at `b6a7177c`). Not verified: live models;
-the approved baseline against GitHub (tested with a local bare `origin`; a
-tagged commit missing locally is recorded as a note, never fetched).
+(read at the `origin` URL the objective recorded) for the reviewer, who
+answers both explicitly; the purpose gate, for projects that declare a root
+purpose, reading models by the commits' trees; no tags, remote changes or
+git aliases in worktrees; dispositions of findings with stable ids. After
+the independent review of #120: the purpose gate and the locked-element
+gates no longer read the checkout the checks ran in; the purpose is
+protected across cycles (moved or renamed, and as the objective's start and
+the approved baseline declare it); model read failures stop the cycle;
+models without requirements record `serves` as stated; ambiguous findings
+are not reproduced again; blank review judgments are refused. Tested with
+the scripted stand-ins (`tests/traceability.rs`, `tests/cycle.rs` with
+cycles that edit `ROADMAP.md` and the purpose, one while a check deletes
+`model/`, `tests/exploring.rs` with wrong-expectation, ambiguous and
+re-judged findings, unit tests in `traceability.rs`, `roles.rs`,
+`gates.rs`, `knowledge.rs`, `record.rs`, and the assistant's `policy.rs`
+and `model_tools.rs`). Not verified: live models; the approved baseline
+against GitHub (tested with local bare remotes); reversing a disposition
+by an Operator command (not built).

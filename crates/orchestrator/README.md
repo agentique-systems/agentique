@@ -57,28 +57,42 @@ what to change.
   the requirements of the project's model it `serves`, its `benefit` and
   its effect on `complexity`; `serves` and `parts` are resolved by identity
   in the base commit's model when it is submitted (a name that does not
-  resolve, or a `serves` that is no requirement, refuses it; a project
-  without a model records why nothing was resolved). At review, what the
-  commit changed (model elements by identity, and the parts whose linked
-  code changed) is compared with `parts` ("changed but not named", "named
-  but not changed"), and the cumulative change since the Operator's
-  approved baseline (the tag `approved-baseline` on `origin`, read there
-  and never locally; without it, the objective's start) is counted at the
-  root: both go to the reviewer, who records its judgments, to the cycle's
-  record and to the thread; the numbers inform, they do not decide. The
-  gate "purpose and governance unchanged" fails a change to `ROADMAP.md`
-  or to the model's purpose requirement (`Purpose`, `purpose` in a root
-  package, and what they own, by identity), whatever the objective names.
-  Worktree sessions are refused `git tag`.
+  resolve, or a `serves` that is no requirement, refuses it; a base without
+  a model folder resolves nothing, and a model with no requirement yet
+  records `serves` as stated, each saying why; a model that cannot be read
+  stops the cycle). At review, what the commit changed (model elements by
+  identity, and the parts whose linked code changed) is compared with
+  `parts` ("changed but not named", "named but not changed"), and the
+  cumulative change since the Operator's approved baseline (the tag
+  `approved-baseline`, read with `git ls-remote` at the URL of `origin`
+  recorded when the objective was created, never the local tag; without
+  it, the objective's start, saying why) is counted at the root: both go to
+  the reviewer, whose judgments of both are required and recorded, to the
+  cycle's record and to the thread; the numbers inform, they do not
+  decide. In a project whose model declares a root purpose requirement
+  (`Purpose`, `purpose`; Agentique's does), the gate "purpose and
+  governance unchanged" fails a change to `ROADMAP.md` or to that
+  requirement and what it owns, by identity, also when it is moved or
+  renamed, as the base, the objective's start and the approved baseline
+  declare it, whatever the objective names; a failure goes to repair like
+  any gate's. Models, links and their presence are read by the commits'
+  trees through a clean checkout made for it, never through the checkout
+  the checks ran in. Worktree sessions are refused `git tag`, changes to
+  the remotes, git aliases given on the command line, and releases or tags
+  on the host; `gh` needs the network.
 - **Dispositions** (`findings`, `knowledge`; C-55): the lead judges a
   reproduced finding with `adjudicate_finding` (a defect, a wrong
   expectation, an ambiguous requirement or an unreliable reproduction),
   which the Orchestrator records in the testing knowledge, across
-  objectives, and shows in the thread; only a defect is chosen to fix, a
-  wrong expectation or an unreliable reproduction is not offered again
-  (found again, it is not new), an ambiguous requirement is a question for
-  the Operator; when every finding is judged other than a defect, the cycle
-  ends with nothing to fix.
+  objectives, and shows in the thread; a finding's id (`f1`, …) is its
+  place among the cycle's findings and never changes. Only a defect is
+  chosen to fix, and once a proposal fixing it is accepted it cannot be
+  judged otherwise; a wrong expectation is not offered again (found again,
+  it is not new); an unreliable reproduction is not offered again until it
+  is found on a later build; an ambiguous requirement is a question for the
+  Operator, not reproduced again in later cycles. When every finding is
+  judged other than a defect, the cycle ends with nothing to fix. The
+  reviewer is told how the finding a change fixes was judged.
 - **Models per role** (`models`, C-54): each role's model (the four above,
   the explorer, escalation and typed decisions), resolved by the Studio
   from Settings › Agents and the credentials before an objective starts: its

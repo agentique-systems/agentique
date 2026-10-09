@@ -370,7 +370,7 @@ impl Driver {
         Knowledge::change(&file, &project, |k| k.add_run(&run))?;
         // Found again after it was adjudicated: not new (C-55).
         let adjudicated: Vec<String> = knowledge
-            .already_adjudicated(&run.findings)
+            .already_adjudicated(&run.findings, &built.build)
             .into_iter()
             .map(|(f, d)| {
                 format!(
@@ -381,7 +381,7 @@ impl Driver {
             })
             .collect();
         let new: Vec<Finding> = knowledge
-            .new_findings(&run.findings)
+            .new_findings(&run.findings, &built.build)
             .into_iter()
             .map(|mut f| {
                 // The build it was found in, as the Orchestrator chose it:
@@ -708,8 +708,13 @@ impl Driver {
             .filter(|f| matches!(f.state, Found::Reproduced | Found::FailingAgain))
             .filter(|f| !here.contains(&f.identity.as_str()) && tried(&f.identity) < TRIES)
             // Judged a wrong expectation or an unreliable reproduction: not
-            // offered again (C-55).
-            .filter(|f| !f.disposition.as_ref().is_some_and(Disposition::sets_aside))
+            // offered again; an ambiguous requirement: not until the
+            // Operator answers it (C-55).
+            .filter(|f| {
+                !f.disposition.as_ref().is_some_and(|d| {
+                    d.sets_aside() || d.kind == DispositionKind::AmbiguousRequirement
+                })
+            })
             .cloned()
             .collect()
     }
@@ -894,12 +899,10 @@ impl Driver {
         let dispositions = self.dispositions();
         let mut offered = Vec::new();
         let mut text = Vec::new();
-        for (i, finding) in knowledge
-            .offered(&self.cycle().findings)
-            .into_iter()
-            .enumerate()
-        {
-            let id = format!("f{}", i + 1);
+        for (i, finding) in knowledge.offered(&self.cycle().findings) {
+            // Its place among the cycle's findings: the same id in every
+            // session of the cycle (C-55).
+            let id = crate::knowledge::finding_id(i);
             text.push(finding_text(
                 &id,
                 finding,

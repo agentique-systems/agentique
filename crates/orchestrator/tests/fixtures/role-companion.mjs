@@ -4,7 +4,7 @@
 // implementer's first attempt leaks a configured key into the change, so the
 // key gate fails and a repair round follows; the repair removes it.
 import { createInterface } from "node:readline";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const KEY = "sk-fake-0123456789abcdef";
@@ -106,6 +106,14 @@ switch (role) {
     if (modelled) {
       // The code of a part the proposal does not name (C-55).
       writeFileSync(join(o.cwd, "src", "cart.rs"), "fn cart() { checkout(); }\n");
+    }
+    // EDIT-ROADMAP and EDIT-PURPOSE: a change no cycle may make (C-55).
+    if (existsSync(join(o.cwd, "EDIT-ROADMAP"))) {
+      writeFileSync(join(o.cwd, "ROADMAP.md"), "A new direction.\n");
+    }
+    if (existsSync(join(o.cwd, "EDIT-PURPOSE"))) {
+      const shop = join(o.cwd, "model", "Shop.sysml");
+      writeFileSync(shop, readFileSync(shop, "utf8").replace("Shops sell.", "Shops sell, and lend."));
     }
     writeFileSync(
       join(o.cwd, "note.test.mjs"),

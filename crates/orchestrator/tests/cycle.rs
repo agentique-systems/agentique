@@ -476,10 +476,12 @@ fn commit_model(repository: &Path, message: &str) -> String {
     git_out(repository, &["rev-parse", "HEAD"])
 }
 
-/// A repository with a model (C-55): `Shop` with the parts `Store` and
-/// `Cart`, each linked to its code, and the requirement `Fast`; the tag
-/// `approved-baseline` pushed to its `origin` one commit before its head,
-/// which adds the part `Basket`. Returns it and the approved commit.
+/// A repository with a model (C-55): `Shop` with its purpose requirement
+/// (`Purpose`, `purpose`: governed, as Agentique is), the parts `Store` and
+/// `Cart`, each linked to its code, and the requirement `Fast`, and a
+/// `ROADMAP.md`; the tag `approved-baseline` pushed to its `origin` one
+/// commit before its head, which adds the part `Basket`. Returns it and the
+/// approved commit.
 fn modelled_repository(dir: &Path, markers: &[&str]) -> (PathBuf, String) {
     let repository = repository_with(dir, markers);
     let origin = dir.join("origin.git");
@@ -488,8 +490,8 @@ fn modelled_repository(dir: &Path, markers: &[&str]) -> (PathBuf, String) {
         &repository,
         &["remote", "add", "origin", &origin.display().to_string()],
     );
-    let shop =
-        "package Shop {\n    part def Store;\n    part def Cart;\n    requirement def Fast;\n}\n";
+    let shop = "package Shop {\n    requirement def Purpose {\n        doc /* Shops sell. */\n    }\n    requirement purpose : Purpose;\n    part def Store;\n    part def Cart;\n    requirement def Fast;\n}\n";
+    std::fs::write(repository.join("ROADMAP.md"), "The shop's direction.\n").unwrap();
     std::fs::create_dir_all(repository.join("model")).unwrap();
     std::fs::create_dir_all(repository.join("src")).unwrap();
     std::fs::write(repository.join("model/Shop.sysml"), shop).unwrap();
@@ -525,6 +527,16 @@ fn run_objective(
     repository: &Path,
     node: agq_assistant::claude_agent::Node,
 ) -> Objective {
+    run_objective_with(dir, repository, node, None)
+}
+
+/// The same, with the project's required checks `checks` when given.
+fn run_objective_with(
+    dir: &Path,
+    repository: &Path,
+    node: agq_assistant::claude_agent::Node,
+    checks: Option<Vec<Vec<String>>>,
+) -> Objective {
     let store = Store::new(dir.join("objectives"));
     let objective = with_models(
         store
@@ -545,7 +557,11 @@ fn run_objective(
         &store,
     );
     let id = objective.id.clone();
-    let handle = run::start(setup_with(dir, &store, node), objective);
+    let mut setup = setup_with(dir, &store, node);
+    if let Some(checks) = checks {
+        setup.checks = checks;
+    }
+    let handle = run::start(setup, objective);
     let deadline = Instant::now() + Duration::from_secs(240);
     while !handle.finished() {
         assert!(Instant::now() < deadline, "the objective did not end");
@@ -635,6 +651,96 @@ fn a_cycle_resolves_its_proposal_and_traces_its_change_for_the_review() {
         e.text
             .starts_with("Cumulative change since the approved baseline at")
     }));
+    // The approved baseline is where the Operator put it, here and on
+    // origin: the cycle moved no tag.
+    assert_eq!(
+        record.origin.as_deref(),
+        Some(dir.path().join("origin.git").display().to_string().as_str())
+    );
+    assert_eq!(
+        git_out(&repository, &["rev-parse", "approved-baseline^{commit}"]),
+        approved
+    );
+    let remote = git_out(
+        &repository,
+        &[
+            "ls-remote",
+            "--tags",
+            "origin",
+            "refs/tags/approved-baseline",
+        ],
+    );
+    assert!(remote.starts_with(&approved), "{remote}");
+}
+
+/// The gates of every attempt of the cycle, and whether the cycle merged.
+fn purpose_gates(record: &Objective) -> Vec<agq_orchestrator::record::Outcome> {
+    let cycle = record.cycle().expect("a cycle ran");
+    assert!(
+        cycle.merged.is_none() && cycle.review.is_none(),
+        "{cycle:?}"
+    );
+    cycle
+        .attempts
+        .iter()
+        .flat_map(|a| a.gates.iter())
+        .filter(|g| g.name == "purpose and governance unchanged")
+        .cloned()
+        .collect()
+}
+
+/// C-55, end to end: a cycle that edits ROADMAP.md in a governed project
+/// fails the purpose gate on every attempt, goes to repair like any gate's
+/// failure, and is never reviewed nor merged.
+#[test]
+fn a_cycle_that_edits_the_roadmap_is_not_merged() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let (repository, _) = modelled_repository(dir.path(), &["EDIT-ROADMAP"]);
+    let record = run_objective(dir.path(), &repository, node);
+    let gates = purpose_gates(&record);
+    assert!(gates.len() >= 2, "a repair followed: {gates:?}");
+    assert!(
+        gates
+            .iter()
+            .all(|g| !g.passed() && g.detail.contains("ROADMAP.md states the purpose")),
+        "{gates:?}"
+    );
+    assert!(record.cycle().unwrap().blocker.is_some());
+}
+
+/// C-55, end to end, and the gate reads the commit, not the checkout the
+/// checks ran in: a cycle rewrites the purpose requirement while a required
+/// check deletes `model/` in that checkout; the gate still finds the change
+/// by identity, and the cycle is not merged.
+#[test]
+fn a_cycle_that_rewrites_the_purpose_is_not_merged_even_when_a_check_hides_the_model() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let (repository, _) = modelled_repository(dir.path(), &["EDIT-PURPOSE"]);
+    let words = |w: &[&str]| w.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    let checks = vec![
+        words(&["git", "rm", "-r", "-q", "--", "model"]),
+        words(&["git", "status", "--short"]),
+    ];
+    let record = run_objective_with(dir.path(), &repository, node, Some(checks));
+    let gates = purpose_gates(&record);
+    assert!(!gates.is_empty());
+    assert!(
+        gates.iter().all(|g| !g.passed()
+            && g.detail
+                .contains("purpose requirement changes (Shop::Purpose::(doc) (doc, updated))")),
+        "{gates:?}"
+    );
+    // The check did run, and did delete the model there.
+    let first = &record.cycle().unwrap().attempts[0];
+    assert!(first.checks[0].passed(), "{:?}", first.checks);
 }
 
 /// C-55, end to end: a proposal whose `serves` names a part, not a
@@ -674,5 +780,6 @@ fn a_proposal_serving_a_part_is_refused() {
         "{}",
         refused[0].text
     );
-    assert!(refused[0].text.contains("its requirements are: Shop::Fast"));
+    assert!(refused[0].text.contains("its requirements are: "));
+    assert!(refused[0].text.contains("Shop::Fast"));
 }

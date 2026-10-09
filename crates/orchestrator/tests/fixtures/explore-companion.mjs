@@ -117,17 +117,24 @@ if (role === "lead" && planning) {
 } else if (role === "lead") {
   const finding = o.prompt.includes("f1:") ? "f1" : undefined;
   const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];
+  // A finding is judged before it is fixed (C-55): WRONG-EXPECTATION and
+  // AMBIGUOUS judge it otherwise, and nothing is proposed.
+  const otherwise = here("WRONG-EXPECTATION")
+    ? "wrong-expectation"
+    : here("AMBIGUOUS")
+      ? "ambiguous-requirement"
+      : undefined;
   if (finding) {
-    // A finding is judged before it is fixed (C-55).
     const judged = await call("adjudicate_finding", {
       finding,
-      disposition: here("WRONG-EXPECTATION") ? "wrong-expectation" : "defect",
+      disposition: otherwise ?? "defect",
       reason: "A button the Operator can press must say what it does.",
+      ...(here("AMBIGUOUS") ? { requirement: "Demo::LabelsReadable" } : {}),
     });
     if (judged.isError) process.exit(8);
   }
-  if (here("WRONG-EXPECTATION")) {
-    end("Judged it a wrong expectation: nothing to fix.");
+  if (otherwise) {
+    end(`Judged it ${otherwise}: nothing to fix.`);
   } else {
   const answer = await call("submit_proposal", {
     title: "Label the History panel's Archive button",
@@ -143,6 +150,16 @@ if (role === "lead" && planning) {
     ],
     ...(finding ? { finding } : {}),
   });
+  // REJUDGE: once its proposal is accepted, the lead tries to judge the
+  // finding it fixes otherwise; the Orchestrator refuses that (C-55).
+  if (finding && !answer.isError && here("REJUDGE")) {
+    const again = await call("adjudicate_finding", {
+      finding,
+      disposition: "wrong-expectation",
+      reason: "On second thoughts.",
+    });
+    if (!again.isError) process.exit(9);
+  }
   end(`Proposed (${answer.isError ? `refused: ${answer.content}` : "accepted"}).`);
   }
 } else if (role === "implementer") {
