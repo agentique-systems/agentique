@@ -123,6 +123,46 @@ fn a_second_open_is_refused_until_the_first_is_closed() {
     History::open(dir.path()).unwrap();
 }
 
+/// On Linux a process another thread starts holds a copy of every open
+/// file until it has started (between fork and exec, before close-on-exec
+/// closes them), the lock file among them, so a lock just released can
+/// still look held for a moment. Opening waits that moment out; a second
+/// open while the first is held is still refused (above).
+#[test]
+fn a_lock_a_starting_process_briefly_shares_is_waited_for() {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let dir = tempfile::tempdir().unwrap();
+    drop(History::create(dir.path()).unwrap());
+    let done = Arc::new(AtomicBool::new(false));
+    let spawners: Vec<_> = (0..4)
+        .map(|_| {
+            let done = done.clone();
+            std::thread::spawn(move || {
+                while !done.load(Ordering::SeqCst) {
+                    let _ = std::process::Command::new("git")
+                        .arg("--version")
+                        .stdout(std::process::Stdio::null())
+                        .status();
+                }
+            })
+        })
+        .collect();
+    let mut refused = 0;
+    for _ in 0..400 {
+        match History::open(dir.path()) {
+            Ok(opened) => drop(opened),
+            Err(Error::Locked) => refused += 1,
+            Err(error) => panic!("{error}"),
+        }
+    }
+    done.store(true, Ordering::SeqCst);
+    for spawner in spawners {
+        spawner.join().unwrap();
+    }
+    assert_eq!(refused, 0, "opened after closing, while processes start");
+}
+
 #[test]
 fn an_edit_made_outside_the_app_is_never_overwritten() {
     let dir = tempfile::tempdir().unwrap();
