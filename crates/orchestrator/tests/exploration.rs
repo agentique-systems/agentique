@@ -2227,3 +2227,88 @@ fn a_stop_ends_a_run_waiting_for_jev_at_once() {
         "the instance was acted on after the stop: {acted:?}"
     );
 }
+
+/// The stand-in, whose next observation fails (it ended) right after it
+/// refuses an action as stale.
+struct EndsAfterStale {
+    studio: StandIn,
+    ending: bool,
+}
+
+impl Instance for EndsAfterStale {
+    fn observe(&mut self) -> Result<Value, String> {
+        if std::mem::take(&mut self.ending) {
+            return Err("the Studio closed the connection".into());
+        }
+        self.studio.observe()
+    }
+
+    fn act(&mut self, act: &explore::Act) -> Result<Value, String> {
+        let answer = self.studio.act(act)?;
+        if answer["error"]
+            .as_str()
+            .is_some_and(|e| e.starts_with("stale"))
+        {
+            self.ending = true;
+        }
+        Ok(answer)
+    }
+
+    fn restart(&mut self, stop: &mut dyn FnMut() -> bool) -> Result<(), String> {
+        self.studio.restart(stop)
+    }
+
+    fn alive(&mut self) -> bool {
+        self.studio.alive()
+    }
+
+    fn folder(&self) -> Option<PathBuf> {
+        self.studio.folder()
+    }
+
+    fn opened(&self) -> Option<Opened> {
+        self.studio.opened()
+    }
+}
+
+/// AR-T-016 / AR-GAP-021 (reproduction, `childWorkBounded`): an
+/// objective's spend on an exploration is counted from the run's steps
+/// (`count_exploration`), so every cost the run counts is on a step it
+/// records. Here Jev decides each step ($0.001 each); the first action is
+/// refused as stale and the instance ends as it is observed again: that
+/// step's decision was paid, and counted in the run, but the step is not
+/// recorded, so the objective (a child's, and through it its parent's)
+/// never counts it.
+#[test]
+fn every_cost_a_run_counts_is_on_a_step_it_records() {
+    let mut studio = StandIn::new(Defects::default());
+    studio.drift = 1;
+    let mut instance = EndsAfterStale {
+        studio,
+        ending: false,
+    };
+    let answers = Scripted::default().jev(&[Ok(("a01", 0.9)), Ok(("a01", 0.9)), Ok(("a01", 0.9))]);
+    let run = explore_with(
+        &mut instance,
+        &plan(Way::Jev, 1, 3),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let lines: Vec<String> = run.steps.iter().map(|t| t.line()).collect();
+    assert!(
+        run.recoveries.iter().any(|r| r.kind == "restarted"),
+        "the instance ended after the stale refusal: {:?}",
+        run.recoveries
+    );
+    let on_steps: f64 = run
+        .steps
+        .iter()
+        .filter_map(|t| t.chosen.as_ref())
+        .map(|c| c.counted)
+        .sum();
+    assert!(
+        (run.usd - run.assistant_usd - on_steps).abs() < 1e-9,
+        "the run counted ${:.4} for its decisions, its recorded steps (what the objective's spend is counted from) ${on_steps:.4}: {lines:#?}",
+        run.usd - run.assistant_usd
+    );
+}
