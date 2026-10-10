@@ -2090,7 +2090,8 @@ it). Read against the code and the model before any change:
 | W13.4 The self-model | #118, #122 | Merged (below); the purpose's obligations in review in #122 (below) |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | #122 | In review (below) |
-| W13.7 Proof | — | Not started |
+| W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | — | In progress (`stage13/start`) |
+| W13.7 Proof | — | Started: blocked by W13.8 (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in

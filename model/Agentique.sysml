@@ -263,14 +263,10 @@ package AgentiqueArchitecture {
     }
 
     item def ObjectiveRequest {
-        doc /* The Operator's objective (C-53), or a child objective an agent delegated
-             * within its parent's permissions and budgets (C-54): its intent, budgets
-             * and the permissions it carries. `cycles` is its cycle budget; `explore`
-             * says whether its cycles start by exploring the running application;
-             * `depth` is 0 for the Operator's and one more than its parent's for a
-             * child (at most 2).
-             */
-        attribute cycles : Natural;
+        doc /* The Operator's objective (C-53), or a child objective an agent delegated within its parent's permissions and budgets (C-54): its intent, what it does and the permissions it carries. What it does (`explore`, whether its cycles start by exploring the running application; `cycles`, the improvements it makes; `mayMerge` and `mayAdopt`) is inferred from the intent by a typed decision (Jev, escalating when unsure) and shown before Start, where the Operator may change it; spend and time are unlimited unless set (the Operator's decision of 2026-10-10), so its cycles, attempts, exploration steps, model calls per role, lack of progress and the Operator's Stop bound it. `depth` is 0 for the Operator's and one more than its parent's for a child (at most 2). */
+        attribute cycles : Natural {
+            doc /* The improvements it makes at most, one per cycle (inferred from the intent). */
+        }
         attribute explore : Boolean;
         attribute depth : Natural;
         attribute mayMerge : Boolean {
@@ -1333,7 +1329,7 @@ package AgentiqueArchitecture {
     }
 
     dependency from Orchestrator to Providers {
-        doc /* Typed decisions in operation, and prices for the spend budget. */
+        doc /* Typed decisions in operation (an objective's shape from its intent among them), and prices for spend. */
     }
 
     dependency from Orchestrator to Launcher {

@@ -322,7 +322,7 @@ decisions named in each row.
 | A chat product with the architecture on the side | Never; the Surface stays an equal way to work (C-3) |
 | Local models and Gemini | Not in this phase (C-35); the provider layer keeps the door open (Q-12) |
 | Typed fast-decision APIs other than Jev | Not in this phase; Jev is a model provider for fast agents (C-35, Q-11) |
-| Spending limits on the Operator's own conversation | Not in this phase; costs are shown, not capped (C-37). An objective has budgets (spend, attempts, time) because nobody approves each step (C-53) |
+| Spending limits on the Operator's own conversation | Not in this phase; costs are shown, not capped (C-37). An objective's work is bounded because nobody approves each step (C-53): by its cycles, attempts, exploration steps and model calls, lack of progress and the Operator's Stop; spend and time are unlimited unless set (C-54 as amended, §7.6) |
 | A marketplace, cloud registry, package manager or vendor catalogue of building blocks | Not a goal; the Library is local, and a project keeps its own copies of what it uses (C-49) |
 | Unattended production deployment, destructive migrations or irreversible external actions; remote worker fleets; a security sandbox Agentique does not have | Not in this phase; implementation work is local, bounded by an objective's permissions and budgets, and the isolation the host really offers is reported as it is (C-50, C-53) |
 | General physical or numerical simulation, broad language support for implementation, a general-purpose workflow language | Not in this phase; the run contract stays open to them (C-50, §4.14) |
@@ -2146,13 +2146,18 @@ judged so, and a finding judged a wrong expectation or unreliable is not
 offered again, so repeated disagreement with a model-generated expectation
 does not turn into a change.
 
-**Budgets and progress.** An objective has a spend budget (USD, from usage at
-the models' own prices, typed decisions included), a cycle budget, an attempt
-budget per phase and a time budget (§1.6, §4.2 and C-37 say "spend, attempts,
-time" for short; the cycle budget counts attempts at the objective level), and
-since C-54 an exploration budget in steps and a budget of model calls per role,
-all set by the Operator. Before each phase the Orchestrator checks
-what is left; a budget used up stops the objective with its record. Repeated
+**Budgets and progress.** An objective has a cycle budget (the improvements it
+makes), an attempt budget per phase, an exploration budget in steps and a
+budget of model calls per role (C-54), and may have a spend budget (USD, from
+usage at the models' own prices, typed decisions included) and a time budget
+(§1.6, §4.2 and C-37 say "spend, attempts, time" for short). The Operator
+starts an objective from its intent: whether it explores, its cycles and
+whether it may merge and adopt are inferred from the intent by a typed
+decision and shown before Start, where the Operator may change them; spend
+and time are unlimited unless set (the control interface, a child objective
+and evaluation tasks set them), and costs are counted and shown either way
+(the Operator's amendment of C-54, §7.6). Before each phase the Orchestrator
+checks what is left; a budget used up stops the objective with its record. Repeated
 identical failures (the same check with the same failure), a proposal that
 repeats a failed one, or rounds without fewer failures count as no progress
 and stop the cycle with a blocker report.
@@ -3676,6 +3681,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-10 | Deviation 14 widened under C-55 (W13.6): from durations in milliseconds to every quantity, a plain number in the unit its attribute's documentation states; measurement expressions (`1200[g]`) stay unsupported and nothing is converted or dimension-checked. The second system, `models/inspection-charging/` (an inspection drone and its charging station, after the Operator's guide), states its units so | The drone's mass budget and bounded wait are calculations; the ISQ and SI libraries are not pinned (§6.10 "Waits") |
 | 2026-10-10 | Self-model under C-55, as built (W13.4, the purpose's obligations): `Purpose` gains eight informal subrequirements (explicit architecture; executable or reported; claims kept apart; the same mechanisms for itself; the Operator keeps control; aligned evolution; the root system; generalise the mechanism), each naming the requirements that make it concrete or "none yet", made through `apply_changes` with the lock of `Purpose` confirmed on the Operator's C-55 instruction; `satisfy purpose by agentique` is declared now that the Requirements panel keeps a declaration apart from evidence, and a dogfood test asserts the purpose stands "only declared", never as holding | §1.1: the purpose's obligations held in the model it governs; the claims of §4.14 apply to it too |
 | 2026-10-10 | Deviation 20 widened under C-55 (W13.6): a usage that subsets another usage takes its configuration and its redefinitions replace that usage's values (the upgraded drone states only what changed from the survey drone); the standard reads `:>` between usages as "is one of" and forbids overriding a bound value | Reuse of a configuration without copying it, recorded as Agentique's reading rather than given the standard's name |
+| 2026-10-10 | **C-54 amended by the Operator** (the start of an objective, during W13.7: the start form's card could not be scrolled, so Start was out of reach, and the form asked for too much): an objective is started from its intent alone. What it does (whether it explores first, how many improvements, whether a reviewed change that passes every check is merged, and then built, tried and adopted) is inferred from the intent by a typed decision (Jev, the `decisions` role, escalating to the `escalation` role's model when unsure, as every typed decision does; the defaults when neither answers, said so) and shown before Start with who inferred it, where the Operator may change whether it explores, merges or adopts; the start form no longer asks for spend, time, attempts or exploration steps, nor lists each role's model (the thread still records each role's model as the objective starts, and a role without a model still stops the start with why). Spend and time are unlimited unless set (the control interface, a child objective and the evaluation tasks still set them): an objective is bounded by its cycles, its attempts per cycle (4), its exploration steps (20 per run), each role's model calls, lack of progress and the Operator's Pause and Stop; costs are still counted and shown. Persistence, named before it is built (R-16): in `objective.json`, `budgets.usd` and `budgets.hours` become optional and are left out when unlimited, and the inferred shape is a new optional field `inferred`; a previous build cannot read a record without them, and leaves it out of its list (`Store::list`), so returning to it is safe but it neither shows nor continues such an objective; the `objectives` data format stays 1, as the C-52 entry allowed for a record the previous reader safely skips. The Assistant's `propose_objective` proposes an intent and whether it explores, no budgets | The Operator's instruction in this session ("just explore if needed, unlimited budget, ... infer from intent", and that the inference is Jev's); the Operator still sees and may change the consequential choices before Start |
 
 ### 7.7 The original requirements
 
