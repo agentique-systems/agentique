@@ -3244,6 +3244,57 @@ mod tests {
         assert_eq!(app.control.digest, None);
     }
 
+    /// Research reproduction AR-T-017 (characterises what is, not what
+    /// should be): an action is checked against the screen's shape, not the
+    /// model's revision, so an action observed before the Operator changed
+    /// the model is accepted on the changed model.
+    #[test]
+    fn an_action_observed_before_the_model_changed_is_accepted_on_the_changed_model() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("model-race");
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        // What `tick` does each frame before it takes requests.
+        let refresh = |app: &mut Studio| {
+            let now = shape(app);
+            if now != app.control.shape {
+                app.control.shape = now;
+                app.control.screen_revision += 1;
+            }
+        };
+        refresh(&mut app);
+        assert_eq!(
+            app.selection.elements(&app.scene),
+            vec![api],
+            "api is selected"
+        );
+        let revision = |app: &Studio| app.project.as_ref().unwrap().state().revision();
+        let model_seen = revision(&app);
+        let delete = act(
+            &app,
+            "explorer",
+            json!({ "kind": "command", "id": "delete" }),
+            true,
+        );
+        // The Operator renames the selected part: the model changes, the
+        // screen keeps its shape (the same view, dialog and selection).
+        app.rename(api, "gateway");
+        refresh(&mut app);
+        assert_ne!(revision(&app), model_seen, "the model changed");
+        assert_eq!(
+            delete.body["observed"],
+            json!(app.control.screen_revision),
+            "the screen did not"
+        );
+        assert_eq!(
+            stale(&app, &delete.body),
+            None,
+            "so the action is not stale"
+        );
+        assert!(
+            start(&mut app, delete).is_ok(),
+            "and it is accepted on a model its agent never observed"
+        );
+    }
+
     /// The digest's cost at 10k elements (W12.2): worked out once per model
     /// revision, so observing stays cheap.
     #[test]
