@@ -121,8 +121,7 @@ impl History {
     /// The model folder at a commit (any git revision, e.g. a commit id or
     /// `refs/heads/main`).
     pub fn load_commit(&self, revision: &str) -> Result<ModelFiles> {
-        let commit = self.repo.revparse_single(revision)?.peel_to_commit()?;
-        model_files(&self.files_in(&commit.tree()?)?)
+        load_commit(&self.repo, revision)
     }
 
     /// Whether the saved model files differ from the last commit.
@@ -146,15 +145,7 @@ impl History {
 
     /// The repository's local branches, sorted by name.
     pub fn branches(&self) -> Result<Vec<String>> {
-        let mut names = Vec::new();
-        for branch in self.repo.branches(Some(BranchType::Local))? {
-            let (branch, _) = branch?;
-            if let Some(name) = branch.name()? {
-                names.push(name.to_owned());
-            }
-        }
-        names.sort();
-        Ok(names)
+        branches(&self.repo)
     }
 
     /// Starts a branch at the last commit, without switching to it.
@@ -212,41 +203,118 @@ impl History {
 
     /// Model files of the model folder inside a commit's tree.
     fn files_in(&self, root: &git2::Tree) -> Result<BTreeMap<String, String>> {
-        let mut files = BTreeMap::new();
-        let tree = match root.get_path(Path::new(MODEL_FOLDER)) {
-            Ok(entry) => entry.to_object(&self.repo)?.peel_to_tree()?,
-            Err(e) if e.code() == ErrorCode::NotFound => return Ok(files),
-            Err(e) => return Err(e.into()),
-        };
-        let mut failure = None;
-        tree.walk(TreeWalkMode::PreOrder, |dir, entry| {
-            let name = entry.name().unwrap_or_default();
-            if name.starts_with('.') {
-                return TreeWalkResult::Skip;
-            }
-            let path = format!("{dir}{name}");
-            if entry.kind() == Some(ObjectType::Blob) && is_model_file(&path) {
-                let text = self
-                    .repo
-                    .find_blob(entry.id())
-                    .map_err(Error::from)
-                    .and_then(|blob| text_of(&path, blob.content().to_vec()));
-                match text {
-                    Ok(text) => {
-                        files.insert(path, text);
-                    }
-                    Err(e) => {
-                        failure = Some(e);
-                        return TreeWalkResult::Abort;
-                    }
+        files_in(&self.repo, root)
+    }
+}
+
+/// The model folder at a commit (any git revision) of `repo`.
+fn load_commit(repo: &git2::Repository, revision: &str) -> Result<ModelFiles> {
+    let commit = repo.revparse_single(revision)?.peel_to_commit()?;
+    model_files(&files_in(repo, &commit.tree()?)?)
+}
+
+/// The local branches of `repo`, sorted.
+fn branches(repo: &git2::Repository) -> Result<Vec<String>> {
+    let mut names = Vec::new();
+    for branch in repo.branches(Some(BranchType::Local))? {
+        let (branch, _) = branch?;
+        if let Some(name) = branch.name()? {
+            names.push(name.to_owned());
+        }
+    }
+    names.sort();
+    Ok(names)
+}
+
+/// Model files of the model folder inside a commit's tree.
+fn files_in(repo: &git2::Repository, root: &git2::Tree) -> Result<BTreeMap<String, String>> {
+    let mut files = BTreeMap::new();
+    let tree = match root.get_path(Path::new(MODEL_FOLDER)) {
+        Ok(entry) => entry.to_object(repo)?.peel_to_tree()?,
+        Err(e) if e.code() == ErrorCode::NotFound => return Ok(files),
+        Err(e) => return Err(e.into()),
+    };
+    let mut failure = None;
+    tree.walk(TreeWalkMode::PreOrder, |dir, entry| {
+        let name = entry.name().unwrap_or_default();
+        if name.starts_with('.') {
+            return TreeWalkResult::Skip;
+        }
+        let path = format!("{dir}{name}");
+        if entry.kind() == Some(ObjectType::Blob) && is_model_file(&path) {
+            let text = repo
+                .find_blob(entry.id())
+                .map_err(Error::from)
+                .and_then(|blob| text_of(&path, blob.content().to_vec()));
+            match text {
+                Ok(text) => {
+                    files.insert(path, text);
+                }
+                Err(e) => {
+                    failure = Some(e);
+                    return TreeWalkResult::Abort;
                 }
             }
-            TreeWalkResult::Ok
-        })
-        .or_else(|e| if failure.is_some() { Ok(()) } else { Err(e) })?;
-        match failure {
-            Some(e) => Err(e),
-            None => Ok(files),
         }
+        TreeWalkResult::Ok
+    })
+    .or_else(|e| if failure.is_some() { Ok(()) } else { Err(e) })?;
+    match failure {
+        Some(e) => Err(e),
+        None => Ok(files),
+    }
+}
+
+/// A project's model as committed and as saved, only read: no lock is taken
+/// and nothing is written, so it can be read while the project is open for
+/// editing (comparing versions, checking a change against its base). A save
+/// in progress is read as it stands; only [`History`] finishes it.
+pub struct Revisions {
+    repo: git2::Repository,
+    /// The model folder.
+    dir: std::path::PathBuf,
+}
+
+impl Revisions {
+    /// The project in `project`: its model folder and the repository whose
+    /// working folder it is (never one further up, never created).
+    pub fn open(project: impl AsRef<Path>) -> Result<Self> {
+        let project = project.as_ref();
+        let folder = project.join(MODEL_FOLDER);
+        if !folder.is_dir() {
+            return Err(Error::NoModelFolder(folder));
+        }
+        let dir = folder.canonicalize()?;
+        let repo = match git2::Repository::open(project) {
+            Ok(repo) => repo,
+            Err(e) if e.code() == ErrorCode::NotFound => return Err(Error::NotWorkingFolder),
+            Err(e) => return Err(e.into()),
+        };
+        if repo.workdir().map(Path::canonicalize).transpose()?
+            != dir.parent().map(Path::to_path_buf)
+        {
+            return Err(Error::NotWorkingFolder);
+        }
+        Ok(Revisions { repo, dir })
+    }
+
+    /// The model folder at a commit (any git revision).
+    pub fn load_commit(&self, revision: &str) -> Result<ModelFiles> {
+        load_commit(&self.repo, revision)
+    }
+
+    /// The model files as saved in the model folder; refused while a save
+    /// is unfinished (only [`History`] finishes or discards it), so old and
+    /// new are never read mixed.
+    pub fn saved(&self) -> Result<ModelFiles> {
+        if crate::folder::save_unfinished(&self.dir) {
+            return Err(Error::SaveUnfinished);
+        }
+        model_files(&read_model_files(&self.dir)?)
+    }
+
+    /// The local branches, sorted.
+    pub fn branches(&self) -> Result<Vec<String>> {
+        branches(&self.repo)
     }
 }
