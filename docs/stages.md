@@ -2090,8 +2090,8 @@ it). Read against the code and the model before any change:
 | W13.4 The self-model | #118, #122 | Merged (below); the purpose's obligations in review in #122 (below) |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | #122 | In review (below) |
-| W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | — | In progress (`stage13/start`) |
-| W13.7 Proof | — | Started: blocked by W13.8 (below) |
+| W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
+| W13.7 Proof | — | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2394,3 +2394,60 @@ not wrap. It has a line of its own and switch labels may wrap; the
 journey now checks that Start, in the Objectives panel (the same form,
 narrower), is not hidden and ends within the form's width (the check fails
 before this fix).
+
+**W13.7, the first proof attempt: failed** (2026-10-10, objective
+`objective-20261010104011`, build `202610101024-99bf013f0e`, supervised by
+the launcher with the Operator's subscription token; nothing here says the
+Operator accepted anything). The Operator entered the one intent themself:
+explore how the Studio shows requirements and their evidence on Agentique's
+own model, fix a reproduced problem, then explore again in the adopted build
+and fix a second one. Jev read it (0.97) as exploring, two improvements,
+merge and adopt. No external intervention while it ran: Claude Code only
+observed (the objective's records and the control interface's
+observations). The Operator closed Agentique after 84 minutes (12:04 UTC);
+the record stays interrupted. It spent $5.40 at API prices (lead $2.73,
+implementer $1.19, evaluator $0.58, reviewer $0.43 on the subscription;
+DeepSeek $0.48; Jev under a cent).
+
+What worked, inside the failed whole: the lead judged the one reproduced
+finding (clicking a scenario in the Scenarios list does not select it) a
+wrong expectation, not a defect; it then proposed, from its own reading
+of the panel, that a subrequirement's row and Inspector evidence say it is
+counted with its container (the headline counts 11 rows while about 19
+show a standing); the implementer made it, every required check and gate
+passed, the evaluator passed it in a test instance after one repair round,
+and the reviewer approved it; the Orchestrator opened #125.
+
+What failed:
+- The repository's checks failed on #125 in a test the change does not
+  touch (`agq-orchestrator --test traceability`: "the project is already
+  open in another Agentique window"), a Linux race that had failed #124's
+  first run an hour earlier and that Claude Code had re-run rather than
+  repaired. The implementer, sent back to repair, rightly found nothing of
+  its own to change, and the cycle ended failed ("the implementer changed
+  nothing"); #125 stayed open. Nothing was merged, built or adopted, and
+  the second cycle in an adopted build never happened.
+- Exploration ignored the plan's target: the lead asked for Agentique's own
+  model, but `STARTS` alternation ran two of four explorations, and the
+  delegated child's, on a copy of the URL shortener.
+- Exploration was slow and invisible: explorer decisions took p50 49 s,
+  p95 120 s (deepseek-flash at high effort, escalating to deepseek-v4-pro
+  at max); one 20-step exploration took 11–16 minutes with nothing in the
+  thread between "Explores…" and "Explored…".
+- Exploration poked at controls by coverage rather than testing the
+  engineering question; its one finding was off the question.
+- Before it, Claude Code had handed the Operator a start form twice
+  without checking it in a window (#123, #124).
+- Interruption, cancellation, failed validation and launcher recovery were
+  not shown on purpose.
+
+Repairs before a fresh proof (each its own PR): project access (#126: a
+read of a version took the project's editing lock, and on Linux a process
+another thread starts briefly shares the lock file — 385 of 400 reopens
+refused on CI before the fix); #125 updated and reviewed on top of it (its
+merge is a salvage by Claude Code, not the objective's own completion);
+the Orchestrator telling a change's own failure from a pre-existing or
+infrastructure failure; the exploration target bound to the plan; progress
+and timing published and the measured bottlenecks improved; exploration
+driven by the plan's engineering questions; the objective's controls checked
+in a real window.
