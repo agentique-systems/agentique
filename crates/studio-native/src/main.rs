@@ -220,15 +220,22 @@ impl Args {
     }
 }
 
-/// `WIDTHxHEIGHT` in logical pixels, no smaller than the window may be.
+/// The smallest the window may be, in logical pixels.
+const MIN_WINDOW: (f32, f32) = (1080.0, 720.0);
+
+/// `WIDTHxHEIGHT` in logical pixels, between the smallest window and 16384.
 fn window_size(text: &str) -> Result<(f32, f32), String> {
     let (width, height) = text
         .split_once(['x', 'X'])
         .ok_or("a size is WIDTHxHEIGHT, e.g. 1080x720")?;
     let number = |n: &str| n.trim().parse::<f32>().map_err(|e| format!("{n}: {e}"));
     let (width, height) = (number(width)?, number(height)?);
-    if width < 1080.0 || height < 720.0 {
-        return Err("the window is at least 1080x720".into());
+    let fits = |n: f32, least: f32| n.is_finite() && (least..=16384.0).contains(&n);
+    if !fits(width, MIN_WINDOW.0) || !fits(height, MIN_WINDOW.1) {
+        return Err(format!(
+            "the window is between {}x{} and 16384x16384",
+            MIN_WINDOW.0, MIN_WINDOW.1
+        ));
     }
     Ok((width, height))
 }
@@ -273,7 +280,7 @@ fn main() {
                     appears_transparent: true,
                     traffic_light_position: None,
                 }),
-                window_min_size: Some(size(px(1080.0), px(720.0))),
+                window_min_size: Some(size(px(MIN_WINDOW.0), px(MIN_WINDOW.1))),
                 app_id: Some("systems.agentique.studio".into()),
                 inactive_frame_interval: if args.measuring() {
                     None

@@ -2091,7 +2091,7 @@ it). Read against the code and the model before any change:
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | #122 | In review (below) |
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
-| W13.7 Proof | — | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
+| W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2405,35 +2405,48 @@ and fix a second one. Jev read it (0.97) as exploring, two improvements,
 merge and adopt. No external intervention while it ran: Claude Code only
 observed (the objective's records and the control interface's
 observations). The Operator closed Agentique after 84 minutes (12:04 UTC);
-the record stays interrupted. It spent $5.40 at API prices (lead $2.73,
-implementer $1.19, evaluator $0.58, reviewer $0.43 on the subscription;
-DeepSeek $0.48; Jev under a cent).
+the record stays interrupted. Its record says $5.40 at API prices (lead
+$2.73, implementer $1.19, evaluator $0.58, reviewer $0.43 on the
+subscription; DeepSeek $0.48; Jev under a cent); that is a lower bound:
+the child's exploration reports $0.41 that its parent's totals leave out, a
+defect of the record.
 
 What worked, inside the failed whole: the lead judged the one reproduced
 finding (clicking a scenario in the Scenarios list does not select it) a
-wrong expectation, not a defect; it then proposed, from its own reading
-of the panel, that a subrequirement's row and Inspector evidence say it is
-counted with its container (the headline counts 11 rows while about 19
-show a standing); the implementer made it, every required check and gate
-passed, the evaluator passed it in a test instance after one repair round,
-and the reviewer approved it; the Orchestrator opened #125.
+wrong expectation, not a defect; it then proposed, from its own reading of
+the source files (not from a reproduced finding, which the intent asked
+for), that a subrequirement's row and Inspector evidence say it is counted
+with its container (the headline counts 11 rows while about 19 show a
+standing); the implementer made it, every required check and gate passed
+(the one criterion that failed on the base did so because the new text did
+not exist there yet), the evaluator passed it in a test instance after one
+repair round, and the reviewer approved it; the Orchestrator opened
+#125.
 
 What failed:
 - The repository's checks failed on #125 in a test the change does not
   touch (`agq-orchestrator --test traceability`: "the project is already
   open in another Agentique window"), a Linux race that had failed #124's
-  first run an hour earlier and that Claude Code had re-run rather than
-  repaired. The implementer, sent back to repair, rightly found nothing of
+  first run about an hour and a half earlier and that Claude Code had
+  re-run rather than repaired. The implementer, sent back to repair, rightly found nothing of
   its own to change, and the cycle ended failed ("the implementer changed
-  nothing"); #125 stayed open. Nothing was merged, built or adopted, and
-  the second cycle in an adopted build never happened.
+  nothing"); #125 stayed open. Nothing was merged, built or adopted. The
+  explorer directives of that cycle are recorded as failed with the
+  implementer's blocker as their result, a defect of the record.
+- Cycle 2 started at 11:50 on the same build, which had not been adopted,
+  against the intent's "then, in the adopted build": a rules exploration
+  (20 steps in 22 seconds, $0.004) found nothing, and a second one, on the
+  URL shortener, was running when Agentique was closed. The second cycle
+  in an adopted build never happened.
 - Exploration ignored the plan's target: the lead asked for Agentique's own
   model, but `STARTS` alternation ran two of four explorations, and the
   delegated child's, on a copy of the URL shortener.
-- Exploration was slow and invisible: explorer decisions took p50 49 s,
-  p95 120 s (deepseek-flash at high effort, escalating to deepseek-v4-pro
-  at max); one 20-step exploration took 11–16 minutes with nothing in the
-  thread between "Explores…" and "Explored…".
+- Exploration was slow and invisible: the first run's decisions took
+  p50 49 s and p95 120 s (its record in the testing knowledge; the
+  explorer on deepseek-flash at high effort, escalation on deepseek-v4-pro
+  at max, as the thread's model lines say); the two modelled explorations
+  took 16 and 11 minutes with nothing in the thread between "Explores…"
+  and "Explored…".
 - Exploration poked at controls by coverage rather than testing the
   engineering question; its one finding was off the question.
 - Before it, Claude Code had handed the Operator a start form twice
@@ -2441,13 +2454,43 @@ What failed:
 - Interruption, cancellation, failed validation and launcher recovery were
   not shown on purpose.
 
-Repairs before a fresh proof (each its own PR): project access (#126: a
-read of a version took the project's editing lock, and on Linux a process
-another thread starts briefly shares the lock file — 385 of 400 reopens
-refused on CI before the fix); #125 updated and reviewed on top of it (its
-merge is a salvage by Claude Code, not the objective's own completion);
-the Orchestrator telling a change's own failure from a pre-existing or
-infrastructure failure; the exploration target bound to the plan; progress
-and timing published and the measured bottlenecks improved; exploration
-driven by the plan's engineering questions; the objective's controls checked
-in a real window.
+Repairs before a fresh proof (each its own PR):
+- Project access (#126, merged): reading a version took the project's
+  editing lock, and on Linux a process another thread starts briefly
+  shares the lock file. Before the fix, 385 of 400 reopens were refused on
+  CI.
+- #125, merged after #126 as a salvage by Claude Code, not the objective's
+  own completion; its review's follow-ups are #131.
+- The Orchestrator telling a change's own failure from one elsewhere or the
+  checks' own machinery (#129).
+- The exploration target bound to the plan; progress and timing published
+  and the measured bottlenecks improved; exploration driven by the plan's
+  engineering questions (the exploration PRs).
+- The objective's controls checked in a real window (#128, below).
+
+**W13.7 repair: what works an objective, reachable in a real window**
+(#128). A window journey operates the Studio through its control interface
+and checks the controls the Operator works an objective with, at 1080x720
+(the smallest window), 1600x1000 and 1920x1040, at 100%, 125%, 150% and
+200% display scaling (`--ui-scale`; `--window-size` is new), while agents
+run and while they are paused. The controls checked are the start form's
+intent and Start, an unfinished objective's Continue and Stop (in the
+Conversation and the Objectives panel), the agents' Resume, Step and Stop,
+and the title bar's buttons. Each must be shown, inside the window, big
+enough to hit, and not cover another; the window's own buttons must be
+whole.
+
+It found that at the smallest window the window's own Maximize and Close
+were outside the window, and that whenever an agent held the window its
+Pause and Stop covered the view switcher (also at 125% and 150%). A review
+found the first fix still overflowed at 200%, with long project names, and
+with the paused chip. The bar now has two parts:
+- What never gives way: the panels' switches, Settings, and the window's
+  own buttons.
+- What gives way, shrinking and then cut at its end: the project, whose
+  name is cut short first; the agents' chip, which keeps its buttons;
+  the views, icons only under 1200 units of room, each icon's tooltip
+  naming it; and the search, down to its icon.
+
+Not checked: screen readers, a real display at 200% (the scale is
+simulated), and keyboard focus order.

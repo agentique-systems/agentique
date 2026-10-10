@@ -1197,24 +1197,27 @@ impl Workspace {
                 .h_full()
                 .window_control_area(WindowControlArea::Drag)
         };
-        div()
-            .id("title-bar")
-            .flex_none()
-            // Held to the window's width, so its search gives way rather
-            // than push the window's own buttons out (W13.7).
-            .w_full()
-            .min_w_0()
-            .overflow_hidden()
-            .h(r(height))
-            .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
+        // Two parts (W13.7): what gives way when room is short (the
+        // project, the agents' chip, the views, the search), shrinking and
+        // then cut at its end; and what never does (the panels' switches,
+        // Settings, and the window's own buttons), so no state of the bar
+        // pushes them out of the window.
+        let gives_way = div()
             .flex()
+            .flex_1()
+            .min_w_0()
+            .h_full()
+            .overflow_hidden()
             .items_center()
             .gap(r(8.0))
-            .bg(theme.chrome)
-            // The project, and how its saving stands.
+            .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
+            // The project, and how its saving stands: its name is cut short
+            // before anything else gives way.
             .child(
                 div()
                     .flex()
+                    .min_w(r(72.0))
+                    .overflow_hidden()
                     .items_center()
                     .gap(r(8.0))
                     .child(brand_mark(&theme).window_control_area(WindowControlArea::Drag))
@@ -1252,11 +1255,18 @@ impl Workspace {
                         .items_center()
                         .gap(r(4.0))
                         // Never narrower than its icon and buttons (Pause
-                        // and Stop; Resume, Step and Stop when paused): only
-                        // what the latest agent did shortens (W13.7: at a
-                        // small window its buttons covered the views).
+                        // and Stop; Resume, Step and Stop when paused; Resume
+                        // when stopped), measured from the font: only what
+                        // the latest agent did shortens (W13.7: at a small
+                        // window its buttons covered the views).
                         .max_w(r(460.0))
-                        .min_w(r(if agents_paused { 236.0 } else { 172.0 }))
+                        .min_w(r(if agents_stopped {
+                            128.0
+                        } else if agents_paused {
+                            240.0
+                        } else {
+                            180.0
+                        }))
                         .px(r(8.0))
                         .h(r(26.0))
                         .rounded(r(crate::tokens::radius::CONTROL))
@@ -1414,7 +1424,7 @@ impl Workspace {
                 )
             })
             .child(drag())
-            // Search, and the panels' switches.
+            // Search.
             .child(
                 div()
                     .id("search")
@@ -1422,12 +1432,11 @@ impl Workspace {
                     .flex()
                     .items_center()
                     .gap(r(8.0))
-                    // It gives way first when the window is narrow, down to
-                    // its icon (W13.7: at the smallest window it pushed the
-                    // window's own buttons out of it).
+                    // It may shrink to its icon when room is short (W13.7:
+                    // at the smallest window it pushed the window's own
+                    // buttons out of it).
                     .w(r(260.0))
                     .min_w(r(36.0))
-                    .flex_shrink(1.0)
                     .overflow_hidden()
                     .h(r(28.0))
                     .px(r(10.0))
@@ -1461,10 +1470,22 @@ impl Workspace {
                             .child("Search or run a command"),
                     )
                     .child(ui::KeyCaps::new("Ctrl+K")),
-            )
+            );
+        div()
+            .id("title-bar")
+            .flex_none()
+            .w_full()
+            .h(r(height))
+            .flex()
+            .items_center()
+            .gap(r(8.0))
+            .bg(theme.chrome)
+            .child(gives_way)
+            // The panels' switches and Settings.
             .child(
                 div()
                     .flex()
+                    .flex_none()
                     .items_center()
                     .gap(r(2.0))
                     .child(
@@ -1502,7 +1523,12 @@ impl Workspace {
                             .on_click(run(studio_entity.clone(), CommandId::Settings)),
                     ),
             )
-            .child(window_controls(maximized, &theme))
+            .child(
+                div()
+                    .flex_none()
+                    .h_full()
+                    .child(window_controls(maximized, &theme)),
+            )
     }
 
     fn status_bar(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
