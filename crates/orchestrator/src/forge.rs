@@ -528,4 +528,84 @@ mod tests {
             assert_eq!(without_credentials(given), kept, "{given}");
         }
     }
+
+    /// The repository a child run of this test binary reads the checks of,
+    /// with a stand-in `gh` first on its `PATH`.
+    const STAND_IN_REPOSITORY: &str = "AGQ_TEST_STAND_IN_GH_REPOSITORY";
+
+    /// AR-T-008 (reproduction, `gatesDecide`): the repository's checks have
+    /// passed only when checks ran and passed. When every check the host
+    /// lists was skipped (each job's condition left it out), nothing ran:
+    /// that is not `Checks::Passed`, on which the cycle merges. The real
+    /// `checks` runs against a stand-in `gh` (built here with `rustc`) that
+    /// lists two skipped checks; it runs in a child run of this binary with
+    /// the stand-in first on its `PATH`, so this process's environment is
+    /// left alone. Needs `rustc` (skipped without it).
+    #[test]
+    fn checks_that_were_all_skipped_have_not_passed() {
+        if let Some(repository) = std::env::var_os(STAND_IN_REPOSITORY) {
+            // The child run: `gh` here is the stand-in.
+            let read = super::checks(std::path::Path::new(&repository), 7);
+            assert_ne!(
+                read,
+                Ok(super::Checks::Passed),
+                "every check was skipped, yet the checks passed"
+            );
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let bin = dir.path().join("bin");
+        let repository = dir.path().join("repository");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::create_dir_all(&repository).unwrap();
+        let listed = r#"[{"name":"Checks (ubuntu-latest)","bucket":"skipping","link":"https://example.invalid/o/r/actions/runs/1/job/2"},{"name":"Checks (windows-latest)","bucket":"skipping","link":"https://example.invalid/o/r/actions/runs/1/job/3"}]"#;
+        let source = dir.path().join("gh.rs");
+        std::fs::write(
+            &source,
+            format!(
+                "fn main() {{\n    let args: Vec<String> = std::env::args().skip(1).collect();\n    if args.first().map(String::as_str) == Some(\"pr\") && args.get(1).map(String::as_str) == Some(\"checks\") {{\n        print!(\"{{}}\", r##\"{listed}\"##);\n    }} else {{\n        std::process::exit(2);\n    }}\n}}\n"
+            ),
+        )
+        .unwrap();
+        let gh = bin.join(format!("gh{}", std::env::consts::EXE_SUFFIX));
+        let built = std::process::Command::new("rustc")
+            .arg("-o")
+            .arg(&gh)
+            .arg(&source)
+            .output();
+        let Ok(built) = built else {
+            eprintln!("rustc is not available: skipped");
+            return;
+        };
+        assert!(
+            built.status.success(),
+            "the stand-in gh did not build: {}",
+            String::from_utf8_lossy(&built.stderr)
+        );
+        let path = std::env::var_os("PATH").unwrap_or_default();
+        let path =
+            std::env::join_paths(std::iter::once(bin.clone()).chain(std::env::split_paths(&path)))
+                .unwrap();
+        let child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "forge::tests::checks_that_were_all_skipped_have_not_passed",
+                "--exact",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .env("PATH", path)
+            .env(STAND_IN_REPOSITORY, &repository)
+            .output()
+            .unwrap();
+        let said = format!(
+            "{}{}",
+            String::from_utf8_lossy(&child.stdout),
+            String::from_utf8_lossy(&child.stderr)
+        );
+        assert!(
+            said.contains("1 passed") || said.contains("1 failed"),
+            "{said}"
+        );
+        assert!(child.status.success(), "{said}");
+    }
 }
