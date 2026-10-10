@@ -16,6 +16,7 @@ mod standin;
 
 use agq_assistant::claude_agent::{ClaudeAgent, Installation, find_node};
 use agq_orchestrator::control::Options;
+use agq_orchestrator::decide::{Answered, Answers, Decision, Failure, Question, Source};
 use agq_orchestrator::explore::{self, Instance, Opened};
 use agq_orchestrator::findings::{
     Check as Found, DispositionKind, Failed, Finding, State as FoundState,
@@ -69,12 +70,12 @@ fn repository_with(dir: &Path, markers: &[&str]) -> PathBuf {
         std::fs::create_dir_all(repository.join(folder)).unwrap();
         std::fs::write(repository.join(folder).join(file), text).unwrap();
     }
-    if markers.contains(&"TARGET-MODEL") {
+    if markers.contains(&"TARGET-MODEL") || markers.contains(&"HYPOTHESES") {
         let model = repository.join("model");
         std::fs::create_dir_all(&model).unwrap();
         std::fs::write(
             model.join("Demo.sysml"),
-            "package Demo {\n    requirement def LabelsReadable {\n        doc /* A button says what it does. */\n    }\n    part def Archive;\n}\n",
+            "package Demo {\n    requirement def LabelsReadable {\n        doc /* A button says what it does. */\n    }\n    requirement def Fast;\n    part def Archive;\n}\n",
         )
         .unwrap();
         std::fs::write(
@@ -252,8 +253,75 @@ fn setup_with(
             wrong: None,
             log: log.clone(),
         }),
+        answers: None,
     };
     (setup, log)
+}
+
+/// The Driver's explorations answered without the providers (E3): Jev takes
+/// the first option, confident; the reasoning model, asked to test a
+/// hypothesis, clicks the History tab and states, as the answer, that a
+/// label says “Archive”: what the stand-in's unlabelled Archive button
+/// contradicts (and its fix makes hold).
+struct Hypothesising;
+
+impl Answers for Hypothesising {
+    fn jev_model(&self) -> ModelRef {
+        ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+    }
+
+    fn threshold(&self) -> f64 {
+        0.6
+    }
+
+    fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+        Ok(Decision {
+            choice: "a01".into(),
+            source: Source::Jev,
+            confidence: Some(0.9),
+            millis: 1,
+            usd: Some(0.0),
+            note: String::new(),
+        })
+    }
+
+    fn chat(
+        &self,
+        _: &ModelRef,
+        _: Option<&str>,
+        prompt: &str,
+        _: &mut dyn FnMut() -> bool,
+    ) -> Result<Answered, String> {
+        let history = prompt.lines().find_map(|line| {
+            let (id, about) = line.strip_prefix("- ")?.split_once(": ")?;
+            about.contains("“History”").then(|| id.to_string())
+        });
+        Ok(Answered::text(
+            match (prompt.contains("engineering hypothesis"), history) {
+                (true, Some(id)) => format!(
+                    r#"{{"choice": "{id}", "expect": {{"anyLabelContains": "Archive"}}, "answers": true}}"#
+                ),
+                _ => r#"{"choice": "a01"}"#.to_string(),
+            },
+            Some(0.001),
+        ))
+    }
+}
+
+/// The roles an objective's explorations decide with (C-54).
+fn deciding_roles(objective: &mut Objective) {
+    for role in ["decisions", "escalation", "explorer"] {
+        objective.models.push(RoleModel {
+            role: role.into(),
+            model: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+            effort: None,
+            access: Access::Key,
+            configured: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+            fallback: None,
+            credential: "DEEPSEEK_API_KEY".into(),
+            billed: "per token".into(),
+        });
+    }
 }
 
 /// Runs the objective to its end, calling `on` with each thread entry as it
@@ -697,11 +765,13 @@ fn a_planned_hypothesis_carries_its_requirement_and_is_reported() {
     let seen = run_to_end(setup, objective, |_, _| {});
     let record = store.load(&id).unwrap();
     let target = record.target.as_ref().expect("its target");
+    // Not answered: kept, to be tested again at this commit.
     let hypothesis = &target.hypotheses[0];
     assert_eq!(
         hypothesis.requirement.as_deref(),
         Some("Demo::LabelsReadable")
     );
+    assert!(hypothesis.select, "the project explored holds it");
     assert!(
         hypothesis
             .requirement_text
@@ -744,6 +814,83 @@ fn a_planned_hypothesis_carries_its_requirement_and_is_reported() {
         "{}",
         proposal.why
     );
+}
+
+/// The review of E3, end to end through the Driver on a project other than
+/// the repository's own model: the hypothesis's requirement is resolved in
+/// the repository's model (where `serves` is), the reasoning model's
+/// answering expectation is contradicted by the stand-in, the finding is
+/// linked to the hypothesis, reproduced and offered under its id, the
+/// lead's brief names it, a proposal serving another requirement is
+/// refused, and one serving the hypothesis's is accepted; an answered
+/// hypothesis is not kept to be tested again.
+#[test]
+fn a_contradicted_hypothesis_is_reproduced_judged_and_fixed_for_its_requirement() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["HYPOTHESES"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (mut setup, _) = setup_with(dir.path(), &store, node, true);
+    setup.answers = Some(Box::new(Hypothesising));
+    let mut objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    deciding_roles(&mut objective);
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let target = record.target.as_ref().expect("its target");
+    assert_eq!(target.project, "models/shop");
+    assert!(target.hypotheses.is_empty(), "answered: not tested again");
+    let answer = &record.cycles[0].explorations[0].answers[0];
+    let explore::Verdict::Contradicted { finding, observed } = &answer.verdict else {
+        panic!("{answer:?}\n{}", texts(&seen));
+    };
+    assert!(observed.contains("Archive"), "{observed}");
+    assert_eq!(
+        answer.expected,
+        Some(serde_json::json!({ "anyLabelContains": "Archive" }))
+    );
+    let found = record.cycles[0]
+        .findings
+        .iter()
+        .find(|f| &f.identity == finding)
+        .expect("its finding");
+    assert_eq!(found.state, FoundState::Reproduced, "{found:?}");
+    assert_eq!(found.requirement.as_deref(), Some("Demo::LabelsReadable"));
+    assert!(found.hypothesis.is_some());
+    // The directive listed it; the thread said how it was answered.
+    assert!(
+        seen.iter().any(|e| e
+            .details
+            .as_deref()
+            .unwrap_or_default()
+            .contains("Hypothesis 1: Every button in the History panel says what it does (governed by Demo::LabelsReadable)")),
+        "{}",
+        texts(&seen)
+    );
+    assert!(
+        seen.iter().any(|e| e
+            .text
+            .starts_with("Hypothesis 1/1 contradicted: Every button")),
+        "{}",
+        texts(&seen)
+    );
+    // Another requirement in `serves` is refused; the hypothesis's is
+    // accepted.
+    assert!(
+        seen.iter().any(|e| e
+            .text
+            .contains("(not accepted: the finding it fixes contradicts Demo::LabelsReadable")),
+        "{}",
+        texts(&seen)
+    );
+    let proposal = record.cycles[0].proposal.as_ref().expect("a proposal");
+    assert_eq!(proposal.serves, vec!["Demo::LabelsReadable".to_string()]);
+    assert_eq!(proposal.finding.as_deref(), Some(finding.as_str()));
+    assert!(proposal.why.contains("the brief listed the hypotheses"));
 }
 
 /// The W13.7 repair: a lead that plans no project is asked once more, and

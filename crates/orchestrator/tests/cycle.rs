@@ -343,6 +343,7 @@ fn setup_with(dir: &Path, store: &Store, node: agq_assistant::claude_agent::Node
         speed: "instant".into(),
         credential: Box::new(|_| None),
         studios: Box::new(run::Live),
+        answers: None,
     }
 }
 

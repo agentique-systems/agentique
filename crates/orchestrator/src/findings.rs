@@ -185,7 +185,34 @@ pub struct Failed {
 
 impl Failed {
     pub fn identity(&self) -> String {
+        // An expectation's keeps what was expected as stated: two of one
+        // shape with different values are two findings (the review of E3);
+        // only what was observed is normalised.
+        if self.check == Check::Expectation
+            && let Some(observed) = self.message.strip_prefix(&self.stated())
+        {
+            return format!(
+                "{}|{}|{}{}",
+                self.check.name(),
+                normalise(&self.control),
+                self.stated().chars().take(300).collect::<String>(),
+                normalise(observed)
+            );
+        }
         identity(self.check, &self.control, &self.message)
+    }
+
+    /// What an expectation's message says was observed instead (its whole
+    /// message for another check).
+    pub fn observed(&self) -> &str {
+        self.message
+            .strip_prefix(&self.stated())
+            .unwrap_or(&self.message)
+    }
+
+    /// How an expectation's message begins: what was expected.
+    fn stated(&self) -> String {
+        format!("expected {}: ", self.evidence["expect"])
     }
 }
 
@@ -246,11 +273,14 @@ pub struct Finding {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disposition: Option<Disposition>,
     /// The hypothesis whose expectation it is, and the requirement that
-    /// governs it, when it is one (the W13.7 repair, E3).
+    /// governs it (of the repository's own model) or the intended
+    /// behaviour, when it is one (the W13.7 repair, E3).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hypothesis: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requirement: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub behaviour: Option<String>,
 }
 
 /// What a finding is judged to be (C-55): only a defect is fixed.
@@ -347,6 +377,7 @@ impl Finding {
             checked_in: None,
             disposition: None,
             hypothesis: None,
+            behaviour: None,
             requirement: None,
         }
     }
@@ -1320,6 +1351,60 @@ pub fn reduce(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_expectations_identity_keeps_what_was_expected() {
+        let failed = |expect: Value, observed: &str| Failed {
+            check: Check::Expectation,
+            control: "requirements-row".into(),
+            message: format!("expected {expect}: {observed}"),
+            evidence: json!({ "expect": expect }),
+        };
+        // The review of E3: two expectations of one shape, with different
+        // values, are two findings (they were one: quoted text and numbers
+        // were normalised away).
+        let three = failed(
+            json!({ "anyLabelContains": "3 of 4 hold" }),
+            "no control on screen says “3 of 4 hold”",
+        );
+        let two = failed(
+            json!({ "anyLabelContains": "2 of 4 hold" }),
+            "no control on screen says “2 of 4 hold”",
+        );
+        assert_ne!(three.identity(), two.identity());
+        // What was observed is still normalised: the same expectation
+        // failing on other text is one finding.
+        let again = failed(
+            json!({ "anyLabelContains": "3 of 4 hold" }),
+            "the status says “Saved 12 s ago”",
+        );
+        let later = failed(
+            json!({ "anyLabelContains": "3 of 4 hold" }),
+            "the status says “Saved 40 s ago”",
+        );
+        assert_eq!(again.identity(), later.identity());
+        assert_eq!(three.observed(), "no control on screen says “3 of 4 hold”");
+        assert!(
+            three
+                .identity()
+                .contains(r#"expected {"anyLabelContains":"3 of 4 hold"}: "#)
+        );
+        // Another check's identity is as before.
+        let label = Failed {
+            check: Check::ReadableLabels,
+            control: "x".into(),
+            message: "the label “Archive 2” is unreadable".into(),
+            evidence: json!({}),
+        };
+        assert_eq!(
+            label.identity(),
+            identity(
+                Check::ReadableLabels,
+                "x",
+                "the label “Archive 2” is unreadable"
+            )
+        );
+    }
 
     #[test]
     fn an_identity_ignores_numbers_paths_ids_and_names() {

@@ -73,12 +73,9 @@ fn spent_on(taken: &explore::Taken) -> Option<(&'static str, Cost)> {
 /// The most of a requirement's text a hypothesis gives the explorer.
 const REQUIREMENT_TEXT: usize = 1500;
 
-/// Whether `problems` already say `name` is no element.
-fn unknown_named(problems: &[String], name: &str) -> bool {
-    problems
-        .iter()
-        .any(|p| p.contains(&format!("`{}`", name.trim())))
-}
+/// The repository's own model, as a project: where a proposal's `serves`
+/// and a hypothesis's requirement are resolved.
+const OWN_MODEL: &str = "model";
 
 /// What the lead's turn checks a plan of an exploration and a child's
 /// project against (C-54, the W13.7 repair): the planning (the base
@@ -100,25 +97,16 @@ impl Planner {
     /// explores from now; or why not.
     pub fn plan(&self, input: &Value) -> Result<Target, String> {
         let mut planned = roles::read_exploration(input, &self.planning.borrow())?;
-        let required: Vec<&String> = planned
-            .hypotheses
-            .iter()
-            .filter_map(|h| h.requirement.as_ref())
-            .collect();
+        let mut problems = Vec::new();
+        // The scope and start: elements of the project explored.
         let names: Vec<&String> = planned
             .scope
             .iter()
             .chain(planned.start.select.iter())
-            .chain(required.iter().copied())
             .collect();
         if !names.is_empty() {
-            let (model, texts) = traceability::project_model(
-                &self.checkout,
-                &planned.project,
-                &self.scratch,
-                &required,
-            )?;
-            let mut problems = Vec::new();
+            let (model, _) =
+                traceability::project_model(&self.checkout, &planned.project, &self.scratch, &[])?;
             let unknown = traceability::unknown(&model, names);
             if !unknown.is_empty() {
                 problems.push(format!(
@@ -129,8 +117,24 @@ impl Planner {
                     short(&planned.revision)
                 ));
             }
-            // A hypothesis's requirement is one, and the explorer reads its
-            // text (E3).
+        }
+        // A hypothesis's requirement: one of the repository's own model,
+        // where a proposal's `serves` is resolved (whatever project is
+        // explored: it governs the application, not the model it shows);
+        // the explorer reads its text, and selects it where the project
+        // explored is that model (E3).
+        let required: Vec<&String> = planned
+            .hypotheses
+            .iter()
+            .filter_map(|h| h.requirement.as_ref())
+            .collect();
+        if !required.is_empty() {
+            let (model, texts) =
+                traceability::project_model(&self.checkout, OWN_MODEL, &self.scratch, &required)
+                    .map_err(|e| {
+                        format!("{e}: a hypothesis's requirement is one of the repository's own model (`{OWN_MODEL}`); without one, give the intended `behaviour`")
+                    })?;
+            let own = planned.project == OWN_MODEL;
             for hypothesis in &mut planned.hypotheses {
                 let Some(name) = hypothesis.requirement.clone() else {
                     continue;
@@ -141,16 +145,16 @@ impl Planner {
                         hypothesis.requirement_text = texts
                             .get(name.trim())
                             .map(|text| crate::thread::capped(text, REQUIREMENT_TEXT));
+                        hypothesis.select = own;
                     }
-                    Err(problem) if !unknown_named(&problems, &name) => {
-                        problems.push(format!("a hypothesis's requirement: {problem}"));
-                    }
-                    Err(_) => {}
+                    Err(problem) => problems.push(format!(
+                        "a hypothesis's requirement: {problem} (`{OWN_MODEL}`)"
+                    )),
                 }
             }
-            if !problems.is_empty() {
-                return Err(problems.join("; "));
-            }
+        }
+        if !problems.is_empty() {
+            return Err(problems.join("; "));
         }
         self.accepted.set(true);
         Ok(self.planning.borrow_mut().accept(planned))
@@ -202,14 +206,19 @@ fn seed(objective: &str, cycle: u32, n: u32) -> u64 {
 /// A finding in a line, for a brief or the thread.
 pub fn finding_line(finding: &Finding) -> String {
     format!(
-        "{} on {}: {}",
+        "{} on {}: {}{}",
         finding.check.name(),
         if finding.control.is_empty() {
             "the instance"
         } else {
             finding.control.as_str()
         },
-        finding.message
+        finding.message,
+        finding
+            .hypothesis
+            .as_ref()
+            .map(|claim| format!(" (hypothesis: {claim})"))
+            .unwrap_or_default()
     )
 }
 
@@ -297,11 +306,18 @@ fn finding_text(id: &str, finding: &Finding, disposition: Option<&Disposition>) 
         finding.check.name(),
         finding.build,
         finding.start,
-        match (&finding.hypothesis, &finding.requirement) {
-            (Some(claim), Some(requirement)) => {
+        match (
+            &finding.hypothesis,
+            &finding.requirement,
+            &finding.behaviour
+        ) {
+            (Some(claim), Some(requirement), _) => {
                 format!("\n  tests the hypothesis: {claim} (governed by {requirement})")
             }
-            (Some(claim), None) => format!("\n  tests the hypothesis: {claim}"),
+            (Some(claim), None, Some(behaviour)) => {
+                format!("\n  tests the hypothesis: {claim} (intended: {behaviour})")
+            }
+            (Some(claim), None, None) => format!("\n  tests the hypothesis: {claim}"),
             _ => String::new(),
         },
         steps(&finding.steps),
@@ -492,7 +508,7 @@ impl Driver {
         // longer the explorer's model or the rules in turn); without models
         // for exploring (an objective recorded without them), the rules
         // decide: they ask no model.
-        let modelled = crate::models::with_deciding(&self.objective.models, |_| ()).is_ok();
+        let modelled = crate::models::with_deciding(&self.objective.models, None, |_| ()).is_ok();
         let plan = Plan {
             goal: goal.clone(),
             way: if modelled {
@@ -561,7 +577,12 @@ impl Driver {
             }),
         };
         let run = if modelled {
-            crate::models::with_deciding(&self.objective.models, |deciding| {
+            let stand_in = self
+                .setup
+                .answers
+                .as_deref()
+                .map(|a| a as &dyn crate::decide::Answers);
+            crate::models::with_deciding(&self.objective.models, stand_in, |deciding| {
                 explore::explore(instance.as_mut(), &plan, deciding, &knowledge, &mut watch)
             })?
         } else {
@@ -681,9 +702,13 @@ impl Driver {
                         format!(
                             "hypothesis {}",
                             a.line(|identity| {
-                                new.iter().position(|f| f.identity == identity).map(|i| {
-                                    crate::knowledge::finding_id(self.cycle().findings.len() + i)
-                                })
+                                match new.iter().position(|f| f.identity == identity) {
+                                    Some(i) => Some(format!(
+                                        "finding {}, to be reproduced",
+                                        crate::knowledge::finding_id(self.cycle().findings.len() + i)
+                                    )),
+                                    None => self.contradiction(identity, &[]),
+                                }
                             })
                         )
                     }))
@@ -714,6 +739,16 @@ impl Driver {
         cycle.findings.extend(new);
         cycle.findings.extend(regressions);
         cycle.exploring = Some(Exploring::Reproduce);
+        // An answered hypothesis is not tested again; one not answered is,
+        // at this commit (E3).
+        if let Some(target) = &mut self.objective.target {
+            target.hypotheses.retain(|h| {
+                !run.answers.iter().any(|a| {
+                    a.claim == h.claim && !matches!(a.verdict, explore::Verdict::NotAnswered { .. })
+                })
+            });
+        }
+        self.save();
         Ok(Phase::Propose)
     }
 
@@ -1075,8 +1110,9 @@ impl Driver {
             Role::Lead,
             &self.objective,
             &format!(
-                "Plan this cycle's exploration (exploration {explored} of cycle {n}).\n\n{}\n\n{}",
+                "Plan this cycle's exploration (exploration {explored} of cycle {n}).\n\n{}\n\n{}{}",
                 planner.brief(),
+                self.answers_brief(&[]),
                 self.testing_summary()
             ),
         );
@@ -1152,9 +1188,71 @@ impl Driver {
             },
             Some(handed),
             text,
-            format!("Explores {}", target.line()),
+            format!("Explores {}\n{}", target.line(), target.hypotheses_text())
+                .trim_end()
+                .to_string(),
         );
         Ok(goal)
+    }
+
+    /// How this objective's explorations answered their hypotheses (E3),
+    /// the latest last, for the lead: a contradiction's finding by its id
+    /// in `offered` where it is offered, else what became of it.
+    pub(super) fn answers_brief(&self, offered: &[(String, String)]) -> String {
+        let answers: Vec<String> = self
+            .objective
+            .cycles
+            .iter()
+            .flat_map(|c| &c.explorations)
+            .flat_map(|e| &e.answers)
+            .map(|a| {
+                format!(
+                    "- {}",
+                    a.line(|identity| self.contradiction(identity, offered))
+                )
+            })
+            .collect();
+        if answers.is_empty() {
+            return String::new();
+        }
+        let shown = &answers[answers.len().saturating_sub(10)..];
+        format!(
+            "How this objective's hypotheses were answered (a contradiction reproduced is still only a finding: it is judged against the requirement before anything is changed; what was answered is not tested again):\n{}\n\n",
+            shown.join("\n")
+        )
+    }
+
+    /// What became of a contradicted hypothesis's finding (E3): its id where
+    /// it is offered to the lead, that it was found here and not
+    /// reproduced, or how it was judged before.
+    pub(super) fn contradiction(
+        &self,
+        identity: &str,
+        offered: &[(String, String)],
+    ) -> Option<String> {
+        if let Some((id, _)) = offered.iter().find(|(_, o)| o == identity) {
+            return Some(format!("finding {id}"));
+        }
+        if let Some(i) = self
+            .cycle()
+            .findings
+            .iter()
+            .position(|f| f.identity == identity)
+        {
+            let finding = &self.cycle().findings[i];
+            let id = crate::knowledge::finding_id(i);
+            return Some(match finding.state {
+                Found::NotReproduced => format!("finding {id}, found once and not reproduced"),
+                Found::Open => format!("finding {id}, not reproduced yet"),
+                _ => format!("finding {id}"),
+            });
+        }
+        self.knowledge()
+            .findings
+            .iter()
+            .find(|f| f.identity == identity)
+            .and_then(|f| f.disposition.as_ref())
+            .map(|d| format!("found before and judged {}", d.kind.name()))
     }
 
     /// What the lead's turn checks plans and children against: the base
@@ -1423,6 +1521,7 @@ mod tests {
             chosen: Some(Chosen {
                 input: None,
                 expect: None,
+                answers: false,
                 why: String::new(),
                 decision: Decision {
                     choice: String::new(),
