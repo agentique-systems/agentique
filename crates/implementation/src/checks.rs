@@ -758,4 +758,27 @@ mod tests {
             Some("test foo ... ignored")
         );
     }
+
+    /// AR-T-010 (reproduction, `claimsKeptApart`): a report of checks is
+    /// current only while the code it saw is known to be unchanged. In a
+    /// folder that is not a git repository the code's digest cannot be read
+    /// when the report is made, nor later; the code then changes: the
+    /// report must not say it is current.
+    #[test]
+    fn a_report_whose_code_cannot_be_identified_is_not_current() {
+        let dir = tempfile::tempdir().unwrap();
+        let code = dir.path().join("code");
+        std::fs::create_dir_all(code.join("src")).unwrap();
+        std::fs::write(code.join("src/lib.rs"), "pub fn one() -> u32 { 1 }\n").unwrap();
+        let tree = super::Tree::default();
+        let links = super::Links::default();
+        let report = crate::CheckReport::new(&tree, &links, &code, Vec::new());
+        assert_eq!(report.commit, "unknown", "no repository: {report:?}");
+        std::fs::write(code.join("src/lib.rs"), "pub fn one() -> u32 { 2 }\n").unwrap();
+        assert_ne!(
+            report.freshness(&tree, &links, &code),
+            agq_simulation::Freshness::Current,
+            "the code changed and could never be identified, yet the report is current: {report:?}"
+        );
+    }
 }
