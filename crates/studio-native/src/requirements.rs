@@ -205,10 +205,41 @@ pub(crate) fn code_current(result: &RunResult, repository: Option<&Path>) -> boo
     })
 }
 
-/// The headline over the rows: what the requirement usages stand on.
+/// The headline over the rows: what the requirement usages stand on, and
+/// how many subrequirement rows it leaves to the requirements that contain
+/// them.
 pub fn rows_headline(rows: &[Row]) -> String {
     let ladders: Vec<Ladder> = rows.iter().map(|row| row.ladder.clone()).collect();
-    headline(&ladders)
+    let nested = ladders.iter().filter(|l| l.nested && !l.definition).count();
+    match nested {
+        0 => headline(&ladders),
+        1 => format!(
+            "{} · 1 subrequirement counted with the requirements that contain them",
+            headline(&ladders)
+        ),
+        n => format!(
+            "{} · {n} subrequirements counted with the requirements that contain them",
+            headline(&ladders)
+        ),
+    }
+}
+
+/// What a subrequirement is, said once for the panel and the Inspector.
+pub const SUBREQUIREMENT_NOTE: &str = "A subrequirement: evaluated within the requirement that contains it (in a requirement def, within each requirement that uses the def) and counted with it, not on its own.";
+
+/// A row's standing in words: for a subrequirement, that it is counted with
+/// the requirement that contains it.
+pub fn standing_words(ladder: &Ladder) -> String {
+    if ladder.definition {
+        ladder.summary()
+    } else if ladder.nested {
+        format!(
+            "{} · a subrequirement, counted with the requirement that contains it",
+            ladder.label()
+        )
+    } else {
+        ladder.label()
+    }
 }
 
 /// How a standing is coloured: a violation or a failure is danger, a
@@ -356,6 +387,51 @@ mod tests {
                 .starts_with("calculated for scout: not evaluable"),
             "{}",
             pleasant.ladder.summary()
+        );
+    }
+
+    #[test]
+    fn a_subrequirement_says_it_is_counted_with_the_requirement_that_contains_it() {
+        let text = "package S {
+    requirement def Purpose {
+        requirement inner;
+    }
+    requirement purpose : Purpose;
+}";
+        let state = SystemState::new(parse(&[Source::new("s.sysml", text)]), BTreeSet::new());
+        assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+        let rows = rows(&state, &Links::default(), &[], None);
+        let words = |name: &str| {
+            standing_words(
+                &rows
+                    .iter()
+                    .find(|row| row.name.ends_with(name))
+                    .unwrap_or_else(|| panic!("no row {name}"))
+                    .ladder,
+            )
+        };
+        assert!(
+            words("inner")
+                .contains("a subrequirement, counted with the requirement that contains it"),
+            "{}",
+            words("inner")
+        );
+        assert!(
+            !words("purpose").contains("subrequirement"),
+            "{}",
+            words("purpose")
+        );
+        assert!(
+            !words("Purpose").contains("subrequirement"),
+            "{}",
+            words("Purpose")
+        );
+        let headline = rows_headline(&rows);
+        assert!(
+            headline.ends_with(
+                "(of 1) · 1 subrequirement counted with the requirements that contain them"
+            ),
+            "{headline}"
         );
     }
 
