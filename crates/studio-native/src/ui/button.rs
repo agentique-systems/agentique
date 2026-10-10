@@ -73,6 +73,8 @@ pub struct Button {
     disabled: bool,
     selected: bool,
     full_width: bool,
+    /// Its label may be cut short (an ellipsis) when room is short.
+    truncate: bool,
     tooltip: Option<Tooltip>,
     on_click: Option<Click>,
     label_for_screen_readers: Option<SharedString>,
@@ -91,6 +93,7 @@ impl Button {
             disabled: false,
             selected: false,
             full_width: false,
+            truncate: false,
             tooltip: None,
             on_click: None,
             label_for_screen_readers: None,
@@ -128,6 +131,11 @@ impl Button {
     }
     pub fn primary(self) -> Self {
         self.variant(Variant::Primary)
+    }
+    /// Lets its label be cut short with an ellipsis when room is short.
+    pub fn truncate(mut self) -> Self {
+        self.truncate = true;
+        self
     }
     pub fn ghost(self) -> Self {
         self.variant(Variant::Ghost)
@@ -271,10 +279,12 @@ impl RenderOnce for Button {
         }
         let group = SharedString::from(format!("button-{:?}", self.id));
         let hover_icon = if self.disabled { fg } else { hover_fg };
+        let truncate = self.truncate;
         let content = div()
             .flex()
             .items_center()
             .gap(r(6.0))
+            .when(truncate, |this| this.min_w_0())
             .when_some(self.icon, |this, name| {
                 this.child(
                     icon(name)
@@ -284,7 +294,14 @@ impl RenderOnce for Button {
                 )
             })
             .when_some(self.label.clone(), |this, label| {
-                this.child(div().whitespace_nowrap().child(label))
+                this.child(
+                    div()
+                        .whitespace_nowrap()
+                        .when(truncate, |this| {
+                            this.min_w_0().overflow_hidden().text_ellipsis()
+                        })
+                        .child(label),
+                )
             })
             .when_some(self.trailing, |this, name| {
                 this.child(icon(name).size(14.0).color(theme.text_muted))
@@ -314,6 +331,7 @@ impl RenderOnce for Button {
                 this.px(r(if self.size == Size::Small { 8.0 } else { 10.0 }))
             })
             .when(self.full_width, |this| this.w_full())
+            .when(truncate, |this| this.min_w_0())
             .rounded(radius)
             .bg(bg)
             .text_color(fg)

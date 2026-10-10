@@ -285,9 +285,9 @@ target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-h\session.j
   `--ui-scale 1.5` scales the UI as display scaling does, for checking text
   at 100%, 150% and 200% on one display; `--window-size 1080x720` starts
   the window at a size (the smallest it may be is 1080x720). The title bar
-  keeps the panels' switches and the window's own buttons whole; the
-  project name, the agents' chip, the views (icons only under 1200 units of
-  room) and the search give way.
+  keeps the panels' switches, the window's own buttons and the agents'
+  buttons whole; the project's name (an ellipsis), the views (icons only
+  under 1200 units of room) and the search give way.
 - **Motion** (`motion.rs`, `ui/primitives.rs`): the camera's 300 ms tween,
   change highlights that hold and fade, and critically damped springs for
   switches, sliding selections and docks opening. Reduced motion (Windows'

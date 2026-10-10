@@ -1211,19 +1211,26 @@ impl Workspace {
             .items_center()
             .gap(r(8.0))
             .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
-            // The project, and how its saving stands: its name is cut short
-            // before anything else gives way.
+            // The project, and how its saving stands: the name is cut short
+            // (an ellipsis) while the mark and the saving state stay whole;
+            // only when room is very short does the group itself give way.
             .child(
                 div()
                     .flex()
-                    .min_w(r(72.0))
+                    .min_w_0()
+                    .flex_shrink(4.0)
                     .overflow_hidden()
                     .items_center()
                     .gap(r(8.0))
-                    .child(brand_mark(&theme).window_control_area(WindowControlArea::Drag))
+                    .child(
+                        brand_mark(&theme)
+                            .flex_none()
+                            .window_control_area(WindowControlArea::Drag),
+                    )
                     .child(match &project {
                         Some(name) => Button::new("project", name.clone())
                             .ghost()
+                            .truncate()
                             .trailing(IconName::ChevronDown)
                             .tooltip("Open another project", Some("Ctrl+O"))
                             .on_click(run(studio_entity.clone(), CommandId::OpenProject))
@@ -1240,7 +1247,7 @@ impl Workspace {
                             .into_any_element(),
                     })
                     .when(project.is_some(), |this| {
-                        this.child(save_state(&saved, uncommitted, &theme))
+                        this.child(div().flex_none().child(save_state(&saved, uncommitted, &theme)))
                     }),
             )
             .child(drag())
@@ -1383,7 +1390,9 @@ impl Workspace {
                 // buttons out of it).
                 let room = f32::from(window.viewport_size().width)
                     / (f32::from(window.rem_size()) / 16.0);
-                this.child(
+                // At a very short room the views give way entirely before
+                // the agents' chip does (they stay on 1, 2 and 3).
+                this.child(div().min_w_0().overflow_hidden().child(
                     Segmented::new("views", view_index)
                         .compact(room < 1200.0)
                         .choice(Some(IconName::Architecture), "Architecture")
@@ -1409,7 +1418,7 @@ impl Workspace {
                             ][index];
                             studio.act(cx, |studio| studio.execute(id));
                         }),
-                )
+                ))
             })
             .when(settings_open, |this| {
                 this.child(
@@ -1432,11 +1441,12 @@ impl Workspace {
                     .flex()
                     .items_center()
                     .gap(r(8.0))
-                    // It may shrink to its icon when room is short (W13.7:
-                    // at the smallest window it pushed the window's own
-                    // buttons out of it).
+                    // It may shrink when room is short, to its icon and at a
+                    // very short room away (W13.7: at the smallest window it
+                    // pushed the window's own buttons out of it); Ctrl+K
+                    // stays.
                     .w(r(260.0))
-                    .min_w(r(36.0))
+                    .min_w_0()
                     .overflow_hidden()
                     .h(r(28.0))
                     .px(r(10.0))

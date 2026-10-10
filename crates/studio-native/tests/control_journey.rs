@@ -1240,6 +1240,7 @@ fn the_objectives_controls_are_reachable_at_every_size_and_scale() {
         ("1920x1040", "1.5"),
         ("1080x720", "1.5"),
         ("1600x1000", "2"),
+        ("1080x720", "2"),
     ] {
         for unfinished in [true, false] {
             let case = format!(
@@ -1271,6 +1272,17 @@ fn the_objectives_controls_are_reachable_at_every_size_and_scale() {
             }
             problems.extend(unreachable(&first, &case, &ids));
             problems.extend(window_buttons_whole(&first, &case, scale));
+            // Where room allows (800 units or more), the search and the
+            // views are shown too; below it they may give way.
+            let room =
+                first["window"]["width"].as_f64().unwrap_or(0.0) / scale.parse::<f64>().unwrap();
+            if room >= 800.0 {
+                problems.extend(unreachable(
+                    &first,
+                    &case,
+                    &["title-search", "Architecture", "Requirements"],
+                ));
+            }
             studio.must(
                 json!({ "kind": "click", "control": "Objectives" }),
                 "look at the Objectives panel",
@@ -1349,8 +1361,9 @@ fn window_buttons_whole(observation: &Value, case: &str, scale: &str) -> Vec<Str
 }
 
 /// What keeps a control in `observation` from being worked: missing,
-/// hidden, outside the window or too small to hit (the controls `ids`), and
-/// any two controls of the title bar covering each other.
+/// hidden (but below its panel's fold, which scrolls), outside the window or
+/// too small to hit (the controls `ids`), and any two controls of the title
+/// bar covering each other.
 fn unreachable(observation: &Value, case: &str, ids: &[&str]) -> Vec<String> {
     let mut found = Vec::new();
     let width = observation["window"]["width"].as_f64().unwrap_or(0.0);
@@ -1369,8 +1382,18 @@ fn unreachable(observation: &Value, case: &str, ids: &[&str]) -> Vec<String> {
             continue;
         };
         let (x0, y0, x1, y1) = rect(c);
-        if !c["hidden"].is_null() {
+        // Below its panel's fold, across inside the window: the panel
+        // scrolls to it (as the first journey shows for the Inspector).
+        let below_fold = matches!(
+            c["region"].as_str(),
+            Some("inspector" | "conversation" | "left-body")
+        ) && x0 >= -0.5
+            && x1 <= width + 0.5
+            && y0 >= 0.0;
+        if !c["hidden"].is_null() && !below_fold {
             found.push(format!("{case}: {id} hidden at {:?}", (x0, y0, x1, y1)));
+        } else if !c["hidden"].is_null() {
+            // Reachable by scrolling; its size is still checked below.
         } else if x1 > width + 0.5 || y1 > height + 0.5 || x0 < -0.5 || y0 < -0.5 {
             found.push(format!(
                 "{case}: {id} outside the {width}x{height} window at {:?}",

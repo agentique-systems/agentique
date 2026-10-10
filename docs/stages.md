@@ -2487,10 +2487,18 @@ found the first fix still overflowed at 200%, with long project names, and
 with the paused chip. The bar now has two parts:
 - What never gives way: the panels' switches, Settings, and the window's
   own buttons.
-- What gives way, shrinking and then cut at its end: the project, whose
-  name is cut short first; the agents' chip, which keeps its buttons;
-  the views, icons only under 1200 units of room, each icon's tooltip
-  naming it; and the search, down to its icon.
+- What gives way: the project's name (an ellipsis, with the mark and the
+  saving state whole), the views (icons only under 1200 units of room, each
+  icon's tooltip naming it) and the search (to its icon); at a very short
+  room the views and the search give way entirely (1, 2, 3 and Ctrl+K
+  stay), and the agents' chip keeps its buttons.
+
+Checked at seven configurations: 1080x720 at 100%, 150% and 200%, 1600x1000
+at 100%, 125% and 200%, and 1920x1040 at 100% and 150%. A control below its
+panel's fold counts as reachable, since the panel scrolls to it. The window's
+own buttons and the agents' buttons are checked by id; other title-bar
+controls only for not covering each other, and the search and the views for
+being shown where room is 800 units or more.
 
 Not checked: screen readers, a real display at 200% (the scale is
 simulated), and keyboard focus order.
