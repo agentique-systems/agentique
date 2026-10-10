@@ -230,6 +230,8 @@ impl Render for ObjectiveForm {
         let switch = |switch: Switch, text: &'static str| {
             div().flex().items_center().gap(r(8.0)).child(switch).child(
                 div()
+                    .flex_1()
+                    .min_w_0()
                     .text_size(r(theme::text::SM))
                     .text_color(theme.text_secondary)
                     .child(text),
@@ -320,16 +322,19 @@ impl Render for ObjectiveForm {
                     "Build, try and restart in the result",
                 ))
             })
+            // On a line of its own: in the buttons' row its unwrapped width
+            // pushed Start out of the panel (W13.8).
+            .child(line(
+                "No spend or time limit: it ends after its improvements (each made or not) or when two explorations in a row reproduce nothing new, and you can pause or stop it at any time."
+                    .into(),
+                theme.text_muted,
+            ))
             .child(
                 div()
                     .flex()
                     .items_center()
+                    .justify_end()
                     .gap(r(6.0))
-                    .child(div().flex_1().child(line(
-                        "No spend or time limit: it ends after its improvements (each made or not) or when two explorations in a row reproduce nothing new, and you can pause or stop it at any time."
-                            .into(),
-                        theme.text_muted,
-                    )))
                     .when(in_conversation, |this| {
                         this.child(
                             Button::new("objective-cancel", "Cancel")

@@ -648,9 +648,15 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     for gone in ["objective-usd", "objective-cycles", "objective-hours"] {
         assert!(control(&objectives, gone).is_none(), "{gone}");
     }
-    assert_eq!(
-        control(&objectives, "objective-start").unwrap()["enabled"],
-        false
+    let start = control(&objectives, "objective-start").unwrap();
+    assert_eq!(start["enabled"], false);
+    // On screen, inside the window: a row's text once pushed it out of
+    // the panel (W13.8).
+    assert!(start["hidden"].is_null(), "{start}");
+    let right = start["bounds"][0].as_f64().unwrap() + start["bounds"][2].as_f64().unwrap();
+    assert!(
+        right <= objectives["window"]["width"].as_f64().unwrap(),
+        "{start}"
     );
     assert!(control(&objectives, "objective-merge").is_none());
 

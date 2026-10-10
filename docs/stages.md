@@ -2387,4 +2387,8 @@ cannot read an unlimited record: its list leaves it out and its check after
 adoption refuses; tested for the old reader's parse). An independent review
 found the "pull requests only" choice promised a pull request the
 Orchestrator does not open, the persistence record incomplete, readings
-repeated and never stopped, and stale governing text; corrected.
+repeated and never stopped, and stale governing text; corrected. When the Operator
+opened it, Start and Cancel were drawn off the right edge of the
+Conversation panel: the sentence about limits shared their row and did
+not wrap. It has a line of its own, and the journey now checks that Start
+is on screen inside the window (that check fails on the first version).
