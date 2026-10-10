@@ -92,11 +92,23 @@ pub fn commit_tree(
     parent: &str,
     message: &str,
 ) -> Result<String, String> {
-    let made = run(
-        repository,
-        &["git", "commit-tree", tree, "-p", parent, "-m", message],
-        Duration::from_secs(60),
-    )?;
+    commit_on(repository, tree, &[parent], message)
+}
+
+/// A new commit holding `tree`, on each of `parents`, with `message`: on
+/// the last one pushed and on a new base, it is pushed without forcing.
+pub fn commit_on(
+    repository: &Path,
+    tree: &str,
+    parents: &[&str],
+    message: &str,
+) -> Result<String, String> {
+    let mut words = vec!["git", "commit-tree", tree];
+    for parent in parents {
+        words.extend(["-p", parent]);
+    }
+    words.extend(["-m", message]);
+    let made = run(repository, &words, Duration::from_secs(60))?;
     let commit = made.stdout.trim().to_string();
     if commit.len() >= 40 && commit.chars().all(|c| c.is_ascii_hexdigit()) {
         Ok(commit)
@@ -234,7 +246,8 @@ pub fn head(repository: &Path, number: u64) -> Result<String, String> {
 pub enum Checks {
     /// Every check passed (and there is at least one).
     Passed,
-    /// A check failed: which, and where to read it.
+    /// Checks failed or were cancelled: each on a line, with where to read
+    /// it.
     Failed(String),
     /// Some are still running, or none has registered yet.
     Pending,
@@ -270,16 +283,21 @@ pub fn checks(repository: &Path, number: u64) -> Result<Checks, String> {
     if all.is_empty() {
         return Ok(Checks::Pending);
     }
-    if let Some(failed) = all
+    // Every failed or cancelled check, one per line.
+    let failed: Vec<String> = all
         .iter()
-        .find(|c| matches!(c["bucket"].as_str(), Some("fail") | Some("cancel")))
-    {
-        return Ok(Checks::Failed(format!(
-            "{} {} ({})",
-            failed["name"].as_str().unwrap_or("a check"),
-            failed["bucket"].as_str().unwrap_or("failed"),
-            failed["link"].as_str().unwrap_or("")
-        )));
+        .filter(|c| matches!(c["bucket"].as_str(), Some("fail") | Some("cancel")))
+        .map(|failed| {
+            format!(
+                "{} {} ({})",
+                failed["name"].as_str().unwrap_or("a check"),
+                failed["bucket"].as_str().unwrap_or("failed"),
+                failed["link"].as_str().unwrap_or("")
+            )
+        })
+        .collect();
+    if !failed.is_empty() {
+        return Ok(Checks::Failed(failed.join("\n")));
     }
     if all
         .iter()
@@ -289,6 +307,35 @@ pub fn checks(repository: &Path, number: u64) -> Result<Checks, String> {
     } else {
         Ok(Checks::Pending)
     }
+}
+
+/// The log of the failed job a failed check links to (`gh run view
+/// --log-failed`), from the link in the check's detail
+/// (`…/actions/runs/<run>/job/<job>`).
+pub fn failed_log(repository: &Path, detail: &str) -> Result<String, String> {
+    let (run_id, job) =
+        run_and_job(detail).ok_or_else(|| format!("the failed check names no run: {detail}"))?;
+    let mut words = vec!["gh", "run", "view", run_id.as_str(), "--log-failed"];
+    if let Some(job) = &job {
+        words.extend(["--job", job.as_str()]);
+    }
+    run(repository, &words, Duration::from_secs(180)).map(|f| f.stdout)
+}
+
+/// The run and job a check's link names.
+pub fn run_and_job(detail: &str) -> Option<(String, Option<String>)> {
+    let number_after = |marker: &str| {
+        detail
+            .split(marker)
+            .nth(1)
+            .map(|rest| {
+                rest.chars()
+                    .take_while(char::is_ascii_digit)
+                    .collect::<String>()
+            })
+            .filter(|n| !n.is_empty())
+    };
+    Some((number_after("/runs/")?, number_after("/job/")))
 }
 
 /// Waits for the repository's checks on the pull request, up to `within`;
@@ -429,6 +476,11 @@ pub fn follow(repository: &Path, base_branch: &str, merged: &str) -> Result<(), 
         &["git", "fetch", "origin", base_branch],
         Duration::from_secs(300),
     )?;
+    // Already there or past it (a change merged on top since, say): it
+    // follows.
+    if head.commit == merged || is_ancestor(repository, merged, &head.commit)? {
+        return Ok(());
+    }
     run(
         repository,
         &["git", "merge", "--ff-only", merged],

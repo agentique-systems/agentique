@@ -447,6 +447,11 @@ fn evidence(
         .flex_col()
         .gap(r(4.0))
         .child(super::group("Evidence", None, cx));
+    let words = crate::requirements::standing_words(&ladder);
+    let section = section.relative().child(ui::target::target(format!(
+        "Evidence of {}: {words}",
+        ladder.name
+    )));
     if ladder.definition {
         return Some(
             section
@@ -460,13 +465,41 @@ fn evidence(
         );
     }
     let standing = ladder.standing();
+    let nested = ladder.nested;
     Some(
         section
             .child(
                 div()
                     .flex()
-                    .child(ui::Chip::new(ladder.label()).tone(crate::requirements::tone(standing))),
+                    .items_center()
+                    .gap(r(6.0))
+                    .child(ui::Chip::new(ladder.label()).tone(crate::requirements::tone(standing)))
+                    .when(nested, |this| {
+                        this.child(
+                            div()
+                                .relative()
+                                .child(ui::target::target(format!(
+                                    "Evidence of {}: subrequirement chip",
+                                    ladder.name
+                                )))
+                                .child(ui::Chip::new("subrequirement")),
+                        )
+                    }),
             )
+            .when(nested, |this| {
+                this.child(
+                    div()
+                        .text_size(r(theme::text::SM))
+                        .text_color(theme.text_muted)
+                        .relative()
+                        .child(ui::target::target(format!(
+                            "Evidence of {}: {}",
+                            ladder.name,
+                            crate::requirements::SUBREQUIREMENT_NOTE
+                        )))
+                        .child(crate::requirements::SUBREQUIREMENT_NOTE),
+                )
+            })
             .child(super::requirements::ladder(
                 &ladder,
                 "inspector",
