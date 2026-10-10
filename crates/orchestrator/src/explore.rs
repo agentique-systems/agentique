@@ -83,6 +83,10 @@ pub trait Supervisor {
     }
     /// What the run is doing (the W13.7 repair): nothing by default.
     fn progress(&mut self, _progress: &Progress) {}
+    /// How often a wait for a model is said to go on: [`HEARTBEAT`].
+    fn heartbeat(&self) -> Duration {
+        HEARTBEAT
+    }
 }
 
 /// How often a run says it still waits for a model's answer.
@@ -94,13 +98,12 @@ pub const HEARTBEAT: Duration = Duration::from_secs(10);
 /// `seconds` its time so far.
 #[derive(Debug)]
 pub enum Progress<'a> {
-    /// A model is about to be asked for step `step`; `by` says who decides.
+    /// A model is being asked for step `step` (said once its call starts,
+    /// not for a step the rules or Jev decide); `by` says which.
     Deciding {
         step: u32,
         of: u32,
         by: String,
-        project: &'a str,
-        goal: &'a str,
         seconds: u64,
     },
     /// Still waiting for `by`'s answer, `waited` seconds so far.
@@ -141,14 +144,10 @@ impl Progress<'_> {
                 step,
                 of,
                 by,
-                project,
-                goal,
                 seconds,
             } => (
                 format!("Step {step}/{of}: asks {by} · {} in", duration(*seconds)),
-                format!(
-                    "Project: {project}\nGoal: {goal}\nNext: the action chosen is taken in the test instance and checked"
-                ),
+                String::new(),
             ),
             Progress::Waiting {
                 step,
@@ -172,15 +171,22 @@ impl Progress<'_> {
     }
 }
 
-/// Who chose a step: the rules, Jev with its confidence, or a model.
-fn decided_by(chosen: &Chosen) -> String {
+/// Who chose a step: the rules, Jev with its confidence, or a model (the
+/// one `timing` says was asked: since the W13.7 repair a step Jev is unsure
+/// of goes to the explorer's model, not to the escalation role's).
+fn decided_by(chosen: &Chosen, timing: &Timing) -> String {
     let d = &chosen.decision;
+    let model = || match (&timing.model, &timing.effort) {
+        (Some(model), Some(effort)) => format!("{model} at {effort}"),
+        (Some(model), None) => model.clone(),
+        (None, _) => "the explorer's model".to_string(),
+    };
     match d.source {
         Source::Rules if d.note.is_empty() => "rules".to_string(),
         Source::Rules => format!("rules ({})", d.note),
         Source::Jev => format!("Jev {:.2}", d.confidence.unwrap_or(0.0)),
-        Source::Model => "the explorer's model".to_string(),
-        Source::Escalated => "escalated to the reasoning model".to_string(),
+        Source::Model => model(),
+        Source::Escalated => format!("Jev unsure, then {}", model()),
     }
 }
 
@@ -239,6 +245,30 @@ pub struct Timing {
     pub tokens: Option<Tokens>,
 }
 
+impl Timing {
+    /// With `other`'s time, calls, prompts and tokens added (a step's
+    /// decision, its action and what was observed after are measured
+    /// apart); the model asked last is kept.
+    fn add(&mut self, other: Timing) {
+        self.jev_ms += other.jev_ms;
+        self.model_ms += other.model_ms;
+        self.act_ms += other.act_ms;
+        self.observe_ms += other.observe_ms;
+        if other.model.is_some() {
+            self.model = other.model;
+            self.effort = other.effort;
+        }
+        self.calls += other.calls;
+        self.prompt_chars += other.prompt_chars;
+        if let Some(t) = other.tokens {
+            let tokens = self.tokens.get_or_insert_with(Tokens::default);
+            tokens.input += t.input;
+            tokens.output += t.output;
+            tokens.reasoning += t.reasoning;
+        }
+    }
+}
+
 /// Tokens a provider reported: input (with the cache's), output, and the
 /// output that was reasoning.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -281,6 +311,19 @@ impl Answers for Measured<'_> {
         answer
     }
 
+    fn ask_jev_all(
+        &self,
+        state: &Value,
+        questions: BTreeMap<String, agq_providers::jev::Question>,
+    ) -> Result<(BTreeMap<String, agq_providers::jev::Answer>, Option<f64>), decide::Failure> {
+        let started = Instant::now();
+        let answer = self.answers.ask_jev_all(state, questions);
+        self.timing.borrow_mut().jev_ms += started.elapsed().as_millis() as u64;
+        answer
+    }
+
+    /// `stop` is asked once before the call too, so whoever watches learns
+    /// the call starts (the call itself sees a stop that came first).
     fn chat(
         &self,
         model: &ModelRef,
@@ -288,6 +331,7 @@ impl Answers for Measured<'_> {
         prompt: &str,
         stop: &mut dyn FnMut() -> bool,
     ) -> Result<decide::Answered, String> {
+        let _ = stop();
         let started = Instant::now();
         let answer = self.answers.chat(model, effort, prompt, stop);
         let mut timing = self.timing.borrow_mut();
@@ -1296,7 +1340,10 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                 action: json!({ "kind": "click", "control": id }),
                 key,
                 about,
-                navigates: matches!(role, "tab" | "option") && region != "dialog",
+                // A panel's tab; never an option (the Inspector's type
+                // matches change the model, the palette's rows run
+                // commands), nor a dialog's or the palette's tab.
+                navigates: role == "tab" && region != "dialog" && region != "palette",
                 area,
                 label,
                 field: false,
@@ -1980,14 +2027,17 @@ impl Taken {
     pub fn line(&self) -> String {
         let t = &self.timing;
         let who = match &self.chosen {
-            Some(chosen) => decided_by(chosen),
+            Some(chosen) => decided_by(chosen, t),
             None => self.step.by.clone(),
         };
         let mut line = format!("{} — {} · {who}", acted(&self.step), self.outcome);
         if t.jev_ms + t.model_ms > 0 {
             line.push_str(&format!(" · {} deciding", tenths(t.jev_ms + t.model_ms)));
         }
-        line.push_str(&format!(" · {} acting", tenths(t.act_ms + t.observe_ms)));
+        line.push_str(&format!(
+            " · {} in the instance",
+            tenths(t.act_ms + t.observe_ms)
+        ));
         line
     }
 
@@ -2618,20 +2668,6 @@ impl Explorer<'_> {
             .then(|| route(&candidates, &self.plan.goal, &self.run.covered))
             .flatten();
         let step = self.run.actions + 1;
-        let asking = self.asking();
-        if routed.is_none()
-            && candidates.len() > 1
-            && let Some((by, _)) = &asking
-        {
-            self.supervisor.progress(&Progress::Deciding {
-                step,
-                of: self.plan.steps,
-                by: by.clone(),
-                project: &self.plan.start,
-                goal: &self.plan.goal,
-                seconds: self.started.elapsed().as_secs(),
-            });
-        }
         // Asked through a measure of where the decision's time goes.
         let measured = Measured::new(self.deciding.answers);
         let deciding = Deciding {
@@ -2650,42 +2686,55 @@ impl Explorer<'_> {
         let (index, chosen) = match routed {
             Some(index) => named_route(index),
             None => {
+                let (by, model) = self.asking();
                 let (supervisor, started, seconds, of) = (
                     &mut *self.supervisor,
                     self.started,
                     self.plan.seconds,
                     self.plan.steps,
                 );
-                let waiting_for = asking.map(|(_, model)| model).unwrap_or_default();
-                let asked = Instant::now();
+                let heartbeat = (supervisor.heartbeat().as_millis() as u64).max(1);
+                let mut asked: Option<Instant> = None;
                 let mut beats = 0;
                 choose(self.plan.way, &choosing, &mut || {
-                    // Still waiting: said at most every HEARTBEAT.
-                    let waited = asked.elapsed().as_secs();
-                    if waited / HEARTBEAT.as_secs() > beats {
-                        beats = waited / HEARTBEAT.as_secs();
+                    // A model's call starts (Jev, the rules and a named
+                    // route ask no stop): said once, and its wait counted
+                    // from here.
+                    let since = match asked {
+                        Some(since) => since,
+                        None => {
+                            supervisor.progress(&Progress::Deciding {
+                                step,
+                                of,
+                                by: by.clone(),
+                                seconds: started.elapsed().as_secs(),
+                            });
+                            *asked.insert(Instant::now())
+                        }
+                    };
+                    // Still waiting: said at most every heartbeat.
+                    let waited = since.elapsed().as_millis() as u64;
+                    if waited / heartbeat > beats {
+                        beats = waited / heartbeat;
                         supervisor.progress(&Progress::Waiting {
                             step,
                             of,
-                            by: waiting_for.clone(),
-                            waited,
+                            by: model.clone(),
+                            waited: waited / 1000,
                         });
                     }
                     halted(supervisor, started, seconds)
                 })
             }
         };
-        self.pending = measured.timing.into_inner();
+        // Added: what was measured of this step before (an observation)
+        // stays in it.
+        self.pending.add(measured.timing.into_inner());
         self.run.actions += 1;
         self.run.latencies.push(chosen.decision.millis);
         self.run.usd += chosen.counted;
         if chosen.decision.usd.is_none() {
             self.run.unpriced += 1;
-        }
-        // A stop, or the time budget, that came while the decision was made
-        // takes no more action.
-        if halted(self.supervisor, self.started, self.plan.seconds) {
-            return Err(self.why_halted());
         }
         let candidate = candidates[index].clone();
         let mut action = candidate.action.clone();
@@ -2716,6 +2765,14 @@ impl Explorer<'_> {
             expect: chosen.expect.clone(),
             by: "explorer".into(),
         };
+        // A stop, or the time budget, that came while the decision was made
+        // takes no more action; the decision is recorded (what it cost
+        // counts).
+        if halted(self.supervisor, self.started, self.plan.seconds) {
+            let why = self.why_halted();
+            self.record(&step, Some(chosen), "not taken", why.clone(), None);
+            return Err(why);
+        }
         self.take(step, Some(chosen), &why)
     }
 
@@ -3166,23 +3223,17 @@ impl Explorer<'_> {
 
     /// Who decides a step by the plan's way, and whose answer a wait is
     /// for: none for the rules.
-    fn asking(&self) -> Option<(String, String)> {
-        let at = |model: &ModelRef, effort: &Option<String>| match effort {
-            Some(effort) => format!("{} at {effort}", model.model),
-            None => model.model.clone(),
-        };
+    /// Who a step's model call asks, as its progress says it, and the
+    /// model waited for: the explorer's (only a model call says so).
+    fn asking(&self) -> (String, String) {
         let deciding = self.deciding;
+        let model = match &deciding.effort {
+            Some(effort) => format!("{} at {effort}", deciding.explorer.model),
+            None => deciding.explorer.model.clone(),
+        };
         match self.plan.way {
-            Way::Rules | Way::Cancel => None,
-            Way::Jev => Some(("Jev".into(), "Jev".into())),
-            Way::Model => {
-                let model = at(&deciding.explorer, &deciding.effort);
-                Some((model.clone(), model))
-            }
-            Way::Escalating => {
-                let model = at(&deciding.explorer, &deciding.effort);
-                Some((format!("Jev, then {model} if Jev is unsure"), model))
-            }
+            Way::Escalating => (format!("{model}, Jev being unsure"), model),
+            _ => (model.clone(), model),
         }
     }
 
@@ -3298,6 +3349,49 @@ mod tests {
                 { "id": "fit", "label": "Fit", "operatorOnly": true }
             ]
         })
+    }
+
+    /// The review of the W13.7 repair: only a panel's tab or a view's
+    /// command is a route the rules take for a goal; never an option (the
+    /// Inspector's type matches change the model, the palette's rows run
+    /// commands), a dialog's tab, nor a label the goal names without
+    /// saying it is a view, a panel or a tab.
+    #[test]
+    fn only_a_panels_tab_or_a_views_command_is_a_route() {
+        let screen = |controls: Value| {
+            json!({
+                "screen": "surface", "screenRevision": 1, "dialog": null, "approval": null,
+                "palette": null, "panels": {}, "selection": [], "status": "",
+                "controls": controls, "commands": [{ "id": "requirements-view", "label": "Requirements view" }]
+            })
+        };
+        let goal = "Open the History panel and read its buttons";
+        let none = BTreeMap::new();
+        let routed = |observation: &Value, goal: &str| {
+            let list = candidates(observation, None);
+            route(&list, goal, &none).map(|i| list[i].key.clone())
+        };
+        // The Inspector's type match, a palette row, a dialog's tab.
+        let not_routes = screen(json!([
+            { "id": "type-History", "label": "History", "role": "option", "region": "inspector" },
+            { "id": "palette-History", "label": "History", "role": "option", "region": "palette" },
+            { "id": "dialog-History", "label": "History", "role": "tab", "region": "dialog" }
+        ]));
+        assert_eq!(routed(&not_routes, goal), None);
+        // The panel's tab is one; not for a goal that only says "history".
+        let tab = screen(json!([
+            { "id": "History", "label": "History", "role": "tab", "region": "inspector" }
+        ]));
+        assert_eq!(
+            routed(&tab, goal).as_deref(),
+            Some("surface|inspector|History|click")
+        );
+        assert_eq!(routed(&tab, "Look through the history of changes"), None);
+        // A view's command, by its name.
+        assert_eq!(
+            routed(&tab, "Count the rows in the Requirements view").as_deref(),
+            Some("surface|command|requirements-view|command")
+        );
     }
 
     #[test]

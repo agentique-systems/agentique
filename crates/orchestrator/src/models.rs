@@ -316,10 +316,12 @@ pub fn decider(models: &[RoleModel]) -> Result<Decider, String> {
 }
 
 /// What an exploring objective's run decides with (W12.4's [`Deciding`]),
-/// from its recorded roles in one call: typed decisions by the [`decider`]
-/// of its `decisions` and `escalation` roles, and the explorer's model and
-/// effort from its `explorer` role, to which Jev escalates a step it is
-/// unsure of (the W13.7 repair). `run` gets them for the run's length.
+/// from its recorded roles in one call: Jev through the [`decider`] of its
+/// `decisions` and `escalation` roles, and the explorer's model and effort
+/// from its `explorer` role, to which Jev escalates a step it is unsure of
+/// (the W13.7 repair). No step of a run asks the escalation role's model:
+/// the decider takes it for the dialogs it decides. `run` gets them for the
+/// run's length.
 pub fn with_deciding<T>(
     models: &[RoleModel],
     run: impl FnOnce(&Deciding) -> T,

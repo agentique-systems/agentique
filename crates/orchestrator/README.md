@@ -124,9 +124,9 @@ what to change.
   `check_copy`) and acts on nothing when they differ (a replay's mismatch
   leaves its finding as it was); a plan's start (a
   view's command, an element to select) is carried out by rule after each
-  start. While it runs it reports through its supervisor (`progress`:
-  before a decision a model makes, while it waits at most every 10 s, after
-  each action), which the driver posts to the thread under the exploration's
+  start. While it runs it reports through its supervisor (`progress`: when
+  a model's call starts, while it waits at most every 10 s, after each
+  action), which the driver posts to the thread under the exploration's
   entry, and each step keeps where its time went (`Timing`), summarised by
   `Run::time`. Each step lists the actions valid there
   that the observation offers to agents (fields with fixed input classes),

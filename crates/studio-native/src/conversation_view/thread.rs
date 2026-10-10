@@ -49,14 +49,23 @@ pub struct Row {
 pub enum What {
     /// A message, a directive, a result or an event.
     Step(Step),
-    /// The tool calls folded under a step.
-    Fold { count: usize, open: bool },
-    /// One tool call, shown while its fold is open.
+    /// The tool calls folded under a step, or the updates of an
+    /// exploration run (`progress`: the explorer makes no tool calls); with
+    /// the latest of them while it is the thread's latest entry (the work
+    /// goes on), so what a run does shows without opening the fold.
+    Fold {
+        count: usize,
+        open: bool,
+        progress: bool,
+        latest: Option<String>,
+    },
+    /// One tool call or update, shown while its fold is open.
     Activity {
         author: String,
         text: String,
         details: Option<String>,
         open: bool,
+        progress: bool,
     },
     /// The objective in one line, where its thread is not shown (it was not
     /// started from this conversation, or ended before this session).
@@ -112,7 +121,12 @@ impl Row {
                         .hash(&mut hasher);
                 }
             }
-            What::Fold { count, open } => (1u8, count, open).hash(&mut hasher),
+            What::Fold {
+                count,
+                open,
+                progress,
+                latest,
+            } => (1u8, count, open, progress, latest).hash(&mut hasher),
             What::Activity { text, open, .. } => (2u8, text.len(), open).hash(&mut hasher),
             What::Summary { intent, state } => (3u8, intent, state).hash(&mut hasher),
         }
@@ -339,9 +353,10 @@ impl Builder<'_> {
                 last_step = entry.seq;
             }
         }
+        let last = entries.last().map(|e| e.seq);
         if let Some(activity) = under.get(&0) {
             let at = at.unwrap_or_else(|| activity[0].at.as_str()).to_string();
-            self.fold(&objective.id, 0, &at, depth, activity);
+            self.fold(&objective.id, 0, &at, depth, activity, last);
         }
         for entry in entries.iter().filter(|e| e.kind != Kind::Activity) {
             let at = at.unwrap_or(&entry.at).to_string();
@@ -349,7 +364,7 @@ impl Builder<'_> {
             if entry.seq != 0
                 && let Some(activity) = under.get(&entry.seq)
             {
-                self.fold(&objective.id, entry.seq, &at, depth, activity);
+                self.fold(&objective.id, entry.seq, &at, depth, activity, last);
             }
             // A child objective's thread, under the directive that started it.
             let child = entry
@@ -412,9 +427,22 @@ impl Builder<'_> {
         });
     }
 
-    fn fold(&mut self, objective: &str, step: u64, at: &str, depth: u8, activity: &[&ThreadEntry]) {
+    /// `last`: the number of the thread's last entry.
+    fn fold(
+        &mut self,
+        objective: &str,
+        step: u64,
+        at: &str,
+        depth: u8,
+        activity: &[&ThreadEntry],
+        last: Option<u64>,
+    ) {
         let id = format!("thread-fold-{objective}-{step}");
         let open = self.open.contains(&id);
+        let latest = activity
+            .last()
+            .filter(|e| e.seq != 0 && Some(e.seq) == last)
+            .map(|e| e.text.clone());
         self.rows.push(Row {
             id,
             objective: objective.to_string(),
@@ -424,6 +452,8 @@ impl Builder<'_> {
             what: What::Fold {
                 count: activity.len(),
                 open,
+                progress: activity.iter().all(|e| is_progress(e)),
+                latest,
             },
         });
         if !open {
@@ -443,9 +473,25 @@ impl Builder<'_> {
                     text: entry.text.clone(),
                     details: entry.details.clone(),
                     open,
+                    progress: is_progress(entry),
                 },
             });
         }
+    }
+}
+
+/// Whether an activity entry is an exploration run's update (the explorer
+/// answers one typed question a step: it makes no tool calls).
+fn is_progress(entry: &ThreadEntry) -> bool {
+    matches!(&entry.author, Author::Agent { role, .. } if role == "explorer")
+}
+
+/// How many tool calls, or updates of a run, a fold holds: `12 tool calls`.
+fn fold_noun(count: usize, progress: bool) -> String {
+    if progress {
+        crate::conversation::plural(count, "update", "updates")
+    } else {
+        crate::conversation::plural(count, "tool call", "tool calls")
     }
 }
 
@@ -533,23 +579,39 @@ pub fn label(row: &Row) -> String {
             };
             super::control_label(format!("{head}: {}", step.text))
         }
-        What::Fold { count, .. } => fold_words(*count, row.seq),
-        What::Activity { author, text, .. } => {
-            super::control_label(format!("Tool call by {author}: {text}"))
-        }
+        What::Fold {
+            count,
+            progress,
+            latest,
+            ..
+        } => fold_words(*count, *progress, latest.as_deref(), row.seq),
+        What::Activity {
+            author,
+            text,
+            progress,
+            ..
+        } => super::control_label(format!(
+            "{} by {author}: {text}",
+            if *progress { "Update" } else { "Tool call" }
+        )),
         What::Summary { intent, state } => super::control_label(format!(
             "Objective “{intent}”, {state}: its record is in the Objectives panel"
         )),
     }
 }
 
-/// `12 tool calls under entry 4`.
-fn fold_words(count: usize, step: u64) -> String {
-    let calls = crate::conversation::plural(count, "tool call", "tool calls");
-    if step == 0 {
+/// `12 tool calls under entry 4`; `9 updates under entry 6, the latest:
+/// Step 4/30: …` while the latest is the thread's.
+fn fold_words(count: usize, progress: bool, latest: Option<&str>, step: u64) -> String {
+    let calls = fold_noun(count, progress);
+    let words = if step == 0 {
         format!("{calls} before the first step")
     } else {
         format!("{calls} under entry {step}")
+    };
+    match latest {
+        Some(latest) => super::control_label(format!("{words}, the latest: {latest}")),
+        None => words,
     }
 }
 
@@ -683,7 +745,12 @@ pub fn render_row(ctx: &Rc<Ctx>, row: &Row, cx: &App) -> AnyElement {
                 )
                 .into_any_element()
         }
-        What::Fold { count, open } => div()
+        What::Fold {
+            count,
+            open,
+            progress,
+            latest,
+        } => div()
             .id(SharedString::from(row.id.clone()))
             .relative()
             .child(control())
@@ -691,6 +758,7 @@ pub fn render_row(ctx: &Rc<Ctx>, row: &Row, cx: &App) -> AnyElement {
             .items_center()
             .gap(r(6.0))
             .ml(r(12.0))
+            .min_w_0()
             .text_size(r(theme::text::XS))
             .text_color(theme.text_muted)
             .cursor_pointer()
@@ -705,18 +773,35 @@ pub fn render_row(ctx: &Rc<Ctx>, row: &Row, cx: &App) -> AnyElement {
                 .size(12.0)
                 .color(theme.text_faint),
             )
-            .child(icon(IconName::Tool).size(12.0).color(theme.text_faint))
-            .child(crate::conversation::plural(
-                *count,
-                "tool call",
-                "tool calls",
-            ))
+            .child(
+                icon(if *progress {
+                    IconName::Play
+                } else {
+                    IconName::Tool
+                })
+                .size(12.0)
+                .color(theme.text_faint),
+            )
+            .child(div().flex_none().child(fold_noun(*count, *progress)))
+            .when_some(latest.clone().filter(|_| !*open), |this, latest| {
+                this.child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .overflow_hidden()
+                        .text_ellipsis()
+                        .whitespace_nowrap()
+                        .text_color(theme.text_secondary)
+                        .child(format!("· {latest}")),
+                )
+            })
             .into_any_element(),
         What::Activity {
             author,
             text,
             details,
             open,
+            ..
         } => div()
             .ml(r(30.0))
             .flex()
@@ -1248,7 +1333,9 @@ mod tests {
             closed[3].what,
             What::Fold {
                 count: 2,
-                open: false
+                open: false,
+                progress: false,
+                latest: None,
             }
         );
         assert_eq!(closed[3].id, "thread-fold-objective-1-3");
@@ -1298,6 +1385,7 @@ mod tests {
                 text: "Edit src/a.rs".into(),
                 details: Some("- let a = 1;\n+ let a = 2;".into()),
                 open: true,
+                progress: false,
             }
         );
         // The status follows the record.
@@ -1332,6 +1420,83 @@ mod tests {
     /// the latest entries are kept; a later message of the Operator's says
     /// where it went; a child's intent is the asking agent's, not "you".
     /// Entries that could not be kept have ids of their own.
+    /// The W13.7 repair, after its review: an exploration run's progress
+    /// folds as its updates (the explorer makes no tool calls), and while
+    /// it goes on the fold's row shows the latest of them; once the run's
+    /// result follows, the row is a count again.
+    #[test]
+    fn a_runs_updates_fold_with_the_latest_shown_while_it_goes_on() {
+        let records = Records::new("progress");
+        let root = records.objective("objective-1", None);
+        let o = "objective-1";
+        let explorer = Author::agent(
+            "explorer",
+            Some(ModelRef::new(Provider::DeepSeek, "deepseek-flash")),
+        );
+        let update = |seq: u64, text: &str| {
+            let mut e = entry(o, seq, seq as u32, Kind::Activity, explorer.clone(), text);
+            e.under = Some(2);
+            e
+        };
+        let mut thread = vec![
+            entry(
+                o,
+                1,
+                1,
+                Kind::Human,
+                Author::Operator,
+                "Find and fix problems",
+            ),
+            entry(o, 2, 2, Kind::Event, Author::Agentique, "Explores model"),
+            update(
+                3,
+                "Step 1/30: clicks “History” — ok · rules (the goal names it)",
+            ),
+            update(4, "Step 2/30: asks deepseek-flash at low · 12 s in"),
+            update(5, "Step 2/30: waiting for deepseek-flash at low · 10 s"),
+        ];
+        let none = |_: &ThreadEntry| None;
+        let going = rows(
+            &root,
+            &[],
+            &BTreeMap::from([(o.to_string(), thread.clone())]),
+            &HashSet::new(),
+            &none,
+            true,
+        );
+        assert_eq!(
+            going[2].what,
+            What::Fold {
+                count: 3,
+                open: false,
+                progress: true,
+                latest: Some("Step 2/30: waiting for deepseek-flash at low · 10 s".into()),
+            }
+        );
+        assert_eq!(
+            label(&going[2]),
+            "3 updates under entry 2, the latest: Step 2/30: waiting for deepseek-flash at low · 10 s"
+        );
+        thread.push(entry(
+            o,
+            6,
+            6,
+            Kind::Result,
+            explorer.clone(),
+            "Explored 30 steps",
+        ));
+        let done = rows(
+            &root,
+            &[],
+            &BTreeMap::from([(o.to_string(), thread)]),
+            &HashSet::from(["thread-fold-objective-1-2".to_string()]),
+            &none,
+            true,
+        );
+        assert_eq!(label(&done[2]), "3 updates under entry 2");
+        assert!(label(&done[3]).starts_with("Update by explorer · deepseek-flash: Step 1/30"));
+    }
+
     #[test]
     fn the_intent_is_the_first_entry_and_unkept_entries_have_their_own_ids() {
         let records = Records::new("intent");
@@ -1654,6 +1819,8 @@ mod tests {
             what: What::Fold {
                 count: 12,
                 open: false,
+                progress: false,
+                latest: None,
             },
             ..directive.clone()
         };

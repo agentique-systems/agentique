@@ -44,6 +44,30 @@ use std::time::Duration;
 /// sample. An objective that explores always has its lead's target.
 pub const SAMPLE: &str = "models/url-shortener";
 
+/// What a step of a run spent, and the role it counts for: a model asked
+/// for the explorer, Jev alone for the decisions. A step the rules took
+/// after a call failed, timed out or was stopped counts what was tried
+/// (the review of the W13.7 repair: it was dropped), and a decision made
+/// as the run stopped counts though nothing was acted on.
+fn spent_on(taken: &explore::Taken) -> Option<(&'static str, Cost)> {
+    use crate::decide::Source;
+    let chosen = taken.chosen.as_ref()?;
+    let role = match chosen.decision.source {
+        Source::Rules if chosen.counted <= 0.0 => return None,
+        Source::Model | Source::Escalated => "explorer",
+        _ if taken.timing.calls > 0 => "explorer",
+        _ => "decisions",
+    };
+    Some((
+        role,
+        Cost {
+            usd: chosen.counted,
+            tokens: taken.timing.tokens.map_or(0, |t| t.input + t.output),
+            unknown: chosen.decision.usd.is_none(),
+        },
+    ))
+}
+
 /// What the lead's turn checks a plan of an exploration and a child's
 /// project against (C-54, the W13.7 repair): the planning (the base
 /// commit's projects, the commit, and what the objective explores so far,
@@ -651,27 +675,11 @@ impl Driver {
     /// escalated to it), and the instance's Assistant (on the explorer's
     /// key) under `explorer`.
     fn count_exploration(&mut self, run: &Run) {
-        for taken in &run.steps {
-            let Some(chosen) = &taken.chosen else {
-                continue;
-            };
-            let role = match chosen.decision.source {
-                crate::decide::Source::Rules => continue,
-                crate::decide::Source::Jev => "decisions",
-                crate::decide::Source::Model | crate::decide::Source::Escalated => "explorer",
-            };
+        for (role, cost) in run.steps.iter().filter_map(spent_on) {
             let Some(model) = self.model_of(role) else {
                 continue;
             };
-            self.objective.spent.add(
-                role,
-                &model,
-                Cost {
-                    usd: chosen.counted,
-                    tokens: 0,
-                    unknown: chosen.decision.usd.is_none(),
-                },
-            );
+            self.objective.spent.add(role, &model, cost);
         }
         if run.assistant_usd > 0.0
             && let Some(model) = self.model_of("explorer")
@@ -1327,5 +1335,84 @@ impl Driver {
             numbers.join(", ")
         ));
         messages.join("\n\n")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::decide::{Decision, Source};
+    use crate::explore::{Chosen, Step, Taken, Timing, Tokens};
+
+    fn taken(source: Source, counted: f64, usd: Option<f64>, calls: u32) -> Taken {
+        Taken {
+            step: Step {
+                action: serde_json::json!({ "kind": "click", "control": "x" }),
+                key: "k".into(),
+                screen: "surface".into(),
+                label: "X".into(),
+                expect: None,
+                by: "explorer".into(),
+            },
+            chosen: Some(Chosen {
+                input: None,
+                expect: None,
+                why: String::new(),
+                decision: Decision {
+                    choice: String::new(),
+                    source,
+                    confidence: None,
+                    millis: 0,
+                    usd,
+                    note: String::new(),
+                },
+                counted,
+            }),
+            outcome: "ok".into(),
+            detail: String::new(),
+            took_ms: None,
+            timing: Timing {
+                calls,
+                tokens: (calls > 0).then_some(Tokens {
+                    input: 900,
+                    output: 100,
+                    reasoning: 80,
+                }),
+                ..Timing::default()
+            },
+        }
+    }
+
+    /// The review of the W13.7 repair: what a step spent counts, also when
+    /// the rules took it after a call failed or was stopped, with the
+    /// tokens the provider reported; a rule that tried nothing counts
+    /// nothing.
+    #[test]
+    fn what_a_step_spent_counts_for_the_role_that_spent_it() {
+        let cost = |usd, tokens, unknown| Cost {
+            usd,
+            tokens,
+            unknown,
+        };
+        assert_eq!(spent_on(&taken(Source::Rules, 0.0, Some(0.0), 0)), None);
+        assert_eq!(
+            spent_on(&taken(Source::Jev, 0.001, Some(0.001), 0)),
+            Some(("decisions", cost(0.001, 0, false)))
+        );
+        assert_eq!(
+            spent_on(&taken(Source::Escalated, 0.004, Some(0.004), 1)),
+            Some(("explorer", cost(0.004, 1000, false)))
+        );
+        // A call that failed or was stopped: the rules took the step, and
+        // the call counts at the most it could have cost.
+        assert_eq!(
+            spent_on(&taken(Source::Rules, 0.03, None, 1)),
+            Some(("explorer", cost(0.03, 1000, true)))
+        );
+        // Jev failed, no model was asked.
+        assert_eq!(
+            spent_on(&taken(Source::Rules, 0.002, None, 0)),
+            Some(("decisions", cost(0.002, 0, true)))
+        );
     }
 }

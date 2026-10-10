@@ -1394,6 +1394,48 @@ fn a_stop_while_deciding_takes_no_more_action() {
     );
 }
 
+/// The review of the W13.7 repair: a decision a model made as the run was
+/// stopped takes no action, and is recorded with what it cost.
+#[test]
+fn a_decision_made_as_the_run_stops_is_recorded_with_its_cost() {
+    /// Stopped once the model's call has started.
+    struct StopsWhileAsked(bool);
+    impl explore::Supervisor for StopsWhileAsked {
+        fn go_on(&mut self) -> bool {
+            true
+        }
+        fn stopped(&mut self) -> bool {
+            self.0
+        }
+        fn progress(&mut self, progress: &explore::Progress) {
+            if matches!(progress, explore::Progress::Deciding { .. }) {
+                self.0 = true;
+            }
+        }
+    }
+    let answers = Scripted {
+        reads: Some(Box::new(|_| r#"{"choice": "a01"}"#.to_string())),
+        ..Scripted::default()
+    };
+    let mut studio = StandIn::new(Defects::default());
+    let run = explore::explore(
+        &mut studio,
+        &plan(Way::Model, 1, 10),
+        &deciding(&answers),
+        &Knowledge::new("stand-in"),
+        &mut StopsWhileAsked(false),
+    );
+    assert_eq!(run.ended, "stopped");
+    assert!(!studio.log.iter().any(|l| l.starts_with("explorer")));
+    let [taken] = run.steps.as_slice() else {
+        panic!("{:?}", run.steps);
+    };
+    assert_eq!(taken.outcome, "not taken");
+    let chosen = taken.chosen.as_ref().unwrap();
+    assert!(chosen.counted > 0.0 && run.usd == chosen.counted, "{run:?}");
+    assert_eq!(taken.timing.calls, 1);
+}
+
 #[test]
 fn no_request_is_sent_where_the_assistants_spend_cannot_be_seen() {
     let mut studio = chatting(true, true, Turn::Ends);
@@ -1606,11 +1648,16 @@ impl explore::Supervisor for Reported {
     fn progress(&mut self, progress: &explore::Progress) {
         self.0.push(progress.entry().0);
     }
+
+    /// A short heartbeat, so the test waits a moment, not ten seconds.
+    fn heartbeat(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(300)
+    }
 }
 
-/// A model whose first answer takes a little over `HEARTBEAT` (asking
-/// `stop` while it is waited for, as a provider's call does), and which
-/// chooses the first option, reporting its tokens.
+/// A model whose first answer takes a little over the test's heartbeat
+/// (asking `stop` while it is waited for, as a provider's call does), and
+/// which chooses the first option, reporting its tokens.
 struct Slow(std::cell::Cell<u32>);
 
 impl Answers for Slow {
@@ -1635,9 +1682,7 @@ impl Answers for Slow {
     ) -> Result<Answered, String> {
         self.0.set(self.0.get() + 1);
         if self.0.get() == 1 {
-            let until = std::time::Instant::now()
-                + explore::HEARTBEAT
-                + std::time::Duration::from_millis(400);
+            let until = std::time::Instant::now() + std::time::Duration::from_millis(450);
             while std::time::Instant::now() < until {
                 if stop() {
                     return Err("stopped".into());
@@ -1658,12 +1703,12 @@ impl Answers for Slow {
     }
 }
 
-/// The W13.7 repair: a run reports what it does as it goes: before a model
-/// is asked (the step, who decides, the goal), while it waits (at most
-/// every `HEARTBEAT`), and after each action (what it did, how it came
-/// out, who chose it, its time); each step keeps where its time went (the
-/// model's calls, prompt and tokens, acting and observing), and the run
-/// says it in a line.
+/// The W13.7 repair: a run reports what it does as it goes: when a model's
+/// call starts (the step, the model), while it waits (at most every
+/// heartbeat, counted from the call's start), and after each action (what
+/// it did, how it came out, the model that chose it, its time); each step
+/// keeps where its time went (the model's calls, prompt and tokens, acting
+/// and observing), and the run says it in a line.
 #[test]
 fn a_run_reports_its_decisions_its_waits_and_its_steps_with_their_time() {
     let answers = Slow(std::cell::Cell::new(0));
@@ -1681,11 +1726,13 @@ fn a_run_reports_its_decisions_its_waits_and_its_steps_with_their_time() {
         "{lines:#?}"
     );
     assert!(
-        lines[1].starts_with("Step 1/2: waiting for deepseek-flash · 10 s"),
+        lines[1].starts_with("Step 1/2: waiting for deepseek-flash · 0 s"),
         "{lines:#?}"
     );
     assert!(
-        lines[2].starts_with("Step 1/2: ") && lines[2].contains("— ok · the explorer's model"),
+        lines[2].starts_with("Step 1/2: ")
+            && lines[2].contains("— ok · deepseek/deepseek-flash · ")
+            && lines[2].contains(" in the instance"),
         "{lines:#?}"
     );
     assert_eq!(
@@ -1695,7 +1742,7 @@ fn a_run_reports_its_decisions_its_waits_and_its_steps_with_their_time() {
     );
     assert!(lines.iter().any(|l| l.starts_with("Step 2/2: asks")));
     let first = &run.steps[0].timing;
-    assert!(first.model_ms >= 10_000, "{first:?}");
+    assert!(first.model_ms >= 400, "{first:?}");
     assert_eq!(first.calls, 1);
     assert_eq!(first.model.as_deref(), Some("deepseek/deepseek-flash"));
     assert!(first.prompt_chars > 1000, "{first:?}");
@@ -2025,12 +2072,23 @@ fn live_step_time_by_way_model_and_effort() {
         let mut planned = plan(way, 3, steps);
         planned.usd = 0.3;
         planned.seconds = 900;
+        /// The lines a run's progress posts, at the run's own heartbeat.
+        struct Lines(u32);
+        impl explore::Supervisor for Lines {
+            fn go_on(&mut self) -> bool {
+                true
+            }
+            fn progress(&mut self, _: &explore::Progress) {
+                self.0 += 1;
+            }
+        }
+        let mut lines = Lines(0);
         let run = explore::explore(
             &mut studio,
             &planned,
             &deciding,
             &Knowledge::new("stand-in"),
-            &mut || true,
+            &mut lines,
         );
         spent += run.usd;
         let chosen: Vec<&explore::Chosen> =
@@ -2047,7 +2105,11 @@ fn live_step_time_by_way_model_and_effort() {
             .count();
         let decided: Vec<u64> = chosen.iter().map(|c| c.decision.millis).collect();
         println!(
-            "{name}: {} decisions (Jev {}, model {}, escalated {}, rules {}, of which a model failed {}); decision p50 {} ms, p95 {} ms; ${:.4}; {}",
+            "{name}: {} new coverage, {} unwanted, {} findings, {} progress lines; {} decisions (Jev {}, model {}, escalated {}, rules {}, of which a model failed {}); decision p50 {} ms, p95 {} ms; ${:.4}; {}",
+            run.new_coverage.len(),
+            run.unwanted.total(),
+            run.findings.len(),
+            lines.0,
             chosen.len(),
             by(Source::Jev),
             by(Source::Model),
