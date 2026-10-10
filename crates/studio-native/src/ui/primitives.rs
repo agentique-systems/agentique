@@ -542,7 +542,9 @@ pub fn inline_message(tone: Tone, message: impl Into<SharedString>, cx: &App) ->
         .when(tone == Tone::Danger || tone == Tone::Warning, |this| {
             this.child(icon(IconName::Alert).size(12.0).color(fg))
         })
-        .child(message.into())
+        // Text in a flex row wraps only when it may shrink: a long
+        // message stays within its panel.
+        .child(div().flex_1().min_w_0().child(message.into()))
 }
 
 /// An empty state that teaches (§3.4): what this place is for and the one

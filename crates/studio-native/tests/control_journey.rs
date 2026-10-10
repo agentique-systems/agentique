@@ -650,14 +650,15 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     }
     let start = control(&objectives, "objective-start").unwrap();
     assert_eq!(start["enabled"], false);
-    // On screen, inside the window: a row's text once pushed it out of
-    // the panel (W13.8).
+    // On screen and within the form: a row's text once pushed it out of
+    // the panel (W13.8). Bounds are cut to what shows, so a Start pushed
+    // partly past the panel's edge is not hidden; its right edge is
+    // compared with the intent field's, which spans the form (the field's
+    // frame adds a few pixels; the panel's padding is more).
     assert!(start["hidden"].is_null(), "{start}");
-    let right = start["bounds"][0].as_f64().unwrap() + start["bounds"][2].as_f64().unwrap();
-    assert!(
-        right <= objectives["window"]["width"].as_f64().unwrap(),
-        "{start}"
-    );
+    let right = |c: &Value| c["bounds"][0].as_f64().unwrap() + c["bounds"][2].as_f64().unwrap();
+    let intent = control(&objectives, "objective-intent").unwrap();
+    assert!(right(start) <= right(intent) + 10.0, "{start} {intent}");
     assert!(control(&objectives, "objective-merge").is_none());
 
     // One agent acts in the window at a time (C-54): `journey` holds it;
