@@ -196,7 +196,9 @@ package InspectionCharging {
     }
 
     part def QuickStation {
-        doc /* A station built with the eager charger. */
+        doc /* A station built with the eager charger. It is declared to satisfy
+             * quickAuthorizedCharging although it does not: its scenario shows
+             * the declaration wrong. */
         port plug : ChargingPort;
         part charger : EagerCharger;
         ref part service : AuthorizationService;

@@ -1632,10 +1632,10 @@ package AgentiqueArchitecture {
             doc /* Agentique's own architecture uses the concepts, operations and checks it offers: this model is valid under its own core, its scenarios run in its own model execution, and its links point at its code. Made concrete by: none yet (the dogfood tests check it). */
         }
         requirement operatorKeepsControl {
-            doc /* The Operator gives intent, sees what agents do and the evidence, and keeps control of the purpose and of consequential decisions: locks, approvals, budgets, Pause and Stop. Made concrete by: OneChangePath (locks), RecoverableAdoption, ChildWorkBounded, OnlyGivenCredentials. */
+            doc /* The Operator gives intent, sees what agents do and the evidence, and keeps control of the purpose and of consequential decisions: locks, approvals, budgets, Pause and Stop. Made concrete by: OneChangePath (locks), ChildWorkBounded, OnlyGivenCredentials; budgets, Pause and Stop: none yet. */
         }
         requirement alignedEvolution {
-            doc /* Every autonomous change names the requirement it serves and the elements it affects, is reviewed against the approved baseline, and leaves the purpose and the governing text to the Operator. Made concrete by: GatesDecide, DefectShownBefore, FindingsReproduce. */
+            doc /* Every autonomous change names the requirement it serves and the elements it affects, is reviewed against the approved baseline, and leaves the purpose and the governing text to the Operator. Made concrete by: GatesDecide (partly: the gates, the purpose's among them); naming what a change serves and the review against the approved baseline: none yet. */
         }
         requirement rootSystem {
             doc /* A system's root states its purpose, a small set of coherent responsibilities and stable contracts; a system that builds systems refers to them, itself included, rather than containing them; no part becomes a universal object (ROADMAP §1.1). Made concrete by: none yet (judged in review). */

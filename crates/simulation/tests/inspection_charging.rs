@@ -137,6 +137,32 @@ fn the_flight_computers_supply_is_the_drones_one_bus() {
     let same = evaluation(&tree, "oneBus", "surveyUnit");
     assert_eq!(same.status, Status::Holds, "{}", same.reason);
     assert_eq!(value(&same, "d.flightComputer.supply.mass"), "150");
+    // The same part, not an equal one: changing the bus changes the supply.
+    let heavier = load_text(&text.replacen(
+        "part :>> bus {
+            attribute :>> mass = 150;",
+        "part :>> bus {
+            attribute :>> mass = 175;",
+        1,
+    ));
+    let followed = evaluation(&heavier, "oneBus", "surveyUnit");
+    assert_eq!(value(&followed, "d.flightComputer.supply.mass"), "175");
+}
+
+/// The dock's interface fits only one way round: its ends are typed by the
+/// station's port and the drone's conjugate; swapped, they are reported.
+#[test]
+fn the_dock_connects_the_station_to_the_drone_one_way_round() {
+    let right = "interface : ChargingLink connect station.plug to drone.charging;";
+    assert!(MODEL.contains(right));
+    let found = problems(&load_text(&MODEL.replace(
+        right,
+        "interface : ChargingLink connect drone.charging to station.plug;",
+    )));
+    assert!(
+        found.iter().any(|p| p.contains("incompatible-ends")),
+        "{found:#?}"
+    );
 }
 
 /// The bus is counted once because the sum names it once and the

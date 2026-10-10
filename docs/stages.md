@@ -2295,7 +2295,7 @@ authorisation service, which the stations refer to and scenarios stand in,
 flight dynamics, electrical protection, current, heat, weather, regulation),
 the units (grams and milliseconds; deviation 14) and that nothing in it
 verifies a physical drone or charger. Bounded questions and what answers
-them (`crates/simulation/tests/inspection_charging.rs`, 16 tests, passing):
+them (`crates/simulation/tests/inspection_charging.rs`, 17 tests, passing):
 
 - *Composition and sharing.* The flight computer's `ref part :>> supply =
   bus;` is the drone's one bus in two roles (a requirement reading
@@ -2344,7 +2344,7 @@ the lock of `Purpose` confirmed on the Operator's C-55 instruction).
 executable or reported; claims kept apart; the same mechanisms for itself;
 the Operator keeps control; aligned evolution; the root system; generalise
 the mechanism), each naming the requirements that make it concrete (for
-example aligned evolution: `GatesDecide`, `DefectShownBefore`,
-`FindingsReproduce`) or "none yet" (four of them). `satisfy purpose by
+example the Operator keeps control: `OneChangePath`, `ChildWorkBounded`,
+`OnlyGivenCredentials`), "partly" or "none yet". `satisfy purpose by
 agentique` is declared: a dogfood test asserts the purpose stands "only
 declared" and is never calculated to hold. Dogfood: 5 passed.
