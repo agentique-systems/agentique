@@ -622,7 +622,9 @@ impl Driver {
         }
         let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
         let source = self.checkout("base", &base)?;
-        let replay = self.replay_in(&built.exe, &source, finding, Options::default())?;
+        let replay = self
+            .replay_in(&built.exe, &source, finding, Options::default())
+            .map_err(|mismatch| mismatch.to_string())?;
         Ok(match replay {
             Replay::Failed { message } => Outcome::new(
                 REPLAY,
@@ -652,7 +654,7 @@ impl Driver {
         source: &Path,
         finding: &Finding,
         options: Options,
-    ) -> Result<Replay, String> {
+    ) -> Result<Replay, explore::Mismatch> {
         let base = self.cycle().base.clone().unwrap_or_default();
         let copy = match self.copy_of(source, &finding.start, &base) {
             Ok(copy) => copy,
@@ -760,13 +762,16 @@ impl Driver {
     /// replay of its finding must pass, started from `start` (the base's
     /// checkout, whose start projects the change cannot alter), and a change
     /// to user-facing code is explored by the rules in the areas it touched,
-    /// from the same start, where no invariant that held before may fail.
+    /// from the same start, where no invariant that held before may fail. A
+    /// copy of the project that went wrong is the Orchestrator's own
+    /// failure, not the change's: it stops the cycle (the W13.7 repair);
+    /// the change's build showing another project fails its criterion.
     pub(super) fn evaluate_by_behaviour(
         &mut self,
         exe: &Path,
         start: &Path,
         user_facing: &[String],
-    ) -> Vec<Outcome> {
+    ) -> Result<Vec<Outcome>, String> {
         let mut outcomes = Vec::new();
         let unreviewed = Options {
             speed: Some("instant".into()),
@@ -780,9 +785,12 @@ impl Driver {
                 Ok(Replay::Failed { message }) => {
                     Outcome::new(REPLAY, "failed", format!("it still fails: {message}"))
                 }
-                // Not the project: a failure, never a pass (the W13.7
-                // repair).
-                Err(why) => Outcome::new(REPLAY, "failed", why),
+                // Not the project shown: the change's failure, never a
+                // pass; not the project copied: not the change's.
+                Err(mismatch @ explore::Mismatch::Shown(_)) => {
+                    Outcome::new(REPLAY, "failed", mismatch.to_string())
+                }
+                Err(mismatch) => return Err(mismatch.to_string()),
                 Ok(Replay::Diverged { at, reason }) => Outcome::new(
                     REPLAY,
                     "not run",
@@ -792,9 +800,9 @@ impl Driver {
             outcomes.push(outcome);
         }
         if !user_facing.is_empty() {
-            outcomes.push(self.explore_changed(exe, start, user_facing, unreviewed));
+            outcomes.push(self.explore_changed(exe, start, user_facing, unreviewed)?);
         }
-        outcomes
+        Ok(outcomes)
     }
 
     /// A short exploration by the rules of the areas the change touched, on
@@ -807,7 +815,7 @@ impl Driver {
         start: &Path,
         changed: &[String],
         options: Options,
-    ) -> Outcome {
+    ) -> Result<Outcome, String> {
         let changes = Changes {
             paths: changed.to_vec(),
             subjects: self
@@ -830,7 +838,7 @@ impl Driver {
             // Its project gone from the base is a failure; the sample
             // missing (a repository without it) explores nothing.
             Err(problem) => {
-                return Outcome::new(
+                return Ok(Outcome::new(
                     CHANGED_AREAS,
                     if targeted.is_some() {
                         "failed"
@@ -838,7 +846,7 @@ impl Driver {
                         "not run"
                     },
                     format!("it did not explore: {problem}"),
-                );
+                ));
             }
         };
         let plan = Plan {
@@ -879,6 +887,7 @@ impl Driver {
         );
         let mut watch = super::Watch {
             controls: self.controls.clone(),
+            report: None,
         };
         let answers = crate::decide::Decider::default();
         let run = explore::explore(
@@ -889,21 +898,26 @@ impl Driver {
             &mut watch,
         );
         drop(instance);
-        // Another copy than the project's is never explored instead: a
-        // failure, not a criterion left unrun.
-        if let Some(why) = &run.mismatch {
-            return Outcome::new(
-                CHANGED_AREAS,
-                "failed",
-                format!("the test instance did not open {project} at the base: {why}"),
-            );
+        // Another copy than the project's is never explored instead: the
+        // change's build showing another project is a failure, not a
+        // criterion left unrun; a copy that went wrong stops the cycle.
+        match &run.mismatch {
+            Some(mismatch @ explore::Mismatch::Shown(_)) => {
+                return Ok(Outcome::new(
+                    CHANGED_AREAS,
+                    "failed",
+                    format!("{mismatch} ({project} at the base)"),
+                ));
+            }
+            Some(mismatch) => return Err(format!("{mismatch} ({project} at the base)")),
+            None => {}
         }
         if run.actions == 0 {
-            return Outcome::new(
+            return Ok(Outcome::new(
                 CHANGED_AREAS,
                 "not run",
                 format!("it did not explore: {}", run.ended),
-            );
+            ));
         }
         let new: Vec<String> = run
             .findings
@@ -912,7 +926,7 @@ impl Driver {
             .filter(|f| knowledge.findings.iter().all(|k| k.identity != f.identity))
             .map(super::explore::finding_line)
             .collect();
-        if new.is_empty() {
+        Ok(if new.is_empty() {
             Outcome::new(
                 CHANGED_AREAS,
                 "passed",
@@ -924,7 +938,7 @@ impl Driver {
             )
         } else {
             Outcome::new(CHANGED_AREAS, "failed", new.join("\n"))
-        }
+        })
     }
 }
 

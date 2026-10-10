@@ -44,6 +44,30 @@ use std::time::Duration;
 /// sample. An objective that explores always has its lead's target.
 pub const SAMPLE: &str = "models/url-shortener";
 
+/// What a step of a run spent, and the role it counts for: a model asked
+/// for the explorer, Jev alone for the decisions. A step the rules took
+/// after a call failed, timed out or was stopped counts what was tried
+/// (the review of the W13.7 repair: it was dropped), and a decision made
+/// as the run stopped counts though nothing was acted on.
+fn spent_on(taken: &explore::Taken) -> Option<(&'static str, Cost)> {
+    use crate::decide::Source;
+    let chosen = taken.chosen.as_ref()?;
+    let role = match chosen.decision.source {
+        Source::Rules if chosen.counted <= 0.0 => return None,
+        Source::Model | Source::Escalated => "explorer",
+        _ if taken.timing.calls > 0 => "explorer",
+        _ => "decisions",
+    };
+    Some((
+        role,
+        Cost {
+            usd: chosen.counted,
+            tokens: taken.timing.tokens.map_or(0, |t| t.input + t.output),
+            unknown: chosen.decision.usd.is_none(),
+        },
+    ))
+}
+
 /// What the lead's turn checks a plan of an exploration and a child's
 /// project against (C-54, the W13.7 repair): the planning (the base
 /// commit's projects, the commit, and what the objective explores so far,
@@ -116,10 +140,6 @@ pub const TRIES: usize = 2;
 
 /// Replays a finding's reproduction and reduction may take.
 const REPLAYS: usize = 6;
-
-/// The ways of deciding successive explorations take: Jev escalating when
-/// unsure, then the explorer's model, then the rules.
-const WAYS: [Way; 3] = [Way::Escalating, Way::Model, Way::Rules];
 
 /// How long one exploration may take at most.
 const EXPLORE_SECONDS: u64 = 1800;
@@ -386,12 +406,6 @@ impl Driver {
             }
         }
         let n = self.cycle().explorations.len() as u32 + 1;
-        let made: u32 = self
-            .objective
-            .cycles
-            .iter()
-            .map(|c| c.explorations.len() as u32)
-            .sum();
         // What the objective explores, at the build's commit; nothing
         // alternates (the W13.7 repair). A scope and start planned at
         // another commit are not taken over unchecked.
@@ -420,13 +434,15 @@ impl Driver {
         // A quarter of the spend budget at most; without one, the run's
         // steps bound it (`f64::MAX` keeps its record a number).
         let run_usd = left_usd.min(budgets.usd.map_or(f64::MAX, |usd| usd / 4.0));
-        // Without models for exploring (an objective recorded without them),
-        // the rules decide: they ask no model.
+        // Jev first, escalating only when unsure (the W13.7 repair: no
+        // longer the explorer's model or the rules in turn); without models
+        // for exploring (an objective recorded without them), the rules
+        // decide: they ask no model.
         let modelled = crate::models::with_deciding(&self.objective.models, |_| ()).is_ok();
         let plan = Plan {
             goal: goal.clone(),
             way: if modelled {
-                WAYS[made as usize % WAYS.len()]
+                Way::Escalating
             } else {
                 Way::Rules
             },
@@ -442,7 +458,7 @@ impl Driver {
             turn_ms: findings::TURN_BUDGET_MS,
             stop_ms: findings::STOP_BUDGET_MS,
         };
-        self.post(
+        let explores = self.post(
             ThreadEntry::new(
                 Kind::Event,
                 Author::agent("explorer", self.model_of("explorer")),
@@ -479,8 +495,15 @@ impl Driver {
             &self.folder("explore"),
             options,
         );
+        // Its progress folds under that entry (the W13.7 repair).
         let mut watch = Watch {
             controls: self.controls.clone(),
+            report: Some(super::Report {
+                poster: self.poster.clone(),
+                author: Author::agent("explorer", self.model_of("explorer")),
+                under: (explores.seq > 0).then_some(explores.seq),
+                directive: self.objective.running_for("explorer").map(|d| d.id.clone()),
+            }),
         };
         let run = if modelled {
             crate::models::with_deciding(&self.objective.models, |deciding| {
@@ -504,7 +527,8 @@ impl Driver {
         }
         // Not the planned project: nothing was explored, and nothing else
         // takes its place (C-54, the W13.7 repair).
-        if let Some(why) = &run.mismatch {
+        if let Some(mismatch) = &run.mismatch {
+            let why = mismatch.reason();
             self.post(
                 ThreadEntry::new(
                     Kind::Result,
@@ -570,6 +594,11 @@ impl Driver {
                 f
             })
             .collect();
+        // Known but never replayed: offered again, said apart from the new.
+        let resurfaced = new
+            .iter()
+            .filter(|f| knowledge.findings.iter().any(|k| k.identity == f.identity))
+            .count();
         let found: Vec<String> = new.iter().map(|f| f.identity.clone()).collect();
         let regressed: Vec<String> = regressions.iter().map(|f| f.identity.clone()).collect();
         self.post(
@@ -577,19 +606,23 @@ impl Driver {
                 Kind::Result,
                 Author::agent("explorer", self.model_of("explorer")),
                 format!(
-                    "Explored {} steps: {} new coverage, {} new finding(s), {} regression(s); ${:.3}; {}",
+                    "Explored {} steps: {} new coverage, {} new finding(s){}, {} regression(s); ${:.3}; {}",
                     run.actions,
                     run.new_coverage.len(),
-                    new.len(),
+                    new.len() - resurfaced,
+                    if resurfaced > 0 {
+                        format!(" and {resurfaced} found before but never replayed")
+                    } else {
+                        String::new()
+                    },
                     regressions.len(),
                     run.usd,
                     run.ended
                 ),
             )
             .with_details(
-                new.iter()
-                    .chain(&regressions)
-                    .map(finding_line)
+                std::iter::once(format!("Where the time went: {}", run.time()))
+                    .chain(new.iter().chain(&regressions).map(finding_line))
                     .chain(adjudicated)
                     .chain(run.recoveries.iter().map(|r| format!("recovered: {} ({})", r.kind, r.detail)))
                     .chain(run.conditions.iter().map(|c| format!("condition: {c}")))
@@ -621,7 +654,7 @@ impl Driver {
     /// A replay whose test instance did not open the planned project (the
     /// W13.7 repair): said in the thread, the finding left as it was (it
     /// says nothing about it), and why the cycle ends.
-    fn not_replayed(&self, what: &str, why: &str) -> String {
+    fn not_replayed(&self, what: &str, why: &explore::Mismatch) -> String {
         self.event(format!(
             "Did not replay {what}: {why}. The finding stays as it was."
         ));
@@ -638,32 +671,15 @@ impl Driver {
     }
 
     /// An exploration's spend, by the role whose model decided: Jev's under
-    /// `decisions`, the explorer's model under `explorer`, an escalation
-    /// under `escalation`, and the instance's Assistant (on the explorer's
+    /// `decisions`, the explorer's model under `explorer` (also when Jev
+    /// escalated to it), and the instance's Assistant (on the explorer's
     /// key) under `explorer`.
     fn count_exploration(&mut self, run: &Run) {
-        for taken in &run.steps {
-            let Some(chosen) = &taken.chosen else {
-                continue;
-            };
-            let role = match chosen.decision.source {
-                crate::decide::Source::Rules => continue,
-                crate::decide::Source::Jev => "decisions",
-                crate::decide::Source::Model => "explorer",
-                crate::decide::Source::Escalated => "escalation",
-            };
+        for (role, cost) in run.steps.iter().filter_map(spent_on) {
             let Some(model) = self.model_of(role) else {
                 continue;
             };
-            self.objective.spent.add(
-                role,
-                &model,
-                Cost {
-                    usd: chosen.counted,
-                    tokens: 0,
-                    unknown: chosen.decision.usd.is_none(),
-                },
-            );
+            self.objective.spent.add(role, &model, cost);
         }
         if run.assistant_usd > 0.0
             && let Some(model) = self.model_of("explorer")
@@ -1319,5 +1335,84 @@ impl Driver {
             numbers.join(", ")
         ));
         messages.join("\n\n")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::decide::{Decision, Source};
+    use crate::explore::{Chosen, Step, Taken, Timing, Tokens};
+
+    fn taken(source: Source, counted: f64, usd: Option<f64>, calls: u32) -> Taken {
+        Taken {
+            step: Step {
+                action: serde_json::json!({ "kind": "click", "control": "x" }),
+                key: "k".into(),
+                screen: "surface".into(),
+                label: "X".into(),
+                expect: None,
+                by: "explorer".into(),
+            },
+            chosen: Some(Chosen {
+                input: None,
+                expect: None,
+                why: String::new(),
+                decision: Decision {
+                    choice: String::new(),
+                    source,
+                    confidence: None,
+                    millis: 0,
+                    usd,
+                    note: String::new(),
+                },
+                counted,
+            }),
+            outcome: "ok".into(),
+            detail: String::new(),
+            took_ms: None,
+            timing: Timing {
+                calls,
+                tokens: (calls > 0).then_some(Tokens {
+                    input: 900,
+                    output: 100,
+                    reasoning: 80,
+                }),
+                ..Timing::default()
+            },
+        }
+    }
+
+    /// The review of the W13.7 repair: what a step spent counts, also when
+    /// the rules took it after a call failed or was stopped, with the
+    /// tokens the provider reported; a rule that tried nothing counts
+    /// nothing.
+    #[test]
+    fn what_a_step_spent_counts_for_the_role_that_spent_it() {
+        let cost = |usd, tokens, unknown| Cost {
+            usd,
+            tokens,
+            unknown,
+        };
+        assert_eq!(spent_on(&taken(Source::Rules, 0.0, Some(0.0), 0)), None);
+        assert_eq!(
+            spent_on(&taken(Source::Jev, 0.001, Some(0.001), 0)),
+            Some(("decisions", cost(0.001, 0, false)))
+        );
+        assert_eq!(
+            spent_on(&taken(Source::Escalated, 0.004, Some(0.004), 1)),
+            Some(("explorer", cost(0.004, 1000, false)))
+        );
+        // A call that failed or was stopped: the rules took the step, and
+        // the call counts at the most it could have cost.
+        assert_eq!(
+            spent_on(&taken(Source::Rules, 0.03, None, 1)),
+            Some(("explorer", cost(0.03, 1000, true)))
+        );
+        // Jev failed, no model was asked.
+        assert_eq!(
+            spent_on(&taken(Source::Rules, 0.002, None, 0)),
+            Some(("decisions", cost(0.002, 0, true)))
+        );
     }
 }

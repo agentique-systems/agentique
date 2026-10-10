@@ -2092,7 +2092,7 @@ it). Read against the code and the model before any change:
 | W13.6 A second system | #122 | In review (below) |
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
-| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130 | E1 in review (below) |
+| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130 | E1 merged; E2 in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2552,7 +2552,7 @@ relevant; decisions took p50 49 s, p95 120 s, and a 20-step exploration
 showed nothing for 11 to 16 minutes; the only finding was a wrong
 expectation, and nothing tested the engineering question).
 
-*E1, what an exploration explores* (#130, `stage13/explore-target`; the
+*E1, what an exploration explores* (#130, merged; the
 Orchestrator's lock confirmed for its docs on the Operator's instruction for
 these repairs). The lead's `submit_exploration` names its `project` (a
 folder of the repository that holds a model's `.sysml` files at the base
@@ -2606,3 +2606,94 @@ a mismatch during reproduction only. Not changed: observation criteria and the
 evaluator's judgment instances still open the change's checkout (the
 repository's own model) as the project. Not verified: a live run on a real
 test instance (the window checks are the coordinator's).
+
+*E2, observable and faster exploration* (`stage13/explore-progress`; the
+Orchestrator's lock confirmed for the Explorer's doc on the Operator's
+instruction for these repairs). Measured first, live without windows on
+the stand-in Studio ($0.3 in all; the stand-in's prompts are shorter than a
+real Studio's, so the models' answering is what differs): the model's time
+is 96 to 99 % of a step's, and almost all its output is reasoning.
+
+| Way, model, effort (8 steps or 6) | Decision p50 | Model call p50 / slowest |
+|---|---|---|
+| Jev, then deepseek-v4-pro at max (the proof's escalation) | 17 s | 75 s / 77 s |
+| Jev, then deepseek-v4-pro at high | 29 s | 93 s / 153 s |
+| Jev, then deepseek-flash at high (three samples) | 4.5 s, 27 s, 16 s | 9 s, 52 s, 18 s / 34 s, 71 s, 35 s |
+| Jev, then deepseek-flash at low | 3.0 s | 6.0 s / 30 s |
+| deepseek-flash alone at high, at low | 16 s, 4.2 s | 16 s, 4.2 s / 55 s, 28 s |
+
+(The proof's escalating runs: p50 49 s and p95 120 s a decision.) So every
+exploration of a modelled objective now decides by Jev escalating, no
+longer the explorer's model or the rules in turn; a step Jev is unsure of
+escalates to the explorer's own model, not the escalation role's reasoning
+model; the explorer's default effort is `low` (Settings,
+`agents.explorer.effort`); a view or panel the goal names as such ("the
+Requirements view", "the History panel") is opened by rule, asking no model;
+and a step's prompt no longer repeats its options' coverage in its state
+(giving the model 12 options instead of 24 hid Send after a request was
+typed, so that stays 24). The run reports to the thread as it goes, folded
+under the "Explores …" entry as its updates (the fold's row shows the latest
+while the run goes on): "Step k/n: asks deepseek-flash at low, Jev being
+unsure · 2 min 5 s in" once a model's call starts (a step Jev or the rules
+decide says nothing before its action), "Step k/n: waiting for
+deepseek-flash at low · 30 s" at most every 10 s from the call's start, and
+"Step k/n: clicks “Requirements” — ok · Jev 0.82 · 1.1 s deciding · 0.4 s in
+the instance" with why, what was expected, the time split, the model's
+calls, prompt and tokens, and the cost folded under it; the "Explored …"
+result says where the run's time went (shares of model, Jev, the instance,
+starting it, the rest; the model's calls with their median and slowest; the
+prompt characters and tokens). Stop interrupts a model's wait at once (it is
+asked every 100 ms), and a call's cost unknown is counted as at most what it
+could have cost, never zero. Folded into E2 from #130's last review: a copy
+that went wrong (other files, copied from elsewhere, not said) in the
+evaluation's replay or exploration stops the cycle as on the base, while the
+change's build showing another project fails its criterion; a reduction
+stops at the first copy that does not match; a reproduction that meets one
+restores its finding as it was; a resurfaced finding is said apart from the
+new. Not done: a restart after a child was given a project before the
+lead's first plan, and before that plan, loses that project (the first plan
+then does not keep it among its projects). Tests: the run's reports, waits
+and time (a model taking a little over 10 s), a view the goal names opened
+by rule, the Driver's thread folding a line a step under the exploration
+with the time in its result, a fixed finding's replay and an evaluation's
+replay on another copy, and the typed mismatch. Not verified: a live run in
+a real test instance (the window checks are the coordinator's), and the
+latency of a real Studio's larger prompts.
+
+*E2 after the independent review.* What a step spent counts also when the
+rules took it after Jev's or the model's call failed, timed out or was
+stopped (for the explorer when a model was asked, else for the decisions),
+with the tokens the provider reported, and a decision made as the run
+stopped is recorded ("not taken") with its cost; a stop that came before a
+model's call sends nothing (`ask_model` asks first). A step Jev was unsure
+of says "Jev unsure, then deepseek-flash at low" ("Jev failed, then …" when
+Jev failed or ran out of time), not "the reasoning model"; the Escalation
+row in Settings and `with_deciding` say that an exploration's steps no
+longer go to the escalation role, whose use in operation is reading an
+objective's intent. Only a panel's tab (never a dialog's or the palette's)
+or a view's command is a route the rules take; an option never is (the
+Inspector's type matches change the model, the palette's rows run commands).
+The run's progress folds as "updates", not "tool calls", with the latest on
+the fold's row while the run goes on (a fold cut off by closing Agentique
+keeps showing its last update until the thread's next entry), and "Step k/n:
+asks …" is said only when a model's call starts, without the project and
+goal repeated (about one line a step where Jev or the rules decide). A
+step's time adds what was measured before its decision (an observation)
+instead of replacing it, and a wait is counted from the model's call, not
+from Jev's. Not measured apart: a provider's own retries (inside the model's
+time) and the Studio's rendering (inside acting and observing). The
+explorer's default effort changed from high to low, and settings.json keeps
+only values that differ from the default: an Operator who chose high while
+it was the default now gets low and chooses it again in Settings › Agents. A
+step Jev is unsure of no longer reaches a stronger model; in E3 the tests of
+hypotheses and ambiguous engineering decisions go to the escalation role.
+Compared on the stand-in (no windows; the held-out comparison in real test
+instances, `live_exploration_compared_by_way_of_deciding`, opens windows and
+was not run): Jev escalating to deepseek-flash at low, 12 steps, reached 10
+actions new to the run's coverage with no unwanted action and no finding, in
+31 progress lines; decisions p50 6.3 s and p95 24.5 s, model calls p50 11.2
+s and slowest 48 s; 2 min 26 s and $0.036 in all. The same run escalating to
+deepseek-v4-pro at max (the old way) was stopped by the system for low
+memory and not run again, so coverage and unwanted actions are not compared;
+for it there is only the 6-step measurement above (decisions p50 17 s, model
+calls p50 75 s).
