@@ -109,7 +109,7 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                                 .child(ui::target::target(format!(
                                     "Requirement {}: {}",
                                     row.name,
-                                    crate::requirements::standing_words(&row.ladder)
+                                    crate::requirements::standing_words(&row)
                                 )))
                                 .on_click(move |_: &ClickEvent, _, cx| {
                                     studio_show.act(cx, |studio| studio.show_element(id))
@@ -166,6 +166,9 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                 .child(
                     div()
                         .flex()
+                        // Chips that do not fit side by side go under each
+                        // other rather than past the card's edge.
+                        .flex_wrap()
                         .items_center()
                         .gap(r(6.0))
                         .min_w_0()
@@ -209,9 +212,9 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                                 .child(ui::target::target(format!(
                                     "Requirement {}: {}",
                                     row.name,
-                                    crate::requirements::SUBREQUIREMENT_NOTE
+                                    crate::requirements::subrequirement_note(&row)
                                 )))
-                                .child(crate::requirements::SUBREQUIREMENT_NOTE),
+                                .child(crate::requirements::subrequirement_note(&row)),
                         )
                     })
                     .when_some(row.doc.clone(), |this, doc| {

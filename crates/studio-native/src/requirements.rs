@@ -13,6 +13,7 @@ use agq_language::{Element, ElementId, ElementKind, Parent, Reference};
 use agq_simulation::{Mode, RunResult};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::{Operation, SystemState};
+use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 
@@ -26,6 +27,10 @@ pub struct Row {
     pub problems: Vec<String>,
     /// Its evidence, kept apart.
     pub ladder: Ladder,
+    /// For a subrequirement: whether the headline counts it with a
+    /// requirement that contains it (its outermost container is a
+    /// requirement usage, or a requirement def some usage is typed by).
+    pub counted: bool,
 }
 
 impl Studio {
@@ -57,12 +62,10 @@ impl Studio {
         rows
     }
 
-    /// One requirement's ladder, for the Inspector.
-    pub fn requirement_ladder(&self, id: ElementId) -> Option<Ladder> {
-        self.requirements()
-            .into_iter()
-            .find(|row| row.id == id)
-            .map(|row| row.ladder)
+    /// A requirement's row: its ladder, and for a subrequirement whether
+    /// the headline counts it.
+    pub fn requirement_row(&self, id: ElementId) -> Option<Row> {
+        self.requirements().into_iter().find(|row| row.id == id)
     }
 
     /// `check_requirements` for the Assistant: the headline and every
@@ -205,36 +208,85 @@ pub(crate) fn code_current(result: &RunResult, repository: Option<&Path>) -> boo
     })
 }
 
-/// The headline over the rows: what the requirement usages stand on, and
-/// how many subrequirement rows it leaves to the requirements that contain
-/// them.
+/// The headline over the rows: what the requirement usages stand on, then
+/// the subrequirement rows it leaves out: those counted with a requirement
+/// that contains them, and those with their own `satisfy` or scenario
+/// results, which it does not count (a subrequirement nothing counted
+/// contains is in neither).
 pub fn rows_headline(rows: &[Row]) -> String {
     let ladders: Vec<Ladder> = rows.iter().map(|row| row.ladder.clone()).collect();
-    let nested = ladders.iter().filter(|l| l.nested && !l.definition).count();
-    match nested {
-        0 => headline(&ladders),
-        1 => format!(
-            "{} · 1 subrequirement counted with the requirements that contain them",
-            headline(&ladders)
-        ),
-        n => format!(
-            "{} · {n} subrequirements counted with the requirements that contain them",
-            headline(&ladders)
-        ),
+    let nested: Vec<&Row> = rows.iter().filter(|r| r.ladder.nested).collect();
+    let own = nested.iter().filter(|r| own_rungs(&r.ladder)).count();
+    let counted = nested
+        .iter()
+        .filter(|r| r.counted && !own_rungs(&r.ladder))
+        .count();
+    let mut parts = vec![headline(&ladders)];
+    match counted {
+        0 => {}
+        1 => parts.push("1 subrequirement counted with the requirement that contains it".into()),
+        n => parts.push(format!(
+            "{n} subrequirements counted with the requirements that contain them"
+        )),
     }
+    match own {
+        0 => {}
+        1 => parts.push(
+            "1 subrequirement with its own satisfy or scenario results, which the headline does not count"
+                .into(),
+        ),
+        k => parts.push(format!(
+            "{k} subrequirements with their own satisfy or scenario results, which the headline does not count"
+        )),
+    }
+    parts.join(" · ")
+}
+
+/// Whether a subrequirement has rungs of its own: a `satisfy` naming it, or
+/// a scenario result verifying it. Calculations marked "within" are its
+/// container's and are counted with it; a calculation of its own always has
+/// a `satisfy` naming it. (Linked tests are not counted for any
+/// requirement's standing.)
+pub fn own_rungs(ladder: &Ladder) -> bool {
+    !ladder.declared.is_empty()
+        || ladder
+            .scenarios
+            .iter()
+            .flat_map(|s| &s.results)
+            .any(|r| r.passes() || r.fails() || r.inconclusive())
 }
 
 /// What a subrequirement is, said once for the panel and the Inspector.
-pub const SUBREQUIREMENT_NOTE: &str = "A subrequirement: evaluated within the requirement that contains it (in a requirement def, within each requirement that uses the def) and counted with it, not on its own.";
+pub fn subrequirement_note(row: &Row) -> &'static str {
+    if own_rungs(&row.ladder) {
+        "A subrequirement with its own satisfy or scenario results: they are shown here and the headline does not count them. Calculations marked \u{201c}within\u{201d} are its container's, counted with it."
+    } else if row.counted {
+        "A subrequirement: evaluated within the requirement that contains it (in a requirement def, within each requirement that uses the def) and counted with it, not on its own."
+    } else {
+        "A subrequirement no requirement usage contains (its def is not used): nothing counts it yet."
+    }
+}
 
-/// A row's standing in words: for a subrequirement, that it is counted with
-/// the requirement that contains it.
-pub fn standing_words(ladder: &Ladder) -> String {
+/// A row's standing in words: for a subrequirement, whether it is counted
+/// with the requirement that contains it, has results of its own, or is
+/// not counted at all.
+pub fn standing_words(row: &Row) -> String {
+    let ladder = &row.ladder;
     if ladder.definition {
         ladder.summary()
-    } else if ladder.nested {
+    } else if ladder.nested && own_rungs(ladder) {
+        format!(
+            "{} · a subrequirement with its own satisfy or scenario results, which the headline does not count",
+            ladder.label()
+        )
+    } else if ladder.nested && row.counted {
         format!(
             "{} · a subrequirement, counted with the requirement that contains it",
+            ladder.label()
+        )
+    } else if ladder.nested {
+        format!(
+            "{} · a subrequirement no requirement usage contains, not counted",
             ladder.label()
         )
     } else {
@@ -281,6 +333,58 @@ pub fn rows(
 ) -> Vec<Row> {
     let tree = state.tree();
     let ladders = ladders(tree, state.diagnostics(), Some(links), Some(runs), report);
+    // What the headline counts: its requirement usages, then (to a fixed
+    // point) the defs a counted usage's type is or specialises, and the
+    // usages inside a counted container; a subrequirement is counted when
+    // its outermost requirement container is.
+    let semantics = agq_language::Semantics::new(tree);
+    let requirement_like = |id: ElementId| {
+        matches!(
+            tree[id].kind,
+            ElementKind::Requirement | ElementKind::RequirementDef
+        )
+    };
+    let outermost = |id: ElementId| {
+        let mut outermost = id;
+        while let Some(owner) = tree[outermost].owner().filter(|o| requirement_like(*o)) {
+            outermost = owner;
+        }
+        outermost
+    };
+    let usages: Vec<ElementId> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| tree[*id].kind == ElementKind::Requirement)
+        .collect();
+    let defs: Vec<ElementId> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| tree[*id].kind == ElementKind::RequirementDef && outermost(*id) == *id)
+        .collect();
+    let mut counted_containers: BTreeSet<ElementId> = ladders
+        .iter()
+        .filter(|l| !l.definition && !l.nested)
+        .map(|l| l.requirement)
+        .collect();
+    loop {
+        let types: Vec<ElementId> = usages
+            .iter()
+            .filter(|u| counted_containers.contains(&outermost(**u)))
+            .flat_map(|u| semantics.types_of(*u))
+            .map(|(t, _)| t)
+            .collect();
+        let more: Vec<ElementId> = defs
+            .iter()
+            .filter(|d| !counted_containers.contains(*d))
+            .filter(|d| types.iter().any(|t| semantics.specializes(*t, **d)))
+            .copied()
+            .collect();
+        if more.is_empty() {
+            break;
+        }
+        counted_containers.extend(more);
+    }
+    let counted = |id: ElementId| counted_containers.contains(&outermost(id));
     ladders
         .into_iter()
         .map(|ladder| {
@@ -309,6 +413,7 @@ pub fn rows(
                     .into_iter()
                     .flat_map(|d| state.diagnostics_for(d).map(|p| p.message.clone()))
                     .collect(),
+                counted: ladder.nested && counted(id),
                 ladder,
             }
         })
@@ -403,11 +508,9 @@ mod tests {
         let rows = rows(&state, &Links::default(), &[], None);
         let words = |name: &str| {
             standing_words(
-                &rows
-                    .iter()
+                rows.iter()
                     .find(|row| row.name.ends_with(name))
-                    .unwrap_or_else(|| panic!("no row {name}"))
-                    .ladder,
+                    .unwrap_or_else(|| panic!("no row {name}")),
             )
         };
         assert!(
@@ -426,13 +529,139 @@ mod tests {
             "{}",
             words("Purpose")
         );
+        // A deliberate change to this assertion (#125's review): the
+        // singular now reads as one.
         let headline = rows_headline(&rows);
         assert!(
             headline.ends_with(
-                "(of 1) · 1 subrequirement counted with the requirements that contain them"
+                "(of 1) · 1 subrequirement counted with the requirement that contains it"
             ),
             "{headline}"
         );
+    }
+
+    /// A subrequirement with its own `satisfy` says so on its row and in
+    /// the headline, never that it is counted with its container; one whose
+    /// only calculations are its container's ("within") is still counted
+    /// with it; one of a def no usage uses is counted by nothing (also in a
+    /// model whose other requirements are used).
+    #[test]
+    fn a_subrequirement_says_whether_and_how_the_headline_counts_it() {
+        let text = "package S {
+    attribute def Mass;
+    part def Kit {
+        attribute mass : ScalarValues::Real;
+    }
+    part light : Kit {
+        attribute :>> mass = 5;
+    }
+    part p;
+    requirement def Purpose {
+        subject kit : Kit;
+        requirement inner;
+        requirement other;
+        requirement light {
+            require constraint { kit.mass <= 10 }
+        }
+    }
+    requirement purpose : Purpose;
+    satisfy purpose by light;
+    satisfy Purpose::inner by p;
+    requirement def Unused {
+        requirement nobody;
+    }
+}";
+        let state = SystemState::new(parse(&[Source::new("s.sysml", text)]), BTreeSet::new());
+        assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+        let rows = rows(&state, &Links::default(), &[], None);
+        let row = |name: &str| {
+            rows.iter()
+                .find(|row| row.name.ends_with(name))
+                .unwrap_or_else(|| panic!("no row {name}"))
+        };
+        let words = |name: &str| standing_words(row(name));
+        assert!(
+            words("inner").contains("its own satisfy or scenario results"),
+            "{}",
+            words("inner")
+        );
+        assert!(
+            !words("inner").contains("counted with"),
+            "{}",
+            words("inner")
+        );
+        assert!(
+            words("other").contains("counted with the requirement"),
+            "{}",
+            words("other")
+        );
+        // Its calculation is the container's: counted with it.
+        assert!(
+            !row("Purpose::light").ladder.calculated.is_empty(),
+            "the container's calculation reaches it"
+        );
+        assert!(!own_rungs(&row("Purpose::light").ladder));
+        assert!(
+            words("Purpose::light").contains("counted with the requirement"),
+            "{}",
+            words("Purpose::light")
+        );
+        assert!(
+            words("nobody").contains("not counted"),
+            "{}",
+            words("nobody")
+        );
+        assert!(subrequirement_note(row("nobody")).contains("nothing counts it"));
+        assert!(subrequirement_note(row("inner")).contains("container's"));
+        let headline = rows_headline(&rows);
+        assert!(
+            headline.ends_with(
+                "2 subrequirements counted with the requirements that contain them · 1 subrequirement with its own satisfy or scenario results, which the headline does not count"
+            ),
+            "{headline}"
+        );
+        let unused = "package S {
+    requirement def Purpose {
+        requirement inner;
+    }
+}";
+        let state = SystemState::new(parse(&[Source::new("s.sysml", unused)]), BTreeSet::new());
+        let rows = super::rows(&state, &Links::default(), &[], None);
+        let headline = rows_headline(&rows);
+        assert!(!headline.contains("subrequirement"), "{headline}");
+        // Used through a specialisation, or by a usage nested in a counted
+        // requirement: counted.
+        for used in [
+            "package S {
+    requirement def Purpose {
+        requirement inner;
+    }
+    requirement def Sub :> Purpose;
+    requirement s : Sub;
+}",
+            "package S {
+    requirement def Purpose {
+        requirement inner;
+    }
+    requirement outer {
+        requirement nested : Purpose;
+    }
+}",
+        ] {
+            let state = SystemState::new(parse(&[Source::new("s.sysml", used)]), BTreeSet::new());
+            assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+            let rows = super::rows(&state, &Links::default(), &[], None);
+            let inner = rows
+                .iter()
+                .find(|r| r.name.ends_with("Purpose::inner"))
+                .expect("Purpose::inner");
+            assert!(inner.counted, "{used}");
+            assert!(
+                standing_words(inner).contains("counted with"),
+                "{}",
+                standing_words(inner)
+            );
+        }
     }
 
     #[test]
@@ -480,7 +709,7 @@ mod tests {
             assert!(started.elapsed().as_secs() < 20, "the run finishes");
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
-        let ladder = app.requirement_ladder(screened).unwrap();
+        let ladder = app.requirement_row(screened).unwrap().ladder;
         assert_eq!(ladder.standing(), Standing::Verified);
         let after = app.check_requirements(Some(screened));
         assert!(
