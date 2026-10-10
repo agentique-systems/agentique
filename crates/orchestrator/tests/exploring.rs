@@ -137,10 +137,10 @@ fn exploring(store: &Store, repository: &Path, intent: &str, budgets: Budgets) -
 
 fn budgets() -> Budgets {
     Budgets {
-        usd: 2.0,
+        usd: Some(2.0),
         cycles: 1,
         attempts: 3,
-        hours: 1.0,
+        hours: Some(1.0),
         steps: 30,
         ..Budgets::default()
     }
@@ -622,7 +622,7 @@ fn the_lead_delegates_a_child_within_its_budget_and_gets_its_result() {
             .contains("exploration(s)")
     );
     let scope = directive.scope.budgets.as_ref().unwrap();
-    assert!((scope.usd - 0.3).abs() < 1e-9 && scope.steps == 30);
+    assert!((scope.usd.unwrap() - 0.3).abs() < 1e-9 && scope.steps == 30);
     let child = store.load(child_id).unwrap();
     assert_eq!(child.parent.as_deref(), Some(id.as_str()));
     assert_eq!(child.depth, 1);
@@ -807,7 +807,7 @@ fn a_childs_spend_before_a_restart_is_counted_once() {
             instruction: "Look closely at the History panel".into(),
             focus: None,
             budgets: Some(Budgets {
-                usd: 0.5,
+                usd: Some(0.5),
                 ..budgets()
             }),
             permissions: Some(Permissions::default()),
@@ -822,7 +822,7 @@ fn a_childs_spend_before_a_restart_is_counted_once() {
     child.depth = 1;
     child.directives = Vec::new();
     child.budgets = Budgets {
-        usd: 0.5,
+        usd: Some(0.5),
         ..budgets()
     };
     child.cycles = vec![cycle];

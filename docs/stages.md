@@ -2349,3 +2349,29 @@ example the Operator keeps control: `OneChangePath`, `ChildWorkBounded`,
 `OnlyGivenCredentials`), "partly" or "none yet". `satisfy purpose by
 agentique` is declared: a dogfood test asserts the purpose stands "only
 declared" and is never calculated to hold. Dogfood: 5 passed.
+
+**W13.8 The start of an objective** (`stage13/start`; the Operator's
+amendment of C-54, made when W13.7 could not start: the start form's card
+in the Conversation could not be scrolled, so Start was out of reach, and
+the Operator found the form asked for too much). The Operator writes only
+the intent. It is read once typing stops: Jev answers three typed questions
+in one request (explore first or not; one, two, three or five improvements;
+merge and adopt, merge only, or a pull request only), and a set below the
+confidence threshold escalates to the `escalation` role's model; when
+neither answers, the defaults (one improvement without exploring, merged
+and adopted), with why. The form shows what it was read as and who read it,
+with switches for exploring, merging and adopting that the Operator may
+change, and Start waits until the intent is read. Spend and time are
+unlimited unless set (a child objective and evaluation tasks set them);
+attempts (4), exploration steps (20 per run) and model calls per role keep
+their defaults, and the form no longer lists each role's model (the thread
+does as the objective starts). The thread's first entries say what the
+intent was read as, by whom, what the Operator changed, and that no spend
+or time limit is set; the reading's cost is the objective's, under the
+decisions role. The card's scrolling element now carries its own height
+limit. The Assistant's `propose_objective` proposes an intent only. Read
+live before building: an exploring intent with one fix (Jev, 0.95, 0.4 s),
+a stated change (Jev, 0.95), and "keep improving … don't merge anything"
+(Jev unsure of the count at 0.36, escalated: explores, five improvements,
+pull requests only, 6.8 s). Persistence as named in §7.6 (an unlimited
+record is skipped by the previous build; tested).

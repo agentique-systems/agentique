@@ -137,12 +137,17 @@ the tool, question and thinking cards, `markdown.rs` the messages).
   Assistant" / "To: the objective"; only the Operator's click, Ctrl+L or
   "Write to the objective" switches it). "Start as objective" beside Send
   (Ctrl+Enter in the message) shows the start form above the composer with
-  the message as the intent: whether it explores, budgets (spend,
-  improvements, attempts, hours, exploration steps), merge and adopt, and
-  each role's model with any fallback, credential and who pays; nothing
-  starts until Start (`objective_form.rs`, the same form the Objectives
-  panel shows when it is not open here). The Assistant's
-  `propose_objective` opens the same form; only the Operator starts it.
+  the message as the intent. The intent is read once the Operator stops
+  typing (a typed decision: Jev on the `decisions` role's model, escalating
+  to the `escalation` role's when unsure; the defaults when neither
+  answers) for what the objective does: whether it explores first, how many
+  improvements, whether reviewed changes are merged, then built, tried and
+  adopted. The form shows that with who read it, and switches the Operator
+  may change; there is no spend or time limit to set, and Start waits until
+  the intent is read (`objective_form.rs`, the same form the Objectives
+  panel shows when it is not open here; the Operator's amendment of C-54).
+  The Assistant's `propose_objective` opens the same form with its intent;
+  only the Operator starts it.
   While an objective runs or waits to continue, a bar above the list has
   its phase, spend and children with Write to it, Pause, Step, Resume,
   Stop and Continue: the palette's commands (`start-objective`,

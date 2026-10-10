@@ -50,49 +50,19 @@ pub enum StudioRequest {
     Act { input: Value },
 }
 
-/// An objective the Assistant proposes (`propose_objective`): its intent,
-/// whether it explores, and the budgets it suggests (none: the start
-/// form's defaults). The Studio checks the budgets when the Operator starts
-/// it; here they are only read.
+/// An objective the Assistant proposes (`propose_objective`): its intent.
+/// What it does (whether it explores, its improvements, whether it merges
+/// and adopts) is read from the intent before Start, as for one the
+/// Operator writes (the Operator's amendment of C-54).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ObjectiveProposal {
     pub intent: String,
-    pub explore: bool,
-    pub usd: Option<f64>,
-    pub cycles: Option<u32>,
-    pub attempts: Option<u32>,
-    pub hours: Option<f64>,
-    pub steps: Option<u32>,
 }
 
 impl ObjectiveProposal {
     fn read(input: &Value) -> Result<ObjectiveProposal, String> {
         let intent = required_str(input, "intent")?.trim().to_string();
-        let explore = match input.get("explore") {
-            None | Some(Value::Null) => false,
-            Some(Value::Bool(on)) => *on,
-            Some(_) => return Err("`explore` must be true or false".into()),
-        };
-        let budgets = &input["budgets"];
-        let number = |field: &str| budgets.get(field).and_then(Value::as_f64);
-        let whole = |field: &str| -> Result<Option<u32>, String> {
-            match number(field) {
-                None => Ok(None),
-                Some(n) if n.fract() == 0.0 && (0.0..=u32::MAX as f64).contains(&n) => {
-                    Ok(Some(n as u32))
-                }
-                Some(n) => Err(format!("`budgets.{field}` must be a whole number; got {n}")),
-            }
-        };
-        Ok(ObjectiveProposal {
-            intent,
-            explore,
-            usd: number("usd"),
-            cycles: whole("cycles")?,
-            attempts: whole("attempts")?,
-            hours: number("hours"),
-            steps: whole("steps")?,
-        })
+        Ok(ObjectiveProposal { intent })
     }
 }
 

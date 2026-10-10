@@ -738,6 +738,374 @@ fn parse_choice(said: &str, situation: &Situation) -> Result<String, String> {
     }
 }
 
+/// What an objective does, as its intent asks (the Operator's amendment
+/// of C-54): whether it explores the running application first, how many
+/// improvements (cycles) it makes, and whether a reviewed change that
+/// passes every check is merged, and then built, tried and adopted.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Shape {
+    pub explore: bool,
+    pub cycles: u32,
+    pub merge: bool,
+    pub adopt: bool,
+}
+
+impl Shape {
+    /// What an objective does when nothing could read its intent: one
+    /// improvement without exploring, merged and adopted.
+    pub const DEFAULT: Shape = Shape {
+        explore: false,
+        cycles: 1,
+        merge: true,
+        adopt: true,
+    };
+
+    /// In the Operator's words, for the start form and the thread.
+    pub fn describe(&self) -> String {
+        format!(
+            "{}; {} at most; {}",
+            if self.explore {
+                "explores the running application first"
+            } else {
+                "does not explore first"
+            },
+            if self.cycles == 1 {
+                "one improvement".to_string()
+            } else {
+                format!("{} improvements", self.cycles)
+            },
+            match (self.merge, self.adopt) {
+                (true, true) =>
+                    "merges reviewed changes that pass every check, then builds, tries and restarts in the result",
+                (true, false) =>
+                    "merges reviewed changes that pass every check, without building or restarting",
+                _ => "opens pull requests for you to merge",
+            }
+        )
+    }
+}
+
+/// An objective's shape as inferred from its intent, and who inferred it:
+/// Jev, the reasoning model it escalated to, or nobody (the defaults, with
+/// why).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Inferred {
+    pub shape: Shape,
+    pub source: Source,
+    /// Jev's least confidence among its answers, when Jev's were used.
+    pub confidence: Option<f64>,
+    pub millis: u64,
+    /// US dollars; `None` when a call's usage or price is unknown.
+    pub usd: Option<f64>,
+    /// Why it escalated, or what failed.
+    #[serde(default)]
+    pub note: String,
+}
+
+impl Inferred {
+    /// Who inferred it, in the Operator's words.
+    pub fn by(&self) -> String {
+        match self.source {
+            Source::Jev => format!(
+                "Jev read the intent (confidence {:.2})",
+                self.confidence.unwrap_or(0.0)
+            ),
+            Source::Escalated | Source::Model => {
+                format!(
+                    "Jev was unsure ({}), so the escalation model read the intent",
+                    self.note
+                )
+            }
+            Source::Rules => format!(
+                "Nothing could read the intent ({}): the defaults",
+                self.note
+            ),
+        }
+    }
+}
+
+/// What the typed questions about an intent are told.
+const SHAPE_ABOUT: &str = "Agentique, an application for modelling systems, improves itself through objectives. An objective runs cycles, and each cycle makes one improvement: it may first explore the running application in a test instance to find problems; then a lead proposes a change, an implementer makes it, checks and a reviewer judge it, and a change that passes every check may be merged into the repository, then built, tried and adopted (Agentique restarts in the new build). The Operator's intent says what the objective should achieve.";
+
+/// One of the typed questions about an intent.
+struct ShapeQuestion {
+    id: &'static str,
+    instructions: &'static str,
+    /// Each option, with what choosing it means.
+    options: &'static [(&'static str, &'static str)],
+}
+
+/// The three questions about an intent.
+const SHAPE_QUESTIONS: [ShapeQuestion; 3] = [
+    ShapeQuestion {
+        id: "explore",
+        instructions: "Should the objective first explore the running application to find the problems it is about?",
+        options: &[
+            (
+                "explore",
+                "Yes: the intent asks to explore, test, find or look for problems, or names an area rather than a change",
+            ),
+            ("direct", "No: the intent names the change to make"),
+        ],
+    },
+    ShapeQuestion {
+        id: "improvements",
+        instructions: "How many improvements should the objective make at most, one per cycle? One unless the intent asks for several, for continuing work or for everything it finds.",
+        options: &[
+            ("1", "One improvement"),
+            ("2", "Two improvements"),
+            ("3", "Three improvements"),
+            ("5", "Five improvements"),
+        ],
+    },
+    ShapeQuestion {
+        id: "integrate",
+        instructions: "What should happen to a reviewed change that passes every check? Merge, build and adopt unless the intent says otherwise.",
+        options: &[
+            (
+                "adopt",
+                "Merge it, then build, try and restart in the result",
+            ),
+            ("merge", "Merge it, without building or restarting"),
+            ("review", "Open a pull request only; the Operator merges"),
+        ],
+    },
+];
+
+/// The shape the three answers name, or why they name none.
+pub fn shape_of(explore: &str, improvements: &str, integrate: &str) -> Result<Shape, String> {
+    let explore = match explore {
+        "explore" => true,
+        "direct" => false,
+        other => return Err(format!("`{other}` is not an answer to whether it explores")),
+    };
+    let cycles = match improvements {
+        "1" | "2" | "3" | "5" => improvements.parse().unwrap_or(1),
+        other => return Err(format!("`{other}` is not a number of improvements")),
+    };
+    let (merge, adopt) = match integrate {
+        "adopt" => (true, true),
+        "merge" => (true, false),
+        "review" => (false, false),
+        other => return Err(format!("`{other}` is not what happens to a change")),
+    };
+    Ok(Shape {
+        explore,
+        cycles,
+        merge,
+        adopt,
+    })
+}
+
+/// Jev's answers read into a shape with its least confidence, or why they
+/// are not used (an answer missing or wrong in form, or one below
+/// `threshold`).
+pub fn shape_from_jev(
+    answers: &BTreeMap<String, Answer>,
+    threshold: f64,
+) -> Result<(Shape, f64), String> {
+    let mut chosen = BTreeMap::new();
+    let mut least = 1.0_f64;
+    for question in &SHAPE_QUESTIONS {
+        let id = question.id;
+        match answers.get(id) {
+            Some(Answer::Choice {
+                choice, confidence, ..
+            }) => {
+                if *confidence < threshold {
+                    return Err(format!(
+                        "Jev chose {choice} for {id} with confidence {confidence:.2}"
+                    ));
+                }
+                least = least.min(*confidence);
+                chosen.insert(id, choice.as_str());
+            }
+            _ => return Err(format!("Jev gave no choice for {id}")),
+        }
+    }
+    let shape = shape_of(
+        chosen["explore"],
+        chosen["improvements"],
+        chosen["integrate"],
+    )?;
+    Ok((shape, least))
+}
+
+/// A model's answer about an intent, `{"explore": …, "improvements": …,
+/// "integrate": …}`, read into a shape.
+pub fn read_shape(said: &str) -> Result<Shape, String> {
+    let object = said
+        .char_indices()
+        .filter(|(_, c)| *c == '{')
+        .find_map(|(at, _)| {
+            let value: Value = serde_json::Deserializer::from_str(&said[at..])
+                .into_iter::<Value>()
+                .next()?
+                .ok()?;
+            value["integrate"].is_string().then_some(value)
+        })
+        .ok_or("the model gave no JSON naming what happens to a change")?;
+    let text = |key: &str| match &object[key] {
+        Value::String(s) => s.clone(),
+        Value::Number(n) => n.to_string(),
+        _ => String::new(),
+    };
+    shape_of(&text("explore"), &text("improvements"), &text("integrate"))
+}
+
+impl Decider {
+    /// What an objective with `intent` does (the Operator's amendment of
+    /// C-54): Jev answers three typed questions about it in one request; a
+    /// confident set is used; otherwise the reasoning model answers them;
+    /// when neither does, the defaults, with why. Asked before Start, so
+    /// the Operator sees it and may change it.
+    pub fn infer(&self, intent: &str) -> Inferred {
+        let started = Instant::now();
+        let state = json!({ "about": SHAPE_ABOUT, "intent": intent.trim() });
+        let mut usd = Some(0.0);
+        let add = |total: Option<f64>, part: Option<f64>| Some(total? + part?);
+        let note = match self.ask_jev_shape(&state) {
+            Ok((answers, cost)) => {
+                usd = add(usd, cost);
+                match shape_from_jev(&answers, self.threshold) {
+                    Ok((shape, confidence)) => {
+                        return Inferred {
+                            shape,
+                            source: Source::Jev,
+                            confidence: Some(confidence),
+                            millis: started.elapsed().as_millis() as u64,
+                            usd,
+                            note: String::new(),
+                        };
+                    }
+                    Err(why) => why,
+                }
+            }
+            Err(failure) => {
+                usd = add(usd, failure.usd);
+                failure.error
+            }
+        };
+        let questions: Vec<String> = SHAPE_QUESTIONS
+            .iter()
+            .map(
+                |ShapeQuestion {
+                     id,
+                     instructions,
+                     options,
+                 }| {
+                    let options: Vec<String> = options
+                        .iter()
+                        .map(|(o, about)| format!("  - {o}: {about}"))
+                        .collect();
+                    format!("{id}: {instructions}\n{}", options.join("\n"))
+                },
+            )
+            .collect();
+        let prompt = format!(
+            "{SHAPE_ABOUT}\n\nThe Operator's intent:\n{}\n\nAnswer each question with one of its options:\n{}\n\nAnswer with JSON only: {{\"explore\": \"<option>\", \"improvements\": \"<option>\", \"integrate\": \"<option>\"}}",
+            intent.trim(),
+            questions.join("\n")
+        );
+        let mut problem = note.clone();
+        for _ in 0..2 {
+            match self.chat(&self.model, self.effort.as_deref(), &prompt, &mut || false) {
+                Ok((said, cost)) => {
+                    usd = add(usd, cost);
+                    match read_shape(&said) {
+                        Ok(shape) => {
+                            return Inferred {
+                                shape,
+                                source: Source::Escalated,
+                                confidence: None,
+                                millis: started.elapsed().as_millis() as u64,
+                                usd,
+                                note,
+                            };
+                        }
+                        Err(error) => problem = format!("{note}; the model: {error}"),
+                    }
+                }
+                Err(error) => {
+                    // A request that was sent may be billed.
+                    usd = None;
+                    problem = format!("{note}; the model failed: {error}");
+                    break;
+                }
+            }
+        }
+        Inferred {
+            shape: Shape::DEFAULT,
+            source: Source::Rules,
+            confidence: None,
+            millis: started.elapsed().as_millis() as u64,
+            usd,
+            note: problem,
+        }
+    }
+
+    /// Jev's answers to the three questions about an intent, in one
+    /// request within its deadline, with what they cost.
+    fn ask_jev_shape(
+        &self,
+        state: &Value,
+    ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
+        let started = Instant::now();
+        let questions = SHAPE_QUESTIONS
+            .iter()
+            .map(
+                |ShapeQuestion {
+                     id,
+                     instructions,
+                     options,
+                 }| {
+                    (
+                        id.to_string(),
+                        jev::Question {
+                            instructions: instructions.to_string(),
+                            kind: QuestionKind::Choice {
+                                options: options
+                                    .iter()
+                                    .map(|(o, about)| (o.to_string(), Some(about.to_string())))
+                                    .collect(),
+                            },
+                        },
+                    )
+                },
+            )
+            .collect();
+        let request = DecisionRequest {
+            model: self.jev_model.clone(),
+            state: state.clone(),
+            questions,
+        };
+        let mut handle = self
+            .providers
+            .decide_start(request, Instant::now() + self.deadline);
+        let result = loop {
+            if let Some(result) = handle.next_result(Duration::from_millis(50)) {
+                break result;
+            }
+        };
+        let model = ModelRef::new(Provider::TypeSafe, &self.jev_model);
+        match result {
+            Ok(reply) => Ok((reply.answers, reply.usage.cost_usd(&model))),
+            Err(failure) => Err(Failure {
+                source: Source::Jev,
+                error: format!("Jev: {failure}"),
+                millis: started.elapsed().as_millis() as u64,
+                usd: if failure.attempts == 0 {
+                    Some(0.0)
+                } else {
+                    failure.usage.and_then(|u| u.cost_usd(&model))
+                },
+            }),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -953,5 +1321,72 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
         .unwrap_err();
         assert_eq!(failed.usd, Some(0.02));
         assert!(failed.error.contains("not an option"), "{}", failed.error);
+    }
+
+    fn choice(choice: &str, confidence: f64) -> Answer {
+        Answer::Choice {
+            choice: choice.into(),
+            probabilities: BTreeMap::new(),
+            confidence,
+        }
+    }
+
+    /// The Operator's amendment of C-54: Jev's three answers make the
+    /// shape when each is confident; otherwise they escalate, with why.
+    #[test]
+    fn an_intent_is_read_into_a_shape() {
+        let answers = BTreeMap::from([
+            ("explore".to_string(), choice("explore", 0.9)),
+            ("improvements".to_string(), choice("2", 0.7)),
+            ("integrate".to_string(), choice("adopt", 0.95)),
+        ]);
+        let (shape, least) = shape_from_jev(&answers, 0.6).unwrap();
+        assert_eq!(
+            shape,
+            Shape {
+                explore: true,
+                cycles: 2,
+                merge: true,
+                adopt: true
+            }
+        );
+        assert!((least - 0.7).abs() < 1e-9);
+        let unsure = shape_from_jev(&answers, 0.8).unwrap_err();
+        assert!(
+            unsure.contains("improvements") && unsure.contains("0.70"),
+            "{unsure}"
+        );
+        let mut missing = answers.clone();
+        missing.remove("integrate");
+        assert!(
+            shape_from_jev(&missing, 0.6)
+                .unwrap_err()
+                .contains("integrate")
+        );
+        let mut odd = answers;
+        odd.insert("improvements".into(), choice("4", 0.9));
+        assert!(shape_from_jev(&odd, 0.6).is_err());
+
+        assert_eq!(
+            read_shape("Reasoning... {\"explore\": \"direct\", \"improvements\": 1, \"integrate\": \"review\"}").unwrap(),
+            Shape {
+                explore: false,
+                cycles: 1,
+                merge: false,
+                adopt: false
+            }
+        );
+        assert!(
+            read_shape(
+                "{\"explore\": \"maybe\", \"improvements\": \"1\", \"integrate\": \"adopt\"}"
+            )
+            .is_err()
+        );
+        assert!(read_shape("no JSON").is_err());
+        assert!(
+            Shape::DEFAULT
+                .describe()
+                .contains("does not explore first; one improvement at most; merges")
+        );
     }
 }

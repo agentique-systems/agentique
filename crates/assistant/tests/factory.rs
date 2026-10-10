@@ -323,42 +323,26 @@ fn the_assistant_proposes_an_objective_and_starts_nothing() {
     let proposed = prepare(
         &state,
         PROPOSE_OBJECTIVE,
-        json!({ "intent": "  Find and fix problems in the Library panel ", "explore": true,
-                "budgets": { "usd": 2.5, "cycles": 3, "steps": 40 } }),
+        json!({ "intent": "  Find and fix problems in the Library panel " }),
     );
     let expected = ObjectiveProposal {
         intent: "Find and fix problems in the Library panel".into(),
-        explore: true,
-        usd: Some(2.5),
-        cycles: Some(3),
-        attempts: None,
-        hours: None,
-        steps: Some(40),
     };
     assert_eq!(
         proposed,
         Prepared::Studio(StudioRequest::ProposeObjective(expected.clone()))
     );
-    // Only the intent is needed; the start form has the rest.
-    assert_eq!(
-        prepare(
-            &state,
-            PROPOSE_OBJECTIVE,
-            json!({ "intent": "Tidy the Inspector" })
-        ),
-        Prepared::Studio(StudioRequest::ProposeObjective(ObjectiveProposal {
-            intent: "Tidy the Inspector".into(),
-            ..ObjectiveProposal::default()
-        }))
+    // Only the intent: what it does is read from it before Start (the
+    // Operator's amendment of C-54), so budgets are not proposed.
+    let budgets = json!({ "intent": "x", "budgets": { "cycles": 3 } });
+    assert!(tools::check_input(PROPOSE_OBJECTIVE, &budgets).is_err());
+    let refused = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        PROPOSE_OBJECTIVE,
+        &json!({ "intent": " " }),
     );
-    // An empty intent, or an improvement and a half, is refused (the
-    // turn's input check refuses the second first).
-    let half = json!({ "intent": "x", "budgets": { "cycles": 1.5 } });
-    assert!(tools::check_input(PROPOSE_OBJECTIVE, &half).is_err());
-    for input in [json!({ "intent": " " }), half] {
-        let refused = tools::prepare(&state, &Library::built_in_only(), PROPOSE_OBJECTIVE, &input);
-        assert!(matches!(refused, Prepared::Invalid(_)), "{refused:?}");
-    }
+    assert!(matches!(refused, Prepared::Invalid(_)), "{refused:?}");
     assert!(
         tools::check_input(PROPOSE_OBJECTIVE, &json!({ "intent": "x", "start": true })).is_err(),
         "there is no way to start it"

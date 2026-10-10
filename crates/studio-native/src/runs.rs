@@ -1086,7 +1086,7 @@ impl Studio {
                 let proposal = crate::objectives::Proposal::from_assistant(&proposed);
                 let _ = reply.send(match self.open_start_form(proposal) {
                     Ok(()) => ToolResult::answer(
-                        "Shown to the Operator as a start form with your intent and budgets, the permissions and each role's model. Only the Operator starts it; nothing has started.",
+                        "Shown to the Operator as a start form with your intent and what it is read to ask for (whether it explores first, how many improvements, whether reviewed changes are merged and adopted), which the Operator may change. Only the Operator starts it; nothing has started.",
                     ),
                     Err(problem) => ToolResult::error(format!("Not shown: {problem}")),
                 });

@@ -64,10 +64,10 @@ fn a_cycle_goes_from_proposal_through_repair_and_review_to_a_merge_it_may_not_ma
                 &repository,
                 "main",
                 Budgets {
-                    usd: 1.0,
+                    usd: Some(1.0),
                     cycles: 1,
                     attempts: 3,
-                    hours: 1.0,
+                    hours: Some(1.0),
                     ..Budgets::default()
                 },
                 Permissions::default(),
@@ -362,10 +362,10 @@ fn an_interrupted_objective_continues_from_the_phase_it_reached() {
                 &repository,
                 "main",
                 Budgets {
-                    usd: 1.0,
+                    usd: Some(1.0),
                     cycles: 1,
                     attempts: 3,
-                    hours: 1.0,
+                    hours: Some(1.0),
                     ..Budgets::default()
                 },
                 Permissions::default(),
@@ -545,10 +545,10 @@ fn run_objective_with(
                 repository,
                 "main",
                 Budgets {
-                    usd: 1.0,
+                    usd: Some(1.0),
                     cycles: 1,
                     attempts: 3,
-                    hours: 1.0,
+                    hours: Some(1.0),
                     ..Budgets::default()
                 },
                 Permissions::default(),

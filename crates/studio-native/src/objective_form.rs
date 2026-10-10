@@ -1,37 +1,43 @@
-//! The objective's start form (C-54, ROADMAP §3.6, §4.16): one form for
-//! the Conversation and the Objectives panel. It shows, before Start, the
-//! intent, whether the objective explores, its budgets (spend, improvements,
-//! attempts, hours and exploration steps), its permissions (merge, adopt),
-//! and each role's model with why a fallback was taken, the credential and
-//! who pays. It is drawn in the Conversation when the composer's message or
-//! the Assistant's proposal opened it there, otherwise in the Objectives
-//! panel; nothing starts until the Operator presses Start, and starting is
-//! the Operator's own (its controls are `objective-…`).
+//! The objective's start form (C-54, as the Operator amended it; ROADMAP
+//! §4.16): one form for the Conversation and the Objectives panel. The
+//! Operator writes the intent; it is read (a typed decision: Jev, escalating
+//! when unsure) for what the objective does, which the form shows with who
+//! read it: whether it explores first, how many improvements, and whether
+//! reviewed changes are merged, and then built, tried and adopted. The
+//! Operator may change whether it explores, merges or adopts. There is no
+//! spend or time limit to set. It is drawn in the Conversation when the
+//! composer's message or the Assistant's proposal opened it there,
+//! otherwise in the Objectives panel; nothing starts until the Operator
+//! presses Start, and starting is the Operator's own (its controls are
+//! `objective-…`).
 
 use crate::{
-    objectives::{Proposal, StartRequest},
+    objectives::StartRequest,
     studio::Studio,
-    ui::{self, ActiveTheme, Button, Switch, TextArea, TextField, r, theme},
+    ui::{self, ActiveTheme, Button, Switch, TextArea, r, theme},
     workspace::StudioExt,
 };
-use agq_orchestrator::record::{Budgets, Permissions, RoleModel};
+use agq_orchestrator::decide::Shape;
 use gpui::{
-    AppContext, ClickEvent, Context, Entity, IntoElement, ParentElement, Render, Styled, Window,
-    div, prelude::FluentBuilder,
+    AppContext, ClickEvent, Context, Entity, IntoElement, ParentElement, Render, Styled, Task,
+    Window, div, prelude::FluentBuilder,
 };
-use gpui_base::input::{InputState, TextareaState};
+use gpui_base::input::TextareaState;
+use std::time::Duration;
+
+/// How long the intent rests unchanged before it is read.
+const REST: Duration = Duration::from_millis(700);
 
 pub struct ObjectiveForm {
     studio: Entity<Studio>,
     intent: Entity<TextareaState>,
-    usd: Entity<InputState>,
-    cycles: Entity<InputState>,
-    attempts: Entity<InputState>,
-    hours: Entity<InputState>,
-    steps: Entity<InputState>,
-    explore: bool,
-    merge: bool,
-    adopt: bool,
+    /// What it does: as read from the intent, then as the Operator set it.
+    shape: Shape,
+    /// The intent whose reading the switches show.
+    applied: Option<String>,
+    /// The intent as last drawn, and the wait before it is read.
+    seen: String,
+    waiting: Option<Task<()>>,
     /// The Assistant proposed what the form shows.
     by_assistant: bool,
     /// The Studio's proposals taken so far (`StartForm::given`).
@@ -40,16 +46,6 @@ pub struct ObjectiveForm {
 
 impl ObjectiveForm {
     pub fn new(studio: Entity<Studio>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let field = |value: &str, window: &mut Window, cx: &mut Context<Self>| {
-            let value = value.to_string();
-            cx.new(|cx| {
-                let mut state = InputState::new(window, cx).placeholder(value.clone());
-                state.set_value(value, window, cx);
-                state
-            })
-        };
-        let defaults = Proposal::new("", false);
-        let budgets = &defaults.budgets;
         ObjectiveForm {
             intent: cx.new(|cx| {
                 let mut state = TextareaState::new(window, cx)
@@ -57,22 +53,23 @@ impl ObjectiveForm {
                 state.set_auto_grow(3, 10, cx);
                 state
             }),
-            usd: field(&number(budgets.usd), window, cx),
-            cycles: field(&budgets.cycles.to_string(), window, cx),
-            attempts: field(&budgets.attempts.to_string(), window, cx),
-            hours: field(&number(budgets.hours), window, cx),
-            steps: field(&budgets.steps.to_string(), window, cx),
-            explore: false,
-            merge: true,
-            adopt: true,
+            shape: Shape::DEFAULT,
+            applied: None,
+            seen: String::new(),
+            waiting: None,
             by_assistant: false,
             given: 0,
             studio,
         }
     }
 
+    fn intent(&self, cx: &gpui::App) -> String {
+        self.intent.read(cx).value().trim().to_string()
+    }
+
     /// Takes the proposal the Studio gave since it was last drawn (the
-    /// composer's message, or the Assistant's proposal).
+    /// composer's message, or the Assistant's proposal), and reads it at
+    /// once.
     fn follow(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let form = &self.studio.read(cx).objectives.form;
         if form.given == self.given {
@@ -82,59 +79,66 @@ impl ObjectiveForm {
         let Some(proposal) = form.proposal.clone() else {
             return;
         };
-        let set = |field: &Entity<InputState>,
-                   value: String,
-                   window: &mut Window,
-                   cx: &mut Context<Self>| {
-            field.update(cx, |state, cx| state.set_value(value, window, cx));
-        };
         self.intent.update(cx, |state, cx| {
             state.set_value(proposal.intent.clone(), window, cx)
         });
-        let budgets = &proposal.budgets;
-        set(&self.usd, number(budgets.usd), window, cx);
-        set(&self.cycles, budgets.cycles.to_string(), window, cx);
-        set(&self.attempts, budgets.attempts.to_string(), window, cx);
-        set(&self.hours, number(budgets.hours), window, cx);
-        set(&self.steps, budgets.steps.to_string(), window, cx);
-        self.explore = proposal.explore;
         self.by_assistant = proposal.by_assistant;
+        self.seen = proposal.intent.clone();
+        self.waiting = None;
+        if !proposal.intent.is_empty() {
+            self.studio
+                .act(cx, |studio| studio.read_intent(&proposal.intent));
+        }
     }
 
-    /// What the form asks for, as typed.
-    fn request(&self, cx: &gpui::App) -> StartRequest {
-        let read = |field: &Entity<InputState>| field.read(cx).value().trim().to_string();
-        // A number that does not read is out of every range: the budgets'
-        // check names it.
-        let decimal = |field: &Entity<InputState>| read(field).parse::<f64>().unwrap_or(-1.0);
-        let whole = |field: &Entity<InputState>| read(field).parse::<u32>().unwrap_or(0);
-        StartRequest {
-            intent: self.intent.read(cx).value().trim().to_string(),
-            explore: self.explore,
-            budgets: Budgets {
-                usd: decimal(&self.usd),
-                cycles: whole(&self.cycles),
-                attempts: whole(&self.attempts),
-                hours: decimal(&self.hours),
-                steps: if self.explore {
-                    whole(&self.steps)
-                } else {
-                    Budgets::default().steps
-                },
-                ..Budgets::default()
-            },
-            permissions: Permissions {
-                push: self.merge,
-                merge: self.merge,
-                adopt: self.merge && self.adopt,
-                ..Permissions::default()
-            },
+    /// Reads the intent once it has rested unchanged (the Operator stopped
+    /// typing); takes what it was read as when that arrives.
+    fn read_when_rested(&mut self, cx: &mut Context<Self>) {
+        let intent = self.intent(cx);
+        if intent != self.seen {
+            self.seen = intent.clone();
+            self.waiting = (!intent.is_empty()).then(|| {
+                let rested = intent.clone();
+                cx.spawn(async move |this, cx| {
+                    cx.background_executor().timer(REST).await;
+                    let _ = this.update(cx, |form, cx| {
+                        if form.intent(cx) == rested {
+                            form.studio.act(cx, |studio| studio.read_intent(&rested));
+                        }
+                        form.waiting = None;
+                    });
+                })
+            });
+        }
+        let read = self
+            .studio
+            .read(cx)
+            .objectives
+            .form
+            .reading
+            .as_ref()
+            .filter(|r| r.intent == intent)
+            .and_then(|r| r.inferred.as_ref().map(|i| i.shape));
+        if let Some(shape) = read
+            && self.applied.as_deref() != Some(intent.as_str())
+        {
+            self.shape = shape;
+            self.applied = Some(intent);
         }
     }
 
     fn start(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
-        let request = self.request(cx);
-        let intent = request.intent.clone();
+        let intent = self.intent(cx);
+        let inferred = self
+            .studio
+            .read(cx)
+            .objectives
+            .form
+            .reading
+            .as_ref()
+            .filter(|r| r.intent == intent)
+            .and_then(|r| r.inferred.clone());
+        let request = StartRequest::new(&intent, self.shape, inferred);
         let started = self.studio.act(cx, |studio| {
             let result = studio.start_objective(request);
             match &result {
@@ -151,67 +155,73 @@ impl ObjectiveForm {
             result
         });
         if started.is_ok() {
-            self.intent
-                .update(cx, |state, cx| state.set_value("", window, cx));
-            self.by_assistant = false;
+            self.clear(window, cx);
         }
         cx.notify();
+    }
+
+    fn clear(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.intent
+            .update(cx, |state, cx| state.set_value("", window, cx));
+        self.by_assistant = false;
+        self.seen.clear();
+        self.applied = None;
+        self.waiting = None;
+        self.shape = Shape::DEFAULT;
     }
 
     /// Closes the form shown in the Conversation, forgetting the intent it
     /// took from the message: the panel shows the form empty.
     fn cancel(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
-        self.intent
-            .update(cx, |state, cx| state.set_value("", window, cx));
-        self.by_assistant = false;
+        self.clear(window, cx);
         self.studio.act(cx, |studio| studio.close_start_form());
         cx.notify();
     }
-
-    /// Explore on: three improvements unless changed (it explores, fixes
-    /// and explores again); off: one.
-    fn set_explore(&mut self, on: bool, window: &mut Window, cx: &mut Context<Self>) {
-        let cycles = self.cycles.read(cx).value().trim().to_string();
-        let (from, to) = if on { ("1", "3") } else { ("3", "1") };
-        if cycles == from {
-            self.cycles
-                .update(cx, |state, cx| state.set_value(to, window, cx));
-        }
-        self.explore = on;
-        cx.notify();
-    }
-}
-
-/// A decimal as the form shows it: `5`, `0.5`.
-fn number(value: f64) -> String {
-    let text = format!("{value:.2}");
-    text.trim_end_matches('0').trim_end_matches('.').to_string()
 }
 
 impl Render for ObjectiveForm {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.follow(window, cx);
+        self.read_when_rested(cx);
         let theme = cx.theme().clone();
+        let intent = self.intent(cx);
         let studio = self.studio.read(cx);
         let in_conversation = studio.objectives.form.in_conversation;
         let message = studio.objectives.message.clone();
-        let models = studio.agent_models_each();
-        let explore = self.explore;
-        let label = |t: &'static str| {
+        let reading = studio
+            .objectives
+            .form
+            .reading
+            .as_ref()
+            .filter(|r| r.intent == intent);
+        let inferred = reading.and_then(|r| r.inferred.clone());
+        let read = inferred.is_some();
+        // What the reading says, and who read it; or why Start waits.
+        let (said, by) = match (&inferred, reading) {
+            _ if intent.is_empty() => (
+                "Say what to improve. It is read for whether to explore first, how many improvements to make, and whether to merge and adopt reviewed changes."
+                    .to_string(),
+                None,
+            ),
+            (Some(inferred), _) => (
+                format!("It {}.", inferred.shape.describe()),
+                Some(inferred.by()),
+            ),
+            (None, Some(_)) => ("Reading the intent…".to_string(), None),
+            (None, None) => (
+                "The intent is read when you stop typing…".to_string(),
+                None,
+            ),
+        };
+        let changed = inferred
+            .as_ref()
+            .is_some_and(|inferred| inferred.shape != self.shape);
+        let line = |text: String, color| {
             div()
                 .text_size(r(theme::text::XS))
-                .text_color(theme.text_muted)
-                .child(t)
-        };
-        let field = |title: &'static str, state: &Entity<InputState>, id: &'static str| {
-            div()
-                .flex_1()
-                .min_w_0()
-                .flex()
-                .flex_col()
-                .gap(r(3.0))
-                .child(label(title))
-                .child(TextField::new(state).target(title).control_id(id))
+                .line_height(r(15.0))
+                .text_color(color)
+                .child(text)
         };
         let switch = |switch: Switch, text: &'static str| {
             div().flex().items_center().gap(r(8.0)).child(switch).child(
@@ -224,17 +234,14 @@ impl Render for ObjectiveForm {
         let entity = cx.entity();
         let toggle = |which: u8| {
             let entity = entity.clone();
-            move |on: bool, window: &mut Window, cx: &mut gpui::App| {
-                entity.update(cx, |form, cx| match which {
-                    0 => form.set_explore(on, window, cx),
-                    1 => {
-                        form.merge = on;
-                        cx.notify();
+            move |on: bool, _: &mut Window, cx: &mut gpui::App| {
+                entity.update(cx, |form, cx| {
+                    match which {
+                        0 => form.shape.explore = on,
+                        1 => form.shape.merge = on,
+                        _ => form.shape.adopt = on,
                     }
-                    _ => {
-                        form.adopt = on;
-                        cx.notify();
-                    }
+                    cx.notify();
                 })
             }
         };
@@ -266,66 +273,59 @@ impl Render for ObjectiveForm {
                     .target("What should Agentique improve in itself?")
                     .control_id("objective-intent"),
             )
-            .child(switch(
-                Switch::new(
-                    "objective-explore",
-                    explore,
-                    "Explore the running application first",
-                )
-                .on_toggle(toggle(0)),
-                "Explore the running application first",
-            ))
             .child(
                 div()
                     .flex()
-                    .gap(r(8.0))
-                    .child(field("Spend budget (USD)", &self.usd, "objective-usd"))
-                    .child(field("Improvements", &self.cycles, "objective-cycles")),
-            )
-            .child(
-                div()
-                    .flex()
-                    .gap(r(8.0))
-                    .child(field(
-                        "Attempts per improvement",
-                        &self.attempts,
-                        "objective-attempts",
-                    ))
-                    .child(field("Hours at most", &self.hours, "objective-hours"))
-                    .when(explore, |this| {
-                        this.child(field("Exploration steps", &self.steps, "objective-steps"))
+                    .flex_col()
+                    .child(line(said, theme.text_secondary))
+                    .when_some(by, |this, by| this.child(line(by, theme.text_muted)))
+                    .when(changed, |this| {
+                        this.child(line(
+                            format!("As you set it, it {}.", self.shape.describe()),
+                            theme.accent.text,
+                        ))
                     }),
             )
-            .child(switch(
-                Switch::new(
-                    "objective-merge",
-                    self.merge,
+            .when(read, |this| {
+                this.child(switch(
+                    Switch::new(
+                        "objective-explore",
+                        self.shape.explore,
+                        "Explore the running application first",
+                    )
+                    .on_toggle(toggle(0)),
+                    "Explore the running application first",
+                ))
+                .child(switch(
+                    Switch::new(
+                        "objective-merge",
+                        self.shape.merge,
+                        "Merge reviewed changes that pass every check",
+                    )
+                    .on_toggle(toggle(1)),
                     "Merge reviewed changes that pass every check",
-                )
-                .on_toggle(toggle(1)),
-                "Merge reviewed changes that pass every check",
-            ))
-            .child(switch(
-                Switch::new(
-                    "objective-adopt",
-                    self.merge && self.adopt,
+                ))
+                .child(switch(
+                    Switch::new(
+                        "objective-adopt",
+                        self.shape.merge && self.shape.adopt,
+                        "Build, try and restart in the result",
+                    )
+                    .disabled(!self.shape.merge)
+                    .on_toggle(toggle(2)),
                     "Build, try and restart in the result",
-                )
-                .disabled(!self.merge)
-                .on_toggle(toggle(2)),
-                "Build, try and restart in the result",
-            ))
-            .child(crate::panels::group("Models", None, cx))
-            .children(
-                models
-                    .into_iter()
-                    .map(|(role, model)| route(role, model, explore, &theme)),
-            )
+                ))
+            })
             .child(
                 div()
                     .flex()
+                    .items_center()
                     .gap(r(6.0))
-                    .child(div().flex_1())
+                    .child(div().flex_1().child(line(
+                        "No spend or time limit: it ends when its improvements are made or a cycle makes no progress, and you can pause or stop it at any time."
+                            .into(),
+                        theme.text_muted,
+                    )))
                     .when(in_conversation, |this| {
                         this.child(
                             Button::new("objective-cancel", "Cancel")
@@ -338,83 +338,18 @@ impl Render for ObjectiveForm {
                     .child(
                         Button::new("objective-start", "Start")
                             .primary()
+                            .disabled(!read)
                             .when(in_conversation, |this| this.small())
                             .tooltip(
-                                "Starts the objective on Agentique's own repository; its thread follows in the Conversation",
+                                if read {
+                                    "Starts the objective on Agentique's own repository; its thread follows in the Conversation"
+                                } else {
+                                    "Waits until the intent is read"
+                                },
                                 None,
                             )
                             .on_click(cx.listener(Self::start)),
                     ),
             )
-    }
-}
-
-/// A role's model before Start (C-54): the model, effort and credential,
-/// who pays, and why a fallback was taken; or why the role has none, which
-/// keeps the objective from starting when it needs that role.
-fn route(
-    role: &str,
-    model: Result<RoleModel, String>,
-    explore: bool,
-    theme: &ui::Theme,
-) -> gpui::AnyElement {
-    let (head, detail, warn) = match model {
-        Ok(model) => (
-            format!("{role} · {}", model.label()),
-            match &model.fallback {
-                Some(why) => format!(
-                    "On its fallback, since {} {why}. {}; {}.",
-                    model.configured, model.credential, model.billed
-                ),
-                None => format!("{}; {}.", model.credential, model.billed),
-            },
-            model.fallback.is_some(),
-        ),
-        // Not needed by an objective that does not explore: recorded,
-        // never a reason not to start.
-        Err(problem) if !agq_orchestrator::models::needed(role, explore) => (
-            format!("{role} · no model now"),
-            format!("{problem}. Only an objective that explores needs it."),
-            false,
-        ),
-        Err(problem) => (
-            format!("{role} · not available"),
-            format!("{problem}. Nothing starts until it has a model."),
-            true,
-        ),
-    };
-    div()
-        .flex()
-        .flex_col()
-        .text_size(r(theme::text::XS))
-        .line_height(r(15.0))
-        .child(
-            div()
-                .text_color(theme.text_secondary)
-                .font_weight(theme::MEDIUM)
-                .child(head),
-        )
-        .child(
-            div()
-                .text_color(if warn {
-                    theme.warning.text
-                } else {
-                    theme.text_muted
-                })
-                .child(detail),
-        )
-        .into_any_element()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::number;
-
-    #[test]
-    fn numbers_read_as_typed() {
-        assert_eq!(number(5.0), "5");
-        assert_eq!(number(0.5), "0.5");
-        assert_eq!(number(2.25), "2.25");
-        assert_eq!(number(6.0), "6");
     }
 }
