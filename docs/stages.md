@@ -2092,7 +2092,7 @@ it). Read against the code and the model before any change:
 | W13.6 A second system | #122 | In review (below) |
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
-| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132 | E1 and E2 merged; E3 in review (below) |
+| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
