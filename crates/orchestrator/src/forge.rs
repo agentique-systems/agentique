@@ -246,7 +246,8 @@ pub fn head(repository: &Path, number: u64) -> Result<String, String> {
 pub enum Checks {
     /// Every check passed (and there is at least one).
     Passed,
-    /// A check failed: which, and where to read it.
+    /// Checks failed or were cancelled: each on a line, with where to read
+    /// it.
     Failed(String),
     /// Some are still running, or none has registered yet.
     Pending,
@@ -282,16 +283,21 @@ pub fn checks(repository: &Path, number: u64) -> Result<Checks, String> {
     if all.is_empty() {
         return Ok(Checks::Pending);
     }
-    if let Some(failed) = all
+    // Every failed or cancelled check, one per line.
+    let failed: Vec<String> = all
         .iter()
-        .find(|c| matches!(c["bucket"].as_str(), Some("fail") | Some("cancel")))
-    {
-        return Ok(Checks::Failed(format!(
-            "{} {} ({})",
-            failed["name"].as_str().unwrap_or("a check"),
-            failed["bucket"].as_str().unwrap_or("failed"),
-            failed["link"].as_str().unwrap_or("")
-        )));
+        .filter(|c| matches!(c["bucket"].as_str(), Some("fail") | Some("cancel")))
+        .map(|failed| {
+            format!(
+                "{} {} ({})",
+                failed["name"].as_str().unwrap_or("a check"),
+                failed["bucket"].as_str().unwrap_or("failed"),
+                failed["link"].as_str().unwrap_or("")
+            )
+        })
+        .collect();
+    if !failed.is_empty() {
+        return Ok(Checks::Failed(failed.join("\n")));
     }
     if all
         .iter()
@@ -470,6 +476,11 @@ pub fn follow(repository: &Path, base_branch: &str, merged: &str) -> Result<(), 
         &["git", "fetch", "origin", base_branch],
         Duration::from_secs(300),
     )?;
+    // Already there or past it (a change merged on top since, say): it
+    // follows.
+    if head.commit == merged || is_ancestor(repository, merged, &head.commit)? {
+        return Ok(());
+    }
     run(
         repository,
         &["git", "merge", "--ff-only", merged],

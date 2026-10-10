@@ -676,15 +676,32 @@ pub struct Blocked {
     pub failure: crate::blockers::CiFailure,
     /// Why it is not the change's.
     pub why: String,
+    /// A defect elsewhere, or the checks' own machinery.
+    #[serde(default)]
+    pub cause: Cause,
     /// The cycle that repairs its cause, once started.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repaired_in: Option<u32>,
-    /// The commit that carried the reviewed change onto the repaired base.
+    /// The commit, pushed to its pull request, that carried the reviewed
+    /// change onto the repaired base.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub carried: Option<String>,
+    pub carried_as: Option<String>,
     /// Why it was not carried over, when it was not.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub note: String,
+}
+
+/// Why a reviewed change is blocked (W13.7).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Cause {
+    /// A test the change cannot have caused fails: a defect already on the
+    /// base, which a repair cycle may repair.
+    #[default]
+    Elsewhere,
+    /// The checks never reached a verdict (cancelled, or failed setting the
+    /// job up): nothing is repaired and nothing reruns them here.
+    Infrastructure,
 }
 
 /// What a cycle's evidence on the base was made with (C-54).
@@ -779,6 +796,13 @@ impl Cycle {
             repairs: None,
             carried: None,
         }
+    }
+
+    /// The commit this cycle builds, tries and adopts: the merge of a
+    /// blocked change it carried onto its repair (which holds both), or its
+    /// own merge.
+    pub fn to_build(&self) -> Option<&String> {
+        self.carried.as_ref().or(self.merged.as_ref())
     }
 
     /// Where it is, in words.
@@ -1009,7 +1033,7 @@ impl Objective {
             && cycle
                 .blocked
                 .as_ref()
-                .is_some_and(|b| b.repaired_in.is_none()))
+                .is_some_and(|b| b.cause == Cause::Elsewhere && b.repaired_in.is_none()))
         .then_some(cycle.n)
     }
 
@@ -2147,10 +2171,18 @@ mod tests {
                 ..Default::default()
             },
             why: "fails in agq-orchestrator, which the change cannot affect".into(),
+            cause: Cause::Elsewhere,
             repaired_in: None,
-            carried: None,
+            carried_as: None,
             note: String::new(),
         });
+        let mut machinery = objective.clone();
+        machinery.cycles[0].blocked.as_mut().unwrap().cause = Cause::Infrastructure;
+        assert_eq!(
+            machinery.repair_due(),
+            None,
+            "the machinery is not repaired"
+        );
         let mut may_not = objective.clone();
         may_not.permissions.merge = false;
         assert_eq!(may_not.repair_due(), None, "no repair without merging");
@@ -2169,6 +2201,17 @@ mod tests {
         objective.cycles[1].blocked = objective.cycles[0].blocked.clone();
         objective.cycles[1].blocked.as_mut().unwrap().repaired_in = None;
         assert_eq!(objective.repair_due(), None);
+        // What a cycle builds: the carried merge, else its own.
+        objective.cycles[1].merged = Some("repair".into());
+        assert_eq!(
+            objective.cycles[1].to_build().map(String::as_str),
+            Some("repair")
+        );
+        objective.cycles[1].carried = Some("carried".into());
+        assert_eq!(
+            objective.cycles[1].to_build().map(String::as_str),
+            Some("carried")
+        );
         let text = serde_json::to_string(&objective).unwrap();
         assert_eq!(serde_json::from_str::<Objective>(&text).unwrap(), objective);
         let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
