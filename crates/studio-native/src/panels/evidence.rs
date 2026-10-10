@@ -471,6 +471,7 @@ fn evidence(
             .child(
                 div()
                     .flex()
+                    .flex_wrap()
                     .items_center()
                     .gap(r(6.0))
                     .child(ui::Chip::new(ladder.label()).tone(crate::requirements::tone(standing)))
@@ -495,9 +496,9 @@ fn evidence(
                         .child(ui::target::target(format!(
                             "Evidence of {}: {}",
                             ladder.name,
-                            crate::requirements::SUBREQUIREMENT_NOTE
+                            crate::requirements::subrequirement_note(&ladder)
                         )))
-                        .child(crate::requirements::SUBREQUIREMENT_NOTE),
+                        .child(crate::requirements::subrequirement_note(&ladder)),
                 )
             })
             .child(super::requirements::ladder(
