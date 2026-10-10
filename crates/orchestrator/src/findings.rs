@@ -942,14 +942,15 @@ impl Replay {
 /// problem shows there. A cycle uses it as a criterion: it fails on the
 /// build that has the problem and passes on one that fixed it. With a
 /// `source`, the instance's copy is checked against it before the first
-/// step (the W13.7 repair), and one that does not match diverges. `stop` is
-/// asked during the replay's waits; a stopped replay diverges.
+/// step (the W13.7 repair): one that does not match replays nothing and is
+/// the error, which says nothing about the finding. `stop` is asked during
+/// the replay's waits; a stopped replay diverges.
 pub fn replay(
     instance: &mut dyn Instance,
     finding: &Finding,
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) -> Replay {
+) -> Result<Replay, String> {
     replay_steps(instance, finding, finding.replay_steps(), source, stop)
 }
 
@@ -958,6 +959,36 @@ fn replay_steps(
     finding: &Finding,
     steps: &[Step],
     source: Option<&Provenance>,
+    stop: &mut dyn FnMut() -> bool,
+) -> Result<Replay, String> {
+    if let Some(source) = source {
+        let mut checked = Ok(());
+        let replay = replay_on(
+            instance,
+            finding,
+            steps,
+            &mut |instance, now| {
+                if let (_, Err(why)) = crate::explore::check_copy(instance, source, now) {
+                    checked = Err(format!(
+                        "the test instance did not open the planned project: {why}"
+                    ));
+                }
+                checked.is_ok()
+            },
+            stop,
+        );
+        return checked.map(|()| replay);
+    }
+    Ok(replay_on(instance, finding, steps, &mut |_, _| true, stop))
+}
+
+/// The replay of `steps`, when `opened` accepts what the instance shows at
+/// its start (else it replays nothing).
+fn replay_on(
+    instance: &mut dyn Instance,
+    finding: &Finding,
+    steps: &[Step],
+    opened: &mut dyn FnMut(&dyn Instance, &Value) -> bool,
     stop: &mut dyn FnMut() -> bool,
 ) -> Replay {
     let diverged = |at: usize, reason: String| Replay::Diverged { at, reason };
@@ -986,12 +1017,10 @@ fn replay_steps(
         Ok(now) => now,
         Err(error) => return gone(0, error),
     };
-    if let Some(source) = source
-        && let (_, Err(why)) = crate::explore::check_copy(instance, source, &now)
-    {
+    if !opened(instance, &now) {
         return diverged(
             0,
-            format!("the test instance did not open the planned project: {why}"),
+            "the test instance did not open the planned project".into(),
         );
     }
     if steps.is_empty() {
@@ -1122,21 +1151,23 @@ fn stopped(replay: &Replay) -> bool {
 /// Replays a finding twice from a fresh start; it is reproduced only when
 /// both fail the same way, and then reduced within what is left of
 /// `replays` (at least two are needed). With a `source`, each replay checks
-/// the instance's copy against it first. `stop` is asked between and during
-/// replays: a stopped reproduction leaves the finding as it was, saying so.
+/// the instance's copy against it first: a copy that does not match leaves
+/// the finding as it was and is the error (the W13.7 repair: it says
+/// nothing about the finding). `stop` is asked between and during replays:
+/// a stopped reproduction leaves the finding as it was, saying so.
 pub fn reproduce(
     instance: &mut dyn Instance,
     finding: &mut Finding,
     replays: usize,
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) {
+) -> Result<(), String> {
     let mut outcomes = Vec::new();
     for _ in 0..2 {
-        let outcome = replay_steps(instance, finding, &finding.steps, source, stop);
+        let outcome = replay_steps(instance, finding, &finding.steps, source, stop)?;
         if stopped(&outcome) {
             finding.note = "its reproduction was stopped".into();
-            return;
+            return Ok(());
         }
         outcomes.push(outcome);
     }
@@ -1161,7 +1192,7 @@ pub fn reproduce(
     let model = asks_the_assistant(finding);
     if reproduced {
         finding.set_state(State::Reproduced, &model);
-        reduce(instance, finding, replays.saturating_sub(2), source, stop);
+        reduce(instance, finding, replays.saturating_sub(2), source, stop)?;
     } else {
         let note = if model.is_empty() {
             summary
@@ -1170,6 +1201,7 @@ pub fn reproduce(
         };
         finding.set_state(State::NotReproduced, &note);
     }
+    Ok(())
 }
 
 /// What a replay cannot promise when the steps ask the Assistant: its
@@ -1195,26 +1227,37 @@ fn asks_the_assistant(finding: &Finding) -> String {
 /// 1, 2, 4, … steps), then runs of steps of halving length (4, 2, 1 for
 /// eight steps), so a dialog opened and cancelled goes as a pair. Reduced
 /// steps are kept only when one more replay confirms them; `stop` ends it
-/// early.
+/// early. A copy that does not match `source` ends it too, and is the
+/// error.
 pub fn reduce(
     instance: &mut dyn Instance,
     finding: &mut Finding,
     replays: usize,
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) {
+) -> Result<(), String> {
     if replays < 2 {
-        return;
+        return Ok(());
     }
     let trials = replays - 1;
     let mut used = 0;
     let mut halted = false;
+    // A copy that did not match ends the reduction: it says nothing.
+    let mut mismatch = None;
     let mut steps = finding.steps.clone();
     let mut fails = |instance: &mut dyn Instance, steps: &[Step], used: &mut usize| {
         *used += 1;
-        let outcome = replay_steps(instance, finding, steps, source, stop);
-        halted |= stopped(&outcome);
-        outcome.failed()
+        match replay_steps(instance, finding, steps, source, stop) {
+            Ok(outcome) => {
+                halted |= stopped(&outcome);
+                outcome.failed()
+            }
+            Err(why) => {
+                halted = true;
+                mismatch = Some(why);
+                false
+            }
+        }
     };
     let n = steps.len();
     let mut keep = 0;
@@ -1243,6 +1286,9 @@ pub fn reduce(
         run /= 2;
     }
     let confirmed = steps.len() < n && fails(instance, &steps, &mut used);
+    if let Some(why) = mismatch {
+        return Err(why);
+    }
     if halted {
         finding.note = "its reduction was stopped; the full steps are kept".into();
     } else if confirmed {
@@ -1251,6 +1297,7 @@ pub fn reduce(
     } else if steps.len() < n {
         finding.note = "the reduced steps did not fail again; the full steps are kept".into();
     }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -622,7 +622,7 @@ impl Driver {
         }
         let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
         let source = self.checkout("base", &base)?;
-        let replay = self.replay_in(&built.exe, &source, finding, Options::default());
+        let replay = self.replay_in(&built.exe, &source, finding, Options::default())?;
         Ok(match replay {
             Replay::Failed { message } => Outcome::new(
                 REPLAY,
@@ -644,20 +644,19 @@ impl Driver {
 
     /// A finding replayed in a fresh test instance of `exe`, started from
     /// its start state in `source` (the base's checkout), its copy checked
-    /// first.
+    /// first (the W13.7 repair): one that does not match is the error. Its
+    /// project gone from the base cannot be replayed (it diverges).
     fn replay_in(
         &mut self,
         exe: &Path,
         source: &Path,
         finding: &Finding,
         options: Options,
-    ) -> Replay {
-        // The copy is checked against the project at the base (the W13.7
-        // repair).
+    ) -> Result<Replay, String> {
         let base = self.cycle().base.clone().unwrap_or_default();
         let copy = match self.copy_of(source, &finding.start, &base) {
             Ok(copy) => copy,
-            Err(reason) => return Replay::Diverged { at: 0, reason },
+            Err(reason) => return Ok(Replay::Diverged { at: 0, reason }),
         };
         let mut instance = self.setup.studios.instance(
             exe,
@@ -777,11 +776,14 @@ impl Driver {
         };
         if let Some(finding) = self.cycle().replay.clone() {
             let outcome = match self.replay_in(exe, start, &finding, unreviewed.clone()) {
-                Replay::Passed => Outcome::new(REPLAY, "passed", "it holds on the change"),
-                Replay::Failed { message } => {
+                Ok(Replay::Passed) => Outcome::new(REPLAY, "passed", "it holds on the change"),
+                Ok(Replay::Failed { message }) => {
                     Outcome::new(REPLAY, "failed", format!("it still fails: {message}"))
                 }
-                Replay::Diverged { at, reason } => Outcome::new(
+                // Not the project: a failure, never a pass (the W13.7
+                // repair).
+                Err(why) => Outcome::new(REPLAY, "failed", why),
+                Ok(Replay::Diverged { at, reason }) => Outcome::new(
                     REPLAY,
                     "not run",
                     format!("it could not be replayed on the change (step {at}): {reason}"),

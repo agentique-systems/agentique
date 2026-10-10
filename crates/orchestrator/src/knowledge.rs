@@ -470,7 +470,9 @@ impl Knowledge {
 
     /// The findings of `found` that are new: not known by their identity
     /// (one judged a wrong expectation is known, so found again it is not
-    /// new).
+    /// new), or known but never replayed and never judged (its reproduction
+    /// did not happen: past the cycle's bound, stopped, or a copy that was
+    /// not the project's; the W13.7 repair), which is to be reproduced.
     pub fn new_findings(&self, found: &[Finding], build: &str) -> Vec<Finding> {
         found
             .iter()
@@ -478,7 +480,12 @@ impl Knowledge {
                 self.findings
                     .iter()
                     .find(|k| k.identity == f.identity)
-                    .is_none_or(|known| Knowledge::found_again(known, build))
+                    .is_none_or(|known| {
+                        Knowledge::found_again(known, build)
+                            || (known.state == State::Open
+                                && known.replays.is_empty()
+                                && known.disposition.is_none())
+                    })
             })
             .cloned()
             .collect()
@@ -881,6 +888,16 @@ mod tests {
                 ("f3".to_string(), findings[2].identity.as_str()),
                 ("f4".to_string(), findings[3].identity.as_str())
             ]
+        );
+        // Known but never replayed nor judged: new again, to be reproduced
+        // (the W13.7 repair).
+        let mut unreplayed = Knowledge::new("p");
+        unreplayed.add_run(&run(&[], vec![finding(5, State::Open)]));
+        assert_eq!(
+            unreplayed
+                .new_findings(&[finding(5, State::Open)], "b1")
+                .len(),
+            1
         );
         // Found again by a later run: not new, already adjudicated.
         let again = vec![finding(1, State::Open), finding(9, State::Open)];

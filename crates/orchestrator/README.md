@@ -121,7 +121,8 @@ what to change.
   folder, or a stand-in in tests). Before its first action a run, and each
   replay, checks the copy against its provenance (the folder copied, the
   digest of its model files, the project the observation shows;
-  `check_copy`) and acts on nothing when they differ; a plan's start (a
+  `check_copy`) and acts on nothing when they differ (a replay's mismatch
+  leaves its finding as it was); a plan's start (a
   view's command, an element to select) is carried out by rule after each
   start. Each step lists the actions valid there
   that the observation offers to agents (fields with fixed input classes),

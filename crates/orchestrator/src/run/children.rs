@@ -151,7 +151,8 @@ impl Bounds {
 /// project against the planner (the W13.7 repair).
 pub(super) struct Against<'a> {
     pub model: Option<&'a Result<Elements, String>>,
-    pub planner: &'a Planner,
+    /// None where the lead may not delegate and does not plan.
+    pub planner: Option<&'a Planner>,
 }
 
 /// A child the lead asked for, checked.
@@ -289,13 +290,13 @@ impl Driver {
                     kit: Some(kit.clone()),
                     offered,
                     model,
-                    planner: Some(planner),
+                    planner,
                 },
             )?;
             self.record_refused(&session);
             self.record_adjudicated(&session.adjudicated);
             // A plan it accepted is what the objective explores from now.
-            let accepted = planner.planning.borrow().target.clone();
+            let accepted = planner.and_then(|p| p.planning.borrow().target.clone());
             if accepted.is_some() && accepted != self.objective.target {
                 self.objective.target = accepted;
                 self.save();
@@ -688,6 +689,7 @@ mod tests {
             projects: vec!["model".into(), "models/shop".into()],
             revision: "abc".into(),
             target: None,
+            given: Vec::new(),
         };
         let asked = serde_json::json!({ "instruction": "Look", "usd": 0.6, "steps": 10, "project": "model" });
         assert!(bounds.check(&asked, 0.0, &planning).is_ok());

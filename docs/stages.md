@@ -2444,7 +2444,7 @@ Orchestrator's lock confirmed for its docs on the Operator's instruction for
 these repairs). The lead's `submit_exploration` names its `project` (a
 folder of the repository that holds a model's `.sysml` files at the base
 commit; the brief lists them, `model` being Agentique's own, leaving out the
-pinned standards, test fixtures and folders inside another), the goal and,
+pinned standards and what the code holds, `crates/`), the goal and,
 where useful, `scope` (elements of that project's model, resolved at the
 commit through a fresh repository holding a copy of its files), `start` (a
 view's command and an element to select, carried out by rule as the first
@@ -2481,7 +2481,15 @@ permission. An independent review found a child delegated before the first
 plan unbound (and the regression not proving inheritance), the alternation
 kept as a fallback, a plan accepted in a turn lost when the turn delegated,
 replays not checking their copies, and a mismatch in the evaluation counted
-as not run; corrected. Not changed: observation criteria and the
+as not run; corrected. Its second review found that a copy that did not
+match during a reproduction set the finding not reproduced for good: such a
+replay is now no result (the finding stays as it was and the cycle ends), a
+finding never replayed nor judged is reproduced when found again, a fixed or
+known finding whose project is gone is not replayed (said), projects given to
+children before the first plan stay among its projects, a refused re-plan is
+asked again, the planner is built only where the lead may delegate, and the
+projects leave out only `standards/` and `crates/`; corrected, with a test of
+a mismatch during reproduction only. Not changed: observation criteria and the
 evaluator's judgment instances still open the change's checkout (the
 repository's own model) as the project. Not verified: a live run on a real
 test instance (the window checks are the coordinator's).

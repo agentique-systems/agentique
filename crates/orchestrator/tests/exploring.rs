@@ -101,10 +101,11 @@ fn repository_with(dir: &Path, markers: &[&str]) -> PathBuf {
 /// (or the Studio has no defect at all). Every build and instance asked
 /// for is logged, with whether it got a key or the stand-in Assistant, and
 /// the project it starts from; an instance says it opened a copy of that
-/// project, or with `wrong_copy`, a copy of other files.
+/// project, or a copy of other files where its folder is named
+/// `wrong_copy` (`explore`, `reproduce`).
 struct StandInStudios {
     defects: bool,
-    wrong_copy: bool,
+    wrong_copy: Option<&'static str>,
     log: Arc<Mutex<Vec<String>>>,
 }
 
@@ -127,7 +128,7 @@ impl Studios for StandInStudios {
         &self,
         exe: &Path,
         start: &Path,
-        _folder: &Path,
+        folder: &Path,
         options: Options,
     ) -> Box<dyn Instance> {
         let fixed = exe.join("FIXED").exists();
@@ -146,7 +147,7 @@ impl Studios for StandInStudios {
         studio.opened = explore::model_digest(&from).ok().map(|digest| Opened {
             folder: PathBuf::from("/stand-in/project"),
             from,
-            digest: if self.wrong_copy {
+            digest: if self.wrong_copy.is_some_and(|name| folder.ends_with(name)) {
                 "0000000000000000".into()
             } else {
                 digest
@@ -228,7 +229,7 @@ fn setup_with(
         credential: Box::new(|_| None),
         studios: Box::new(StandInStudios {
             defects,
-            wrong_copy: false,
+            wrong_copy: None,
             log: log.clone(),
         }),
     };
@@ -668,6 +669,80 @@ fn a_lead_that_plans_no_project_ends_the_cycle_without_exploring() {
     );
 }
 
+/// The W13.7 repair: a reproduction whose test instance opened another
+/// copy says nothing about its finding: the finding stays as it was (open,
+/// never replayed, in the cycle and the testing knowledge), the cycle ends
+/// with the reason, and a later exploration that finds it again with the
+/// right copy reproduces it.
+#[test]
+fn a_reproduction_on_another_copy_leaves_its_finding_as_it_was() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (mut setup, log) = setup_with(dir.path(), &store, node.clone(), true);
+    setup.studios = Box::new(StandInStudios {
+        defects: true,
+        wrong_copy: Some("reproduce"),
+        log,
+    });
+    let first = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = first.id.clone();
+    let seen = run_to_end(setup, first, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Failed, "{}", texts(&seen));
+    let cycle = record.cycle().unwrap();
+    assert_eq!(cycle.explorations.len(), 1, "it explored");
+    let finding = &cycle.findings[0];
+    assert_eq!(finding.state, FoundState::Open, "{finding:#?}");
+    assert!(finding.replays.is_empty());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .contains("was not replayed: the test instance did not open the planned project"),
+        "{:?}",
+        cycle.blocker
+    );
+    assert!(
+        seen.iter()
+            .any(|e| e.text.starts_with("Did not replay the reproduction of")
+                && e.text.contains("The finding stays as it was")),
+        "{}",
+        texts(&seen)
+    );
+    let knowledge = Knowledge::load(
+        &Knowledge::file(&store, &repository),
+        &Knowledge::key(&repository),
+    )
+    .unwrap();
+    let known = knowledge
+        .findings
+        .iter()
+        .find(|f| f.identity == finding.identity)
+        .expect("kept");
+    assert_eq!(known.state, FoundState::Open);
+    // With the right copy, the next objective finds it again and
+    // reproduces it: one mismatch hides nothing.
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let second = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = second.id.clone();
+    let seen = run_to_end(setup, second, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let again = record
+        .cycle()
+        .unwrap()
+        .findings
+        .iter()
+        .find(|f| f.identity == finding.identity)
+        .unwrap_or_else(|| panic!("{}", texts(&seen)));
+    assert_eq!(again.state, FoundState::Reproduced);
+}
+
 /// The W13.7 repair: a test instance whose copy is not the planned
 /// project's (here, other files) is never explored in its place: the run
 /// takes no action, the thread says what was planned and what was opened,
@@ -684,7 +759,7 @@ fn an_instance_that_opened_another_copy_is_not_explored() {
     let (mut setup, log) = setup_with(dir.path(), &store, node, true);
     setup.studios = Box::new(StandInStudios {
         defects: true,
-        wrong_copy: true,
+        wrong_copy: Some("explore"),
         log,
     });
     let objective = exploring(&store, &repository, "Find and fix problems", budgets());

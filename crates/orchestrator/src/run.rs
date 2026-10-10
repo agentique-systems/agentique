@@ -1836,6 +1836,9 @@ impl Driver {
                     };
                     match checked {
                         Ok(asked) => {
+                            if let Some(planner) = planner {
+                                planner.planning.borrow_mut().gave(&asked.target.project);
+                            }
                             *delegated.borrow_mut() = Some(asked);
                             ToolResult::answer(
                                 "Delegated: the Orchestrator starts the child objective when your turn ends, and you will receive its result as your next message. End your turn now with one short sentence.",
@@ -2288,20 +2291,23 @@ impl Driver {
             Ok(_) => None,
         };
         let policy = self.policy(&lead, false, false);
+        let delegates =
+            self.objective.explore && self.may_delegate() && self.cycle().repairs.is_none();
         let kit = Toolset {
             system: roles::instructions(Role::Lead),
-            definitions: roles::lead_tools(
-                false,
-                self.objective.explore && self.may_delegate() && self.cycle().repairs.is_none(),
-            ),
+            definitions: roles::lead_tools(false, delegates),
         };
         let mut context = match self.repair_brief() {
             Some(brief) => brief,
             None => self.findings_brief(),
         };
         // A child delegated while proposing explores what the objective
-        // explores (the W13.7 repair).
-        let planner = self.planner(&lead, &base)?;
+        // explores (the W13.7 repair): the planner, where it may delegate.
+        let planner = if delegates {
+            Some(self.planner(&lead, &base)?)
+        } else {
+            None
+        };
         if let Some(reading) = reading {
             context = format!("{reading}\n\n{context}");
         }
@@ -2315,7 +2321,7 @@ impl Driver {
                 attempt > 0,
                 children::Against {
                     model: Some(&model),
-                    planner: &planner,
+                    planner: planner.as_ref(),
                 },
             )?;
             // Accepted when it was submitted, against the findings it was

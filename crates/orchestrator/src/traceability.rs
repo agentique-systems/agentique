@@ -889,8 +889,8 @@ pub fn has_model(repository: &Path, commit: &str) -> Result<bool, String> {
 /// The projects of `repository` at `commit`, by its tree (C-54, the W13.7
 /// repair): the folders that hold a model's `.sysml` files themselves, as
 /// the repository names them (`model`, `models/url-shortener`), in order;
-/// not the pinned standards (`standards/`), not test fixtures (in a
-/// `tests` or `fixtures` folder), and not a folder inside another listed.
+/// not the pinned standards (`standards/`) nor what the code holds
+/// (`crates/`: test fixtures, the Library's blocks).
 pub fn projects(repository: &Path, commit: &str) -> Result<Vec<String>, String> {
     let listed = crate::forge::run(
         repository,
@@ -903,22 +903,9 @@ pub fn projects(repository: &Path, commit: &str) -> Result<Vec<String>, String> 
         .filter_map(|path| path.trim().rsplit_once('/'))
         .filter(|(_, file)| file.ends_with(".sysml"))
         .map(|(folder, _)| folder.to_string())
-        .filter(|folder| {
-            !folder.starts_with("standards/")
-                && !folder
-                    .split('/')
-                    .any(|part| part == "tests" || part == "fixtures")
-        })
+        .filter(|folder| !folder.starts_with("standards/") && !folder.starts_with("crates/"))
         .collect();
-    Ok(folders
-        .iter()
-        .filter(|folder| {
-            !folders
-                .iter()
-                .any(|other| folder.starts_with(&format!("{other}/")))
-        })
-        .cloned()
-        .collect())
+    Ok(folders.into_iter().collect())
 }
 
 /// The model of project `project` of `checkout` (a checkout of a commit in

@@ -590,6 +590,10 @@ pub struct Planning {
     pub projects: Vec<String>,
     pub revision: String,
     pub target: Option<Target>,
+    /// The projects children were given before there was a target: the
+    /// first plan keeps them among its projects, so what they find is the
+    /// objective's.
+    pub given: Vec<String>,
 }
 
 impl Planning {
@@ -653,11 +657,24 @@ impl Planning {
     pub fn accept(&mut self, planned: Target) -> Target {
         let permitted: Vec<String> = match &self.target {
             Some(target) => target.projects(),
-            None => planned.projects(),
+            None => planned
+                .projects()
+                .into_iter()
+                .chain(self.given.iter().map(String::as_str))
+                .collect(),
         }
         .into_iter()
         .map(str::to_string)
         .collect();
+        let mut seen = Vec::new();
+        let permitted: Vec<String> = permitted
+            .into_iter()
+            .filter(|p| {
+                let first = !seen.contains(p);
+                seen.push(p.clone());
+                first
+            })
+            .collect();
         let vary = permitted
             .into_iter()
             .filter(|p| *p != planned.project)
@@ -665,6 +682,14 @@ impl Planning {
         let accepted = Target { vary, ..planned };
         self.target = Some(accepted.clone());
         accepted
+    }
+
+    /// Notes that a child was given `project`: before there is a target,
+    /// the first plan keeps it among its projects.
+    pub fn gave(&mut self, project: &str) {
+        if self.target.is_none() && !self.given.iter().any(|p| p == project) {
+            self.given.push(project.to_string());
+        }
     }
 
     /// The target of a child the lead delegates to explore `instruction`:
@@ -1449,6 +1474,7 @@ mod tests {
             projects: projects.clone(),
             revision: "abc1234".into(),
             target: None,
+            given: Vec::new(),
         };
         let plan = read_exploration(
             &json!({
@@ -1557,6 +1583,7 @@ mod tests {
             projects,
             revision: "abc1234".into(),
             target: None,
+            given: Vec::new(),
         };
         let unbound = planning.child(None, "Look closer").unwrap_err();
         assert!(
@@ -1569,6 +1596,9 @@ mod tests {
             (named.project.as_str(), named.goal.as_str()),
             ("models/shop", "Look closer")
         );
+        // Given to a child before the first plan: kept among the plan's
+        // projects, so what the child finds is the objective's.
+        planning.gave("models/shop");
         planning.accept(Target {
             project: "model".into(),
             revision: "abc1234".into(),
@@ -1578,8 +1608,12 @@ mod tests {
                 view: Some("requirements-view".into()),
                 select: None,
             },
-            vary: vec!["models/shop".into()],
+            vary: Vec::new(),
         });
+        assert_eq!(
+            planning.target.as_ref().unwrap().vary,
+            vec!["models/shop".to_string()]
+        );
         let inherited = planning.child(None, "Look closer").unwrap();
         assert_eq!(inherited.project, "model");
         assert_eq!(inherited.scope, vec!["A::b".to_string()]);
