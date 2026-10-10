@@ -119,6 +119,10 @@ pub struct Setup {
     pub credential: CredentialSource,
     /// What builds the Studio and starts its test instances.
     pub studios: Box<dyn Studios + Send>,
+    /// What answers an exploration's typed questions in place of the
+    /// providers (Jev and the models its roles name): none in operation, a
+    /// stand-in in tests (as `studios` is).
+    pub answers: Option<Box<dyn crate::decide::Answers + Send>>,
 }
 
 /// Where a key for a test instance comes from.
@@ -1759,14 +1763,22 @@ impl Driver {
                             },
                         )
                         .and_then(|proposal| {
-                            // A hypothesis's finding: the change serves the
-                            // requirement it contradicts (E3).
-                            let requirement = proposal
+                            // The change serves the requirement the finding
+                            // was judged against, or else the one its
+                            // hypothesis names (E3).
+                            let judged = proposal.finding.as_ref().and_then(|id| {
+                                dispositions
+                                    .borrow()
+                                    .get(id)
+                                    .and_then(|d| d.requirement.clone())
+                            });
+                            let named = proposal
                                 .finding
                                 .as_ref()
                                 .and_then(|id| cycle_findings.iter().find(|f| &f.identity == id))
-                                .and_then(|f| f.requirement.as_deref());
-                            roles::serves_the_finding(&proposal, requirement).map(|()| proposal)
+                                .and_then(|f| f.requirement.clone());
+                            roles::serves_the_finding(&proposal, judged.or(named).as_deref())
+                                .map(|()| proposal)
                         });
                         match read {
                             Ok(proposal) => *accepted.borrow_mut() = Some(proposal),
@@ -2494,34 +2506,9 @@ impl Driver {
             return String::new();
         }
         let (offered, text) = self.offered_findings();
-        // How this cycle's explorations answered their hypotheses (E3).
-        let answers: Vec<String> = self
-            .cycle()
-            .explorations
-            .iter()
-            .flat_map(|e| &e.answers)
-            .map(|a| {
-                format!(
-                    "- {}",
-                    a.line(|identity| {
-                        offered
-                            .iter()
-                            .find(|(_, offered)| offered == identity)
-                            .map(|(id, _)| id.clone())
-                    })
-                )
-            })
-            .collect();
         format!(
             "{}Reproduced findings of this cycle{}:\n{}\n\n{}",
-            if answers.is_empty() {
-                String::new()
-            } else {
-                format!(
-                    "The hypotheses this cycle's exploration tested (a contradiction reproduced is still only a finding: judge it against the requirement before anything is changed):\n{}\n\n",
-                    answers.join("\n")
-                )
-            },
+            self.answers_brief(&offered),
             if offered.is_empty() {
                 ""
             } else {

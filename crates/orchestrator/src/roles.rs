@@ -221,12 +221,12 @@ fn submit_exploration() -> Value {
                 "hypotheses": {
                     "type": "array",
                     "maxItems": 5,
-                    "description": "What the exploration tests first, each with a share of its steps (then it explores what is not covered): engineering hypotheses about whether what the application shows agrees with the project's model and its requirements. The explorer works through each workflow and states an expectation the next observation is checked against: one that fails is a finding of that hypothesis; one it could not state is reported as not answered, never a finding.",
+                    "description": "What the exploration tests first, each with a share of its steps (then it explores what is not covered): engineering hypotheses about whether what the application shows agrees with the project explored and with Agentique's requirements. The explorer works through each workflow and states the expectation that answers it, checked against the next observation: one that fails is a finding of that hypothesis; one it could not state is reported as not answered, never a finding.",
                     "items": {
                         "type": "object",
                         "properties": {
                             "claim": { "type": "string", "description": "What should hold, in one sentence." },
-                            "requirement": { "type": "string", "description": "The requirement of the project's model that governs it, by qualified name (read_model shows them); its text is given to the explorer." },
+                            "requirement": { "type": "string", "description": "The requirement that governs the application's behaviour here: one of the repository's own model (`model`, where a proposal's `serves` is resolved), whatever project is explored, by qualified name (read_model shows them); its text is given to the explorer. Name the explored project's elements in `claim` and `workflow`." },
                             "behaviour": { "type": "string", "description": "The intended behaviour in plain words, when no requirement states it." },
                             "workflow": { "type": "string", "description": "The steps in the GUI that test it, in the screens' words (such as: open the Requirements view; select the requirement X)." },
                             "expected": { "type": "string", "description": "What should then be observed (text, counts, a state shown), in words." }
@@ -306,7 +306,7 @@ pub fn lead_tools(planning: bool, may_delegate: bool) -> Value {
 /// The lead's instructions while it plans an exploration.
 pub fn planning_instructions() -> String {
     format!(
-        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its target with submit_exploration: the project the objective is about (the brief lists the projects at this commit; `model` is Agentique's own model) and the goal, in the words of the screens and panels, with the elements it is about and where to start when that helps. The project is recorded on the objective and every later exploration keeps to it; name others in `vary` only when the objective asks for several. Give it `hypotheses` to test: what the application should show if it agrees with the project's model and its requirements, each with the requirement that governs it (read the model: read_model, find_elements), the workflow in the screens' words and the observation you expect. Good hypotheses test meaning, not controls: whether counts and summaries agree with the rows they summarise, whether what one element contains is counted with it, whether evidence or a result refers to the configuration it claims, whether something unsupported, unknown or out of date is said to be so. Do not repeat an expectation the brief lists as judged wrong before. If one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
+        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its target with submit_exploration: the project the objective is about (the brief lists the projects at this commit; `model` is Agentique's own model) and the goal, in the words of the screens and panels, with the elements it is about and where to start when that helps. The project is recorded on the objective and every later exploration keeps to it; name others in `vary` only when the objective asks for several. Give it `hypotheses` to test: what the application should show of the project explored if it behaves as its requirements say, each with the requirement of the repository's own model that governs that behaviour (read_model, find_elements; or the intended behaviour when none does), the workflow in the screens' words and the observation you expect. The brief lists how earlier hypotheses were answered: do not test again what was answered. Good hypotheses test meaning, not controls: whether counts and summaries agree with the rows they summarise, whether what one element contains is counted with it, whether evidence or a result refers to the configuration it claims, whether something unsupported, unknown or out of date is said to be so. Do not repeat an expectation the brief lists as judged wrong before. If one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
     )
 }
 
@@ -729,14 +729,13 @@ impl Planning {
                 ));
             }
         };
-        // What the plan said about its own project only.
-        let (scope, start, hypotheses) = match &self.target {
-            Some(target) if target.project == project => (
-                target.scope.clone(),
-                target.start.clone(),
-                target.hypotheses.clone(),
-            ),
-            _ => (Vec::new(), Default::default(), Vec::new()),
+        // What the plan said about its own project only; its hypotheses
+        // are its own exploration's (a child's lead plans its own: E3).
+        let (scope, start) = match &self.target {
+            Some(target) if target.project == project => {
+                (target.scope.clone(), target.start.clone())
+            }
+            _ => (Vec::new(), Default::default()),
         };
         Ok(Target {
             project,
@@ -745,7 +744,7 @@ impl Planning {
             scope,
             start,
             vary: Vec::new(),
-            hypotheses,
+            hypotheses: Vec::new(),
         })
     }
 }
@@ -851,6 +850,8 @@ fn read_hypothesis(input: &Value) -> Result<crate::explore::Hypothesis, String> 
         behaviour: text("behaviour"),
         workflow: needed("workflow")?,
         expected: needed("expected")?,
+        // The Orchestrator decides it, from where the requirement is.
+        select: false,
     };
     if hypothesis.requirement.is_none() && hypothesis.behaviour.is_none() {
         return Err(
@@ -1067,10 +1068,12 @@ pub fn read_proposal(input: &Value, given: &Given) -> Result<Proposal, String> {
     Ok(proposal)
 }
 
-/// Whether a proposal that fixes the finding of a hypothesis serves the
-/// requirement governing it (the W13.7 repair, E3): that a finding
-/// reproduced is no authority to change; what the change is for is the
-/// requirement the finding showed the application contradicts.
+/// Whether a proposal that fixes a finding serves the requirement it was
+/// judged against (its disposition's), or else the one governing the
+/// hypothesis it contradicts (the W13.7 repair, E3): a finding reproduced
+/// is no reason to change by itself; what the change is for is the
+/// requirement the finding showed the application contradicts. Both are of
+/// the base commit's model, where `serves` is resolved.
 pub fn serves_the_finding(proposal: &Proposal, requirement: Option<&str>) -> Result<(), String> {
     match requirement {
         Some(requirement)

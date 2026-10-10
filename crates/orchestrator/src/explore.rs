@@ -120,6 +120,12 @@ pub enum Progress<'a> {
         taken: &'a Taken,
         seconds: u64,
     },
+    /// Hypothesis `index` (from 0) of `of` was answered (E3).
+    Answered {
+        index: usize,
+        of: usize,
+        answer: &'a Answer,
+    },
 }
 
 /// Seconds as a person reads them: `41 s`, `2 min 5 s`.
@@ -166,6 +172,10 @@ impl Progress<'_> {
             } => (
                 format!("Step {step}/{of}: {}", taken.line()),
                 taken.details(*seconds),
+            ),
+            Progress::Answered { index, of, answer } => (
+                format!("Hypothesis {}/{of} {}", index + 1, answer.line(|_| None)),
+                String::new(),
             ),
         }
     }
@@ -596,48 +606,77 @@ pub struct Hypothesis {
     pub behaviour: Option<String>,
     pub workflow: String,
     pub expected: String,
+    /// Whether its requirement is an element of the project explored (the
+    /// repository's own model): selected by rule when it is taken up.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub select: bool,
 }
 
-/// How an exploration answered a hypothesis.
+/// How an exploration answered a hypothesis, with the expectation that
+/// answered it as the explorer stated it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Answer {
     pub claim: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requirement: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected: Option<Value>,
+    #[serde(flatten)]
     pub verdict: Verdict,
 }
 
-/// Whether the application agrees with a hypothesis: the expectation the
-/// explorer stated for it held, it failed (the finding it became, by
-/// identity), or no expectation was checked (with why: never a finding).
+/// Whether the application agrees with a hypothesis: the answering
+/// expectation held, it failed (the finding it became, by identity, and
+/// what was observed instead), or none was checked (with why: never a
+/// finding).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "verdict", rename_all = "kebab-case")]
 pub enum Verdict {
     Agrees,
-    Contradicted { finding: String },
-    NotAnswered { why: String },
+    Contradicted {
+        finding: String,
+        #[serde(default)]
+        observed: String,
+    },
+    NotAnswered {
+        why: String,
+    },
+    /// A verdict a later build wrote.
+    #[serde(other)]
+    Unknown,
 }
 
 impl Answer {
-    /// In a line, for the thread and the lead: the verdict, then the claim.
-    pub fn line(&self, finding_id: impl Fn(&str) -> Option<String>) -> String {
+    /// In a line, for the thread and the lead: the verdict (with what
+    /// `contradiction` says of its finding: its id, or that it was not
+    /// reproduced or was judged before), the claim, and what was expected.
+    pub fn line(&self, contradiction: impl Fn(&str) -> Option<String>) -> String {
         let verdict = match &self.verdict {
             Verdict::Agrees => "agrees".to_string(),
-            Verdict::Contradicted { finding } => match finding_id(finding) {
-                Some(id) => format!("contradicted (finding {id})"),
+            Verdict::Contradicted { finding, .. } => match contradiction(finding) {
+                Some(what) => format!("contradicted ({what})"),
                 None => "contradicted".to_string(),
             },
             Verdict::NotAnswered { why } => format!("not answered ({why})"),
+            Verdict::Unknown => "answered as a later build says".to_string(),
         };
-        format!(
+        let mut line = format!(
             "{verdict}: {}{}",
             self.claim,
             self.requirement
                 .as_ref()
                 .map(|r| format!(" [{r}]"))
                 .unwrap_or_default()
-        )
+        );
+        match (&self.expected, &self.verdict) {
+            (Some(expected), Verdict::Contradicted { observed, .. }) if !observed.is_empty() => {
+                line.push_str(&format!(" — expected {expected}: {observed}"));
+            }
+            (Some(expected), _) => line.push_str(&format!(" — expected {expected}")),
+            _ => {}
+        }
+        line
     }
 }
 
@@ -670,7 +709,36 @@ impl Target {
         if !self.vary.is_empty() {
             text.push_str(&format!("; may also explore {}", self.vary.join(", ")));
         }
+        if !self.hypotheses.is_empty() {
+            text.push_str(&format!(
+                "; tests {} hypotheses first",
+                self.hypotheses.len()
+            ));
+        }
         text
+    }
+
+    /// Its hypotheses, one a line, for the thread (E3).
+    pub fn hypotheses_text(&self) -> String {
+        self.hypotheses
+            .iter()
+            .enumerate()
+            .map(|(i, h)| {
+                format!(
+                    "Hypothesis {}: {} ({}); workflow: {}; expected: {}",
+                    i + 1,
+                    h.claim,
+                    match (&h.requirement, &h.behaviour) {
+                        (Some(requirement), _) => format!("governed by {requirement}"),
+                        (None, Some(behaviour)) => format!("intended: {behaviour}"),
+                        (None, None) => "no requirement named".to_string(),
+                    },
+                    h.workflow,
+                    h.expected
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -1616,6 +1684,7 @@ fn named_route(index: usize) -> (usize, Chosen) {
         Chosen {
             input: None,
             expect: None,
+            answers: false,
             why: String::new(),
             decision: Decision {
                 choice: String::new(),
@@ -1639,6 +1708,7 @@ fn rank(
     covered: &BTreeMap<String, u32>,
     focus: &Focus,
     seed: u64,
+    relevance_first: bool,
 ) -> Vec<usize> {
     let mut order: Vec<usize> = (0..candidates.len()).collect();
     order.sort_by_key(|&i| {
@@ -1650,7 +1720,14 @@ fn rank(
             (_, n) => 1 + n,
         };
         let (goal, changed) = focus.relevance(c);
-        (tier, !goal, !changed, seeded(seed, &c.key))
+        // A hypothesis's workflow before what is new: what it needs may
+        // have been covered before (the review of E3).
+        let (first, second) = if relevance_first {
+            (u32::from(!goal), tier)
+        } else {
+            (tier, u32::from(!goal))
+        };
+        (first, second, !changed, seeded(seed, &c.key))
     });
     order
 }
@@ -1677,15 +1754,24 @@ pub struct Deciding<'a> {
 
 impl Deciding<'_> {
     /// The model a step asks, at its effort: the escalation role's for a
-    /// step testing a hypothesis, else the explorer's.
+    /// step testing a hypothesis (at most [`HYPOTHESIS_EFFORT`]), else the
+    /// explorer's.
     pub fn asked(&self, hypothesis: bool) -> (&ModelRef, Option<&str>) {
         if hypothesis {
-            (&self.escalation, self.escalation_effort.as_deref())
+            let effort = match self.escalation_effort.as_deref() {
+                Some("max" | "xhigh") => Some(HYPOTHESIS_EFFORT),
+                effort => effort,
+            };
+            (&self.escalation, effort)
         } else {
             (&self.explorer, self.effort.as_deref())
         }
     }
 }
+
+/// The most a step testing a hypothesis thinks (the review of E3: the
+/// escalation role at `max` takes a minute or more a call).
+pub const HYPOTHESIS_EFFORT: &str = "high";
 
 /// How many of the rules' best actions Jev chooses among, and the model.
 /// (Fewer for the model hid what follows an action, such as Send after
@@ -1708,6 +1794,10 @@ pub struct Chosen {
     /// What a model said the next observation would show.
     #[serde(default)]
     pub expect: Option<Value>,
+    /// That `expect` answers the hypothesis the step tests (E3): the model
+    /// said so; any other expectation answers nothing.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub answers: bool,
     /// The model's reason, when it gave one.
     #[serde(default)]
     pub why: String,
@@ -1723,7 +1813,11 @@ pub struct Chosen {
 const INSTRUCTIONS: &str = "An explorer tests the Agentique application by operating it toward a goal, to find problems. Choose its next action among the options; each is valid on this screen and safe in this test instance. Prefer behaviour not covered before, toward the areas the goal names; do not repeat the last actions; leave a dialog or panel once its behaviour is covered.";
 
 /// The instructions of a step that tests a hypothesis (E3).
-const HYPOTHESIS: &str = "An explorer tests one engineering hypothesis about the Agentique application in a test instance: the state's `hypothesis` gives the claim, the requirement that governs it (with its text) or the intended behaviour, the workflow in the GUI that tests it, and what should then be observed. Choose the next action among the options that carries the workflow forward. When the next observation will show whether the claim holds, add \"expect\" with what it must show if the application behaves as the requirement says (concrete text, counts or states, in the grammar given): that check answers the hypothesis. Never state an expectation the state lists as judged wrong before.";
+const HYPOTHESIS: &str = "An explorer tests one engineering hypothesis about the Agentique application in a test instance: the state's `hypothesis` gives the claim, the requirement that governs it (with its text) or the intended behaviour, the workflow in the GUI that tests it, and what should then be observed. Choose the next action among the options that carries the workflow forward. When the next observation will show whether the claim holds, add \"expect\" with what the screen must show if the application behaves as the requirement (or the intended behaviour) says, in concrete text, counts or states in the grammar given (not the Assistant's reply), and \"answers\": true: that check answers the hypothesis. Mark no other expectation so. Never state an expectation the state lists as judged wrong before.";
+
+/// The instructions of Jev's step between a hypothesis's reasoning steps:
+/// navigation along its workflow.
+const WORKFLOW: &str = "An explorer works through a workflow in the Agentique application in a test instance: the state's `hypothesis` gives the claim and the workflow. Choose the next action among the options that carries the workflow forward.";
 
 const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text; for the Conversation, the request to send; never a path that leads elsewhere), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains, and replyContains (text the Assistant's reply will hold)";
 
@@ -1777,7 +1871,7 @@ fn shown_as(shown: &[(String, usize)], choice: &str) -> Option<usize> {
 
 /// Reads the model's answer: an option, text only for a field, an
 /// expectation in the grammar of observation criteria, and a reason.
-type Said = (Option<String>, Option<Value>, String);
+type Said = (Option<String>, Option<Value>, String, bool);
 
 fn read_answer(
     said: &str,
@@ -1832,7 +1926,8 @@ fn read_answer(
         .chars()
         .take(200)
         .collect();
-    Ok((choice, (input, expect, why)))
+    let answers = answer["answers"] == true;
+    Ok((choice, (input, expect, why, answers)))
 }
 
 /// What a decision took: its time, its cost (`None` once a call's cost is
@@ -1885,6 +1980,7 @@ fn by_rule(ranked: &[usize], spent: Spent, note: String) -> (usize, Chosen) {
         Chosen {
             input: None,
             expect: None,
+            answers: false,
             why: String::new(),
             decision: Decision {
                 choice: String::new(),
@@ -1952,7 +2048,7 @@ impl Choosing<'_> {
             &read,
             stop,
         ) {
-            Ok((decision, (input, expect, why))) => {
+            Ok((decision, (input, expect, why, answers))) => {
                 let spent = spent.and(decision.millis, decision.usd, bound);
                 let index = shown_as(&shown, &decision.choice).unwrap_or(self.ranked[0]);
                 (
@@ -1960,6 +2056,7 @@ impl Choosing<'_> {
                     Chosen {
                         input,
                         expect,
+                        answers,
                         why,
                         decision: Decision {
                             source,
@@ -2022,6 +2119,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
                         Chosen {
                             input: None,
                             expect: None,
+                            answers: false,
                             why: String::new(),
                             decision,
                             counted: spent.counted,
@@ -2420,13 +2518,18 @@ struct Explorer<'a> {
     started: Instant,
     /// The time of the step being taken, until it is recorded.
     pending: Timing,
-    /// The hypothesis being tested (E3), the steps spent on it, the one
-    /// whose expectation the next check answers, and that check's result
-    /// (the identity of the expectation that failed, if it failed).
+    /// The hypothesis being tested (E3) and the steps spent on it; the
+    /// one whose answering expectation the next check answers, with it,
+    /// and that check's result (the expectation that failed, if it
+    /// failed); whether its last decided step was the reasoning model's
+    /// without answering (Jev navigates next); whether its requirement was
+    /// selected.
     hypothesis: usize,
     spent_on: u32,
-    expecting: Option<usize>,
-    checked: Option<Option<String>>,
+    expecting: Option<(usize, Value)>,
+    checked: Option<Option<Failed>>,
+    reasoned: bool,
+    selected: bool,
 }
 
 /// Explores `instance` as `plan` says, deciding by `plan.way` with
@@ -2493,12 +2596,17 @@ pub fn explore(
         spent_on: 0,
         expecting: None,
         checked: None,
+        reasoned: false,
+        selected: false,
     };
     explorer.run.ended = match explorer.go() {
         Ok(()) => "the step budget was used".into(),
         Err(why) => why,
     };
-    // What it did not get to is not answered, never a finding.
+    // An expectation checked last (the final turn's, or before an error)
+    // still answers; what it did not get to is not answered, never a
+    // finding.
+    explorer.settle();
     let ended = explorer.run.ended.clone();
     while explorer.hypothesis < plan.hypotheses.len() {
         explorer.answer(
@@ -2506,6 +2614,7 @@ pub fn explore(
             Verdict::NotAnswered {
                 why: format!("the run ended: {ended}"),
             },
+            None,
         );
     }
     let mut run = explorer.run;
@@ -2532,6 +2641,7 @@ impl Explorer<'_> {
                     Verdict::NotAnswered {
                         why: "the rules state no expectation".into(),
                     },
+                    None,
                 );
             }
         }
@@ -2798,13 +2908,25 @@ impl Explorer<'_> {
         if candidates.is_empty() {
             return self.dead_end();
         }
-        // A hypothesis first (E3): toward its workflow, decided by the
-        // escalation role's model (an engineering question; a model, since
-        // Jev states no expectation).
+        // A hypothesis first (E3): toward its workflow and requirement,
+        // relevance before coverage. Its decided steps are the escalation
+        // role's reasoning model's (it states the answering expectation),
+        // and Jev's (navigation along the workflow) after a reasoning step
+        // that did not answer.
         let testing = self.testing();
-        let (way, aim) = match &testing {
-            Some(h) => (Way::Model, format!("{} {}", h.workflow, h.claim)),
-            None => (self.plan.way, self.plan.goal.clone()),
+        let aim = match &testing {
+            Some(h) => format!(
+                "{} {} {}",
+                h.workflow,
+                h.claim,
+                h.requirement.as_deref().unwrap_or_default()
+            ),
+            None => self.plan.goal.clone(),
+        };
+        let (way, reasoning) = match &testing {
+            Some(_) if self.reasoned => (Way::Jev, false),
+            Some(_) => (Way::Model, true),
+            None => (self.plan.way, false),
         };
         if testing.is_some() {
             self.expecting = None;
@@ -2818,18 +2940,28 @@ impl Explorer<'_> {
             &self.run.covered,
             toward.as_ref().unwrap_or(&self.focus),
             self.plan.seed,
+            testing.is_some(),
         );
         let mut state = self.state();
         if let Some(h) = &testing {
-            state["hypothesis"] = json!({
-                "claim": h.claim,
-                "requirement": h.requirement,
-                "requirementText": h.requirement_text,
-                "behaviour": h.behaviour,
-                "workflow": h.workflow,
-                "expected": h.expected,
-                "stepsLeft": self.share().saturating_sub(self.spent_on),
-            });
+            // The reasoning model reads all of it; Jev, the claim and the
+            // workflow (its prompt stays small).
+            state["hypothesis"] = if reasoning {
+                json!({
+                    "claim": h.claim,
+                    "requirement": h.requirement,
+                    "requirementText": h.requirement_text,
+                    "behaviour": h.behaviour,
+                    "workflow": h.workflow,
+                    "expected": h.expected,
+                    "stepsLeft": self.share().saturating_sub(self.spent_on),
+                })
+            } else {
+                json!({ "claim": h.claim, "workflow": h.workflow })
+            };
+            if reasoning {
+                state["judgedWrong"] = json!(self.judged_wrong());
+            }
         }
         // A view or panel the goal (or the workflow) names, not opened yet
         // in this run: the rules take it, and no model is asked (the W13.7
@@ -2837,10 +2969,28 @@ impl Explorer<'_> {
         let routed = (!matches!(way, Way::Rules | Way::Cancel))
             .then(|| route(&candidates, &aim, &self.run.covered))
             .flatten();
+        // Then the hypothesis's requirement, selected by rule where the
+        // project explored holds it.
+        if routed.is_none()
+            && let Some(h) = &testing
+            && h.select
+            && !self.selected
+            && let Some(name) = &h.requirement
+        {
+            self.selected = true;
+            let shown = self.now["selection"]
+                .as_array()
+                .is_some_and(|s| s.iter().any(|e| e == name.as_str()));
+            if !shown {
+                return self.select_requirement(name);
+            }
+        }
+        let decided_by_model = reasoning && routed.is_none();
         let step = self.run.actions + 1;
         // Asked through a measure of where the decision's time goes.
         let measured = Measured::new(self.deciding.answers);
-        let (model_asked, effort) = self.deciding.asked(testing.is_some());
+        let (model_asked, effort) = self.deciding.asked(reasoning);
+        // This step's own: `explorer` is the model the step asks.
         let deciding = Deciding {
             answers: &measured,
             explorer: model_asked.clone(),
@@ -2849,10 +2999,10 @@ impl Explorer<'_> {
             escalation_effort: self.deciding.escalation_effort.clone(),
         };
         let choosing = Choosing {
-            instructions: if testing.is_some() {
-                HYPOTHESIS
-            } else {
-                INSTRUCTIONS
+            instructions: match (&testing, reasoning) {
+                (Some(_), true) => HYPOTHESIS,
+                (Some(_), false) => WORKFLOW,
+                (None, _) => INSTRUCTIONS,
             },
             deciding: &deciding,
             candidates: &candidates,
@@ -2864,7 +3014,7 @@ impl Explorer<'_> {
         let (index, chosen) = match routed {
             Some(index) => named_route(index),
             None => {
-                let (by, model) = self.asking(testing.is_some());
+                let (by, model) = self.asking(reasoning);
                 let (supervisor, started, seconds, of) = (
                     &mut *self.supervisor,
                     self.started,
@@ -2958,11 +3108,41 @@ impl Explorer<'_> {
         }
         if testing.is_some() {
             self.spent_on += 1;
-            if step.expect.is_some() {
-                self.expecting = Some(self.hypothesis);
+            if decided_by_model {
+                // Only the expectation the model marked as answering, and
+                // one the screen shows (a reply's is recorded, not checked
+                // as a finding).
+                let answering = chosen.answers
+                    && step
+                        .expect
+                        .as_ref()
+                        .and_then(findings::deterministic)
+                        .is_some();
+                if answering && let Some(expect) = &step.expect {
+                    self.expecting = Some((self.hypothesis, expect.clone()));
+                }
+                self.reasoned = !answering;
+            } else if routed.is_none() {
+                self.reasoned = false;
             }
         }
         self.take(step, Some(chosen), &why)
+    }
+
+    /// The hypothesis's requirement selected by rule (a step of its).
+    fn select_requirement(&mut self, element: &str) -> Result<(), String> {
+        self.run.actions += 1;
+        self.spent_on += 1;
+        let screen = screen_of(&self.now);
+        let step = Step {
+            action: json!({ "kind": "select", "element": element }),
+            key: format!("{screen}|selection|element|select"),
+            screen,
+            label: element.to_string(),
+            expect: None,
+            by: "hypothesis".into(),
+        };
+        self.take(step, None, "the hypothesis's requirement, by rule")
     }
 
     /// The hypothesis the next step tests, if any is left and a model
@@ -2986,12 +3166,16 @@ impl Explorer<'_> {
     /// without one.
     fn settle(&mut self) {
         let checked = self.checked.take();
-        if let (Some(i), Some(failed)) = (self.expecting, checked) {
+        if let (Some((i, expected)), Some(failed)) = (self.expecting.clone(), checked) {
             self.expecting = None;
             let verdict = match failed {
                 None => Verdict::Agrees,
-                Some(identity) => {
+                Some(failed) => {
+                    let identity = failed.identity();
                     let h = &self.plan.hypotheses[i];
+                    // Its finding, reported with the step: linked to the
+                    // first hypothesis whose expectation it is (the same
+                    // expectation stated again keeps that link).
                     if let Some(finding) = self
                         .run
                         .findings
@@ -3000,11 +3184,15 @@ impl Explorer<'_> {
                     {
                         finding.hypothesis = Some(h.claim.clone());
                         finding.requirement = h.requirement.clone();
+                        finding.behaviour = h.behaviour.clone();
                     }
-                    Verdict::Contradicted { finding: identity }
+                    Verdict::Contradicted {
+                        finding: identity,
+                        observed: failed.observed().to_string(),
+                    }
                 }
             };
-            self.answer(i, verdict);
+            self.answer(i, verdict, Some(expected));
         } else if self.expecting.is_none()
             && self.testing().is_some()
             && self.spent_on >= self.share()
@@ -3013,23 +3201,35 @@ impl Explorer<'_> {
             self.answer(
                 self.hypothesis,
                 Verdict::NotAnswered {
-                    why: format!("no expectation was checked within its {share} steps"),
+                    why: format!("no answering expectation was checked within its {share} steps"),
                 },
+                None,
             );
         }
     }
 
-    /// Records how hypothesis `i` was answered; the next is tested.
-    fn answer(&mut self, i: usize, verdict: Verdict) {
+    /// Records how hypothesis `i` was answered (and says so); the next is
+    /// tested.
+    fn answer(&mut self, i: usize, verdict: Verdict, expected: Option<Value>) {
         let h = &self.plan.hypotheses[i];
         self.run.answers.push(Answer {
             claim: h.claim.clone(),
             requirement: h.requirement.clone(),
+            expected,
             verdict,
         });
+        if let Some(answer) = self.run.answers.last() {
+            self.supervisor.progress(&Progress::Answered {
+                index: i,
+                of: self.plan.hypotheses.len(),
+                answer,
+            });
+        }
         self.hypothesis = i + 1;
         self.spent_on = 0;
         self.expecting = None;
+        self.reasoned = false;
+        self.selected = false;
     }
 
     /// Acts, checks what the action did, and records it.
@@ -3382,7 +3582,7 @@ impl Explorer<'_> {
                 failed
                     .iter()
                     .find(|f| f.check == Check::Expectation)
-                    .map(Failed::identity),
+                    .cloned(),
             );
         }
     }
@@ -3502,8 +3702,23 @@ impl Explorer<'_> {
             Some(effort) => format!("{} at {effort}", model.model),
             None => model.model.clone(),
         };
+        let tested = self
+            .plan
+            .hypotheses
+            .get(self.hypothesis)
+            .filter(|_| testing);
+        if let Some(h) = tested {
+            return (
+                format!(
+                    "{model} for hypothesis {} of {} ({})",
+                    self.hypothesis + 1,
+                    self.plan.hypotheses.len(),
+                    h.claim.chars().take(80).collect::<String>()
+                ),
+                model,
+            );
+        }
         match self.plan.way {
-            _ if testing => (format!("{model} for a hypothesis"), model),
             Way::Escalating => (format!("{model}, Jev being unsure"), model),
             _ => (model.clone(), model),
         }
@@ -3540,7 +3755,6 @@ impl Explorer<'_> {
                 "lastReply": observed::last_reply(now).chars().take(300).collect::<String>(),
             },
             "lastActions": last,
-            "judgedWrong": self.judged_wrong(),
         })
     }
 
@@ -3557,7 +3771,16 @@ impl Explorer<'_> {
                         .as_ref()
                         .is_some_and(|d| d.kind == findings::DispositionKind::WrongExpectation)
             })
-            .map(|f| f.message.chars().take(200).collect())
+            .map(|f| {
+                format!(
+                    "{} (judged wrong: {})",
+                    f.message.chars().take(160).collect::<String>(),
+                    f.disposition
+                        .as_ref()
+                        .map(|d| d.reason.chars().take(120).collect::<String>())
+                        .unwrap_or_default()
+                )
+            })
             .take(8)
             .collect()
     }
@@ -3642,6 +3865,33 @@ mod tests {
         })
     }
 
+    /// The review of E3: an answer is one object with its verdict beside
+    /// the claim, and a verdict a later build writes is read as unknown.
+    #[test]
+    fn an_answer_reads_as_written_and_a_later_verdict_as_unknown() {
+        let answer = Answer {
+            claim: "The counts agree".into(),
+            requirement: Some("Shop::Counted".into()),
+            expected: Some(json!({ "anyLabelContains": "3 of 4" })),
+            verdict: Verdict::Contradicted {
+                finding: "expectation|x|y".into(),
+                observed: "no control says it".into(),
+            },
+        };
+        let written = serde_json::to_value(&answer).unwrap();
+        assert_eq!(written["verdict"], "contradicted");
+        assert_eq!(written["finding"], "expectation|x|y");
+        assert_eq!(serde_json::from_value::<Answer>(written).unwrap(), answer);
+        let later: Answer =
+            serde_json::from_value(json!({ "claim": "c", "verdict": "half-answered", "how": 1 }))
+                .unwrap();
+        assert_eq!(later.verdict, Verdict::Unknown);
+        assert_eq!(
+            answer.line(|_| Some("finding f2".into())),
+            r#"contradicted (finding f2): The counts agree [Shop::Counted] — expected {"anyLabelContains":"3 of 4"}: no control says it"#
+        );
+    }
+
     /// The review of the W13.7 repair: an escalated step says why it was
     /// escalated (Jev unsure, or Jev failed) and the model it went to.
     #[test]
@@ -3649,6 +3899,7 @@ mod tests {
         let chosen = |note: &str| Chosen {
             input: None,
             expect: None,
+            answers: false,
             why: String::new(),
             decision: Decision {
                 choice: "a01".into(),
@@ -3879,7 +4130,7 @@ mod tests {
         let button = list.iter().position(|c| !c.field).unwrap();
         let shown = vec![("a01".to_string(), button), ("a02".to_string(), field)];
         let read = |said: &str| read_answer(said, &shown, &list);
-        let (choice, (input, expect, why)) = read(
+        let (choice, (input, expect, why, _)) = read(
             r#"{"choice": "a02", "input": "Shop", "expect": {"dialog": null}, "why": "try a name"}"#,
         )
         .unwrap();
@@ -3898,7 +4149,7 @@ mod tests {
             "text for a button"
         );
         // An empty text for a button is no input.
-        let (_, (input, _, _)) = read(r#"{"choice": "a01", "input": ""}"#).unwrap();
+        let (_, (input, _, _, _)) = read(r#"{"choice": "a01", "input": ""}"#).unwrap();
         assert_eq!(input, None);
         assert!(
             read(r#"{"choice": "a01", "expect": {"pixels": 3}}"#).is_err(),

@@ -325,13 +325,14 @@ pub fn decider(models: &[RoleModel]) -> Result<Decider, String> {
 /// intent. `run` gets them for the run's length.
 pub fn with_deciding<T>(
     models: &[RoleModel],
+    stand_in: Option<&dyn crate::decide::Answers>,
     run: impl FnOnce(&Deciding) -> T,
 ) -> Result<T, String> {
     let decider = decider(models)?;
     let explorer = for_role(models, "explorer")?;
     let escalation = for_role(models, "escalation")?;
     let deciding = Deciding {
-        answers: &decider,
+        answers: stand_in.unwrap_or(&decider),
         explorer: explorer.model.clone(),
         effort: explorer.effort.clone(),
         escalation: escalation.model.clone(),
@@ -454,7 +455,7 @@ mod tests {
         // Exploration's deciding, from the explorer and decisions roles in
         // one call (W12.5 passes the record's models): Jev escalates a step
         // to the explorer's model (the W13.7 repair).
-        let seen = with_deciding(&models, |deciding| {
+        let seen = with_deciding(&models, None, |deciding| {
             (
                 deciding.answers.jev_model().to_string(),
                 deciding.explorer.to_string(),
@@ -477,7 +478,7 @@ mod tests {
             .cloned()
             .collect();
         assert!(
-            with_deciding(&sessions, |_| ())
+            with_deciding(&sessions, None, |_| ())
                 .unwrap_err()
                 .contains("no model was resolved")
         );
