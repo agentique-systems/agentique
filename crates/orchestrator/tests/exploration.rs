@@ -1395,21 +1395,34 @@ fn a_stop_while_deciding_takes_no_more_action() {
 }
 
 /// The review of the W13.7 repair: a decision a model made as the run was
-/// stopped takes no action, and is recorded with what it cost.
+/// stopped takes no action, and is recorded with what it cost; a stop that
+/// came before the model's call sends nothing.
 #[test]
 fn a_decision_made_as_the_run_stops_is_recorded_with_its_cost() {
-    /// Stopped once the model's call has started.
-    struct StopsWhileAsked(bool);
+    /// Stopped once the model's call was sent (from `stopped` asked after
+    /// the call started), or from the start.
+    struct StopsWhileAsked {
+        asked: bool,
+        polled: bool,
+        from_the_start: bool,
+    }
     impl explore::Supervisor for StopsWhileAsked {
         fn go_on(&mut self) -> bool {
             true
         }
         fn stopped(&mut self) -> bool {
-            self.0
+            if self.from_the_start {
+                return true;
+            }
+            if self.asked && !self.polled {
+                self.polled = true;
+                return false;
+            }
+            self.asked
         }
         fn progress(&mut self, progress: &explore::Progress) {
             if matches!(progress, explore::Progress::Deciding { .. }) {
-                self.0 = true;
+                self.asked = true;
             }
         }
     }
@@ -1423,7 +1436,11 @@ fn a_decision_made_as_the_run_stops_is_recorded_with_its_cost() {
         &plan(Way::Model, 1, 10),
         &deciding(&answers),
         &Knowledge::new("stand-in"),
-        &mut StopsWhileAsked(false),
+        &mut StopsWhileAsked {
+            asked: false,
+            polled: false,
+            from_the_start: false,
+        },
     );
     assert_eq!(run.ended, "stopped");
     assert!(!studio.log.iter().any(|l| l.starts_with("explorer")));
@@ -1434,6 +1451,24 @@ fn a_decision_made_as_the_run_stops_is_recorded_with_its_cost() {
     let chosen = taken.chosen.as_ref().unwrap();
     assert!(chosen.counted > 0.0 && run.usd == chosen.counted, "{run:?}");
     assert_eq!(taken.timing.calls, 1);
+    // Stopped before the call: nothing is sent, nothing spent.
+    let unsent = Scripted {
+        reads: Some(Box::new(|_| r#"{"choice": "a01"}"#.to_string())),
+        ..Scripted::default()
+    };
+    let run = explore::explore(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Model, 1, 10),
+        &deciding(&unsent),
+        &Knowledge::new("stand-in"),
+        &mut StopsWhileAsked {
+            asked: false,
+            polled: false,
+            from_the_start: true,
+        },
+    );
+    assert!(unsent.prompts.borrow().is_empty(), "nothing was sent");
+    assert_eq!(run.usd, 0.0, "{run:?}");
 }
 
 #[test]

@@ -2664,32 +2664,36 @@ latency of a real Studio's larger prompts.
 rules took it after Jev's or the model's call failed, timed out or was
 stopped (for the explorer when a model was asked, else for the decisions),
 with the tokens the provider reported, and a decision made as the run
-stopped is recorded ("not taken") with its cost. A step Jev was unsure of
-says "Jev unsure, then deepseek-flash at low", not "the reasoning model";
-the Escalation row in Settings and `with_deciding` say that an
-exploration's steps no longer go to the escalation role. Only a panel's tab
-(never a dialog's or the palette's) or a view's command is a route the
-rules take; an option never is (the Inspector's type matches change the
-model, the palette's rows run commands). The run's progress folds as
-"updates", not "tool calls", with the latest on the fold's row while the
-run goes on, and "Step k/n: asks …" is said only when a model's call
-starts, without the project and goal repeated (about one line a step where
-Jev or the rules decide). A step's time adds what was measured before its
-decision (an observation) instead of replacing it, and a wait is counted
-from the model's call, not from Jev's. Not measured apart: a provider's own
-retries (inside the model's time) and the Studio's rendering (inside acting
-and observing). The explorer's default effort changed from high to low, and
-settings.json keeps only values that differ from the default: an Operator
-who chose high while it was the default now gets low and chooses it again
-in Settings › Agents. A step Jev is unsure of no longer reaches a stronger
-model; in E3 the tests of hypotheses and ambiguous engineering decisions go
-to the escalation role. Compared on the stand-in (no windows; the held-out comparison in real test
-instances, `live_exploration_compared_by_way_of_deciding`, opens windows
-and was not run): Jev escalating to deepseek-flash at low, 12 steps, reached
-10 actions new to the run's coverage with no unwanted action and no
-finding, in 31 progress lines; decisions p50 6.3 s and p95 24.5 s, model
-calls p50 11.2 s and slowest 48 s; 2 min 26 s and $0.036 in all. The same
-run escalating to deepseek-v4-pro at max (the old way) was stopped by the
-system for low memory and not run again, so coverage and unwanted actions
-are not compared; for it there is only the 6-step measurement above
-(decisions p50 17 s, model calls p50 75 s).
+stopped is recorded ("not taken") with its cost; a stop that came before a
+model's call sends nothing (`ask_model` asks first). A step Jev was unsure
+of says "Jev unsure, then deepseek-flash at low" ("Jev failed, then …" when
+Jev failed or ran out of time), not "the reasoning model"; the Escalation
+row in Settings and `with_deciding` say that an exploration's steps no
+longer go to the escalation role, whose use in operation is reading an
+objective's intent. Only a panel's tab (never a dialog's or the palette's)
+or a view's command is a route the rules take; an option never is (the
+Inspector's type matches change the model, the palette's rows run commands).
+The run's progress folds as "updates", not "tool calls", with the latest on
+the fold's row while the run goes on (a fold cut off by closing Agentique
+keeps showing its last update until the thread's next entry), and "Step k/n:
+asks …" is said only when a model's call starts, without the project and
+goal repeated (about one line a step where Jev or the rules decide). A
+step's time adds what was measured before its decision (an observation)
+instead of replacing it, and a wait is counted from the model's call, not
+from Jev's. Not measured apart: a provider's own retries (inside the model's
+time) and the Studio's rendering (inside acting and observing). The
+explorer's default effort changed from high to low, and settings.json keeps
+only values that differ from the default: an Operator who chose high while
+it was the default now gets low and chooses it again in Settings › Agents. A
+step Jev is unsure of no longer reaches a stronger model; in E3 the tests of
+hypotheses and ambiguous engineering decisions go to the escalation role.
+Compared on the stand-in (no windows; the held-out comparison in real test
+instances, `live_exploration_compared_by_way_of_deciding`, opens windows and
+was not run): Jev escalating to deepseek-flash at low, 12 steps, reached 10
+actions new to the run's coverage with no unwanted action and no finding, in
+31 progress lines; decisions p50 6.3 s and p95 24.5 s, model calls p50 11.2
+s and slowest 48 s; 2 min 26 s and $0.036 in all. The same run escalating to
+deepseek-v4-pro at max (the old way) was stopped by the system for low
+memory and not run again, so coverage and unwanted actions are not compared;
+for it there is only the 6-step measurement above (decisions p50 17 s, model
+calls p50 75 s).

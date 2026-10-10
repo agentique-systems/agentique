@@ -250,6 +250,16 @@ pub fn ask_model<T>(
     let mut usd = Some(0.0);
     let mut problem = String::new();
     for _ in 0..2 {
+        // A stop that came first sends nothing, and costs nothing more
+        // (`stop` is asked again while the call is waited for).
+        if stop() {
+            return Err(Failure {
+                source: Source::Model,
+                error: "stopped before it was asked".into(),
+                millis: started.elapsed().as_millis() as u64,
+                usd,
+            });
+        }
         let answered = answers
             .chat(model, effort, &prompt, stop)
             .map_err(|error| Failure {

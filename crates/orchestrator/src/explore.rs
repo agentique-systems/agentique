@@ -171,9 +171,14 @@ impl Progress<'_> {
     }
 }
 
+/// How a decision's note begins when Jev failed (an error, its deadline)
+/// rather than answered unsure.
+const JEV_FAILED: &str = "Jev failed: ";
+
 /// Who chose a step: the rules, Jev with its confidence, or a model (the
 /// one `timing` says was asked: since the W13.7 repair a step Jev is unsure
-/// of goes to the explorer's model, not to the escalation role's).
+/// of, or Jev failed on, goes to the explorer's model, not to the
+/// escalation role's).
 fn decided_by(chosen: &Chosen, timing: &Timing) -> String {
     let d = &chosen.decision;
     let model = || match (&timing.model, &timing.effort) {
@@ -186,6 +191,9 @@ fn decided_by(chosen: &Chosen, timing: &Timing) -> String {
         Source::Rules => format!("rules ({})", d.note),
         Source::Jev => format!("Jev {:.2}", d.confidence.unwrap_or(0.0)),
         Source::Model => model(),
+        Source::Escalated if d.note.starts_with(JEV_FAILED) => {
+            format!("Jev failed, then {}", model())
+        }
         Source::Escalated => format!("Jev unsure, then {}", model()),
     }
 }
@@ -322,8 +330,8 @@ impl Answers for Measured<'_> {
         answer
     }
 
-    /// `stop` is asked once before the call too, so whoever watches learns
-    /// the call starts (the call itself sees a stop that came first).
+    /// (`ask_model` asks `stop` before each call: whoever watches learns
+    /// the call starts, and a stop that came first sends nothing.)
     fn chat(
         &self,
         model: &ModelRef,
@@ -331,7 +339,6 @@ impl Answers for Measured<'_> {
         prompt: &str,
         stop: &mut dyn FnMut() -> bool,
     ) -> Result<decide::Answered, String> {
-        let _ = stop();
         let started = Instant::now();
         let answer = self.answers.chat(model, effort, prompt, stop);
         let mut timing = self.timing.borrow_mut();
@@ -1938,7 +1945,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
         }
         Err(failure) => (
             Spent::NOTHING.and(failure.millis, failure.usd, bound),
-            failure.error,
+            format!("{JEV_FAILED}{}", failure.error),
         ),
     };
     if way == Way::Escalating {
@@ -3349,6 +3356,43 @@ mod tests {
                 { "id": "fit", "label": "Fit", "operatorOnly": true }
             ]
         })
+    }
+
+    /// The review of the W13.7 repair: an escalated step says why it was
+    /// escalated (Jev unsure, or Jev failed) and the model it went to.
+    #[test]
+    fn an_escalated_step_says_why_and_to_which_model() {
+        let chosen = |note: &str| Chosen {
+            input: None,
+            expect: None,
+            why: String::new(),
+            decision: Decision {
+                choice: "a01".into(),
+                source: Source::Escalated,
+                confidence: None,
+                millis: 0,
+                usd: Some(0.0),
+                note: note.into(),
+            },
+            counted: 0.0,
+        };
+        let timing = Timing {
+            model: Some("deepseek/deepseek-flash".into()),
+            effort: Some("low".into()),
+            calls: 1,
+            ..Timing::default()
+        };
+        assert_eq!(
+            decided_by(&chosen("Jev chose a02 with confidence 0.40"), &timing),
+            "Jev unsure, then deepseek/deepseek-flash at low"
+        );
+        assert_eq!(
+            decided_by(
+                &chosen(&format!("{JEV_FAILED}its deadline passed")),
+                &timing
+            ),
+            "Jev failed, then deepseek/deepseek-flash at low"
+        );
     }
 
     /// The review of the W13.7 repair: only a panel's tab or a view's
