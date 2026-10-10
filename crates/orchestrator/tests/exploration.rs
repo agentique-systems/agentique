@@ -2159,3 +2159,71 @@ fn live_step_time_by_way_model_and_effort() {
     }
     println!("spent ${spent:.4}");
 }
+
+/// The Operator's Stop at a set moment, as the Orchestrator's supervisor
+/// reads it: before each step and during long waits.
+struct StopsAt(std::time::Instant);
+
+impl explore::Supervisor for StopsAt {
+    fn go_on(&mut self) -> bool {
+        !self.stopped()
+    }
+
+    fn stopped(&mut self) -> bool {
+        std::time::Instant::now() >= self.0
+    }
+}
+
+/// AR-T-019 (reproduction, C-54: Stop takes effect at once): a Stop while
+/// a run waits for Jev ends the wait and the run at once, and the instance
+/// is not acted on after it. The real decider (its Jev deadline as the
+/// Orchestrator configures it) asks a local TypeSafe AI endpoint that takes
+/// the request and never answers; the Operator stops the run half a second
+/// in. No key or network beyond this computer is used.
+#[test]
+fn a_stop_ends_a_run_waiting_for_jev_at_once() {
+    use std::time::{Duration, Instant};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    std::thread::spawn(move || {
+        // Each request is read by no one and never answered.
+        let mut held = Vec::new();
+        for stream in listener.incoming() {
+            held.push(stream);
+        }
+    });
+    let decider = Decider {
+        providers: agq_providers::Providers::new()
+            .with_key(Provider::TypeSafe, "test-key")
+            .with_endpoint(Provider::TypeSafe, url),
+        ..Decider::default()
+    };
+    let mut studio = StandIn::new(Defects::default());
+    let plan = plan(Way::Jev, 1, 20);
+    let stop = Instant::now() + Duration::from_millis(500);
+    let run = explore::explore(
+        &mut studio,
+        &plan,
+        &deciding(&decider),
+        &Knowledge::new("stand-in"),
+        &mut StopsAt(stop),
+    );
+    let late = Instant::now().saturating_duration_since(stop);
+    let steps: Vec<String> = run.steps.iter().map(|t| t.line()).collect();
+    // What the instance was asked to do, besides starting.
+    let acted: Vec<&String> = studio
+        .log
+        .iter()
+        .filter(|l| !l.starts_with("start "))
+        .collect();
+    assert!(
+        late < Duration::from_secs(1),
+        "the run ended {late:?} after the Operator's stop (Jev's deadline is {:?}); ended: {}; steps: {steps:#?}; the instance was asked: {acted:?}",
+        decider.deadline,
+        run.ended
+    );
+    assert!(
+        acted.is_empty(),
+        "the instance was acted on after the stop: {acted:?}"
+    );
+}
