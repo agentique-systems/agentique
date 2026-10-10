@@ -407,4 +407,53 @@ mod tests {
         assert_eq!(compared.after[&compared.created[0]].owners[0], store.raw());
         assert!(compared.after[&compared.created[0]].locked, "inside a lock");
     }
+
+    /// Reading the model as committed, comparing commits and checking a
+    /// change against a base only read: they take no editing lock and write
+    /// nothing, so they work while the project is open for editing (the
+    /// Studio, an agent's session) and never make an open fail.
+    #[test]
+    fn reading_versions_takes_no_editing_lock_and_writes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path();
+        std::fs::create_dir_all(folder.join("model")).unwrap();
+        std::fs::write(
+            folder.join("model/Shop.sysml"),
+            "package Shop {
+    part def Store;
+}
+",
+        )
+        .unwrap();
+        drop(Project::open(folder).unwrap());
+        let base = agq_execution::git::init_and_commit(folder, "Start").unwrap();
+        let editing = Project::open(folder).unwrap();
+        let before = std::fs::read_to_string(folder.join("model/agentique.json")).unwrap();
+        assert!(
+            model_at(folder, &base)
+                .unwrap()
+                .values()
+                .any(|e| e.name == "Shop::Store")
+        );
+        assert!(
+            compare_commits(folder, &base, &base)
+                .unwrap()
+                .created
+                .is_empty()
+        );
+        assert_eq!(
+            locked_changes(folder, &base, &[]).unwrap(),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            locked_code(folder, &base, &[], &[], &[]).unwrap(),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            std::fs::read_to_string(folder.join("model/agentique.json")).unwrap(),
+            before,
+            "nothing written"
+        );
+        drop(editing);
+    }
 }
