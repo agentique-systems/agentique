@@ -192,3 +192,32 @@ fn agentiques_links_point_at_its_model_and_its_code() {
     }
     assert!(problems.is_empty(), "{}", problems.join("\n"));
 }
+
+/// C-55: the purpose is declared, never calculated or shown to hold: its
+/// obligations are informal, so its standing is "only declared", and its
+/// evidence is the requirements each obligation names.
+#[test]
+fn agentiques_purpose_is_declared_and_never_shown_as_holding() {
+    use agq_implementation::requirements::{Standing, ladders};
+    use agq_simulation::requirements::{Status, evaluate_all};
+    let tree = self_model();
+    let purpose = tree.find("AgentiqueArchitecture::purpose").unwrap();
+    let diagnostics = validate(&tree);
+    let ladder = ladders(&tree, &diagnostics, None, None, None)
+        .into_iter()
+        .find(|l| l.requirement == purpose)
+        .expect("the purpose has a ladder");
+    assert_eq!(ladder.standing(), Standing::OnlyDeclared);
+    let evaluated: Vec<_> = evaluate_all(&tree)
+        .into_iter()
+        .filter(|e| e.requirement == purpose)
+        .collect();
+    assert_eq!(evaluated.len(), 1, "agentique is declared to satisfy it");
+    assert_eq!(evaluated[0].status, Status::NotEvaluable);
+    let obligations = tree[tree.find("AgentiqueArchitecture::Purpose").unwrap()]
+        .children()
+        .iter()
+        .filter(|c| tree[**c].kind == agq_language::ElementKind::Requirement)
+        .count();
+    assert_eq!(obligations, 8);
+}

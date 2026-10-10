@@ -1617,25 +1617,31 @@ package AgentiqueArchitecture {
     }
 
     requirement def Purpose {
-        doc /* Agentique's purpose, as ROADMAP §1.1 states it (C-55; the one authoritative statement, referred to here, not restated). Its obligations are the subrequirements below; they are informal, so the purpose is never calculated to hold: its evidence is the requirements that make each obligation concrete (OneChangePath, GatesDecide, FindingsReproduce, DefectShownBefore, ChildWorkBounded and the others), their scenarios and the tests linked to them. The purpose and its protections change only by the Operator's decision, never inside an objective. */
+        doc /* Agentique's purpose, as ROADMAP §1.1 states it (C-55; the one authoritative statement, referred to here, not restated). Its obligations are the subrequirements below, each naming the requirements that make it concrete, or none yet. They are informal, so the purpose is never calculated to hold: it is declared, and its evidence is those requirements with their scenarios and linked tests. The purpose and its protections change only by the Operator's decision, never inside an objective. */
         subject product : Agentique;
         requirement explicitArchitecture {
-            doc /* A system's structure, contracts, behaviour and requirements are explicit KerML/SysML elements of one System State, valid under the supported subset, shown on the Surface and given to agents through the same operations. */
+            doc /* A system's structure, contracts, behaviour and requirements are explicit KerML/SysML elements of one System State, valid under the supported subset, shown on the Surface and given to agents through the same operations. Made concrete by: OneChangePath, AssistantThroughTools. */
         }
         requirement executableOrReported {
-            doc /* Modelled behaviour runs in model execution and requirements are evaluated on modelled configurations; what cannot run or be evaluated is reported as such, never approximated. */
+            doc /* Modelled behaviour runs in model execution and requirements are evaluated on modelled configurations; what cannot run or be evaluated is reported as such, never shown as run or evaluated when it was not. Made concrete by: none yet. */
         }
         requirement claimsKeptApart {
-            doc /* The claims of ROADMAP §4.14 (parse, resolution, rules, calculation, executable, completed, check passed, implementation agrees, evidence under stated assumptions) are shown apart, none stronger than it is. */
+            doc /* The claims of ROADMAP §4.14 (parse, resolution, rules, calculation, executable, completed, check passed, implementation agrees, evidence under stated assumptions) are shown apart, none stronger than it is. Made concrete by: RequiredChecksDecide (a check that did not run is never a pass); the rest none yet. */
         }
         requirement sameMechanismsForItself {
-            doc /* Agentique's own architecture uses the concepts, operations and checks it offers: this model is valid under its own core, its scenarios run in its own model execution, and its links point at its code. */
+            doc /* Agentique's own architecture uses the concepts, operations and checks it offers: this model is valid under its own core, its scenarios run in its own model execution, and its links point at its code. Made concrete by: none yet (the dogfood tests check it). */
         }
         requirement operatorKeepsControl {
-            doc /* The Operator gives intent, sees what agents do and the evidence, and keeps control of the purpose and of consequential decisions: locks, approvals, budgets, Pause and Stop. */
+            doc /* The Operator gives intent, sees what agents do and the evidence, and keeps control of the purpose and of consequential decisions: locks, approvals, budgets, Pause and Stop. Made concrete by: OneChangePath (locks), RecoverableAdoption, ChildWorkBounded, OnlyGivenCredentials. */
         }
         requirement alignedEvolution {
-            doc /* Every autonomous change names the requirement it serves and the elements it affects, is reviewed against the approved baseline, and leaves the purpose and the governing text to the Operator. */
+            doc /* Every autonomous change names the requirement it serves and the elements it affects, is reviewed against the approved baseline, and leaves the purpose and the governing text to the Operator. Made concrete by: GatesDecide, DefectShownBefore, FindingsReproduce. */
+        }
+        requirement rootSystem {
+            doc /* A system's root states its purpose, a small set of coherent responsibilities and stable contracts; a system that builds systems refers to them, itself included, rather than containing them; no part becomes a universal object (ROADMAP §1.1). Made concrete by: none yet (judged in review). */
+        }
+        requirement generaliseTheMechanism {
+            doc /* Shared contracts are definitions and contextual roles are usages; variation sits at the narrowest scope that needs it; an abstraction is introduced when distinct uses demonstrate it (ROADMAP §1.1). Made concrete by: none yet (judged in review). */
         }
     }
 
