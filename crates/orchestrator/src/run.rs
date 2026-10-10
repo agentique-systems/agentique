@@ -17,8 +17,6 @@ mod evidence;
 mod explore;
 mod trace;
 
-pub use explore::STARTS;
-
 use crate::control::{Client, Options, TestInstance};
 use crate::explore::Instance;
 use crate::findings::Disposition;
@@ -621,9 +619,6 @@ struct Session {
     said: String,
     /// The child objective the lead delegated, checked (C-54).
     delegated: Option<children::Asked>,
-    /// The target of the lead's plan of an exploration, as it was accepted
-    /// (C-54, the W13.7 repair).
-    target: Option<crate::explore::Target>,
     /// Delegations the Orchestrator refused, with why.
     refused: Vec<(Value, String)>,
 }
@@ -631,15 +626,16 @@ struct Session {
 /// What a session works with besides its role's own: the test instance its
 /// control tools operate, the lead's tools for an exploring cycle, the
 /// reproduced findings it may choose among, the base commit's model a
-/// proposal's names are resolved in (C-55), and what a plan of an
-/// exploration is checked against (the W13.7 repair).
+/// proposal's names are resolved in (C-55), and the lead's planner, which
+/// checks a plan of an exploration and a child's project (the W13.7
+/// repair).
 #[derive(Default)]
 struct With<'a> {
     test: Option<&'a mut Client>,
     kit: Option<Toolset>,
     offered: Vec<(String, String)>,
     model: Option<&'a Result<Elements, String>>,
-    planning: Option<&'a explore::Planned>,
+    planner: Option<&'a explore::Planner>,
 }
 
 /// What an exploration by the rules decides with: they ask no model, so
@@ -1220,10 +1216,10 @@ impl Driver {
             kit,
             offered,
             model: base_model,
-            planning,
+            planner,
         } = with;
         // What the lead may delegate now, as its `delegate` tool checks it.
-        let bounds = self.bounds(role == Role::Lead);
+        let bounds = self.bounds();
         // What the lead's submissions are checked against (C-55): the base
         // commit's model, and what findings were judged to be, its own
         // judgments in this session included.
@@ -1244,7 +1240,6 @@ impl Driver {
         let knowledge_file = Knowledge::file(&self.setup.store, &self.objective.repository);
         let knowledge_key = Knowledge::key(&self.objective.repository);
         let accepted: RefCell<Option<record::Proposal>> = RefCell::new(None);
-        let target: RefCell<Option<crate::explore::Target>> = RefCell::new(None);
         let refusal: RefCell<Option<String>> = RefCell::new(None);
         let adjudicated: RefCell<Vec<(String, Disposition)>> = RefCell::new(Vec::new());
         let mut model = WorkingModel::new(cwd.to_path_buf());
@@ -1331,23 +1326,23 @@ impl Driver {
                         ));
                     }
                     if call.name == roles::SUBMIT_EXPLORATION
-                        && let Some(planning) = planning
+                        && let Some(planner) = planner
                     {
-                        match planning.check(&call.input) {
-                            Ok(planned) => *target.borrow_mut() = Some(planned),
-                            Err(problem) => {
-                                refusals.post(ThreadEntry::new(
-                                    Kind::Result,
-                                    lead.clone(),
-                                    format!(
-                                        "Plans the exploration of {} (not accepted: {problem})",
-                                        call.input["project"].as_str().unwrap_or("no project")
-                                    ),
-                                ));
-                                return ToolResult::error(format!(
-                                    "Not accepted: {problem}. Fix it and submit again."
-                                ));
-                            }
+                        // Accepted, it is what the objective explores from
+                        // now, also for a child delegated in this turn.
+                        if let Err(problem) = planner.plan(&call.input) {
+                            refusals.post(ThreadEntry::new(
+                                Kind::Result,
+                                lead.clone(),
+                                format!(
+                                    "Plans the exploration of {} (not accepted: {problem})",
+                                    call.input["project"].as_str().unwrap_or("no project")
+                                ),
+                            ));
+                            *refusal.borrow_mut() = Some(problem.clone());
+                            return ToolResult::error(format!(
+                                "Not accepted: {problem}. Fix it and submit again."
+                            ));
                         }
                     }
                     if call.name == roles::SUBMIT_PROPOSAL {
@@ -1446,10 +1441,16 @@ impl Driver {
                 }
                 roles::DELEGATE if role == Role::Lead => {
                     // Checked now; recorded and started when the turn ends.
-                    let checked = if delegated.borrow().is_some() {
-                        Err("one child at a time: you delegated one in this turn".into())
-                    } else {
-                        bounds.check(&call.input, cost.borrow().iter().map(|(_, c)| c.usd).sum())
+                    let checked = match planner {
+                        _ if delegated.borrow().is_some() => {
+                            Err("one child at a time: you delegated one in this turn".into())
+                        }
+                        Some(planner) => bounds.check(
+                            &call.input,
+                            cost.borrow().iter().map(|(_, c)| c.usd).sum(),
+                            &planner.planning.borrow(),
+                        ),
+                        None => Err("this session has no projects to delegate".into()),
                     };
                     match checked {
                         Ok(asked) => {
@@ -1700,7 +1701,6 @@ impl Driver {
             adjudicated: adjudicated.into_inner(),
             delegated: delegated.into_inner(),
             refused: refused.into_inner(),
-            target: target.into_inner(),
             said,
         })
     }
@@ -1910,6 +1910,9 @@ impl Driver {
             system: roles::instructions(Role::Lead),
             definitions: roles::lead_tools(false, self.objective.explore && self.may_delegate()),
         };
+        // A child delegated while proposing explores what the objective
+        // explores (the W13.7 repair).
+        let planner = self.planner(&lead, &base)?;
         let mut context = self.findings_brief();
         if let Some(reading) = reading {
             context = format!("{reading}\n\n{context}");
@@ -1922,7 +1925,10 @@ impl Driver {
                 brief.clone(),
                 kit.clone(),
                 attempt > 0,
-                children::Against::Proposal(&model),
+                children::Against {
+                    model: Some(&model),
+                    planner: &planner,
+                },
             )?;
             // Accepted when it was submitted, against the findings it was
             // offered and its own judgments of them.

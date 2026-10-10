@@ -26,7 +26,6 @@
 use agq_orchestrator::decide::{Answers, Decider, Decision, Failure, Question, Source, Way};
 use agq_orchestrator::explore::{
     self, Changes, Deciding, Instance, LiveInstance, Opened, Plan, Provenance, Run, Start, Step,
-    Target,
 };
 use agq_orchestrator::findings::{self, Check, Failed, Finding, Replay, State};
 use agq_orchestrator::knowledge::Knowledge;
@@ -155,7 +154,7 @@ fn plan(way: Way, seed: u64, steps: u32) -> Plan {
         usd: 1.0,
         changes: Changes::default(),
         start: "stand-in".into(),
-        target: None,
+        begin: Default::default(),
         source: None,
         conversation: false,
         // Short, so a turn that never ends takes no time in a test.
@@ -387,7 +386,7 @@ fn planted_defects_reproduce_and_a_flaky_one_does_not() {
     ] {
         let (mut studio, run) = found(defects);
         let mut finding = run.findings[0].clone();
-        findings::reproduce(&mut studio, &mut finding, 12, &mut || false);
+        findings::reproduce(&mut studio, &mut finding, 12, None, &mut || false);
         assert_eq!(
             finding.state,
             State::Reproduced,
@@ -402,7 +401,7 @@ fn planted_defects_reproduce_and_a_flaky_one_does_not() {
     let run = by_rules(&mut studio, 5, 80);
     assert_eq!(checks(&run), BTreeSet::from([Check::Answers]));
     let mut finding = run.findings[0].clone();
-    findings::reproduce(&mut studio, &mut finding, 12, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 12, None, &mut || false);
     assert_eq!(finding.state, State::NotReproduced);
     assert!(finding.note.contains("the check held"), "{}", finding.note);
     assert_eq!(finding.reduced, None);
@@ -442,7 +441,7 @@ fn reduction_keeps_only_the_steps_that_still_fail() {
         crash: true,
         ..Defects::default()
     });
-    findings::reproduce(&mut studio, &mut finding, 16, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 16, None, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     let reduced: Vec<&str> = finding
         .reduced
@@ -460,7 +459,7 @@ fn reduction_keeps_only_the_steps_that_still_fail() {
     let starts = studio.starts;
     let mut again = finding.clone();
     again.reduced = None;
-    findings::reduce(&mut studio, &mut again, 3, &mut || false);
+    findings::reduce(&mut studio, &mut again, 3, None, &mut || false);
     assert!(studio.starts - starts <= 3);
 }
 
@@ -482,14 +481,14 @@ fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
     ] {
         let (mut broken, run) = found(defects);
         let mut finding = run.findings[0].clone();
-        findings::reproduce(&mut broken, &mut finding, 10, &mut || false);
+        findings::reproduce(&mut broken, &mut finding, 10, None, &mut || false);
         assert!(
-            findings::replay(&mut broken, &finding, &mut || false).failed(),
+            findings::replay(&mut broken, &finding, None, &mut || false).failed(),
             "{defects:?}"
         );
         let mut fixed = StandIn::new(Defects::default());
         assert_eq!(
-            findings::replay(&mut fixed, &finding, &mut || false),
+            findings::replay(&mut fixed, &finding, None, &mut || false),
             Replay::Passed,
             "{defects:?}"
         );
@@ -512,13 +511,13 @@ fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
         ..Defects::default()
     });
     assert!(matches!(
-        findings::replay(&mut studio, &finding, &mut || false),
+        findings::replay(&mut studio, &finding, None, &mut || false),
         Replay::Diverged { at: 1, .. }
     ));
     finding
         .steps
         .insert(0, step(json!({ "kind": "click", "control": "History" })));
-    assert!(findings::replay(&mut studio, &finding, &mut || false).failed());
+    assert!(findings::replay(&mut studio, &finding, None, &mut || false).failed());
 }
 
 #[test]
@@ -810,7 +809,7 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
     assert_eq!(knowledge.coverage.len(), run.covered.len());
     assert_eq!(knowledge.findings.len(), 1);
     let mut finding = knowledge.findings[0].clone();
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false);
     knowledge.update(&finding);
     assert_eq!(knowledge.findings[0].state, State::Reproduced);
     // Fixed by a change: the next run's build replays it first and it passes.
@@ -822,7 +821,7 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
         .cloned()
         .collect::<Vec<_>>()
     {
-        let replay = findings::replay(&mut fixed, &finding, &mut || false);
+        let replay = findings::replay(&mut fixed, &finding, None, &mut || false);
         knowledge.replayed(&finding.identity, "b2", &replay);
     }
     assert_eq!(knowledge.findings[0].state, State::Fixed);
@@ -934,7 +933,7 @@ fn a_turn_that_never_ends_is_a_finding_and_stop_must_end_it() {
     );
     let mut finding = run.findings[0].clone();
     assert!(finding.message.contains("300 ms"), "{}", finding.message);
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     assert!(finding.note.contains("Assistant"), "{}", finding.note);
     // A turn that Stop does not end either: both, and a fresh start.
@@ -1023,7 +1022,7 @@ fn an_expectation_about_the_reply_is_recorded_never_a_finding() {
     assert_eq!(checks(&run), BTreeSet::from([Check::Expectation]));
     let mut finding = run.findings[0].clone();
     assert_eq!(finding.steps.last().unwrap().by, "wait");
-    findings::reproduce(&mut studio, &mut finding, 4, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 4, None, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     assert!(
         finding.note.contains("never the reply's wording"),
@@ -1043,7 +1042,7 @@ fn a_hang_and_an_exit_are_one_finding_and_never_pass_a_replay() {
     let mut finding = run.findings[0].clone();
     assert_eq!(finding.message, findings::ENDED);
     assert_eq!(finding.evidence["exited"], false, "it hung");
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     // A build where the same step exits instead fails the replay too.
     let mut exits = StandIn::new(Defects {
@@ -1058,7 +1057,7 @@ fn a_hang_and_an_exit_are_one_finding_and_never_pass_a_replay() {
     ];
     crashing.control = "export".into();
     crashing.identity = findings::identity(Check::Answers, "export", findings::ENDED);
-    assert!(findings::replay(&mut exits, &crashing, &mut || false).failed());
+    assert!(findings::replay(&mut exits, &crashing, None, &mut || false).failed());
 }
 
 #[test]
@@ -1071,7 +1070,7 @@ fn an_instance_that_ends_on_undo_is_found_with_the_undo() {
     let mut finding = run.findings[0].clone();
     let last = finding.steps.last().unwrap();
     assert_eq!((last.target(), last.by.as_str()), ("undo", "check"));
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
 }
 
@@ -1347,11 +1346,11 @@ fn each_refusal_kind_is_handled_as_it_means() {
         "{}",
         finding.message
     );
-    findings::reproduce(&mut kinded, &mut finding, 4, &mut || false);
+    findings::reproduce(&mut kinded, &mut finding, 4, None, &mut || false);
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     // Once it stops failing, its replay passes.
     kinded.times = 0;
-    assert!(findings::replay(&mut kinded, &finding, &mut || false).passed());
+    assert!(findings::replay(&mut kinded, &finding, None, &mut || false).passed());
 }
 
 #[test]
@@ -1523,17 +1522,10 @@ fn a_run_explores_only_a_copy_of_its_planned_project() {
 #[test]
 fn a_run_starts_where_its_plan_says() {
     let mut planned = plan(Way::Rules, 1, 5);
-    planned.target = Some(Target {
-        project: "stand-in".into(),
-        revision: "abc1234".into(),
-        goal: planned.goal.clone(),
-        scope: vec!["Shop::Store".into()],
-        start: Start {
-            view: Some("graph".into()),
-            select: Some("Shop::Store".into()),
-        },
-        vary: Vec::new(),
-    });
+    planned.begin = Start {
+        view: Some("graph".into()),
+        select: Some("Shop::Store".into()),
+    };
     let mut studio = StandIn::new(Defects::default());
     let run = by_plan_in(&mut studio, &planned);
     let first: Vec<(&str, &str)> = run
@@ -1559,7 +1551,7 @@ fn a_run_starts_where_its_plan_says() {
     assert_eq!(run.actions, 5);
     assert!(run.notes.is_empty(), "{:?}", run.notes);
     // A view it does not offer: noted, and the element still selected.
-    planned.target.as_mut().unwrap().start.view = Some("requirements-view".into());
+    planned.begin.view = Some("requirements-view".into());
     let mut studio = StandIn::new(Defects::default());
     let run = by_plan_in(&mut studio, &planned);
     assert!(
@@ -1705,7 +1697,7 @@ fn live_exploration_compared_by_way_of_deciding() {
                     .unwrap()
                     .to_string_lossy()
                     .into_owned(),
-                target: None,
+                begin: Default::default(),
                 source: None,
                 // Nothing to the instance's Assistant: it has no key of its
                 // own yet (W12.5).
@@ -1719,7 +1711,7 @@ fn live_exploration_compared_by_way_of_deciding() {
             // Each finding reproduced (a few, within a bounded number of
             // replays each).
             for finding in run.findings.iter_mut().take(4) {
-                findings::reproduce(&mut instance, finding, 6, &mut || false);
+                findings::reproduce(&mut instance, finding, 6, None, &mut || false);
             }
             drop(instance);
             let reached: Vec<&String> = task

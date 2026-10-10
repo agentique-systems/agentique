@@ -14,13 +14,13 @@
 //! them across runs. [`Instance`] is the one place tests replace the GUI;
 //! what the explorer reads from it is in `observed`.
 //!
-//! What a run explores is its plan's [`Target`] (the W13.7 repair): a
-//! project of the repository at the revision of the build explored, as the
-//! objective's lead planned it. The instance opens a copy of that project,
-//! and before its first action the run checks the copy against the plan's
-//! [`Provenance`] (the folder copied, the digest of its model files, the
-//! project the observation shows); a mismatch ends the run without acting,
-//! never a substitution.
+//! What a run explores is the project its objective's lead planned (the
+//! W13.7 repair: [`Target`]), at the revision of the build explored. The
+//! instance opens a copy of that project, and before its first action the
+//! run checks the copy against the plan's [`Provenance`] (the folder copied,
+//! the digest of its model files, the project the observation shows,
+//! [`check_copy`]); a mismatch ends the run without acting, never a
+//! substitution. Replays check their copies the same way.
 
 use crate::control::{Client, TestInstance};
 use crate::decide::{self, Answers, Decision, Question, Source, Way};
@@ -348,18 +348,25 @@ impl Start {
     }
 }
 
-/// Where a run's project comes from (C-54): a project of a checkout of a
-/// revision, with the digest of its model files there. Before its first
-/// action the run checks the copy its instance opened against it.
+/// Where a run's project comes from (C-54): the folder of a checkout of a
+/// revision its model files are copied from, with their digest there, and
+/// the project's git tree at the revision when it is known. The checkout is
+/// clean at the revision (it is made again when anything in it changed), so
+/// its files are the revision's, but for any git ignores. Explorations and
+/// replays check the copy their instance opened against it before their
+/// first action ([`check_copy`]).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Provenance {
-    /// The checkout of `revision` the project is copied from.
-    pub repository: PathBuf,
-    pub project: String,
+    /// The folder its files are copied from.
+    pub folder: PathBuf,
     pub revision: String,
-    /// [`model_digest`] of the project's model files there.
+    /// [`model_digest`] of the files there.
     pub digest: String,
+    /// `git rev-parse <revision>:<project>`: the project's identity in the
+    /// repository.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tree: Option<String>,
 }
 
 impl Provenance {
@@ -367,24 +374,19 @@ impl Provenance {
     /// digest of its model files; why not, when the checkout has no model
     /// files there.
     pub fn of(checkout: &Path, project: &str, revision: &str) -> Result<Provenance, String> {
-        let source = Provenance {
-            repository: checkout.to_path_buf(),
-            project: project.to_string(),
-            revision: revision.to_string(),
-            digest: String::new(),
-        };
-        let digest = model_digest(&source.folder()).map_err(|e| {
+        let folder = model_folder(&within(checkout, project));
+        let digest = model_digest(&folder).map_err(|e| {
             format!(
                 "the project {project} has no model at {}: {e}",
                 crate::builds::short(revision)
             )
         })?;
-        Ok(Provenance { digest, ..source })
-    }
-
-    /// The folder a copy of it takes its files from.
-    pub fn folder(&self) -> PathBuf {
-        model_folder(&within(&self.repository, &self.project))
+        Ok(Provenance {
+            folder,
+            revision: revision.to_string(),
+            digest,
+            tree: None,
+        })
     }
 }
 
@@ -397,6 +399,50 @@ pub struct Opened {
     pub folder: PathBuf,
     pub from: PathBuf,
     pub digest: String,
+}
+
+/// Whether `instance` opened a copy of `source` (the W13.7 repair): copied
+/// from its folder, with its files' digest, and shown as the project in
+/// `observation`, its first after the start. Returns what the instance
+/// said it opened, with why it does not match, if it does not. Explorations
+/// and replays check it before their first action.
+pub fn check_copy(
+    instance: &dyn Instance,
+    source: &Provenance,
+    observation: &Value,
+) -> (Option<Opened>, Result<(), String>) {
+    let Some(opened) = instance.opened() else {
+        return (
+            None,
+            Err("the instance does not say which copy it opened, so it cannot be checked".into()),
+        );
+    };
+    let revision = crate::builds::short(&source.revision);
+    let checked = if !same_folder(&opened.from, &source.folder) {
+        Err(format!(
+            "it copied {}, not {} of {revision}",
+            opened.from.display(),
+            source.folder.display()
+        ))
+    } else if opened.digest != source.digest {
+        Err(format!(
+            "its copy's files (digest {}) are not those of {revision} (digest {})",
+            opened.digest, source.digest
+        ))
+    } else {
+        match observation["project"]["folder"]
+            .as_str()
+            .or_else(|| observation["identity"]["project"].as_str())
+        {
+            Some(folder) if same_folder(Path::new(folder), &opened.folder) => Ok(()),
+            Some(folder) => Err(format!(
+                "it shows the project {folder}, not its copy {}",
+                opened.folder.display()
+            )),
+            None => Err("it shows no project open".into()),
+        }
+    };
+    (Some(opened), checked)
 }
 
 impl Instance for LiveInstance {
@@ -1572,11 +1618,10 @@ pub struct Plan {
     pub changes: Changes,
     /// The start state, as findings name it (the start project).
     pub start: String,
-    /// What it explores, as its objective's lead planned it: its project is
-    /// `start`, at the revision of the build explored. None for a run
-    /// nobody planned (an objective without a target, a test).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<Target>,
+    /// Where the explorer begins, as the lead planned it: a view opened,
+    /// an element selected, by rule after each start.
+    #[serde(default, skip_serializing_if = "Start::is_empty")]
+    pub begin: Start,
     /// Where its project comes from: the run checks its instance's copy
     /// against it before its first action, and ends when it does not match.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1945,48 +1990,19 @@ impl Explorer<'_> {
         let Some(source) = &self.plan.source else {
             return Ok(());
         };
-        let opened = self.instance.opened().ok_or_else(|| {
-            "the instance does not say which copy it opened, so it cannot be checked".to_string()
-        })?;
-        self.run.opened.get_or_insert(opened.clone());
-        let revision = crate::builds::short(&source.revision);
-        if !same_folder(&opened.from, &source.folder()) {
-            return Err(format!(
-                "it copied {}, not {} of {revision} ({})",
-                opened.from.display(),
-                source.project,
-                source.folder().display()
-            ));
+        let (opened, checked) = check_copy(self.instance, source, now);
+        // The first copy that matched, or the one that did not.
+        if checked.is_err() || self.run.opened.is_none() {
+            self.run.opened = opened;
         }
-        if opened.digest != source.digest {
-            return Err(format!(
-                "its copy's files (digest {}) are not those of {} at {revision} (digest {})",
-                opened.digest, source.project, source.digest
-            ));
-        }
-        let shown = now["project"]["folder"]
-            .as_str()
-            .or_else(|| now["identity"]["project"].as_str());
-        match shown {
-            Some(folder) if same_folder(Path::new(folder), &opened.folder) => {}
-            Some(folder) => {
-                return Err(format!(
-                    "it shows the project {folder}, not its copy {}",
-                    opened.folder.display()
-                ));
-            }
-            None => return Err("it shows no project open".into()),
-        }
-        Ok(())
+        checked
     }
 
     /// The plan's start, by rule, as the first steps after each start (a
     /// replay takes them too): its view opened, then its element selected.
     /// A view the instance does not offer is noted, not forced.
     fn start_steps(&mut self) -> Result<(), String> {
-        let Some(start) = self.plan.target.as_ref().map(|t| t.start.clone()) else {
-            return Ok(());
-        };
+        let start = self.plan.begin.clone();
         if let Some(view) = &start.view {
             let offered = candidates(&self.now, self.folder.as_deref())
                 .into_iter()
@@ -2997,7 +3013,7 @@ mod tests {
         std::fs::write(model.join(".gitignore"), "*.tmp\n").unwrap();
         std::fs::write(model.join("agentique.lock"), "").unwrap();
         let source = Provenance::of(&dir.path().join("repo"), "model", "abc").unwrap();
-        assert!(same_folder(&source.folder(), &model));
+        assert!(same_folder(&source.folder, &model));
         let copy = dir.path().join("copy").join("model");
         let copied = copy_model(&model, &copy).unwrap();
         assert_eq!(copied, source.digest);

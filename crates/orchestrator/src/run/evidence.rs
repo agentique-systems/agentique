@@ -643,7 +643,8 @@ impl Driver {
     }
 
     /// A finding replayed in a fresh test instance of `exe`, started from
-    /// its start state in `source` (the base's checkout).
+    /// its start state in `source` (the base's checkout), its copy checked
+    /// first.
     fn replay_in(
         &mut self,
         exe: &Path,
@@ -651,6 +652,13 @@ impl Driver {
         finding: &Finding,
         options: Options,
     ) -> Replay {
+        // The copy is checked against the project at the base (the W13.7
+        // repair).
+        let base = self.cycle().base.clone().unwrap_or_default();
+        let copy = match self.copy_of(source, &finding.start, &base) {
+            Ok(copy) => copy,
+            Err(reason) => return Replay::Diverged { at: 0, reason },
+        };
         let mut instance = self.setup.studios.instance(
             exe,
             &explore::within(source, &finding.start),
@@ -658,7 +666,9 @@ impl Driver {
             options,
         );
         let controls = self.controls.clone();
-        findings::replay(instance.as_mut(), finding, &mut || controls.stopped())
+        findings::replay(instance.as_mut(), finding, Some(&copy), &mut || {
+            controls.stopped()
+        })
     }
 
     /// Observation criteria in test instances of `exe` (the project is
@@ -806,20 +816,25 @@ impl Driver {
                 .unwrap_or_default(),
         };
         let areas: Vec<String> = changes.areas().into_iter().collect();
-        // The objective's target's project at the base (the W13.7 repair),
-        // or the sample when it never planned one.
-        let project = self
-            .objective
-            .target
-            .as_ref()
-            .map_or(super::explore::STARTS[0].to_string(), |t| t.project.clone());
+        // What the objective explores, at the base (the W13.7 repair); the
+        // sample for an objective that explores nothing of its own.
+        let targeted = self.objective.target.as_ref().map(|t| t.project.clone());
+        let project = targeted
+            .clone()
+            .unwrap_or_else(|| super::explore::SAMPLE.to_string());
         let base = self.cycle().base.clone().unwrap_or_default();
-        let source = match explore::Provenance::of(start, &project, &base) {
+        let source = match self.copy_of(start, &project, &base) {
             Ok(source) => source,
+            // Its project gone from the base is a failure; the sample
+            // missing (a repository without it) explores nothing.
             Err(problem) => {
                 return Outcome::new(
                     CHANGED_AREAS,
-                    "not run",
+                    if targeted.is_some() {
+                        "failed"
+                    } else {
+                        "not run"
+                    },
                     format!("it did not explore: {problem}"),
                 );
             }
@@ -842,7 +857,7 @@ impl Driver {
             usd: RULES_USD,
             changes,
             start: project.clone(),
-            target: None,
+            begin: Default::default(),
             source: Some(source),
             conversation: false,
             turn_ms: findings::TURN_BUDGET_MS,
@@ -872,6 +887,15 @@ impl Driver {
             &mut watch,
         );
         drop(instance);
+        // Another copy than the project's is never explored instead: a
+        // failure, not a criterion left unrun.
+        if let Some(why) = &run.mismatch {
+            return Outcome::new(
+                CHANGED_AREAS,
+                "failed",
+                format!("the test instance did not open {project} at the base: {why}"),
+            );
+        }
         if run.actions == 0 {
             return Outcome::new(
                 CHANGED_AREAS,

@@ -11,13 +11,19 @@
 // - WAIT-MESSAGE: the implementer waits for the Operator's message;
 // - WEAKEN: the implementer's first attempt has the test but not the fix,
 //   and its repair weakens the test until it passes anywhere;
-// - TARGET-MODEL: the lead's plans and delegations name the project
-//   `model` (the repository's own model) instead of `models/shop`;
+// - TARGET-MODEL: the lead's plans name the project `model` (the
+//   repository's own model) instead of `models/shop`; with DELEGATE, the
+//   lead first delegates without a project before any plan (which must be
+//   refused, else 11), then plans and delegates without one (the child
+//   takes the plan's project), and a child's lead first plans
+//   `models/shop` (which must be refused, else 12);
 // - VARY: the first plan permits `models/garden` too, and the plan of a
-//   second exploration names it.
+//   second exploration names it;
+// - NO-PLAN: the planning lead never plans.
 // The lead plans the History panel (of `models/shop`, a project the test
 // repository holds; a plan the Orchestrator refuses ends the script with
-// 10), proposes to fix the first reproduced
+// 10), and names that project for a child it delegates before planning;
+// it proposes to fix the first reproduced
 // finding (f1) with a test that fails on the base, and says what the
 // Operator wrote; the implementer writes the fix (FIXED, which the
 // stand-in Studio reads) and its test; the reviewer approves.
@@ -103,11 +109,18 @@ const plan = async (goal) => {
   if (planned.isError) process.exit(10);
 };
 
-if (role === "lead" && planning) {
+// Whether the objective explores a project already (the planning brief
+// says so), and whether it is a child the lead delegated.
+const targeted = o.prompt.includes("This objective explores ");
+const child = o.prompt.includes("Objective: Look closely at the History panel");
+
+if (role === "lead" && planning && here("NO-PLAN")) {
+  end("Nothing to plan.");
+} else if (role === "lead" && planning) {
   const delegating = here("DELEGATE") && o.prompt.includes("DELEGATE-ME") && !o.prompt.includes("has ended");
   if (here("DELEGATE-MANY") && (o.prompt.includes("DELEGATE-ME") || o.prompt.includes("has ended"))) {
     // Delegates in every turn until the Orchestrator refuses, then plans.
-    const answer = await call("delegate", { instruction: "Look at the History panel again", usd: 0.2, steps: 10 });
+    const answer = await call("delegate", { instruction: "Look at the History panel again", usd: 0.2, steps: 10, project });
     if (answer.isError) {
       await plan("Look at the History panel and its buttons");
       end("Planned.");
@@ -119,14 +132,26 @@ if (role === "lead" && planning) {
       const refused = await call("delegate", { instruction: "Explore everything", usd: 999, steps: 5 });
       if (!refused.isError) process.exit(7);
     }
-    await call("delegate", {
-      instruction: "Look closely at the History panel",
-      focus: "History",
-      usd: 0.3,
-      steps: 30,
-      ...(here("TARGET-MODEL") ? { project: "model" } : {}),
-    });
+    const asked = { instruction: "Look closely at the History panel", focus: "History", usd: 0.3, steps: 30 };
+    if (here("TARGET-MODEL") && !targeted) {
+      // Before any plan, a child without a project is refused; planned,
+      // it takes the plan's.
+      const unbound = await call("delegate", asked);
+      if (!unbound.isError) process.exit(11);
+      await plan("Look at the History panel and its buttons");
+      await call("delegate", asked);
+    } else if (here("TARGET-MODEL")) {
+      await call("delegate", asked);
+    } else {
+      await call("delegate", { ...asked, project });
+    }
     end("Delegated.");
+  } else if (here("TARGET-MODEL") && child) {
+    // A child explores its parent's project, and no other.
+    const other = await call("submit_exploration", { project: "models/shop", goal: "Look elsewhere" });
+    if (!other.isError) process.exit(12);
+    await plan("Look closely at the History panel");
+    end("Planned.");
   } else {
     // What the Operator wrote, given with the brief, goes into the goal.
     const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];

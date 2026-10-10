@@ -7,14 +7,18 @@
 //! explorations in a row that reproduce nothing new end the objective as
 //! "nothing new reproduced", an outcome, not a failure.
 //!
-//! The lead's plan names its target (the W13.7 repair): the project to
-//! explore, checked to hold a model at the base commit, with the goal and
-//! where useful the elements it is about and where to start. The objective
-//! records it once planned, and every later exploration (also after an
-//! adoption), child, replay and the evaluation's exploration keeps to its
-//! projects; the copy each test instance opens is checked against the
-//! project at the build's commit before the first action, and a mismatch
-//! ends the cycle, said in the thread.
+//! The lead's plan names what the objective explores (the W13.7 repair):
+//! the project, checked to hold a model at the base commit, with the goal
+//! and where useful the elements it is about and where to start. A plan the
+//! lead's turn accepts is recorded on the objective at once; a child takes
+//! it, or a project the lead names among those it permits (before the first
+//! plan, the lead must name one); later explorations (also after an
+//! adoption), replays and the evaluation's exploration keep to its
+//! projects. An exploration without a plan is asked for once more, and
+//! without one the cycle ends: nothing alternates between projects. The
+//! copy each test instance opens, for an exploration or a replay, is
+//! checked against the project at the build's commit before the first
+//! action; a mismatch acts on nothing.
 
 use super::{Driver, Next, Watch};
 use crate::builds::short;
@@ -30,78 +34,72 @@ use crate::traceability;
 use agq_assistant::turn::Toolset;
 use agq_providers::{Credential, ModelRef};
 use serde_json::Value;
-use std::path::PathBuf;
+use std::cell::RefCell;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-/// The start states explorations alternate between (C-54) when no target
-/// was ever planned (an objective whose lead gave no plan): a copy of the
-/// URL shortener sample, and of Agentique's own model as a project.
-pub const STARTS: [&str; 2] = ["models/url-shortener", "model"];
+/// The project an objective's evaluation explores when the objective
+/// explores nothing of its own (it has no target): the URL shortener
+/// sample. An objective that explores always has its lead's target.
+pub const SAMPLE: &str = "models/url-shortener";
 
-/// What the lead's plan of an exploration is checked against in its
-/// session (C-54, the W13.7 repair): the base commit's projects, the
-/// objective's recorded target, and where a project's model is read (a
-/// checkout of the base in which nothing ran, and a scratch folder).
-pub(super) struct Planned {
-    pub projects: Vec<String>,
-    pub revision: String,
-    pub recorded: Option<Target>,
-    pub checkout: PathBuf,
-    pub scratch: PathBuf,
+/// What the lead's turn checks a plan of an exploration and a child's
+/// project against (C-54, the W13.7 repair): the planning (the base
+/// commit's projects, the commit, and what the objective explores so far,
+/// which a plan it accepts becomes at once), and where a project's model is
+/// read to resolve a plan's names (a checkout of the base in which nothing
+/// ran, and a scratch folder).
+pub(super) struct Planner {
+    pub planning: RefCell<roles::Planning>,
+    checkout: PathBuf,
+    scratch: PathBuf,
 }
 
-impl Planned {
-    fn planning(&self) -> roles::Planning<'_> {
-        roles::Planning {
-            projects: &self.projects,
-            revision: &self.revision,
-            recorded: self.recorded.as_ref(),
-        }
-    }
-
-    /// The lead's `submit_exploration`, checked: its target, with the names
-    /// of its scope and start resolved in the project's model at the base
-    /// commit; or why not.
-    pub fn check(&self, input: &Value) -> Result<Target, String> {
-        let target = roles::read_exploration(input, &self.planning())?;
-        let names: Vec<&String> = target
+impl Planner {
+    /// The lead's `submit_exploration`, checked (its names resolved in the
+    /// project's model at the base commit) and accepted: what the objective
+    /// explores from now; or why not.
+    pub fn plan(&self, input: &Value) -> Result<Target, String> {
+        let planned = roles::read_exploration(input, &self.planning.borrow())?;
+        let names: Vec<&String> = planned
             .scope
             .iter()
-            .chain(target.start.select.iter())
+            .chain(planned.start.select.iter())
             .collect();
         if !names.is_empty() {
             let model =
-                traceability::project_model(&self.checkout, &target.project, &self.scratch)?;
+                traceability::project_model(&self.checkout, &planned.project, &self.scratch)?;
             let unknown = traceability::unknown(&model, names);
             if !unknown.is_empty() {
                 return Err(format!(
                     "{} {} not an element of the model of {} at {}",
                     unknown.join(", "),
                     if unknown.len() == 1 { "is" } else { "are" },
-                    target.project,
-                    crate::builds::short(&self.revision)
+                    planned.project,
+                    short(&planned.revision)
                 ));
             }
         }
-        Ok(target)
+        Ok(self.planning.borrow_mut().accept(planned))
     }
 
     /// What the lead is told of the projects it may name.
     fn brief(&self) -> String {
-        let projects = if self.projects.is_empty() {
+        let planning = self.planning.borrow();
+        let projects = if planning.projects.is_empty() {
             "none".to_string()
         } else {
-            self.projects.join(", ")
+            planning.projects.join(", ")
         };
-        match &self.recorded {
+        match &planning.target {
             Some(target) => format!(
-                "This objective explores {} (its target, recorded when its exploration was first planned): `project` names {}.\nProjects at this commit: {projects}.",
+                "This objective explores {}, as its first plan recorded: `project` names {}, and a child explores it unless you name another of them.\nProjects at this commit: {projects}.",
                 target.line(),
                 target.projects().join(" or ")
             ),
             None => format!(
-                "Projects at this commit (`project` names the one the objective is about; `model` is Agentique's own model): {projects}."
+                "Projects at this commit (`project` names the one the objective is about; `model` is Agentique's own model): {projects}. A child you delegate before planning needs its `project`."
             ),
         }
     }
@@ -322,15 +320,17 @@ impl Driver {
             if self.controls.stopped() {
                 return Err("stopped".into());
             }
-            let start = explore::within(&checkout, &fixed.start);
+            let source = self.copy_of(&checkout, &fixed.start, &built.commit)?;
             let mut instance = self.setup.studios.instance(
                 &built.exe,
-                &start,
+                &explore::within(&checkout, &fixed.start),
                 &self.folder("replay"),
                 options.clone(),
             );
             let controls = self.controls.clone();
-            let replay = findings::replay(instance.as_mut(), fixed, &mut || controls.stopped());
+            let replay = findings::replay(instance.as_mut(), fixed, Some(&source), &mut || {
+                controls.stopped()
+            });
             drop(instance);
             Knowledge::change(&file, &project, |k| {
                 k.replayed(&fixed.identity, &built.build, &replay)
@@ -370,17 +370,27 @@ impl Driver {
             .iter()
             .map(|c| c.explorations.len() as u32)
             .sum();
-        // The target's project at the build's commit; only an objective
-        // whose lead never planned one alternates between the samples.
-        let target = self.objective.target.clone().map(|target| Target {
-            revision: built.commit.clone(),
-            ..target
-        });
-        let start = match &target {
-            Some(target) => target.project.clone(),
-            None => STARTS[((self.cycle().n + n) % 2) as usize].to_string(),
-        };
-        let source = Provenance::of(&checkout, &start, &built.commit)?;
+        // What the objective explores, at the build's commit; nothing
+        // alternates (the W13.7 repair). A scope and start planned at
+        // another commit are not taken over unchecked.
+        let mut target = self
+            .objective
+            .target
+            .clone()
+            .ok_or("no project was planned for this exploration")?;
+        let mut dropped = String::new();
+        if target.revision != built.commit && !(target.scope.is_empty() && target.start.is_empty())
+        {
+            dropped = format!(
+                "\nIts scope and start were planned at {}, not this commit: left out.",
+                short(&target.revision)
+            );
+            target.scope.clear();
+            target.start = Default::default();
+        }
+        target.revision = built.commit.clone();
+        let start = target.project.clone();
+        let source = self.copy_of(&checkout, &start, &built.commit)?;
         let changes = self.changes_since(knowledge.last_commit(), &base);
         let budgets = &self.objective.budgets;
         let left_usd = budgets.usd_left(self.objective.spent.usd);
@@ -404,7 +414,7 @@ impl Driver {
             usd: run_usd,
             changes,
             start: start.clone(),
-            target,
+            begin: target.start.clone(),
             source: Some(source.clone()),
             conversation: options.key.is_some(),
             turn_ms: findings::TURN_BUDGET_MS,
@@ -429,13 +439,10 @@ impl Driver {
                 ),
             )
             .with_details(format!(
-                "{}\nCopied from {} (model files' digest {}).\nRecent changes: {}",
-                match &plan.target {
-                    Some(target) => format!("Target: {}", target.line()),
-                    None => "No target was planned: the start alternates between the samples."
-                        .to_string(),
-                },
-                source.folder().display(),
+                "Explores {}{dropped}\nCopied from {} (the project's tree {}; its model files' digest {}).\nRecent changes: {}",
+                target.line(),
+                source.folder.display(),
+                source.tree.as_deref().unwrap_or("not known"),
                 source.digest,
                 if plan.changes.paths.is_empty() {
                     "none known".to_string()
@@ -486,11 +493,10 @@ impl Driver {
                     ),
                 )
                 .with_details(format!(
-                    "Planned: {} at {} (digest {}), copied from {}.\nOpened: {}",
-                    source.project,
+                    "Planned: {start} at {} (digest {}), copied from {}.\nOpened: {}",
                     source.revision,
                     source.digest,
-                    source.folder().display(),
+                    source.folder.display(),
                     match &run.opened {
                         Some(opened) => format!(
                             "{} from {} (digest {})",
@@ -703,6 +709,7 @@ impl Driver {
                 return Err("stopped".into());
             }
             let mut finding = self.cycle().findings[i].clone();
+            let source = self.copy_of(&checkout, &finding.start, &built.commit)?;
             let mut instance = self.setup.studios.instance(
                 &built.exe,
                 &explore::within(&checkout, &finding.start),
@@ -710,9 +717,13 @@ impl Driver {
                 options.clone(),
             );
             let controls = self.controls.clone();
-            findings::reproduce(instance.as_mut(), &mut finding, REPLAYS, &mut || {
-                controls.stopped()
-            });
+            findings::reproduce(
+                instance.as_mut(),
+                &mut finding,
+                REPLAYS,
+                Some(&source),
+                &mut || controls.stopped(),
+            );
             drop(instance);
             if self.controls.stopped() {
                 return Err("stopped".into());
@@ -776,6 +787,7 @@ impl Driver {
             known.state = Found::Open;
             known.replays.clear();
             known.reduced = None;
+            let source = self.copy_of(&checkout, &known.start, &built.commit)?;
             let mut instance = self.setup.studios.instance(
                 &built.exe,
                 &explore::within(&checkout, &known.start),
@@ -783,9 +795,13 @@ impl Driver {
                 self.explore_options(),
             );
             let controls = self.controls.clone();
-            findings::reproduce(instance.as_mut(), &mut known, REPLAYS, &mut || {
-                controls.stopped()
-            });
+            findings::reproduce(
+                instance.as_mut(),
+                &mut known,
+                REPLAYS,
+                Some(&source),
+                &mut || controls.stopped(),
+            );
             drop(instance);
             if self.controls.stopped() {
                 return Err("stopped".into());
@@ -878,14 +894,16 @@ impl Driver {
             .count()
     }
 
-    /// The lead plans the exploration: its target (the project to explore,
-    /// the goal, where useful the elements it is about and where to start),
-    /// checked when submitted and recorded on the objective, and its
-    /// directive to the explorer, after any child it delegates. Without a
-    /// plan, the explorer's goal is the objective's intent, toward the
-    /// target recorded before if there is one. An objective two deep has no
-    /// plan of its lead's: its goal is its intent, toward the target it
-    /// inherited.
+    /// The lead plans the exploration: what the objective explores (the
+    /// project, the goal, where useful the elements it is about and where
+    /// to start), checked when submitted and recorded on the objective as
+    /// soon as it is accepted, and its directive to the explorer, after any
+    /// child it delegates. A lead that plans nothing is asked once more
+    /// (with why its plan was refused, if it was); without a plan, an
+    /// objective that already explores a project goes on toward its intent,
+    /// and one that does not ends the cycle (the W13.7 repair: no project
+    /// is chosen for it). An objective two deep has no plan of its lead's:
+    /// its goal is its intent, on the project it was given.
     fn plan_exploration(&mut self) -> Result<String, String> {
         let n = self.cycle().n;
         let explored = self.cycle().explorations.len() + 1;
@@ -906,47 +924,61 @@ impl Driver {
         }
         let base = self.cycle_base()?;
         let lead = self.checkout("lead", &base)?;
-        let planned = Planned {
-            projects: traceability::projects(&self.objective.repository, &base)?,
-            revision: base.clone(),
-            recorded: self.objective.target.clone(),
-            checkout: lead.clone(),
-            scratch: self.folder("project-model"),
-        };
+        let planner = self.planner(&lead, &base)?;
         let policy = self.policy(&lead, false, false);
-        let context = format!(
-            "Plan this cycle's exploration (exploration {explored} of cycle {n}).\n\n{}\n\n{}",
-            planned.brief(),
-            self.testing_summary()
-        );
-        let brief = roles::brief(Role::Lead, &self.objective, &context);
         let kit = Toolset {
             system: roles::planning_instructions(),
             definitions: roles::lead_tools(true, self.may_delegate()),
         };
-        let session = self.lead(
-            &lead,
-            policy,
-            brief,
-            kit,
-            false,
-            super::children::Against::Plan(&planned),
-        )?;
-        let (goal, text, details) = match session.target {
-            Some(target) => {
-                let goal = target.goal.clone();
-                let details = format!("Target: {}", target.line());
-                self.record_target(target);
-                (goal.clone(), format!("Explore: {goal}"), details)
-            }
-            None => (
-                intent.clone(),
-                "Explore toward the objective (the lead gave no other goal)".to_string(),
-                match &self.objective.target {
-                    Some(target) => format!("Target: {}", target.line()),
-                    None => String::new(),
-                },
+        let before = self.objective.target.clone();
+        let mut brief = roles::brief(
+            Role::Lead,
+            &self.objective,
+            &format!(
+                "Plan this cycle's exploration (exploration {explored} of cycle {n}).\n\n{}\n\n{}",
+                planner.brief(),
+                self.testing_summary()
             ),
+        );
+        for attempt in 0..2 {
+            let session = self.lead(
+                &lead,
+                policy.clone(),
+                brief,
+                kit.clone(),
+                attempt > 0,
+                super::children::Against {
+                    model: None,
+                    planner: &planner,
+                },
+            )?;
+            let planned = planner.planning.borrow().target.clone();
+            if planned != before || self.objective.target.is_some() || self.over().is_some() {
+                break;
+            }
+            brief = format!(
+                "You ended without a plan that was accepted{}. Plan this exploration with submit_exploration: an objective explores only the project its lead names.\n\n{}",
+                session
+                    .refusal
+                    .map(|why| format!(" (the last was refused: {why})"))
+                    .unwrap_or_default(),
+                planner.brief()
+            );
+        }
+        let planned = planner.planning.borrow().target.clone();
+        let Some(target) = self.objective.target.clone() else {
+            return Err(
+                "the lead planned no exploration: an objective explores only a project its lead names"
+                    .into(),
+            );
+        };
+        let (goal, text) = if planned != before {
+            (target.goal.clone(), format!("Explore: {}", target.goal))
+        } else {
+            (
+                intent,
+                "Explore toward the objective (the lead gave no other goal)".to_string(),
+            )
         };
         self.direct(
             "lead",
@@ -959,29 +991,38 @@ impl Driver {
             },
             Some(handed),
             text,
-            details,
+            format!("Explores {}", target.line()),
         );
         Ok(goal)
     }
 
-    /// Records the lead's plan as the objective's target (C-54, the W13.7
-    /// repair). The projects it may explore are those of its first plan: a
-    /// later plan names one of them (checked when submitted), and the target
-    /// keeps the others in `vary`.
-    fn record_target(&mut self, planned: Target) {
-        let permitted: Vec<String> = match &self.objective.target {
-            Some(recorded) => recorded.projects(),
-            None => planned.projects(),
-        }
-        .into_iter()
-        .map(str::to_string)
-        .collect();
-        let vary = permitted
-            .into_iter()
-            .filter(|p| *p != planned.project)
-            .collect();
-        self.objective.target = Some(Target { vary, ..planned });
-        self.save();
+    /// What the lead's turn checks plans and children against: the base
+    /// commit's projects, read by its tree, and what the objective explores
+    /// so far; a project's model is read in `lead`, a checkout of `base`.
+    pub(super) fn planner(&self, lead: &Path, base: &str) -> Result<Planner, String> {
+        Ok(Planner {
+            planning: RefCell::new(roles::Planning {
+                projects: traceability::projects(&self.objective.repository, base)?,
+                revision: base.to_string(),
+                target: self.objective.target.clone(),
+            }),
+            checkout: lead.to_path_buf(),
+            scratch: self.folder("project-model"),
+        })
+    }
+
+    /// Where a copy of `project` of `checkout` (a checkout of `revision`)
+    /// comes from: its folder, its files' digest, and the project's tree in
+    /// the repository when git knows it.
+    pub(super) fn copy_of(
+        &self,
+        checkout: &Path,
+        project: &str,
+        revision: &str,
+    ) -> Result<Provenance, String> {
+        let mut source = Provenance::of(checkout, project, revision)?;
+        source.tree = traceability::project_tree(&self.objective.repository, revision, project);
+        Ok(source)
     }
 
     /// Whether the objective explores `project`: one of its target's, or

@@ -234,7 +234,7 @@ fn delegate() -> Value {
             "properties": {
                 "instruction": { "type": "string", "description": "What the child explores and why." },
                 "focus": { "type": "string", "description": "The area, in the words of the screens and panels." },
-                "project": { "type": "string", "description": "The project the child explores. Leave it out to give it this objective's target; another must be one this objective may explore (its target's, or before it has one, a project the brief lists)." },
+                "project": { "type": "string", "description": "The project the child explores, one this objective may explore. Needed before you plan this exploration with submit_exploration (a project the brief lists); after, leave it out to give the child the project you planned." },
                 "usd": { "type": "number", "description": "Its spend budget in US dollars: more than nothing, and within what is left of this objective's when this objective has a spend limit." },
                 "steps": { "type": "integer", "description": "Its exploration's actions, at most this objective's step budget." }
             },
@@ -579,30 +579,34 @@ fn finding_of(given: &Given, id: &str) -> Result<String, String> {
         })
 }
 
-/// What a lead's plan of an exploration is checked against (C-54, the
-/// W13.7 repair): the projects of the base commit, that commit, and the
-/// objective's target if one is recorded (a later plan keeps to its
-/// projects).
-pub struct Planning<'a> {
-    pub projects: &'a [String],
-    pub revision: &'a str,
-    pub recorded: Option<&'a Target>,
+/// What a lead's plan of an exploration and a child's project are checked
+/// against (C-54, the W13.7 repair): the projects of the base commit (the
+/// folders that hold a model's files, as the repository lists them), that
+/// commit, and what the objective explores so far: its recorded target, or
+/// a plan accepted earlier in the lead's turn, which [`Planning::accept`]
+/// makes it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Planning {
+    pub projects: Vec<String>,
+    pub revision: String,
+    pub target: Option<Target>,
 }
 
-impl Planning<'_> {
-    /// The projects a plan or a child may name: the recorded target's, or
-    /// before there is one, every project of the base commit.
+impl Planning {
+    /// The projects a plan or a child may name: the target's, or before
+    /// there is one, every project of the base commit.
     pub fn permitted(&self) -> Vec<String> {
-        match self.recorded {
+        match &self.target {
             Some(target) => target.projects().into_iter().map(str::to_string).collect(),
-            None => self.projects.to_vec(),
+            None => self.projects.clone(),
         }
     }
 
-    /// `project` as the repository names it (`/` between folders), if it
-    /// is one a plan may name; else why not, with those it may.
-    pub fn project(&self, project: &str) -> Result<String, String> {
-        let named = project.trim().replace('\\', "/");
+    /// `named` as the repository lists it (a project folder, or the one of
+    /// its model folder), if a plan may name it; else why not: outside the
+    /// target's projects, or holding no model at the commit.
+    pub fn project(&self, named: &str) -> Result<String, String> {
+        let named = named.trim().replace('\\', "/");
         let named = named.trim_end_matches('/').to_string();
         if named.is_empty() {
             return Err("name the project to explore".into());
@@ -612,37 +616,101 @@ impl Planning<'_> {
                 "`{named}` is not a folder of the repository: name one as the brief lists it"
             ));
         }
-        let exists =
-            self.projects.contains(&named) || self.projects.contains(&format!("{named}/model"));
-        let permitted = self.permitted();
-        if !exists {
-            return Err(format!(
+        let listed = [named.clone(), format!("{named}/model")]
+            .into_iter()
+            .find(|form| self.projects.contains(form));
+        let held = || {
+            format!(
                 "`{named}` holds no model at {}: the projects are {}",
-                crate::builds::short(self.revision),
+                crate::builds::short(&self.revision),
                 if self.projects.is_empty() {
                     "none".to_string()
                 } else {
                     self.projects.join(", ")
                 }
-            ));
+            )
+        };
+        match &self.target {
+            Some(target) => {
+                let form = listed.clone().unwrap_or(named.clone());
+                let permitted = self.permitted();
+                if !permitted.contains(&form) {
+                    return Err(format!(
+                        "this objective explores {}, as its first plan recorded: name {}",
+                        target.line(),
+                        permitted.join(" or ")
+                    ));
+                }
+                listed.ok_or_else(held)
+            }
+            None => listed.ok_or_else(held),
         }
-        if !permitted.contains(&named) {
-            return Err(format!(
-                "this objective explores {}, as its first plan recorded: name {}",
-                self.recorded.map(Target::line).unwrap_or_default(),
-                permitted.join(" or ")
-            ));
+    }
+
+    /// Makes `planned` what the objective explores, and returns it as it is
+    /// recorded: the projects it may explore stay those of its first plan
+    /// (`vary` holds the others).
+    pub fn accept(&mut self, planned: Target) -> Target {
+        let permitted: Vec<String> = match &self.target {
+            Some(target) => target.projects(),
+            None => planned.projects(),
         }
-        Ok(named)
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let vary = permitted
+            .into_iter()
+            .filter(|p| *p != planned.project)
+            .collect();
+        let accepted = Target { vary, ..planned };
+        self.target = Some(accepted.clone());
+        accepted
+    }
+
+    /// The target of a child the lead delegates to explore `instruction`:
+    /// on the project it names (one the objective may explore) or else the
+    /// objective's, without other projects. Before the objective has a
+    /// target, the lead must name the project.
+    pub fn child(&self, named: Option<&str>, instruction: &str) -> Result<Target, String> {
+        let named = named.map(str::trim).filter(|n| !n.is_empty());
+        let project = match (named, &self.target) {
+            (Some(named), _) => self.project(named)?,
+            (None, Some(target)) => target.project.clone(),
+            (None, None) => {
+                return Err(format!(
+                    "this objective has no project to explore yet: name the child's `project` ({}), or plan the exploration with submit_exploration first",
+                    if self.projects.is_empty() {
+                        "none at this commit".to_string()
+                    } else {
+                        self.projects.join(", ")
+                    }
+                ));
+            }
+        };
+        // What the plan said about its own project only.
+        let (scope, start) = match &self.target {
+            Some(target) if target.project == project => {
+                (target.scope.clone(), target.start.clone())
+            }
+            _ => (Vec::new(), Default::default()),
+        };
+        Ok(Target {
+            project,
+            revision: self.revision.clone(),
+            goal: instruction.to_string(),
+            scope,
+            start,
+            vary: Vec::new(),
+        })
     }
 }
 
 /// A plan from `submit_exploration`'s input, checked against `planning`
 /// (C-54, the W13.7 repair): a project the objective may explore (one of
-/// the base commit's; after the first plan, one of the recorded target's),
-/// a goal, other projects only among those, a view as a command's id. The
-/// names of `scope` and `start.select` are the caller's to resolve in the
-/// project's model. Its revision is the base commit.
+/// the base commit's; once it has a target, one of the target's), a goal,
+/// other projects only among those, a view as a command's id. The names of
+/// `scope` and `start.select` are the caller's to resolve in the project's
+/// model. Its revision is the base commit.
 pub fn read_exploration(input: &Value, planning: &Planning) -> Result<Target, String> {
     let project = planning.project(input["project"].as_str().unwrap_or_default())?;
     let goal = input["goal"].as_str().unwrap_or_default().trim();
@@ -691,7 +759,7 @@ pub fn read_exploration(input: &Value, planning: &Planning) -> Result<Target, St
     }
     Ok(Target {
         project,
-        revision: planning.revision.to_string(),
+        revision: planning.revision.clone(),
         goal: goal.to_string(),
         scope: texts(&input["scope"]),
         start,
@@ -1365,20 +1433,22 @@ mod tests {
     }
 
     /// The W13.7 repair: a plan names a project of the base commit (as the
-    /// repository names it), a goal, other projects only among those, and a
-    /// view as a command's id; once the objective has a target, a later plan
-    /// keeps to its projects and cannot widen them.
+    /// repository lists it, `X` meaning `X/model` where that is listed), a
+    /// goal, other projects only among those, and a view as a command's id;
+    /// once the objective has a target, a later plan keeps to its projects
+    /// and cannot widen them, and is told so first.
     #[test]
     fn a_plan_names_a_project_of_the_commit_and_keeps_to_its_target() {
         let projects = vec![
-            "model".to_string(),
+            "examples/shop/model".to_string(),
+            "model".into(),
             "models/garden".into(),
             "models/shop".into(),
         ];
-        let planning = Planning {
-            projects: &projects,
-            revision: "abc1234",
-            recorded: None,
+        let mut planning = Planning {
+            projects: projects.clone(),
+            revision: "abc1234".into(),
+            target: None,
         };
         let plan = read_exploration(
             &json!({
@@ -1402,11 +1472,18 @@ mod tests {
         assert_eq!(plan.vary, vec!["model".to_string()]);
         assert_eq!(plan.start.view.as_deref(), Some("requirements-view"));
         assert_eq!(plan.projects(), vec!["models/shop", "model"]);
+        // A project folder whose model folder is listed: as listed.
+        let examples = read_exploration(
+            &json!({ "project": "examples/shop", "goal": "Look" }),
+            &planning,
+        )
+        .unwrap();
+        assert_eq!(examples.project, "examples/shop/model");
         for (input, why) in [
             (json!({ "goal": "Look" }), "name the project"),
             (
                 json!({ "project": "models/none", "goal": "Look" }),
-                "holds no model at abc1234: the projects are model, models/garden, models/shop",
+                "holds no model at abc1234: the projects are examples/shop/model, model, models/garden, models/shop",
             ),
             (
                 json!({ "project": "../model", "goal": "Look" }),
@@ -1429,31 +1506,36 @@ mod tests {
             let refused = read_exploration(&input, &planning).unwrap_err();
             assert!(refused.contains(why), "{refused}");
         }
-        // Recorded: a later plan names one of its projects, nothing more.
-        let recorded = Planning {
-            projects: &projects,
-            revision: "def5678",
-            recorded: Some(&plan),
-        };
+        // Accepted: the projects it may explore are its first plan's.
+        let recorded = planning.accept(plan.clone());
+        assert_eq!(recorded, plan);
+        planning.revision = "def5678".into();
         let later =
-            read_exploration(&json!({ "project": "model", "goal": "Again" }), &recorded).unwrap();
+            read_exploration(&json!({ "project": "model", "goal": "Again" }), &planning).unwrap();
         assert_eq!(
             (later.project.as_str(), later.revision.as_str()),
             ("model", "def5678")
         );
-        let other = read_exploration(
-            &json!({ "project": "models/garden", "goal": "Elsewhere" }),
-            &recorded,
-        )
-        .unwrap_err();
-        assert!(
-            other.contains("this objective explores models/shop") && other.contains("model"),
-            "{other}"
+        assert_eq!(
+            planning.accept(later).vary,
+            vec!["models/shop".to_string()],
+            "the others stay permitted"
         );
+        // Outside them, existing or not, the target is what it is told.
+        for other in ["models/garden", "models/none"] {
+            let refused =
+                read_exploration(&json!({ "project": other, "goal": "Elsewhere" }), &planning)
+                    .unwrap_err();
+            assert!(
+                refused.contains("this objective explores model at def5678")
+                    && refused.contains("name model or models/shop"),
+                "{refused}"
+            );
+        }
         assert!(
             read_exploration(
                 &json!({ "project": "model", "goal": "Wider", "vary": ["models/garden"] }),
-                &recorded
+                &planning
             )
             .is_err(),
             "a later plan cannot widen its projects"
@@ -1462,6 +1544,49 @@ mod tests {
         let schema = submit_exploration();
         let required = schema["input_schema"]["required"].as_array().unwrap();
         assert!(required.contains(&json!("project")) && required.contains(&json!("goal")));
+    }
+
+    /// The W13.7 repair: a child explores a project its parent may explore:
+    /// the one the lead names, or else the parent's target's (its scope and
+    /// start with it, on that project only, and no other projects); before
+    /// the parent has a target the lead must name it.
+    #[test]
+    fn a_child_explores_its_parents_target_or_a_project_the_lead_names() {
+        let projects = vec!["model".to_string(), "models/shop".into()];
+        let mut planning = Planning {
+            projects,
+            revision: "abc1234".into(),
+            target: None,
+        };
+        let unbound = planning.child(None, "Look closer").unwrap_err();
+        assert!(
+            unbound.contains("name the child's `project` (model, models/shop)")
+                && unbound.contains("submit_exploration first"),
+            "{unbound}"
+        );
+        let named = planning.child(Some("models/shop"), "Look closer").unwrap();
+        assert_eq!(
+            (named.project.as_str(), named.goal.as_str()),
+            ("models/shop", "Look closer")
+        );
+        planning.accept(Target {
+            project: "model".into(),
+            revision: "abc1234".into(),
+            goal: "Look".into(),
+            scope: vec!["A::b".into()],
+            start: crate::explore::Start {
+                view: Some("requirements-view".into()),
+                select: None,
+            },
+            vary: vec!["models/shop".into()],
+        });
+        let inherited = planning.child(None, "Look closer").unwrap();
+        assert_eq!(inherited.project, "model");
+        assert_eq!(inherited.scope, vec!["A::b".to_string()]);
+        assert!(inherited.vary.is_empty(), "a child explores one project");
+        let other = planning.child(Some("models/shop"), "Look there").unwrap();
+        assert!(other.scope.is_empty() && other.start.is_empty());
+        assert!(planning.child(Some("models/none"), "x").is_err());
     }
 
     /// C-55: a review states both judgments; a blank one is refused.

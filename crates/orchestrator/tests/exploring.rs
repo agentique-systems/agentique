@@ -478,11 +478,14 @@ fn two_explorations_without_a_new_problem_end_the_objective() {
 }
 
 /// The W13.7 repair, end to end: the lead names Agentique's own model
-/// (`model`) as its plan's project. The objective records that target once;
-/// every exploration of both cycles, each child the lead delegates, the
-/// reproduction's replays and the evaluation's replay start from a copy of
-/// `model` at the cycle's base build, each copy checked against it before
-/// the first action, and nothing alternates to another project.
+/// (`model`) as its plan's project. Before that plan, a child it delegates
+/// without a project is refused; once planned, a child it delegates without
+/// one takes `model`, and a child's lead that names another project is
+/// refused. The objective records the plan; every exploration of both
+/// cycles, each child, the reproduction's replays and the evaluation's
+/// replay start from a copy of `model` at the cycle's base build, each copy
+/// checked against it before the first action, and nothing alternates to
+/// another project.
 #[test]
 fn every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project() {
     let Ok(node) = find_node() else {
@@ -540,16 +543,40 @@ fn every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project(
             _ => None,
         })
         .collect();
-    assert!(!children.is_empty(), "{}", texts(&seen));
+    assert_eq!(children.len(), 2, "one a cycle: {}", texts(&seen));
     for child in &children {
-        assert_eq!(
-            child.target.as_ref().map(|t| t.project.as_str()),
-            Some("model")
-        );
+        let target = child.target.as_ref().expect("a child's target");
+        assert_eq!(target.project, "model");
+        assert!(target.vary.is_empty(), "a child explores one project");
+        assert!(!child.cycles[0].explorations.is_empty());
         for exploration in child.cycles.iter().flat_map(|c| &c.explorations) {
             assert_eq!(exploration.start, "model");
         }
+        // Its lead named another project: refused, and it planned `model`.
+        let theirs = store.thread(&child.id, 0);
+        assert!(
+            theirs.iter().any(|e| e.text.starts_with(
+                "Plans the exploration of models/shop (not accepted: this objective explores model"
+            )),
+            "{}",
+            texts(&theirs)
+        );
     }
+    // Before the first plan, a child without a project was refused.
+    let unbound: Vec<&String> = record
+        .directives
+        .iter()
+        .filter_map(|d| match &d.status {
+            DirectiveStatus::Refused { reason } => Some(reason),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(unbound.len(), 1, "{unbound:?}");
+    assert!(
+        unbound[0].contains("no project to explore yet")
+            && unbound[0].contains("submit_exploration first"),
+        "{unbound:?}"
+    );
     // Every test instance (explorations, replays, the evaluation's replay)
     // started from the checkout's `model`.
     let log = log.lock().unwrap().clone();
@@ -591,6 +618,53 @@ fn every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project(
         !all.iter().any(|e| e.text.contains("url-shortener")),
         "{}",
         texts(&all)
+    );
+}
+
+/// The W13.7 repair: a lead that plans no project is asked once more, and
+/// without a plan the cycle ends: no project is chosen for it, and nothing
+/// is explored.
+#[test]
+fn a_lead_that_plans_no_project_ends_the_cycle_without_exploring() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["NO-PLAN"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, log) = setup_with(dir.path(), &store, node, true);
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Failed, "{}", texts(&seen));
+    assert!(record.target.is_none());
+    let cycle = record.cycle().unwrap();
+    assert!(cycle.explorations.is_empty());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .contains("the lead planned no exploration"),
+        "{:?}",
+        cycle.blocker
+    );
+    // Asked twice: its session started, then resumed.
+    let sessions = seen
+        .iter()
+        .filter(|e| {
+            matches!(&e.author, Author::Agent { role, .. } if role == "lead")
+                && (e.text.starts_with("Starts its session")
+                    || e.text.starts_with("Resumes its session"))
+        })
+        .count();
+    assert_eq!(sessions, 2, "{}", texts(&seen));
+    assert!(!seen.iter().any(|e| e.text.starts_with("Explores ")));
+    assert!(
+        log.lock().unwrap().iter().all(|l| !l.starts_with("start ")),
+        "no test instance started"
     );
 }
 
@@ -1404,7 +1478,7 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
         usd: 0.01,
         changes: Changes::default(),
         start: "models/url-shortener".into(),
-        target: None,
+        begin: Default::default(),
         source: None,
         conversation: false,
         turn_ms: 10_000,

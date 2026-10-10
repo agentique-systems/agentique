@@ -618,7 +618,7 @@ mod tests {
                 usd: 0.1,
                 changes: Default::default(),
                 start: "url-shortener".into(),
-                target: None,
+                begin: Default::default(),
                 source: None,
                 conversation: false,
                 turn_ms: 1000,

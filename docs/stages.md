@@ -2092,7 +2092,7 @@ it). Read against the code and the model before any change:
 | W13.6 A second system | #122 | In review (below) |
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | — | In progress (`stage13/start`) |
 | W13.7 Proof | — | Started: blocked by W13.8 (below) |
-| W13.7 repairs: exploration (E1 the target, E2 progress and time, E3 engineering questions) | — | E1 in review (`stage13/explore-target`, below) |
+| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130 | E1 in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2402,36 +2402,49 @@ relevant; decisions took p50 49 s, p95 120 s, and a 20-step exploration
 showed nothing for 11 to 16 minutes; the only finding was a wrong
 expectation, and nothing tested the engineering question).
 
-*E1, the target* (`stage13/explore-target`; the Orchestrator's lock
-confirmed for its docs on the Operator's instruction for these repairs).
-The lead's `submit_exploration` names its `project` (a folder of the
-repository that holds a model's `.sysml` files at the base commit; the
-brief lists them, `model` being Agentique's own), the goal and, where
-useful, `scope` (elements of that project's model, resolved at the
-commit through a fresh repository holding a copy of its files), `start`
-(a view's command and an element to select, carried out by rule as the
-first steps after each start, so replays take them too) and `vary` (other
-projects, only when the objective asks for several); a project that holds
-no model, a name that does not resolve or a view that is not a command's
-id is refused with the reason and the projects there are. The objective
-records the target once planned (`target`, optional in `objective.json`);
-a later plan keeps to its projects, a child takes the parent's target (or
-a project the lead names among them), and every later exploration (also
-after an adoption), the replays of fixed and known findings (only those of
-its projects) and the evaluation's exploration of the changed areas use
-its project at the build's commit; only an objective whose lead never
-planned one alternates between the samples as before, saying so. Each run
-records where its project came from (the checkout, the project, the
-revision and the digest of its model files) and the copy its instance
-opened; before the first action the copy is checked (copied from that
-folder, the same digest, the project the observation shows), and a
-mismatch acts on nothing and ends the cycle with what was planned and
-what was opened in the thread. Tests: the stand-in harness's regression
-(`every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project`:
-two cycles, two children, the replays, all on `model` at the base), a copy
-of other files ends the cycle, the engine's checks of a copy and of the
-start steps, a plan's reading, the projects of a commit and a project's
-model. `two_explorations_without_a_new_problem_end_the_objective` now asks
-for variety (`vary`) to explore a second project, as alternation needs that
-permission. Not verified: a live run on a real test instance (the window
-checks are the coordinator's).
+*E1, what an exploration explores* (#130, `stage13/explore-target`; the
+Orchestrator's lock confirmed for its docs on the Operator's instruction for
+these repairs). The lead's `submit_exploration` names its `project` (a
+folder of the repository that holds a model's `.sysml` files at the base
+commit; the brief lists them, `model` being Agentique's own, leaving out the
+pinned standards, test fixtures and folders inside another), the goal and,
+where useful, `scope` (elements of that project's model, resolved at the
+commit through a fresh repository holding a copy of its files), `start` (a
+view's command and an element to select, carried out by rule as the first
+steps after each start, so replays take them too) and `vary` (other
+projects, only when the objective asks for several); a project that holds no
+model, a name that does not resolve or a view that is not a command's id is
+refused with the reason and the projects there are. A plan the lead's turn
+accepts is recorded on the objective at once (`target`, optional in
+`objective.json`), so a child delegated after it in the same turn explores
+it; before the first plan, `delegate` must name the child's `project`, and a
+child explores only the project it was given (its lead's plan of another is
+refused). Later plans keep to the plan's projects; a lead that plans nothing
+is asked once more and the cycle then ends: the alternation between
+`models/url-shortener` and `model` is gone. Later explorations (also after an
+adoption), the replays of fixed and known findings (only those of its
+projects) and the evaluation's exploration of the changed areas use its
+project at the build's commit. Each exploration and each replay checks the
+copy its instance opened (copied from the project's folder of the build's
+commit, the same digest of its model files, the project the observation
+shows; the project's git tree is recorded beside it) before acting: a
+mismatch acts on nothing, fails the exploration's cycle with what was
+planned and what was opened in the thread, diverges a replay and fails the
+evaluation's exploration. The digest is of the checkout's files, which are
+the commit's but for files git ignores. Tests: the stand-in harness's
+regression (`every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project`:
+an unbound child refused before the plan, two children taking `model`, a
+child's lead refused another project, two cycles, the replays, all on
+`model` at the base), a lead that plans nothing, a copy of other files, the
+engine's checks of a copy and of the start steps, a plan's reading, a
+child's project, the projects of a commit and a project's model.
+`two_explorations_without_a_new_problem_end_the_objective` now asks for
+variety (`vary`) to explore a second project, as alternation needs that
+permission. An independent review found a child delegated before the first
+plan unbound (and the regression not proving inheritance), the alternation
+kept as a fallback, a plan accepted in a turn lost when the turn delegated,
+replays not checking their copies, and a mismatch in the evaluation counted
+as not run; corrected. Not changed: observation criteria and the
+evaluator's judgment instances still open the change's checkout (the
+repository's own model) as the project. Not verified: a live run on a real
+test instance (the window checks are the coordinator's).

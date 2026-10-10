@@ -17,7 +17,7 @@
 //! reproduction is set aside, and an ambiguous requirement goes to the
 //! Operator.
 
-use crate::explore::{Act, Instance, Step};
+use crate::explore::{Act, Instance, Provenance, Step};
 use crate::observed::{self, Refusal};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -940,20 +940,24 @@ impl Replay {
 /// Replays a finding's steps (the reduced ones, when there are) from a fresh
 /// start of the instance's build and checks it after the last: whether the
 /// problem shows there. A cycle uses it as a criterion: it fails on the
-/// build that has the problem and passes on one that fixed it. `stop` is
+/// build that has the problem and passes on one that fixed it. With a
+/// `source`, the instance's copy is checked against it before the first
+/// step (the W13.7 repair), and one that does not match diverges. `stop` is
 /// asked during the replay's waits; a stopped replay diverges.
 pub fn replay(
     instance: &mut dyn Instance,
     finding: &Finding,
+    source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
 ) -> Replay {
-    replay_steps(instance, finding, finding.replay_steps(), stop)
+    replay_steps(instance, finding, finding.replay_steps(), source, stop)
 }
 
 fn replay_steps(
     instance: &mut dyn Instance,
     finding: &Finding,
     steps: &[Step],
+    source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
 ) -> Replay {
     let diverged = |at: usize, reason: String| Replay::Diverged { at, reason };
@@ -982,6 +986,14 @@ fn replay_steps(
         Ok(now) => now,
         Err(error) => return gone(0, error),
     };
+    if let Some(source) = source
+        && let (_, Err(why)) = crate::explore::check_copy(instance, source, &now)
+    {
+        return diverged(
+            0,
+            format!("the test instance did not open the planned project: {why}"),
+        );
+    }
     if steps.is_empty() {
         let outcome = Outcome {
             before: &now,
@@ -1109,17 +1121,19 @@ fn stopped(replay: &Replay) -> bool {
 
 /// Replays a finding twice from a fresh start; it is reproduced only when
 /// both fail the same way, and then reduced within what is left of
-/// `replays` (at least two are needed). `stop` is asked between and during
+/// `replays` (at least two are needed). With a `source`, each replay checks
+/// the instance's copy against it first. `stop` is asked between and during
 /// replays: a stopped reproduction leaves the finding as it was, saying so.
 pub fn reproduce(
     instance: &mut dyn Instance,
     finding: &mut Finding,
     replays: usize,
+    source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
 ) {
     let mut outcomes = Vec::new();
     for _ in 0..2 {
-        let outcome = replay_steps(instance, finding, &finding.steps, stop);
+        let outcome = replay_steps(instance, finding, &finding.steps, source, stop);
         if stopped(&outcome) {
             finding.note = "its reproduction was stopped".into();
             return;
@@ -1147,7 +1161,7 @@ pub fn reproduce(
     let model = asks_the_assistant(finding);
     if reproduced {
         finding.set_state(State::Reproduced, &model);
-        reduce(instance, finding, replays.saturating_sub(2), stop);
+        reduce(instance, finding, replays.saturating_sub(2), source, stop);
     } else {
         let note = if model.is_empty() {
             summary
@@ -1186,6 +1200,7 @@ pub fn reduce(
     instance: &mut dyn Instance,
     finding: &mut Finding,
     replays: usize,
+    source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
 ) {
     if replays < 2 {
@@ -1197,7 +1212,7 @@ pub fn reduce(
     let mut steps = finding.steps.clone();
     let mut fails = |instance: &mut dyn Instance, steps: &[Step], used: &mut usize| {
         *used += 1;
-        let outcome = replay_steps(instance, finding, steps, stop);
+        let outcome = replay_steps(instance, finding, steps, source, stop);
         halted |= stopped(&outcome);
         outcome.failed()
     };

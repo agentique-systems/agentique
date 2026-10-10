@@ -536,6 +536,19 @@ fn a_commits_projects_and_a_projects_model_are_read() {
     );
     write(&repository, "models/notes/README.md", "No model here.\n");
     write(&repository, "Top.sysml", "package Top;\n");
+    // Not projects: the pinned standards, test fixtures, a folder inside
+    // a project.
+    write(&repository, "standards/lib/Lib.sysml", "package Lib;\n");
+    write(
+        &repository,
+        "crates/x/tests/fixtures/F.sysml",
+        "package F;\n",
+    );
+    write(
+        &repository,
+        "models/garden/parts/Bed.sysml",
+        "package Beds;\n",
+    );
     let first = commit(&repository, "Start");
     // A later file is not in the first commit's projects.
     write(&repository, "models/later/Later.sysml", "package Later;\n");
