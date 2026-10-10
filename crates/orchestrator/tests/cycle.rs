@@ -783,3 +783,100 @@ fn a_proposal_serving_a_part_is_refused() {
     assert!(refused[0].text.contains("its requirements are: "));
     assert!(refused[0].text.contains("Shop::Fast"));
 }
+
+/// AR-T-004 (reproduction, ROADMAP §4.16 "Durable, continuing work"): the
+/// handover to an adopted build is asked only once the objective's
+/// continuation is durable. Here the objective's own record cannot be
+/// written when the cycle adopts (a folder stands where its atomic write
+/// puts its temporary file), while its thread and journal still can: the
+/// Studio must not be told to hand over to a build the record on disk does
+/// not say to continue in.
+#[test]
+fn an_adoption_waits_for_its_continuation_to_be_saved() {
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let mut objective = store
+        .create(
+            "Adopt the merged build",
+            &repository,
+            "main",
+            Budgets::default(),
+            Permissions {
+                push: true,
+                merge: true,
+                adopt: true,
+                ..Permissions::default()
+            },
+        )
+        .unwrap();
+    // A cycle whose build passed its trial: it is adopted next.
+    let mut cycle = agq_orchestrator::record::Cycle::new(1);
+    cycle.phase = Phase::Adopt;
+    cycle.build = Some("0.1.0-adopted".into());
+    objective.cycles.push(cycle);
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    // From here the objective's record cannot be written (as on a full disk
+    // or a locked file); nothing else is in the way.
+    let in_the_way = store
+        .folder
+        .join(&id)
+        .join(format!("objective.tmp.{}", std::process::id()));
+    std::fs::create_dir_all(&in_the_way).unwrap();
+    let setup = Setup {
+        store: store.clone(),
+        work: dir.path().join("work"),
+        builds: dir.path().join("builds"),
+        runtime: Box::new(|_, _| Err("no agent works in this test".into())),
+        keys: Vec::new(),
+        checks: Vec::new(),
+        protected: Vec::new(),
+        running_build: None,
+        speed: "instant".into(),
+        credential: Box::new(|_| None),
+        studios: Box::new(run::Live),
+    };
+    let handle = run::start(setup, objective);
+    let deadline = Instant::now() + Duration::from_secs(60);
+    let mut stopped = false;
+    let mut thread = Vec::new();
+    // Each handover asked: its build, and the continuation on disk then.
+    let mut handovers = Vec::new();
+    loop {
+        match handle.events.recv_timeout(Duration::from_millis(50)) {
+            Ok(Event::Adopt { build, reply }) => {
+                let saved = store.load(&id).unwrap().continuation;
+                handovers.push((build, saved));
+                // The Studio would save and exit here; this one declines.
+                let _ = reply.send(Err("this test hands over to nothing".into()));
+            }
+            Ok(Event::Thread(entry)) => thread.push(entry.text),
+            Ok(_) => {}
+            Err(_) if handle.finished() => break,
+            Err(_) => {}
+        }
+        if Instant::now() > deadline && !stopped {
+            handle.send(Command::Stop);
+            stopped = true;
+        }
+        assert!(
+            Instant::now() < deadline + Duration::from_secs(30),
+            "the objective did not end: {thread:#?}"
+        );
+    }
+    // The failure took effect, and the objective said so.
+    assert!(
+        thread
+            .iter()
+            .any(|t| t.starts_with("The objective's record could not be saved")),
+        "{thread:#?}"
+    );
+    // No handover without its continuation on disk.
+    assert!(
+        handovers
+            .iter()
+            .all(|(build, saved)| saved.as_ref().is_some_and(|c| &c.build == build)),
+        "the Studio was told to hand over although the record on disk holds no continuation for it: {handovers:?}\n{thread:#?}"
+    );
+}
