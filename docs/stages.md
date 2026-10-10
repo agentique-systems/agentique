@@ -2360,9 +2360,13 @@ merge and adopt, merge only, or keep each reviewed change on its branch,
 pushing and merging nothing, so the cycle ends there), and a set below the
 confidence threshold escalates to the `escalation` role's model; when
 neither answers, the defaults (one improvement without exploring, merged
-and adopted), with why. The same intent is read once; a reading replaced
-by further typing is stopped (its Jev call, if made, is paid and counted
-nowhere: only the reading used is the objective's cost). The form shows what it was read as and who read it,
+and adopted), with why; without the decisions role it escalates directly,
+and without the escalation role an unsure Jev gives the defaults. The same
+intent is read once (a reading that fell back to the defaults is read again);
+a reading replaced by further typing is told to stop, and a model call
+already under way is cancelled at once, but what it had used is paid and
+counted nowhere: only the reading used is the objective's cost, and a
+reading is used once. The form shows what it was read as and who read it,
 with switches for exploring, merging and adopting that the Operator may
 change, and Start waits until the intent is read. Spend and time are
 unlimited unless set (a child objective's are);

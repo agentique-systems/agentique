@@ -526,20 +526,21 @@ impl Answers for Decider {
         };
         let mut handle = self.providers.chat(request);
         let deadline = Instant::now() + Duration::from_secs(120);
+        // Stop and the deadline are checked whatever arrives, also while a
+        // reasoning model streams its thinking.
         let reply = loop {
             match handle.next_event(Duration::from_millis(100)) {
                 Some(Event::Finished(Ok(reply))) => break reply,
                 Some(Event::Finished(Err(error))) => return Err(error.to_string()),
-                Some(_) => {}
-                None if Instant::now() >= deadline => {
+                _ if Instant::now() >= deadline => {
                     handle.cancel();
                     return Err("the model did not answer in time".into());
                 }
-                None if stop() => {
+                _ if stop() => {
                     handle.cancel();
                     return Err("stopped".into());
                 }
-                None => {}
+                _ => {}
             }
         };
         let said: String = reply
@@ -832,7 +833,7 @@ impl Shape {
                 (true, false) =>
                     "merges reviewed changes that pass every check, without building or restarting",
                 _ =>
-                    "keeps each reviewed change on its own branch for you; nothing is pushed or merged, so each cycle ends there",
+                    "keeps each reviewed change on its own branch for you; nothing is pushed or merged, so each cycle stops there and is recorded as failed",
             }
         )
     }
@@ -1069,18 +1070,22 @@ fn model_prompt(intent: &str) -> String {
     )
 }
 
+/// The model a reading escalates to, with its effort; or why there is
+/// none.
+pub type Escalation<'a> = Result<(&'a ModelRef, Option<&'a str>), String>;
+
 /// What an objective with `intent` does (the Operator's amendment of
-/// C-54): Jev answers three typed questions about it in one request; a
-/// set confident at `answers`' threshold is used; otherwise the
-/// `escalation` model answers them (one more call when its answer cannot
-/// be read); when neither does, the defaults, with why. `stop` is asked
-/// while the model is waited for (a reading the Operator's typing
-/// replaced). Asked before Start, so the Operator sees it and may change
-/// it.
+/// C-54): Jev answers three typed questions about it in one request
+/// (unless `jev` says why it cannot); a set confident at `answers`'
+/// threshold is used; otherwise the `escalation` model answers them (one
+/// more call when its answer cannot be read); when neither does, the
+/// defaults, with why. `stop` is asked before and while the model is
+/// waited for (a reading the Operator's typing replaced). Asked before
+/// Start, so the Operator sees it and may change it.
 pub fn infer(
     answers: &dyn Answers,
-    escalation: &ModelRef,
-    effort: Option<&str>,
+    jev: Result<(), String>,
+    escalation: Escalation,
     intent: &str,
     stop: &mut dyn FnMut() -> bool,
 ) -> Inferred {
@@ -1088,7 +1093,15 @@ pub fn infer(
     let state = json!({ "about": SHAPE_ABOUT, "intent": intent.trim() });
     let mut usd = Some(0.0);
     let add = |total: Option<f64>, part: Option<f64>| Some(total? + part?);
-    let note = match answers.ask_jev_all(&state, jev_questions()) {
+    let asked = jev
+        .map_err(|why| Failure {
+            error: format!("Jev: {why}"),
+            source: Source::Jev,
+            millis: 0,
+            usd: Some(0.0),
+        })
+        .and_then(|()| answers.ask_jev_all(&state, jev_questions()));
+    let note = match asked {
         Ok((said, cost)) => {
             usd = add(usd, cost);
             match shape_from_jev(&said, answers.threshold()) {
@@ -1112,7 +1125,24 @@ pub fn infer(
     };
     let prompt = model_prompt(intent);
     let mut problem = note.clone();
+    let (escalation, effort) = match escalation {
+        Ok(model) => model,
+        Err(why) => {
+            return Inferred {
+                shape: Shape::DEFAULT,
+                source: Source::Rules,
+                confidence: None,
+                millis: started.elapsed().as_millis() as u64,
+                usd,
+                note: format!("{note}; no escalation model: {why}"),
+            };
+        }
+    };
     for _ in 0..2 {
+        if stop() {
+            problem = format!("{note}; stopped");
+            break;
+        }
         match answers.chat(escalation, effort, &prompt, stop) {
             Ok((said, cost)) => {
                 usd = add(usd, cost);
@@ -1151,7 +1181,13 @@ pub fn infer(
 impl Decider {
     /// [`infer`] with this decider's Jev and escalation model.
     pub fn infer(&self, intent: &str, stop: &mut dyn FnMut() -> bool) -> Inferred {
-        infer(self, &self.model, self.effort.as_deref(), intent, stop)
+        infer(
+            self,
+            Ok(()),
+            Ok((&self.model, self.effort.as_deref())),
+            intent,
+            stop,
+        )
     }
 }
 
@@ -1528,7 +1564,7 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
             ("integrate", "adopt", 0.95),
         ];
         let jev = reader(Ok(confident.clone()), vec![]);
-        let read = infer(&jev, &model, None, INTENT, &mut || false);
+        let read = infer(&jev, Ok(()), Ok((&model, None)), INTENT, &mut || false);
         assert_eq!((read.source, read.shape.cycles), (Source::Jev, 2));
         assert_eq!(read.confidence, Some(0.8));
         assert_eq!(jev.asked.get(), 0, "no model is asked");
@@ -1540,7 +1576,9 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
         let mut unsure = confident.clone();
         unsure[1].2 = 0.3;
         let escalated = reader(Ok(unsure), vec![Ok("no JSON at all"), Ok(TWO)]);
-        let read = infer(&escalated, &model, None, INTENT, &mut || false);
+        let read = infer(&escalated, Ok(()), Ok((&model, None)), INTENT, &mut || {
+            false
+        });
         assert_eq!(read.source, Source::Escalated);
         assert!(read.shape.explore && read.shape.cycles == 2 && read.shape.adopt);
         assert_eq!(
@@ -1556,17 +1594,38 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
             read.by()
         );
 
-        let absent = reader(Err("Jev: no key".into()), vec![Ok(TWO)]);
-        let read = infer(&absent, &model, None, INTENT, &mut || false);
+        let absent = reader(Err("Jev: must not be asked".into()), vec![Ok(TWO)]);
+        let read = infer(
+            &absent,
+            Err("the decisions role: no TypeSafe AI key".into()),
+            Ok((&model, None)),
+            INTENT,
+            &mut || false,
+        );
         assert_eq!(read.source, Source::Escalated);
         assert!(
-            read.by().starts_with("Jev did not answer (no key)"),
+            read.by()
+                .starts_with("Jev did not answer (the decisions role: no TypeSafe AI key)"),
             "{}",
             read.by()
         );
+        let no_model = reader(Ok(vec![("explore", "explore", 0.2)]), vec![]);
+        let read = infer(
+            &no_model,
+            Ok(()),
+            Err("no DeepSeek key".into()),
+            INTENT,
+            &mut || false,
+        );
+        assert_eq!((read.source, no_model.asked.get()), (Source::Rules, 0));
+        assert!(
+            read.note.contains("no escalation model: no DeepSeek key"),
+            "{}",
+            read.note
+        );
 
         let nothing = reader(Err("Jev: no key".into()), vec![Err("no DeepSeek key")]);
-        let read = infer(&nothing, &model, None, INTENT, &mut || false);
+        let read = infer(&nothing, Ok(()), Ok((&model, None)), INTENT, &mut || false);
         assert_eq!((read.source, read.shape), (Source::Rules, Shape::DEFAULT));
         assert_eq!(read.usd, None, "a sent request may be billed");
         assert!(read.note.contains("no DeepSeek key"), "{}", read.note);
@@ -1577,7 +1636,7 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
         );
 
         let stopped = reader(Err("Jev: late".into()), vec![Ok(TWO)]);
-        let read = infer(&stopped, &model, None, INTENT, &mut || true);
+        let read = infer(&stopped, Ok(()), Ok((&model, None)), INTENT, &mut || true);
         assert_eq!(read.source, Source::Rules);
         assert!(read.note.contains("stopped"), "{}", read.note);
         assert_eq!(

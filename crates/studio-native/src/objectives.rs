@@ -626,6 +626,8 @@ impl Studio {
             }
         }
         objective.inferred = request.inferred;
+        // The reading was used: the same intent is read again next time.
+        self.objectives.form.reading = None;
         objective.models = resolved.models;
         objective.roles_unavailable = resolved.unavailable.into_iter().collect();
         store.save(&objective)?;
@@ -691,47 +693,49 @@ impl Studio {
     /// the defaults, with why.
     pub fn read_intent(&mut self, intent: &str) {
         let intent = intent.trim().to_string();
-        // Read once per intent: the same text, read or being read, is not
-        // asked again (typing a character and taking it back).
-        if self
-            .objectives
-            .form
-            .reading
-            .as_ref()
-            .is_some_and(|r| r.intent == intent)
-        {
+        // Read once per intent: the same text, being read or read by Jev or
+        // the model, is not asked again (typing a character and taking it
+        // back); one that fell back to the defaults is asked again (a key
+        // may have been added since).
+        if self.objectives.form.reading.as_ref().is_some_and(|r| {
+            r.intent == intent
+                && r.inferred
+                    .as_ref()
+                    .is_none_or(|i| i.source != agq_orchestrator::decide::Source::Rules)
+        }) {
             return;
         }
-        // Jev on the decisions role's model and the escalation role's,
-        // as Settings and the credentials resolve them; without either,
-        // the defaults, with why.
-        let mut models = Vec::new();
-        let mut missing = Vec::new();
-        for (role, model) in self.agent_models_each() {
-            match model {
-                Ok(model) => models.push(model),
-                Err(why) if matches!(role, "decisions" | "escalation") => {
-                    missing.push(format!("the {role} role: {why}"))
-                }
-                Err(_) => {}
-            }
-        }
-        let decider = if missing.is_empty() {
-            agq_orchestrator::models::decider(&models)
-        } else {
-            Err(missing.join("; "))
+        // Jev on the decisions role's model, escalating to the escalation
+        // role's, as Settings and the credentials resolve them; a role that
+        // does not resolve is skipped, with why.
+        let each = self.agent_models_each();
+        let role = |name: &str| {
+            each.iter()
+                .find(|(r, _)| *r == name)
+                .map(|(_, model)| model.clone())
+                .unwrap_or_else(|| Err("not configured".into()))
+                .map_err(|why| format!("the {name} role: {why}"))
         };
+        let (decisions, escalation) = (role("decisions"), role("escalation"));
         let (sender, receiver) = std::sync::mpsc::channel();
         let replaced = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let stop = replaced.clone();
         let read = intent.clone();
         std::thread::spawn(move || {
-            let inferred = match decider {
-                Ok(decider) => decider.infer(&read, &mut || {
-                    stop.load(std::sync::atomic::Ordering::SeqCst)
-                }),
-                Err(why) => defaults(why),
-            };
+            let mut decider = agq_orchestrator::decide::Decider::default();
+            if let Ok(model) = &decisions {
+                decider.jev_model = model.model.model.clone();
+            }
+            let inferred = agq_orchestrator::decide::infer(
+                &decider,
+                decisions.as_ref().map(|_| ()).map_err(Clone::clone),
+                escalation
+                    .as_ref()
+                    .map(|model| (&model.model, model.effort.as_deref()))
+                    .map_err(Clone::clone),
+                &read,
+                &mut || stop.load(std::sync::atomic::Ordering::SeqCst),
+            );
             let _ = sender.send(inferred);
         });
         // The reading it replaces, if any, is dropped and so stopped.
@@ -744,9 +748,11 @@ impl Studio {
         self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
-    /// Puts the start form back in the Objectives panel.
+    /// Puts the start form back in the Objectives panel, forgetting its
+    /// reading.
     pub fn close_start_form(&mut self) {
         self.objectives.form.in_conversation = false;
+        self.objectives.form.reading = None;
         self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
@@ -1068,9 +1074,11 @@ impl Studio {
             // gives the defaults, never a form that waits forever.
             let arrived = match receiver.try_recv() {
                 Ok(inferred) => Some(inferred),
-                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                    Some(defaults("the reading ended without an answer".into()))
-                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(Inferred {
+                    // Calls it made may have been paid.
+                    usd: None,
+                    ..defaults("the reading ended without an answer".into())
+                }),
                 Err(std::sync::mpsc::TryRecvError::Empty) => None,
             };
             if let Some(inferred) = arrived {
@@ -1328,34 +1336,45 @@ mod tests {
         assert_eq!(ids, vec!["child-a", "child-b", "grandchild"]);
     }
 
-    /// An intent is read once (the same text is not asked again); a
-    /// reading replaced by another is told to stop; without the roles that
-    /// read it, the defaults, with why (the Operator's amendment of C-54).
+    /// An intent is read once while it is being read or was read by a
+    /// model; one that fell back to the defaults is read again (a key may
+    /// have been added); a reading replaced by another is told to stop;
+    /// without the roles that read it, the defaults, with why; a reading
+    /// is forgotten when the form closes (the Operator's amendment of
+    /// C-54).
     #[test]
     fn an_intent_is_read_once_and_without_its_models_gives_the_defaults() {
         use std::sync::atomic::Ordering;
         let (mut app, _folder) = crate::edit::app_tests::studio("read-intent");
         app.runtime.credentials.clear();
-        app.read_intent(" Explore the History panel ");
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
-        let inferred = loop {
-            app.poll_objective();
-            if let Some(inferred) = app
-                .objectives
-                .form
-                .reading
-                .as_ref()
-                .unwrap()
-                .inferred
-                .clone()
-            {
-                break inferred;
+        let read = |app: &mut Studio| {
+            let deadline = std::time::Instant::now() + Duration::from_secs(10);
+            loop {
+                app.poll_objective();
+                if let Some(inferred) = &app.objectives.form.reading.as_ref().unwrap().inferred {
+                    break inferred.clone();
+                }
+                assert!(std::time::Instant::now() < deadline, "never read");
+                std::thread::sleep(Duration::from_millis(10));
             }
-            assert!(std::time::Instant::now() < deadline, "never read");
-            std::thread::sleep(Duration::from_millis(10));
         };
-        let reading = app.objectives.form.reading.as_ref().unwrap();
-        assert_eq!(reading.intent, "Explore the History panel");
+        app.read_intent(" Explore the History panel ");
+        // Being read: the same text is not asked again.
+        let first = app
+            .objectives
+            .form
+            .reading
+            .as_ref()
+            .unwrap()
+            .replaced
+            .clone();
+        app.read_intent("Explore the History panel");
+        assert!(!first.load(Ordering::SeqCst), "the same reading goes on");
+        let inferred = read(&mut app);
+        assert_eq!(
+            app.objectives.form.reading.as_ref().unwrap().intent,
+            "Explore the History panel"
+        );
         assert_eq!(inferred.shape, Shape::DEFAULT);
         assert_eq!(inferred.source, agq_orchestrator::decide::Source::Rules);
         assert!(
@@ -1363,8 +1382,13 @@ mod tests {
             "{}",
             inferred.note
         );
+        assert!(
+            inferred.note.contains("no escalation model"),
+            "{}",
+            inferred.note
+        );
         assert!(inferred.by().ends_with("so the defaults apply."));
-        // The same intent is not read again.
+        // The defaults: the same text is read again.
         app.read_intent("Explore the History panel");
         assert!(
             app.objectives
@@ -1373,7 +1397,7 @@ mod tests {
                 .as_ref()
                 .unwrap()
                 .inferred
-                .is_some()
+                .is_none()
         );
         // Another replaces it, and the replaced reading is told to stop.
         let replaced = app
@@ -1389,6 +1413,9 @@ mod tests {
         let now = app.objectives.form.reading.as_ref().unwrap();
         assert!(now.intent == "Rename the Add button" && now.inferred.is_none());
         assert!(app.objectives.wants_poll());
+        // Closing the form forgets it.
+        app.close_start_form();
+        assert!(app.objectives.form.reading.is_none());
     }
 
     /// What the intent is read as becomes the request: its improvements,

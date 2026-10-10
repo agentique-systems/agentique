@@ -60,5 +60,5 @@
   explores first, how many improvements, whether reviewed changes are merged
   and adopted), so write in the intent what the Operator said about those;
   only the Operator starts it, and nothing has started when it answers.
-  Its thread then appears in the
-  Conversation, but it is not sent to you: do not answer for its agents.
+  Its thread then appears in the Conversation, but it is not sent to you:
+  do not answer for its agents.

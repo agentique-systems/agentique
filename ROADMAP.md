@@ -2155,8 +2155,8 @@ usage at the models' own prices, typed decisions included) and a time budget
 starts an objective from its intent: whether it explores, its cycles and
 whether it may merge and adopt are inferred from the intent by a typed
 decision and shown before Start, where the Operator may change them; spend
-and time are unlimited unless set (a child objective and evaluation tasks
-set them), and costs are counted and shown either way
+and time are unlimited unless set (a child objective's are), and the costs
+of its work are counted and shown either way
 (the Operator's amendment of C-54, §7.6). Before each phase the Orchestrator
 checks what is left; a budget used up stops the objective with its record. Repeated
 identical failures (the same check with the same failure), a proposal that
