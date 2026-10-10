@@ -2086,10 +2086,10 @@ it). Read against the code and the model before any change:
 |---|---|---|
 | W13.1 Direction | #117 | Merged |
 | W13.2 Referential usages | #119 | Merged (below) |
-| W13.3 Requirement constraints and evidence | #121 | In review (below) |
-| W13.4 The self-model | #118 | Merged (below); the purpose's subrequirements follow W13.3 |
+| W13.3 Requirement constraints and evidence | #121 | Merged (below) |
+| W13.4 The self-model | #118, #122 | Merged (below); the purpose's obligations in review in #122 (below) |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
-| W13.6 A second system | — | In progress (`stage13/drone`) |
+| W13.6 A second system | #122 | In review (below) |
 | W13.7 Proof | — | Not started |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
@@ -2284,3 +2284,67 @@ a real model calling `check_requirements`. Limits: no units; package-level
 constants are not read; scenario runs still work attribute values out
 differently (deviation 23); a change to the code alone reaches the ladder
 when the model, the links, the kept results or the checks next change.
+
+**W13.6 A second system** (#122; nothing here says the Operator accepted
+anything). `models/inspection-charging/InspectionCharging.sysml`: an
+inspection drone and its charging station, after the Operator's guide
+"SysML v2: From Syntax to Systems" (its Aster example), as text like the
+other examples. Its documentation states the boundary (the drone's mass by
+assembly, the station's charger, the charging contact; outside: the
+authorisation service, which the stations refer to and scenarios stand in,
+flight dynamics, electrical protection, current, heat, weather, regulation),
+the units (grams and milliseconds; deviation 14) and that nothing in it
+verifies a physical drone or charger. Bounded questions and what answers
+them (`crates/simulation/tests/inspection_charging.rs`, 17 tests, passing):
+
+- *Composition and sharing.* The flight computer's `ref part :>> supply =
+  bus;` is the drone's one bus in two roles (a requirement reading
+  `flightComputer.supply.mass == bus.mass` holds at 150 g). The bus is
+  counted once because the sum names it once and the controller's mass
+  excludes it: a sum that also added the supply counts it twice (6050 g).
+  A composite part bound to the bus is reported (`wrong-value`, SysML
+  7.6.3). Stated as a limit: a second, composite bus inside the controller
+  is not reported, and a sum that does not name it leaves it out (5900 g);
+  Agentique does not check that a roll-up covers every composite part. The
+  dock refers to the survey drone and the home station and connects them
+  with the `ChargingLink` interface (conjugated ports).
+- *Calculation on the modelled configuration.* `LaunchMassLimit` (assumed:
+  the drone carries a payload; required `aircraft.mass <= limit`) holds for
+  the survey drone at 5900 g of 7000 g; the upgraded drone, which states
+  only what changed from the survey drone's configuration (650 g avionics,
+  2300 g payload), violates it at 7150 g (its `satisfy` declaration is shown
+  wrong) and meets the ferry limit of 8000 g; without a payload the limit
+  claims nothing (assumptions not met). `BoundedWait` holds at home
+  (500 ms × 2) and in the field (2000 ms × 3, exactly 6000 ms), and one more
+  field attempt is caught (8000 ms).
+- *Behaviour in model execution.* The contacts stay off while the answer is
+  pending (checked 50 ms in) and come on only after an acceptance (read from
+  the trace); a refusal leaves them off; a lost answer is asked again and
+  decided at 500 ms; two lost answers end a home station's attempt at
+  1000 ms; the field station, the same `Charger` definition configured for
+  a slow link, energises on its third attempt (4000 ms) and gives up at
+  6000 ms when every answer is lost, the calculated bound; a plausible
+  wrong design (`EagerCharger`, energise first, switch off on a refusal)
+  fails `offWhileAsking` while its end state alone would pass. It has its
+  own requirement (`quickAuthorizedCharging`), so it never counts against
+  the correct station's. Runs are the same run every time (whole traces).
+- *Kept apart.* The behavioural requirement is informal: not calculated,
+  never shown as holding on its `satisfy`; six scenarios verify it.
+
+Not verified: the model in the Studio by eye; units. Before this stage the
+same model text had five unsupported constructs and nothing of its mass or
+wait could be calculated. An independent review found the first version's
+claim about the bus (that a copy would make 6050 g) wrong for this model,
+the wrong design's scenario counting against the correct station, and
+end-state checks that could not show ordering; corrected.
+
+**W13.4, the purpose's obligations** (#122, made through `apply_changes`,
+the lock of `Purpose` confirmed on the Operator's C-55 instruction).
+`Purpose` gains eight informal subrequirements (explicit architecture;
+executable or reported; claims kept apart; the same mechanisms for itself;
+the Operator keeps control; aligned evolution; the root system; generalise
+the mechanism), each naming the requirements that make it concrete (for
+example the Operator keeps control: `OneChangePath`, `ChildWorkBounded`,
+`OnlyGivenCredentials`), "partly" or "none yet". `satisfy purpose by
+agentique` is declared: a dogfood test asserts the purpose stands "only
+declared" and is never calculated to hold. Dogfood: 5 passed.

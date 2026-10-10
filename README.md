@@ -191,6 +191,7 @@ pull request.
 | `models/url-shortener/` | The Scenario A architecture, used by tests and the language check |
 | `models/link-screening/` | Scenario I: the URL shortener with AI screening and its scenarios; its code is a fixture in `crates/implementation/tests/fixtures/url-shortener` |
 | `models/notifications/` | Scenario I's second example, a retrying notification dispatcher |
+| `models/inspection-charging/` | Stage 13's second system (C-55): an inspection drone and its charging station, with a shared bus referred to, a mass budget and a bounded wait calculated, and charging authorisation simulated, success and failure |
 | `docs/` | `stages.md` (progress), `subset.md` (supported SysML), `deviations.md` (departures from the standard) |
 | `standards/` | Pinned KerML 1.0 / SysML 2.0 artifacts, libraries and grammar, kept as the reference (never edited) |
 | `tools/` | The architecture check, the link-screening evaluation's report (`screening_report.py`), and the (rarely run) standards pinning tools |
