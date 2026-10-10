@@ -14,7 +14,7 @@ use crate::conversation::ToolResult;
 use crate::tools::{Prepared, cap, prepare};
 use crate::turn::ToolCall;
 use agq_language::{ElementId, Tree};
-use agq_system_state::{Actor, ApplyError, Project};
+use agq_system_state::{Actor, ApplyError, Project, ProjectReader};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -114,11 +114,10 @@ pub fn locked_code(
     links: &[String],
     allowed: &[String],
 ) -> Result<Vec<String>, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let before = project.tree_at(base).map_err(|e| e.to_string())?;
-    let locks_before = project.locks_at(base).map_err(|e| e.to_string())?;
-    let after = project.state().tree();
-    let locks_now = project.state().locks().clone();
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (before, locks_before) = project.at(base).map_err(|e| e.to_string())?;
+    let (after, locks_now) = project.saved().map_err(|e| e.to_string())?;
+    let after = &after;
     let allowed_ids: BTreeSet<ElementId> = allowed
         .iter()
         .filter_map(|name| after.find(name).or_else(|| before.find(name)))
@@ -163,11 +162,10 @@ pub fn locked_changes(
     base: &str,
     allowed: &[String],
 ) -> Result<Vec<String>, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let before = project.tree_at(base).map_err(|e| e.to_string())?;
-    let locks_before = project.locks_at(base).map_err(|e| e.to_string())?;
-    let after = project.state().tree();
-    let locks_now = project.state().locks().clone();
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (before, locks_before) = project.at(base).map_err(|e| e.to_string())?;
+    let (after, locks_now) = project.saved().map_err(|e| e.to_string())?;
+    let after = &after;
     let mut found = Vec::new();
     if locks_before != locks_now {
         found.push("the locks".to_string());
@@ -252,23 +250,20 @@ fn described(tree: &Tree, locks: &BTreeSet<ElementId>) -> BTreeMap<u64, Describe
 }
 
 /// The model of the repository checked out in `folder`, as committed in
-/// `commit`, by identity. The project in `folder` is opened to read it, and
-/// closed again.
+/// `commit`, by identity. It is only read ([`ProjectReader`]): no editing
+/// lock, nothing written.
 pub fn model_at(folder: &Path, commit: &str) -> Result<BTreeMap<u64, Described>, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let tree = project.tree_at(commit).map_err(|e| e.to_string())?;
-    let locks = project.locks_at(commit).map_err(|e| e.to_string())?;
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (tree, locks) = project.at(commit).map_err(|e| e.to_string())?;
     Ok(described(&tree, &locks))
 }
 
 /// The model of the repository checked out in `folder`, as committed in
-/// `from` and in `to`, compared by identity.
+/// `from` and in `to`, compared by identity; only read.
 pub fn compare_commits(folder: &Path, from: &str, to: &str) -> Result<Compared, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let before = project.tree_at(from).map_err(|e| e.to_string())?;
-    let locks_before = project.locks_at(from).map_err(|e| e.to_string())?;
-    let after = project.tree_at(to).map_err(|e| e.to_string())?;
-    let locks_after = project.locks_at(to).map_err(|e| e.to_string())?;
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (before, locks_before) = project.at(from).map_err(|e| e.to_string())?;
+    let (after, locks_after) = project.at(to).map_err(|e| e.to_string())?;
     let comparison = agq_system_state::compare(&before, &after);
     let raw = |ids: &[ElementId]| ids.iter().map(|id| id.raw()).collect();
     Ok(Compared {

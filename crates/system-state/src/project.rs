@@ -486,6 +486,52 @@ fn next_id(identities: &Identities) -> Result<u64, ProjectError> {
 /// on one branch never takes the id of a different element on another.
 /// Unreadable branches are skipped. Reads each branch's model folder: fine
 /// for a few branches, to be replaced by reading only `agentique.json`.
+/// A project's model as committed and as saved, only read (no editing
+/// lock, nothing written; [`agq_history::Revisions`]): for comparing
+/// versions and checking a change while the project may be open for
+/// editing elsewhere. Elements without an identity entry get ids no branch
+/// tip or the saved model uses, so they cannot pass for one of them.
+pub struct ProjectReader {
+    revisions: agq_history::Revisions,
+    /// The id the next unidentified element gets.
+    floor: u64,
+}
+
+impl ProjectReader {
+    pub fn open(folder: &Path) -> Result<ProjectReader, ProjectError> {
+        let revisions = agq_history::Revisions::open(folder)?;
+        let saved = revisions
+            .saved()
+            .ok()
+            .and_then(|files| next_id(&files.identities).ok())
+            .unwrap_or(0);
+        let tips = revisions
+            .branches()
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|branch| revisions.load_commit(&format!("refs/heads/{branch}")).ok())
+            .filter_map(|tip| next_id(&tip.identities).ok())
+            .max()
+            .unwrap_or(0);
+        Ok(ProjectReader {
+            revisions,
+            floor: saved.max(tips),
+        })
+    }
+
+    /// The model and its locks at a commit (any git revision).
+    pub fn at(&self, revision: &str) -> Result<(Tree, BTreeSet<ElementId>), ProjectError> {
+        let model = read(&self.revisions.load_commit(revision)?, self.floor)?;
+        Ok((model.tree, model.locks))
+    }
+
+    /// The model and its locks as saved in the model folder.
+    pub fn saved(&self) -> Result<(Tree, BTreeSet<ElementId>), ProjectError> {
+        let model = read(&self.revisions.saved()?, self.floor)?;
+        Ok((model.tree, model.locks))
+    }
+}
+
 fn next_on_branches(history: &History) -> u64 {
     let branches = history.branches().unwrap_or_default();
     branches

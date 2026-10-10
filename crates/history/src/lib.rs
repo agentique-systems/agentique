@@ -32,7 +32,7 @@ mod identity;
 mod repo;
 
 pub use identity::{FORMAT, IDENTITY_FILE, Identities};
-pub use repo::Checkpoint;
+pub use repo::{Checkpoint, Revisions};
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -179,17 +179,31 @@ impl History {
     }
 }
 
+/// How long a lock that looks held is waited for before the folder is
+/// taken to be open elsewhere: on Linux a process another thread of this
+/// process starts holds a copy of every open file, the lock file among
+/// them, until it has started (close-on-exec closes it then), so a lock
+/// released a moment ago can still look held.
+const LOCK_WAIT: std::time::Duration = std::time::Duration::from_millis(500);
+
 /// Locks the model folder for this process. The operating system releases
-/// the lock when the file is closed, also when the process dies.
+/// the lock when the file is closed, also when the process dies. A lock
+/// still held after [`LOCK_WAIT`] is another holder's: [`Error::Locked`].
 fn lock(dir: &Path) -> Result<fs::File> {
     let file = fs::OpenOptions::new()
         .create(true)
         .truncate(false)
         .write(true)
         .open(dir.join(LOCK_FILE))?;
-    match file.try_lock() {
-        Ok(()) => Ok(file),
-        Err(fs::TryLockError::WouldBlock) => Err(Error::Locked),
-        Err(fs::TryLockError::Error(e)) => Err(e.into()),
+    let deadline = std::time::Instant::now() + LOCK_WAIT;
+    loop {
+        match file.try_lock() {
+            Ok(()) => return Ok(file),
+            Err(fs::TryLockError::WouldBlock) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            Err(fs::TryLockError::WouldBlock) => return Err(Error::Locked),
+            Err(fs::TryLockError::Error(e)) => return Err(e.into()),
+        }
     }
 }

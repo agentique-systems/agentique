@@ -470,7 +470,7 @@ fn git_out(folder: &Path, args: &[&str]) -> String {
 /// Commits everything, the model's new elements given their identities
 /// first (opening the project does).
 fn commit_model(repository: &Path, message: &str) -> String {
-    let _ = agq_assistant::model_tools::model_at(repository, "HEAD");
+    drop(agq_system_state::Project::open(repository));
     git(repository, &["add", "-A"]);
     git(repository, &["commit", "-q", "-m", message]);
     git_out(repository, &["rev-parse", "HEAD"])
