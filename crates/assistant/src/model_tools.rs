@@ -405,8 +405,10 @@ mod tests {
 
     /// Reading the model as committed, comparing commits and checking a
     /// change against a base only read: they take no editing lock and write
-    /// nothing, so they work while the project is open for editing (the
-    /// Studio, an agent's session) and never make an open fail.
+    /// nothing (not even an identity for an element the saved model gives
+    /// none, or a `.gitignore`), so they work while the project is open for
+    /// editing (the Studio, an agent's session) and never make an open fail.
+    /// A lock whose element is gone is no lock.
     #[test]
     fn reading_versions_takes_no_editing_lock_and_writes_nothing() {
         let dir = tempfile::tempdir().unwrap();
@@ -414,16 +416,30 @@ mod tests {
         std::fs::create_dir_all(folder.join("model")).unwrap();
         std::fs::write(
             folder.join("model/Shop.sysml"),
-            "package Shop {
-    part def Store;
-}
-",
+            "package Shop {\n    part def Store;\n}\n",
         )
         .unwrap();
-        drop(Project::open(folder).unwrap());
+        let mut project = Project::open(folder).unwrap();
+        let store = project.state().tree().find("Shop::Store").unwrap();
+        project
+            .apply(Change::new(
+                Actor::Operator,
+                "Lock Store",
+                vec![Operation::Lock { element: store }],
+            ))
+            .unwrap();
+        drop(project);
         let base = agq_execution::git::init_and_commit(folder, "Start").unwrap();
         let editing = Project::open(folder).unwrap();
-        let before = std::fs::read_to_string(folder.join("model/agentique.json")).unwrap();
+        // Edited outside: an element without an identity, and Store gone
+        // while agentique.json still locks it.
+        std::fs::write(
+            folder.join("model/Shop.sysml"),
+            "package Shop {\n    part def Cart;\n}\n",
+        )
+        .unwrap();
+        std::fs::remove_file(folder.join("model/.gitignore")).unwrap();
+        let identities = std::fs::read_to_string(folder.join("model/agentique.json")).unwrap();
         assert!(
             model_at(folder, &base)
                 .unwrap()
@@ -438,7 +454,8 @@ mod tests {
         );
         assert_eq!(
             locked_changes(folder, &base, &[]).unwrap(),
-            Vec::<String>::new()
+            vec!["the locks".to_string(), "Shop::Store".to_string()],
+            "the lock went with Store"
         );
         assert_eq!(
             locked_code(folder, &base, &[], &[], &[]).unwrap(),
@@ -446,9 +463,10 @@ mod tests {
         );
         assert_eq!(
             std::fs::read_to_string(folder.join("model/agentique.json")).unwrap(),
-            before,
-            "nothing written"
+            identities,
+            "no identity written"
         );
+        assert!(!folder.join("model/.gitignore").exists(), "nothing written");
         drop(editing);
     }
 }
