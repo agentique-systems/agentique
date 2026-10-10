@@ -653,7 +653,7 @@ impl Driver {
     ) -> Replay {
         let mut instance = self.setup.studios.instance(
             exe,
-            &source.join(&finding.start),
+            &explore::within(source, &finding.start),
             &self.folder("replay"),
             options,
         );
@@ -785,9 +785,10 @@ impl Driver {
         outcomes
     }
 
-    /// A short exploration by the rules of the areas the change touched: a
-    /// failed invariant that the testing knowledge did not hold before is a
-    /// failure (an expectation is never one here: the rules state none).
+    /// A short exploration by the rules of the areas the change touched, on
+    /// the objective's target's project: a failed invariant that the
+    /// testing knowledge did not hold before is a failure (an expectation
+    /// is never one here: the rules state none).
     fn explore_changed(
         &mut self,
         exe: &Path,
@@ -805,6 +806,24 @@ impl Driver {
                 .unwrap_or_default(),
         };
         let areas: Vec<String> = changes.areas().into_iter().collect();
+        // The objective's target's project at the base (the W13.7 repair),
+        // or the sample when it never planned one.
+        let project = self
+            .objective
+            .target
+            .as_ref()
+            .map_or(super::explore::STARTS[0].to_string(), |t| t.project.clone());
+        let base = self.cycle().base.clone().unwrap_or_default();
+        let source = match explore::Provenance::of(start, &project, &base) {
+            Ok(source) => source,
+            Err(problem) => {
+                return Outcome::new(
+                    CHANGED_AREAS,
+                    "not run",
+                    format!("it did not explore: {problem}"),
+                );
+            }
+        };
         let plan = Plan {
             goal: format!(
                 "Explore the areas the change touched: {}",
@@ -822,7 +841,9 @@ impl Driver {
             // its budget, so the budget is above nothing.
             usd: RULES_USD,
             changes,
-            start: super::explore::STARTS[0].to_string(),
+            start: project.clone(),
+            target: None,
+            source: Some(source),
             conversation: false,
             turn_ms: findings::TURN_BUDGET_MS,
             stop_ms: findings::STOP_BUDGET_MS,
@@ -835,7 +856,7 @@ impl Driver {
         .unwrap_or_else(|_| Knowledge::new("unread"));
         let mut instance = self.setup.studios.instance(
             exe,
-            &start.join(super::explore::STARTS[0]),
+            &explore::within(start, &project),
             &self.folder("changed"),
             options,
         );

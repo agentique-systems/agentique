@@ -519,3 +519,41 @@ fn a_project_without_a_purpose_is_not_governed() {
     let gate = gates::purpose(&patch, &check);
     assert!(gate.passed(), "{gate:?}");
 }
+
+/// The W13.7 repair: the projects of a commit are the folders that hold a
+/// model's `.sysml` files themselves, by the commit's tree (not a
+/// checkout's files), and a project other than the repository's own
+/// `model` has its model read by name, so a plan's names resolve in it.
+#[test]
+fn a_commits_projects_and_a_projects_model_are_read() {
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository(dir.path());
+    write(&repository, "model/Shop.sysml", SHOP);
+    write(
+        &repository,
+        "models/garden/Garden.sysml",
+        "package Garden {\n    part def Bed;\n    requirement def Watered;\n}\n",
+    );
+    write(&repository, "models/notes/README.md", "No model here.\n");
+    write(&repository, "Top.sysml", "package Top;\n");
+    let first = commit(&repository, "Start");
+    // A later file is not in the first commit's projects.
+    write(&repository, "models/later/Later.sysml", "package Later;\n");
+    assert_eq!(
+        traceability::projects(&repository, &first).unwrap(),
+        vec!["model".to_string(), "models/garden".to_string()]
+    );
+    let scratch = dir.path().join("scratch");
+    let garden = traceability::project_model(&repository, "models/garden", &scratch).unwrap();
+    let names: Vec<&str> = garden.values().map(|e| e.name.as_str()).collect();
+    assert!(names.contains(&"Garden::Watered"), "{names:?}");
+    assert!(!scratch.exists(), "the scratch folder is removed");
+    let unknown = traceability::unknown(
+        &garden,
+        &["Garden::Bed".to_string(), "Garden::Pond".to_string()],
+    );
+    assert_eq!(unknown, vec!["`Garden::Pond`".to_string()]);
+    let own = traceability::project_model(&repository, "model", &scratch).unwrap();
+    assert!(own.values().any(|e| e.name == "Shop::Fast"));
+    assert!(traceability::project_model(&repository, "models/notes", &scratch).is_err());
+}

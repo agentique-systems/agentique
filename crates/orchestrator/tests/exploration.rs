@@ -24,7 +24,10 @@
 //! results as JSON.
 
 use agq_orchestrator::decide::{Answers, Decider, Decision, Failure, Question, Source, Way};
-use agq_orchestrator::explore::{self, Changes, Deciding, Instance, LiveInstance, Plan, Run, Step};
+use agq_orchestrator::explore::{
+    self, Changes, Deciding, Instance, LiveInstance, Opened, Plan, Provenance, Run, Start, Step,
+    Target,
+};
 use agq_orchestrator::findings::{self, Check, Failed, Finding, Replay, State};
 use agq_orchestrator::knowledge::Knowledge;
 use agq_providers::{ModelRef, Provider};
@@ -152,6 +155,8 @@ fn plan(way: Way, seed: u64, steps: u32) -> Plan {
         usd: 1.0,
         changes: Changes::default(),
         start: "stand-in".into(),
+        target: None,
+        source: None,
         conversation: false,
         // Short, so a turn that never ends takes no time in a test.
         turn_ms: 300,
@@ -1435,6 +1440,148 @@ fn tasks() -> Vec<Task> {
         .collect()
 }
 
+/// The W13.7 repair: before its first action a run checks the copy its
+/// instance opened against its plan's provenance (the folder copied, the
+/// digest of its files, the project the observation shows). The planned
+/// copy is explored and recorded; a copy of anything else ends the run
+/// without an action, never explored in its place.
+#[test]
+fn a_run_explores_only_a_copy_of_its_planned_project() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("models").join("shop");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("Shop.sysml"),
+        "package Shop { part def Store; }\n",
+    )
+    .unwrap();
+    let source = Provenance::of(dir.path(), "models/shop", "abc1234").unwrap();
+    let opened = Opened {
+        folder: "/stand-in/project".into(),
+        from: project.clone(),
+        digest: source.digest.clone(),
+    };
+    let mut planned = plan(Way::Rules, 1, 6);
+    planned.start = "models/shop".into();
+    planned.source = Some(source);
+    let knowledge = Knowledge::new("stand-in");
+    let mut studio = StandIn::new(Defects::default());
+    studio.opened = Some(opened.clone());
+    let run = explore_with(&mut studio, &planned, &Scripted::default(), &knowledge);
+    assert!(run.mismatch.is_none(), "{:?}", run.mismatch);
+    assert_eq!(run.actions, 6, "{}", run.ended);
+    assert_eq!(run.opened.as_ref(), Some(&opened));
+    let other = dir.path().join("models").join("garden");
+    for (copy, why) in [
+        (
+            Some(Opened {
+                digest: "0000000000000000".into(),
+                ..opened.clone()
+            }),
+            "digest",
+        ),
+        (
+            Some(Opened {
+                from: other,
+                ..opened.clone()
+            }),
+            "copied",
+        ),
+        (
+            Some(Opened {
+                folder: "/elsewhere/project".into(),
+                ..opened.clone()
+            }),
+            "shows the project /stand-in/project",
+        ),
+        (None, "does not say which copy"),
+    ] {
+        let mut studio = StandIn::new(Defects::default());
+        studio.opened = copy;
+        let run = explore_with(&mut studio, &planned, &Scripted::default(), &knowledge);
+        let mismatch = run.mismatch.clone().unwrap_or_else(|| panic!("{why}"));
+        assert!(mismatch.contains(why), "{mismatch}");
+        assert!(
+            run.ended
+                .starts_with("the test instance did not open the planned project"),
+            "{}",
+            run.ended
+        );
+        assert_eq!(run.actions, 0);
+        assert!(run.steps.is_empty());
+        assert!(
+            studio.log.iter().all(|l| l.starts_with("start")),
+            "{:?}",
+            studio.log
+        );
+    }
+}
+
+/// The W13.7 repair: the plan's start, by rule, as the run's first steps
+/// (counted, and taken again by a replay): its view opened, its element
+/// selected. A view the instance does not offer is noted, not forced.
+#[test]
+fn a_run_starts_where_its_plan_says() {
+    let mut planned = plan(Way::Rules, 1, 5);
+    planned.target = Some(Target {
+        project: "stand-in".into(),
+        revision: "abc1234".into(),
+        goal: planned.goal.clone(),
+        scope: vec!["Shop::Store".into()],
+        start: Start {
+            view: Some("graph".into()),
+            select: Some("Shop::Store".into()),
+        },
+        vary: Vec::new(),
+    });
+    let mut studio = StandIn::new(Defects::default());
+    let run = by_plan_in(&mut studio, &planned);
+    let first: Vec<(&str, &str)> = run
+        .steps
+        .iter()
+        .take(2)
+        .map(|t| (t.step.by.as_str(), t.outcome.as_str()))
+        .collect();
+    assert_eq!(
+        first,
+        vec![("start", "ok"), ("start", "ok")],
+        "{:?}",
+        run.steps
+    );
+    assert_eq!(
+        run.steps[0].step.action,
+        json!({ "kind": "command", "id": "graph" })
+    );
+    assert_eq!(
+        run.steps[1].step.action,
+        json!({ "kind": "select", "element": "Shop::Store" })
+    );
+    assert_eq!(run.actions, 5);
+    assert!(run.notes.is_empty(), "{:?}", run.notes);
+    // A view it does not offer: noted, and the element still selected.
+    planned.target.as_mut().unwrap().start.view = Some("requirements-view".into());
+    let mut studio = StandIn::new(Defects::default());
+    let run = by_plan_in(&mut studio, &planned);
+    assert!(
+        run.notes
+            .iter()
+            .any(|n| n.contains("`requirements-view` is not a command this instance offers")),
+        "{:?}",
+        run.notes
+    );
+    assert_eq!(run.steps[0].step.action["kind"], "select");
+}
+
+/// A run of `plan` by its way in `studio`, nothing scripted for a model.
+fn by_plan_in(studio: &mut StandIn, plan: &Plan) -> Run {
+    explore_with(
+        studio,
+        plan,
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    )
+}
+
 #[test]
 fn the_exploration_tasks_are_fixed_and_held_out_from_tuning() {
     let tasks = tasks();
@@ -1558,6 +1705,8 @@ fn live_exploration_compared_by_way_of_deciding() {
                     .unwrap()
                     .to_string_lossy()
                     .into_owned(),
+                target: None,
+                source: None,
                 // Nothing to the instance's Assistant: it has no key of its
                 // own yet (W12.5).
                 conversation: false,

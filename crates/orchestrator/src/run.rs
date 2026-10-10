@@ -621,20 +621,25 @@ struct Session {
     said: String,
     /// The child objective the lead delegated, checked (C-54).
     delegated: Option<children::Asked>,
+    /// The target of the lead's plan of an exploration, as it was accepted
+    /// (C-54, the W13.7 repair).
+    target: Option<crate::explore::Target>,
     /// Delegations the Orchestrator refused, with why.
     refused: Vec<(Value, String)>,
 }
 
 /// What a session works with besides its role's own: the test instance its
 /// control tools operate, the lead's tools for an exploring cycle, the
-/// reproduced findings it may choose among, and the base commit's model a
-/// proposal's names are resolved in (C-55).
+/// reproduced findings it may choose among, the base commit's model a
+/// proposal's names are resolved in (C-55), and what a plan of an
+/// exploration is checked against (the W13.7 repair).
 #[derive(Default)]
 struct With<'a> {
     test: Option<&'a mut Client>,
     kit: Option<Toolset>,
     offered: Vec<(String, String)>,
     model: Option<&'a Result<Elements, String>>,
+    planning: Option<&'a explore::Planned>,
 }
 
 /// What an exploration by the rules decides with: they ask no model, so
@@ -1215,9 +1220,10 @@ impl Driver {
             kit,
             offered,
             model: base_model,
+            planning,
         } = with;
         // What the lead may delegate now, as its `delegate` tool checks it.
-        let bounds = self.bounds();
+        let bounds = self.bounds(role == Role::Lead);
         // What the lead's submissions are checked against (C-55): the base
         // commit's model, and what findings were judged to be, its own
         // judgments in this session included.
@@ -1238,6 +1244,7 @@ impl Driver {
         let knowledge_file = Knowledge::file(&self.setup.store, &self.objective.repository);
         let knowledge_key = Knowledge::key(&self.objective.repository);
         let accepted: RefCell<Option<record::Proposal>> = RefCell::new(None);
+        let target: RefCell<Option<crate::explore::Target>> = RefCell::new(None);
         let refusal: RefCell<Option<String>> = RefCell::new(None);
         let adjudicated: RefCell<Vec<(String, Disposition)>> = RefCell::new(Vec::new());
         let mut model = WorkingModel::new(cwd.to_path_buf());
@@ -1322,6 +1329,26 @@ impl Driver {
                         return ToolResult::error(format!(
                             "Not accepted: {problem}. Submit your review again."
                         ));
+                    }
+                    if call.name == roles::SUBMIT_EXPLORATION
+                        && let Some(planning) = planning
+                    {
+                        match planning.check(&call.input) {
+                            Ok(planned) => *target.borrow_mut() = Some(planned),
+                            Err(problem) => {
+                                refusals.post(ThreadEntry::new(
+                                    Kind::Result,
+                                    lead.clone(),
+                                    format!(
+                                        "Plans the exploration of {} (not accepted: {problem})",
+                                        call.input["project"].as_str().unwrap_or("no project")
+                                    ),
+                                ));
+                                return ToolResult::error(format!(
+                                    "Not accepted: {problem}. Fix it and submit again."
+                                ));
+                            }
+                        }
                     }
                     if call.name == roles::SUBMIT_PROPOSAL {
                         let read = roles::read_proposal(
@@ -1673,6 +1700,7 @@ impl Driver {
             adjudicated: adjudicated.into_inner(),
             delegated: delegated.into_inner(),
             refused: refused.into_inner(),
+            target: target.into_inner(),
             said,
         })
     }
@@ -1894,7 +1922,7 @@ impl Driver {
                 brief.clone(),
                 kit.clone(),
                 attempt > 0,
-                Some(&model),
+                children::Against::Proposal(&model),
             )?;
             // Accepted when it was submitted, against the findings it was
             // offered and its own judgments of them.

@@ -10,8 +10,14 @@
 //   Orchestrator refuses, then plans;
 // - WAIT-MESSAGE: the implementer waits for the Operator's message;
 // - WEAKEN: the implementer's first attempt has the test but not the fix,
-//   and its repair weakens the test until it passes anywhere.
-// The lead plans the History panel, proposes to fix the first reproduced
+//   and its repair weakens the test until it passes anywhere;
+// - TARGET-MODEL: the lead's plans and delegations name the project
+//   `model` (the repository's own model) instead of `models/shop`;
+// - VARY: the first plan permits `models/garden` too, and the plan of a
+//   second exploration names it.
+// The lead plans the History panel (of `models/shop`, a project the test
+// repository holds; a plan the Orchestrator refuses ends the script with
+// 10), proposes to fix the first reproduced
 // finding (f1) with a test that fails on the base, and says what the
 // Operator wrote; the implementer writes the fix (FIXED, which the
 // stand-in Studio reads) and its test; the reviewer approves.
@@ -82,6 +88,20 @@ const call = async (name, input) => {
 const end = (text) =>
   out({ type: "assistant", id: `msg_end_${n}`, model: "deepseek-v4-pro", content: [{ type: "text", text }] });
 const here = (file) => existsSync(join(o.cwd, file));
+// The project a plan names, and what it permits besides.
+const project = here("TARGET-MODEL")
+  ? "model"
+  : here("VARY") && o.prompt.includes("(exploration 2 of")
+    ? "models/garden"
+    : "models/shop";
+const plan = async (goal) => {
+  const planned = await call("submit_exploration", {
+    project,
+    goal,
+    ...(here("VARY") ? { vary: ["models/shop", "models/garden"] } : {}),
+  });
+  if (planned.isError) process.exit(10);
+};
 
 if (role === "lead" && planning) {
   const delegating = here("DELEGATE") && o.prompt.includes("DELEGATE-ME") && !o.prompt.includes("has ended");
@@ -89,7 +109,7 @@ if (role === "lead" && planning) {
     // Delegates in every turn until the Orchestrator refuses, then plans.
     const answer = await call("delegate", { instruction: "Look at the History panel again", usd: 0.2, steps: 10 });
     if (answer.isError) {
-      await call("submit_exploration", { goal: "Look at the History panel and its buttons" });
+      await plan("Look at the History panel and its buttons");
       end("Planned.");
     } else {
       end("Delegated.");
@@ -104,14 +124,13 @@ if (role === "lead" && planning) {
       focus: "History",
       usd: 0.3,
       steps: 30,
+      ...(here("TARGET-MODEL") ? { project: "model" } : {}),
     });
     end("Delegated.");
   } else {
     // What the Operator wrote, given with the brief, goes into the goal.
     const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];
-    await call("submit_exploration", {
-      goal: `Look at the History panel and its buttons${wrote ? ` (${wrote})` : ""}`,
-    });
+    await plan(`Look at the History panel and its buttons${wrote ? ` (${wrote})` : ""}`);
     end("Planned.");
   }
 } else if (role === "lead") {

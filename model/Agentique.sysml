@@ -782,17 +782,17 @@ package AgentiqueArchitecture {
             doc /* What an agent role hands back for a directive. */
         }
         item def Explored :> RoleResult {
-            doc /* What an exploration run found: deterministic checks that failed (an invariant, or an expectation stated before the action) while the explorer's model chose the actions. Not yet reproduced. */
+            doc /* What an exploration run found: deterministic checks that failed (an invariant, or an expectation stated before the action) while the explorer's model chose the actions. Not yet reproduced. Before its first action the run checks that its test instance opened a copy of the planned project at the build's commit (the folder copied, the digest of its files, the project the observation shows); a run whose copy does not match acts on nothing and ends the cycle, never exploring something else in its place. */
             attribute found : Natural;
         }
         item def LeadAnswer :> RoleResult {
             doc /* What the lead hands back: a plan, a delegation, or a proposal. */
         }
         item def Plan :> LeadAnswer {
-            doc /* The lead's plan before exploring, when it delegates nothing more. */
+            doc /* The lead's plan before exploring, when it delegates nothing more: its target, the project to explore (a folder of the repository that holds a model's files, such as `model`, Agentique's own model, checked to hold one at the base commit) with the goal and, where useful, the elements it is about (resolved in that project's model) and where to start (a view, an element). The objective records it once planned: every later exploration (also after an adoption), each child, the replays and the evaluation's exploration keep to its projects, others only when the plan permitted them. */
         }
         item def Delegation :> LeadAnswer {
-            doc /* The lead asks for a child objective with its delegate tool (C-54). */
+            doc /* The lead asks for a child objective with its delegate tool (C-54). The child explores the parent's target, or another project the lead names among those the objective may explore. */
             attribute focus : String;
         }
         item def Proposal :> LeadAnswer {

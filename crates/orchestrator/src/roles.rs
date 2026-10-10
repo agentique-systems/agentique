@@ -4,6 +4,7 @@
 //! driver), Agentique's model and control tools beside them, and one tool
 //! with which the role hands its result to the Orchestrator, which checks it.
 
+use crate::explore::Target;
 use crate::findings::{Disposition, DispositionKind};
 use crate::record::{Attempt, Objective, Proposal};
 use crate::traceability::{self, Elements, Resolution};
@@ -200,13 +201,25 @@ fn submit_evaluation() -> Value {
 fn submit_exploration() -> Value {
     json!({
         "name": SUBMIT_EXPLORATION,
-        "description": "Hand the explorer its goal for this cycle's exploration of the running build (it acts in a test instance, choosing each action among the valid ones, and checks invariants after each). Without it, the explorer's goal is the objective.",
+        "description": "Hand the explorer its target for this cycle's exploration of the running build: the project it opens (a copy of it, at the build's commit) and its goal (it acts in a test instance, choosing each action among the valid ones, and checks invariants after each). The Orchestrator checks the project and the names, records the target on the objective, and keeps every later exploration, child and replay of the objective to it. Without it, the explorer's goal is the objective.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "goal": { "type": "string", "description": "What to explore, in the words of the screens and panels (the explorer prefers actions whose labels and areas meet its words)." }
+                "project": { "type": "string", "description": "The project to explore: a folder of the repository holding a model's files, as the brief lists them for this commit (`model` is Agentique's own model; `models/url-shortener` a sample). Name the one the objective is about; once recorded, later plans keep to it." },
+                "goal": { "type": "string", "description": "What to find out, in the words of the screens and panels (the explorer prefers actions whose labels and areas meet its words)." },
+                "scope": { "type": "array", "items": { "type": "string" }, "description": "Elements of the project's model the exploration is about, by qualified name; each must be an element of the project's model at this commit." },
+                "start": {
+                    "type": "object",
+                    "description": "Where the explorer starts, by rule, before it chooses anything: `view`, the id of a command that opens a view or panel (such as `requirements-view`; observe_app lists the commands), and `select`, an element of the project's model to select (qualified name).",
+                    "properties": {
+                        "view": { "type": "string" },
+                        "select": { "type": "string" }
+                    },
+                    "additionalProperties": false
+                },
+                "vary": { "type": "array", "items": { "type": "string" }, "description": "Only when the objective asks for several projects: other projects later explorations of this objective may explore. Leave it out to explore `project` every time." }
             },
-            "required": ["goal"],
+            "required": ["project", "goal"],
             "additionalProperties": false
         }
     })
@@ -221,6 +234,7 @@ fn delegate() -> Value {
             "properties": {
                 "instruction": { "type": "string", "description": "What the child explores and why." },
                 "focus": { "type": "string", "description": "The area, in the words of the screens and panels." },
+                "project": { "type": "string", "description": "The project the child explores. Leave it out to give it this objective's target; another must be one this objective may explore (its target's, or before it has one, a project the brief lists)." },
                 "usd": { "type": "number", "description": "Its spend budget in US dollars: more than nothing, and within what is left of this objective's when this objective has a spend limit." },
                 "steps": { "type": "integer", "description": "Its exploration's actions, at most this objective's step budget." }
             },
@@ -275,7 +289,7 @@ pub fn lead_tools(planning: bool, may_delegate: bool) -> Value {
 /// The lead's instructions while it plans an exploration.
 pub fn planning_instructions() -> String {
     format!(
-        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its goal with submit_exploration, in the words of the screens and panels; if one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
+        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its target with submit_exploration: the project the objective is about (the brief lists the projects at this commit; `model` is Agentique's own model) and the goal, in the words of the screens and panels, with the elements it is about and where to start when that helps. The project is recorded on the objective and every later exploration keeps to it; name others in `vary` only when the objective asks for several. If one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
     )
 }
 
@@ -563,6 +577,126 @@ fn finding_of(given: &Given, id: &str) -> Result<String, String> {
                     .join(", ")
             )
         })
+}
+
+/// What a lead's plan of an exploration is checked against (C-54, the
+/// W13.7 repair): the projects of the base commit, that commit, and the
+/// objective's target if one is recorded (a later plan keeps to its
+/// projects).
+pub struct Planning<'a> {
+    pub projects: &'a [String],
+    pub revision: &'a str,
+    pub recorded: Option<&'a Target>,
+}
+
+impl Planning<'_> {
+    /// The projects a plan or a child may name: the recorded target's, or
+    /// before there is one, every project of the base commit.
+    pub fn permitted(&self) -> Vec<String> {
+        match self.recorded {
+            Some(target) => target.projects().into_iter().map(str::to_string).collect(),
+            None => self.projects.to_vec(),
+        }
+    }
+
+    /// `project` as the repository names it (`/` between folders), if it
+    /// is one a plan may name; else why not, with those it may.
+    pub fn project(&self, project: &str) -> Result<String, String> {
+        let named = project.trim().replace('\\', "/");
+        let named = named.trim_end_matches('/').to_string();
+        if named.is_empty() {
+            return Err("name the project to explore".into());
+        }
+        if crate::explore::climbs(&named) {
+            return Err(format!(
+                "`{named}` is not a folder of the repository: name one as the brief lists it"
+            ));
+        }
+        let exists =
+            self.projects.contains(&named) || self.projects.contains(&format!("{named}/model"));
+        let permitted = self.permitted();
+        if !exists {
+            return Err(format!(
+                "`{named}` holds no model at {}: the projects are {}",
+                crate::builds::short(self.revision),
+                if self.projects.is_empty() {
+                    "none".to_string()
+                } else {
+                    self.projects.join(", ")
+                }
+            ));
+        }
+        if !permitted.contains(&named) {
+            return Err(format!(
+                "this objective explores {}, as its first plan recorded: name {}",
+                self.recorded.map(Target::line).unwrap_or_default(),
+                permitted.join(" or ")
+            ));
+        }
+        Ok(named)
+    }
+}
+
+/// A plan from `submit_exploration`'s input, checked against `planning`
+/// (C-54, the W13.7 repair): a project the objective may explore (one of
+/// the base commit's; after the first plan, one of the recorded target's),
+/// a goal, other projects only among those, a view as a command's id. The
+/// names of `scope` and `start.select` are the caller's to resolve in the
+/// project's model. Its revision is the base commit.
+pub fn read_exploration(input: &Value, planning: &Planning) -> Result<Target, String> {
+    let project = planning.project(input["project"].as_str().unwrap_or_default())?;
+    let goal = input["goal"].as_str().unwrap_or_default().trim();
+    if goal.is_empty() {
+        return Err("a plan needs its goal".into());
+    }
+    let texts = |field: &Value| -> Vec<String> {
+        field
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .map(str::to_string)
+            .collect()
+    };
+    let mut vary = Vec::new();
+    for other in texts(&input["vary"]) {
+        let other = planning
+            .project(&other)
+            .map_err(|problem| format!("`vary`: {problem}"))?;
+        if other != project && !vary.contains(&other) {
+            vary.push(other);
+        }
+    }
+    let text = |field: &str| {
+        input["start"][field]
+            .as_str()
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .map(str::to_string)
+    };
+    let start = crate::explore::Start {
+        view: text("view"),
+        select: text("select"),
+    };
+    if let Some(view) = &start.view
+        && !view
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
+        return Err(format!(
+            "`start.view` is a command's id, such as `requirements-view`, not `{view}`"
+        ));
+    }
+    Ok(Target {
+        project,
+        revision: planning.revision.to_string(),
+        goal: goal.to_string(),
+        scope: texts(&input["scope"]),
+        start,
+        vary,
+    })
 }
 
 /// A review from `submit_review`'s input, checked (C-55): its verdict one
@@ -1228,6 +1362,106 @@ mod tests {
         );
         assert_eq!(judge("f2").unwrap().0, findings[1].identity);
         assert_eq!(judge("f3").unwrap().0, findings[2].identity);
+    }
+
+    /// The W13.7 repair: a plan names a project of the base commit (as the
+    /// repository names it), a goal, other projects only among those, and a
+    /// view as a command's id; once the objective has a target, a later plan
+    /// keeps to its projects and cannot widen them.
+    #[test]
+    fn a_plan_names_a_project_of_the_commit_and_keeps_to_its_target() {
+        let projects = vec![
+            "model".to_string(),
+            "models/garden".into(),
+            "models/shop".into(),
+        ];
+        let planning = Planning {
+            projects: &projects,
+            revision: "abc1234",
+            recorded: None,
+        };
+        let plan = read_exploration(
+            &json!({
+                "project": r"models\shop/", "goal": " Look at the Requirements panel ",
+                "scope": ["Shop::Store", " "],
+                "start": { "view": "requirements-view", "select": "Shop::Store" },
+                "vary": ["model", "models/shop"]
+            }),
+            &planning,
+        )
+        .unwrap();
+        assert_eq!(
+            (
+                plan.project.as_str(),
+                plan.goal.as_str(),
+                plan.revision.as_str()
+            ),
+            ("models/shop", "Look at the Requirements panel", "abc1234")
+        );
+        assert_eq!(plan.scope, vec!["Shop::Store".to_string()]);
+        assert_eq!(plan.vary, vec!["model".to_string()]);
+        assert_eq!(plan.start.view.as_deref(), Some("requirements-view"));
+        assert_eq!(plan.projects(), vec!["models/shop", "model"]);
+        for (input, why) in [
+            (json!({ "goal": "Look" }), "name the project"),
+            (
+                json!({ "project": "models/none", "goal": "Look" }),
+                "holds no model at abc1234: the projects are model, models/garden, models/shop",
+            ),
+            (
+                json!({ "project": "../model", "goal": "Look" }),
+                "not a folder",
+            ),
+            (
+                json!({ "project": "C:/model", "goal": "Look" }),
+                "not a folder",
+            ),
+            (json!({ "project": "model", "goal": " " }), "goal"),
+            (
+                json!({ "project": "model", "goal": "Look", "start": { "view": "Requirements view" } }),
+                "command's id",
+            ),
+            (
+                json!({ "project": "model", "goal": "Look", "vary": ["models/none"] }),
+                "`vary`",
+            ),
+        ] {
+            let refused = read_exploration(&input, &planning).unwrap_err();
+            assert!(refused.contains(why), "{refused}");
+        }
+        // Recorded: a later plan names one of its projects, nothing more.
+        let recorded = Planning {
+            projects: &projects,
+            revision: "def5678",
+            recorded: Some(&plan),
+        };
+        let later =
+            read_exploration(&json!({ "project": "model", "goal": "Again" }), &recorded).unwrap();
+        assert_eq!(
+            (later.project.as_str(), later.revision.as_str()),
+            ("model", "def5678")
+        );
+        let other = read_exploration(
+            &json!({ "project": "models/garden", "goal": "Elsewhere" }),
+            &recorded,
+        )
+        .unwrap_err();
+        assert!(
+            other.contains("this objective explores models/shop") && other.contains("model"),
+            "{other}"
+        );
+        assert!(
+            read_exploration(
+                &json!({ "project": "model", "goal": "Wider", "vary": ["models/garden"] }),
+                &recorded
+            )
+            .is_err(),
+            "a later plan cannot widen its projects"
+        );
+        // The tool asks for both.
+        let schema = submit_exploration();
+        let required = schema["input_schema"]["required"].as_array().unwrap();
+        assert!(required.contains(&json!("project")) && required.contains(&json!("goal")));
     }
 
     /// C-55: a review states both judgments; a blank one is refused.

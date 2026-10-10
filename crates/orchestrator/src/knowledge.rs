@@ -58,6 +58,9 @@ pub struct RunRecord {
     pub at: String,
     pub way: Way,
     pub goal: String,
+    /// The project it explored (its plan's start).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub start: String,
     pub build: String,
     /// The commit the build was made from (C-54: the next run prefers what
     /// changed since).
@@ -329,6 +332,7 @@ impl Knowledge {
             at: run.started.clone(),
             way: run.plan.way,
             goal: run.plan.goal.clone(),
+            start: run.plan.start.clone(),
             build: run.build.clone(),
             commit: run.commit.clone(),
             seed: run.plan.seed,
@@ -614,6 +618,8 @@ mod tests {
                 usd: 0.1,
                 changes: Default::default(),
                 start: "url-shortener".into(),
+                target: None,
+                source: None,
                 conversation: false,
                 turn_ms: 1000,
                 stop_ms: 1000,
@@ -637,6 +643,8 @@ mod tests {
             conditions: Vec::new(),
             ended: String::new(),
             seconds: 3.0,
+            opened: None,
+            mismatch: None,
         }
     }
 

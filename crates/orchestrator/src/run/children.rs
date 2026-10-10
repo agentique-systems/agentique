@@ -15,7 +15,9 @@
 //! spent is counted in the parent's once (the directive keeps what was
 //! counted); the Operator may stop a child alone.
 
+use super::explore::Planned;
 use super::{Driver, Poster, Session, With};
+use crate::explore::Target;
 use crate::findings::State as Found;
 use crate::record::{
     Budgets, Cycle, DirectiveStatus, Exploring, MAX_DEPTH, Objective, Permissions, Recipient,
@@ -86,6 +88,12 @@ pub(super) struct Bounds {
     pub usd: f64,
     /// The most steps a child's exploration may take.
     pub steps: u32,
+    /// The projects of the base commit, the commit, and the objective's
+    /// target: a child's project is one the objective may explore (the
+    /// W13.7 repair).
+    pub projects: Vec<String>,
+    pub revision: String,
+    pub target: Option<Target>,
 }
 
 impl Bounds {
@@ -120,6 +128,18 @@ impl Bounds {
                 self.steps
             ));
         }
+        let project = match input["project"].as_str().map(str::trim) {
+            Some(project) if !project.is_empty() => Some(
+                crate::roles::Planning {
+                    projects: &self.projects,
+                    revision: &self.revision,
+                    recorded: self.target.as_ref(),
+                }
+                .project(project)
+                .map_err(|problem| format!("`project`: {problem}"))?,
+            ),
+            _ => None,
+        };
         Ok(Asked {
             instruction: instruction.to_string(),
             focus: input["focus"]
@@ -129,8 +149,17 @@ impl Bounds {
                 .map(str::to_string),
             usd,
             steps,
+            project,
         })
     }
+}
+
+/// What the lead's turn hands over is checked against: a proposal against
+/// the base commit's model (C-55), a plan of an exploration against the
+/// projects it may name (the W13.7 repair).
+pub(super) enum Against<'a> {
+    Proposal(&'a Result<Elements, String>),
+    Plan(&'a Planned),
 }
 
 /// A child the lead asked for, checked.
@@ -140,6 +169,9 @@ pub(super) struct Asked {
     pub focus: Option<String>,
     pub usd: f64,
     pub steps: u32,
+    /// The project it explores, when the lead named one; else the parent's
+    /// target's.
+    pub project: Option<String>,
 }
 
 impl Driver {
@@ -149,8 +181,9 @@ impl Driver {
         self.objective.depth < MAX_DEPTH
     }
 
-    /// What the lead may delegate now.
-    pub(super) fn bounds(&self) -> Bounds {
+    /// What the lead may delegate now; with the base commit's projects
+    /// when `lead` (another role delegates nothing).
+    pub(super) fn bounds(&self, lead: bool) -> Bounds {
         let left = self.objective.budgets.usd_left(self.objective.spent.usd);
         let running = self.objective.directives.iter().any(|d| {
             matches!(&d.recipient, Recipient::Child(c) if !c.is_empty())
@@ -175,6 +208,19 @@ impl Driver {
             ),
             usd: left,
             steps: self.objective.budgets.steps,
+            projects: match (lead, self.objective.cycle().and_then(|c| c.base.as_deref())) {
+                (true, Some(base)) => {
+                    crate::traceability::projects(&self.objective.repository, base)
+                        .unwrap_or_default()
+                }
+                _ => Vec::new(),
+            },
+            revision: self
+                .objective
+                .cycle()
+                .and_then(|c| c.base.clone())
+                .unwrap_or_default(),
+            target: self.objective.target.clone(),
         }
     }
 
@@ -189,8 +235,9 @@ impl Driver {
     /// child's run and the lead's session again with the child's result.
     /// What waits for the lead (the Operator's messages, children's results)
     /// opens each of its sessions; each is offered the reproduced findings
-    /// it may choose among, and its proposal is checked against `model`,
-    /// the base commit's (C-55). What it judged findings to be is recorded
+    /// it may choose among, and what it hands over is checked `against` the
+    /// base commit's model (a proposal, C-55) or the projects it may name (a
+    /// plan). What it judged findings to be is recorded
     /// on the cycle after each session.
     pub(super) fn lead(
         &mut self,
@@ -199,8 +246,12 @@ impl Driver {
         brief: String,
         kit: Toolset,
         resume: bool,
-        model: Option<&Result<Elements, String>>,
+        against: Against,
     ) -> Result<Session, String> {
+        let (model, planning) = match against {
+            Against::Proposal(model) => (Some(model), None),
+            Against::Plan(planned) => (None, Some(planned)),
+        };
         let proposing = kit
             .definitions
             .as_array()
@@ -262,6 +313,7 @@ impl Driver {
                     kit: Some(kit.clone()),
                     offered,
                     model,
+                    planning,
                 },
             )?;
             self.record_refused(&session);
@@ -521,7 +573,9 @@ impl Driver {
 }
 
 /// The child objective a delegation starts: explore only, within the
-/// parent's budget and permissions, one deeper, on the parent's models.
+/// parent's budget and permissions, one deeper, on the parent's models,
+/// with the parent's target (on the project the lead named, when it named
+/// one; the W13.7 repair).
 pub(super) fn child_objective(
     parent: &Objective,
     id: &str,
@@ -547,6 +601,22 @@ pub(super) fn child_objective(
         cycle.base = theirs.base.clone();
         cycle.base_build = theirs.base_build.clone();
     }
+    child.target = match (&asked.project, &parent.target) {
+        (Some(project), Some(target)) => Some(Target {
+            project: project.clone(),
+            vary: Vec::new(),
+            ..target.clone()
+        }),
+        (Some(project), None) => Some(Target {
+            project: project.clone(),
+            revision: cycle.base.clone().unwrap_or_default(),
+            goal: child.intent.clone(),
+            scope: Vec::new(),
+            start: Default::default(),
+            vary: Vec::new(),
+        }),
+        (None, target) => target.clone(),
+    };
     child.cycles = vec![cycle];
     child.spent = Default::default();
     child.continuation = None;
@@ -646,6 +716,9 @@ mod tests {
             refused: None,
             usd: 1.0,
             steps: 20,
+            projects: vec!["model".into(), "models/shop".into()],
+            revision: "abc".into(),
+            target: None,
         };
         let asked = serde_json::json!({ "instruction": "Look", "usd": 0.6, "steps": 10 });
         assert!(bounds.check(&asked, 0.0).is_ok());
@@ -656,5 +729,36 @@ mod tests {
         );
         let too_long = serde_json::json!({ "instruction": "Look", "usd": 0.1, "steps": 30 });
         assert!(bounds.check(&too_long, 0.0).is_err());
+        // A child's project: one of the base commit's, and once the
+        // objective has a target, one of its own.
+        let on = |project: &str| serde_json::json!({ "instruction": "Look", "usd": 0.1, "steps": 5, "project": project });
+        assert_eq!(
+            bounds
+                .check(&on(r"models\shop/"), 0.0)
+                .unwrap()
+                .project
+                .as_deref(),
+            Some("models/shop")
+        );
+        assert!(
+            bounds
+                .check(&on("models/none"), 0.0)
+                .unwrap_err()
+                .contains("holds no model")
+        );
+        let targeted = Bounds {
+            target: Some(Target {
+                project: "model".into(),
+                revision: "abc".into(),
+                goal: "g".into(),
+                scope: Vec::new(),
+                start: Default::default(),
+                vary: Vec::new(),
+            }),
+            ..bounds.clone()
+        };
+        assert!(targeted.check(&on("model"), 0.0).is_ok());
+        let other = targeted.check(&on("models/shop"), 0.0).unwrap_err();
+        assert!(other.contains("this objective explores model"), "{other}");
     }
 }
