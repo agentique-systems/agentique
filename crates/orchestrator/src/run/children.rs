@@ -105,9 +105,13 @@ impl Bounds {
             .as_f64()
             .ok_or("a child needs a budget, `usd`")?;
         if !(usd > 0.0 && usd <= left) {
-            return Err(format!(
-                "a child's budget is more than nothing and at most what is left of this objective's: ${left:.2}"
-            ));
+            return Err(if left.is_finite() {
+                format!(
+                    "a child's budget is more than nothing and at most what is left of this objective's: ${left:.2}"
+                )
+            } else {
+                "a child's budget is more than nothing".into()
+            });
         }
         let steps = input["steps"].as_u64().ok_or("a child needs `steps`")? as u32;
         if steps == 0 || steps > self.steps {

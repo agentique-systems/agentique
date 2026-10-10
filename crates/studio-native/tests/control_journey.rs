@@ -623,8 +623,9 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     );
     assert_eq!(studio.observe()["screen"], "surface", "nothing happened");
 
-    // The Objectives panel: its fields and switches are labelled as the
-    // Operator reads them, and are the Operator's.
+    // The Objectives panel: its intent and Start are labelled as the
+    // Operator reads them, and are the Operator's (its switches show once
+    // the intent is read).
     studio.must(
         json!({ "kind": "click", "control": "Objectives" }),
         "look at the Objectives panel",

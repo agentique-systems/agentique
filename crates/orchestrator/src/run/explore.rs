@@ -289,9 +289,7 @@ impl Driver {
         let left_seconds = (budgets.hours_left(self.objective.spent.seconds) * 3600.0).max(60.0);
         // A quarter of the spend budget at most; without one, the run's
         // steps bound it (`f64::MAX` keeps its record a number).
-        let run_usd = left_usd
-            .min(budgets.usd.map_or(f64::MAX, |usd| usd / 4.0))
-            .min(f64::MAX);
+        let run_usd = left_usd.min(budgets.usd.map_or(f64::MAX, |usd| usd / 4.0));
         // Without models for exploring (an objective recorded without them),
         // the rules decide: they ask no model.
         let modelled = crate::models::with_deciding(&self.objective.models, |_| ()).is_ok();

@@ -2002,12 +2002,13 @@ mod tests {
     }
 
     /// The Operator's amendment of C-54 (§7.6): spend and time unlimited,
-    /// left out of the record, with the shape inferred from the intent. A
-    /// previous build cannot read such a record, so its list leaves it out
-    /// (returning to it is safe); this build reads it whole, and a record
-    /// with limits still reads in the previous build.
+    /// left out of the record, with what the intent was read as. The
+    /// previous build's reader cannot parse such a record (so its list
+    /// leaves it out and its check after adoption refuses, as §7.6 says);
+    /// this build reads and lists it whole; a record with limits still
+    /// parses in the previous build's reader.
     #[test]
-    fn an_unlimited_record_is_skipped_by_the_previous_build() {
+    fn an_unlimited_record_is_unreadable_to_the_previous_build() {
         #[derive(Deserialize)]
         #[allow(dead_code)]
         struct PreviousBudgets {

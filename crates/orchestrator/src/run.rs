@@ -853,7 +853,7 @@ impl Driver {
                 format!(". You changed it: it {}", started.describe())
             };
             self.event(format!(
-                "{}: it {}{changed}",
+                "{} It {}{changed}",
                 inferred.by(),
                 inferred.shape.describe()
             ));
@@ -861,7 +861,7 @@ impl Driver {
         let budgets = &self.objective.budgets;
         if self.objective.parent.is_none() && budgets.usd.is_none() && budgets.hours.is_none() {
             self.event(
-                "No spend or time limit is set: it ends when its improvements are made, when a cycle makes no progress, or when you stop it",
+                "No spend or time limit is set: it ends after its improvements (each made or not), when two explorations in a row reproduce nothing new, or when you stop it",
             );
         }
         for model in self.objective.models.clone() {

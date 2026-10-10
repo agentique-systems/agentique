@@ -2356,13 +2356,16 @@ in the Conversation could not be scrolled, so Start was out of reach, and
 the Operator found the form asked for too much). The Operator writes only
 the intent. It is read once typing stops: Jev answers three typed questions
 in one request (explore first or not; one, two, three or five improvements;
-merge and adopt, merge only, or a pull request only), and a set below the
+merge and adopt, merge only, or keep each reviewed change on its branch,
+pushing and merging nothing, so the cycle ends there), and a set below the
 confidence threshold escalates to the `escalation` role's model; when
 neither answers, the defaults (one improvement without exploring, merged
-and adopted), with why. The form shows what it was read as and who read it,
+and adopted), with why. The same intent is read once; a reading replaced
+by further typing is stopped (its Jev call, if made, is paid and counted
+nowhere: only the reading used is the objective's cost). The form shows what it was read as and who read it,
 with switches for exploring, merging and adopting that the Operator may
 change, and Start waits until the intent is read. Spend and time are
-unlimited unless set (a child objective and evaluation tasks set them);
+unlimited unless set (a child objective's are);
 attempts (4), exploration steps (20 per run) and model calls per role keep
 their defaults, and the form no longer lists each role's model (the thread
 does as the objective starts). The thread's first entries say what the
@@ -2373,5 +2376,11 @@ limit. The Assistant's `propose_objective` proposes an intent only. Read
 live before building: an exploring intent with one fix (Jev, 0.95, 0.4 s),
 a stated change (Jev, 0.95), and "keep improving … don't merge anything"
 (Jev unsure of the count at 0.36, escalated: explores, five improvements,
-pull requests only, 6.8 s). Persistence as named in §7.6 (an unlimited
-record is skipped by the previous build; tested).
+merging nothing, 6.8 s); and the proof's intent asking for a second fix in
+the adopted build (Jev, 0.98: explores, two improvements, adopts).
+Persistence as the Operator decided in §7.6 (a build before this change
+cannot read an unlimited record: its list leaves it out and its check after
+adoption refuses; tested for the old reader's parse). An independent review
+found the "pull requests only" choice promised a pull request the
+Orchestrator does not open, the persistence record incomplete, readings
+repeated and never stopped, and stale governing text; corrected.

@@ -392,7 +392,8 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   controls and commands) stay the Operator's everywhere; in the
   Operator's window its rows read "Directive, entry 3, by lead" without
   their text. The observation's `objective` gives the objective shown: its
-  state, phase, spend, children, whether the start form is open, and its
+  state, phase, spend and its spend budget (`budget`, null without a
+  limit), children, whether the start form is open, and its
   thread's size and last entry (kind, author, where it went; its text and
   the intent only in a test instance); `conversation.addressed` says whom
   the composer addresses. The values of the objective's fields

@@ -177,6 +177,22 @@ pub trait Answers {
     /// Jev's choice among the question's options, with its confidence,
     /// within its deadline.
     fn ask_jev(&self, question: &Question) -> Result<Decision, Failure>;
+    /// Jev's answers to several typed questions about one state, in one
+    /// request within its deadline, with what they cost (the questions
+    /// about an objective's intent, [`infer`]). Where Jev is not asked so,
+    /// it does not answer.
+    fn ask_jev_all(
+        &self,
+        _state: &Value,
+        _questions: BTreeMap<String, jev::Question>,
+    ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
+        Err(Failure {
+            error: "Jev: not asked several questions here".into(),
+            source: Source::Jev,
+            millis: 0,
+            usd: Some(0.0),
+        })
+    }
     /// One call to `model`: what it said and what it cost (`None` when
     /// unknown), or why it failed (a request that was sent may be billed,
     /// so a failed call's cost is unknown). `stop` is asked while it is
@@ -389,6 +405,41 @@ impl Default for Decider {
 impl Answers for Decider {
     fn jev_model(&self) -> ModelRef {
         ModelRef::new(Provider::TypeSafe, &self.jev_model)
+    }
+
+    fn ask_jev_all(
+        &self,
+        state: &Value,
+        questions: BTreeMap<String, jev::Question>,
+    ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
+        let started = Instant::now();
+        let request = DecisionRequest {
+            model: self.jev_model.clone(),
+            state: state.clone(),
+            questions,
+        };
+        let mut handle = self
+            .providers
+            .decide_start(request, Instant::now() + self.deadline);
+        let result = loop {
+            if let Some(result) = handle.next_result(Duration::from_millis(50)) {
+                break result;
+            }
+        };
+        let model = ModelRef::new(Provider::TypeSafe, &self.jev_model);
+        match result {
+            Ok(reply) => Ok((reply.answers, reply.usage.cost_usd(&model))),
+            Err(failure) => Err(Failure {
+                source: Source::Jev,
+                error: format!("Jev: {failure}"),
+                millis: started.elapsed().as_millis() as u64,
+                usd: if failure.attempts == 0 {
+                    Some(0.0)
+                } else {
+                    failure.usage.and_then(|u| u.cost_usd(&model))
+                },
+            }),
+        }
     }
 
     fn threshold(&self) -> f64 {
@@ -780,7 +831,8 @@ impl Shape {
                     "merges reviewed changes that pass every check, then builds, tries and restarts in the result",
                 (true, false) =>
                     "merges reviewed changes that pass every check, without building or restarting",
-                _ => "opens pull requests for you to merge",
+                _ =>
+                    "keeps each reviewed change on its own branch for you; nothing is pushed or merged, so each cycle ends there",
             }
         )
     }
@@ -805,21 +857,23 @@ pub struct Inferred {
 }
 
 impl Inferred {
-    /// Who inferred it, in the Operator's words.
+    /// Who read the intent, as a sentence in the Operator's words.
     pub fn by(&self) -> String {
         match self.source {
             Source::Jev => format!(
-                "Jev read the intent (confidence {:.2})",
+                "Jev read the intent (confidence {:.2}).",
                 self.confidence.unwrap_or(0.0)
             ),
-            Source::Escalated | Source::Model => {
-                format!(
-                    "Jev was unsure ({}), so the escalation model read the intent",
-                    self.note
-                )
-            }
+            Source::Escalated | Source::Model if self.note.starts_with("Jev:") => format!(
+                "Jev did not answer ({}), so the escalation role's model read the intent.",
+                self.note.trim_start_matches("Jev:").trim()
+            ),
+            Source::Escalated | Source::Model => format!(
+                "Jev was unsure ({}), so the escalation role's model read the intent.",
+                self.note
+            ),
             Source::Rules => format!(
-                "Nothing could read the intent ({}): the defaults",
+                "Nothing could read the intent ({}), so the defaults apply.",
                 self.note
             ),
         }
@@ -869,7 +923,10 @@ const SHAPE_QUESTIONS: [ShapeQuestion; 3] = [
                 "Merge it, then build, try and restart in the result",
             ),
             ("merge", "Merge it, without building or restarting"),
-            ("review", "Open a pull request only; the Operator merges"),
+            (
+                "keep",
+                "Keep it on its branch for the Operator; push and merge nothing",
+            ),
         ],
     },
 ];
@@ -888,7 +945,7 @@ pub fn shape_of(explore: &str, improvements: &str, integrate: &str) -> Result<Sh
     let (merge, adopt) = match integrate {
         "adopt" => (true, true),
         "merge" => (true, false),
-        "review" => (false, false),
+        "keep" => (false, false),
         other => return Err(format!("`{other}` is not what happens to a change")),
     };
     Ok(Shape {
@@ -934,175 +991,167 @@ pub fn shape_from_jev(
 }
 
 /// A model's answer about an intent, `{"explore": …, "improvements": …,
-/// "integrate": …}`, read into a shape.
+/// "integrate": …}`, read into a shape: the first object in what it said
+/// that names one (an echo of the template before it is passed over).
 pub fn read_shape(said: &str) -> Result<Shape, String> {
-    let object = said
-        .char_indices()
-        .filter(|(_, c)| *c == '{')
-        .find_map(|(at, _)| {
-            let value: Value = serde_json::Deserializer::from_str(&said[at..])
-                .into_iter::<Value>()
-                .next()?
-                .ok()?;
-            value["integrate"].is_string().then_some(value)
-        })
-        .ok_or("the model gave no JSON naming what happens to a change")?;
-    let text = |key: &str| match &object[key] {
+    let text = |object: &Value, key: &str| match &object[key] {
         Value::String(s) => s.clone(),
         Value::Number(n) => n.to_string(),
         _ => String::new(),
     };
-    shape_of(&text("explore"), &text("improvements"), &text("integrate"))
+    let mut problem = "the model gave no JSON naming what happens to a change".to_string();
+    for (at, _) in said.char_indices().filter(|(_, c)| *c == '{') {
+        let Some(Ok(object)) = serde_json::Deserializer::from_str(&said[at..])
+            .into_iter::<Value>()
+            .next()
+        else {
+            continue;
+        };
+        if !object["integrate"].is_string() {
+            continue;
+        }
+        match shape_of(
+            &text(&object, "explore"),
+            &text(&object, "improvements"),
+            &text(&object, "integrate"),
+        ) {
+            Ok(shape) => return Ok(shape),
+            Err(error) => problem = error,
+        }
+    }
+    Err(problem)
+}
+
+/// The three questions about an intent as Jev is asked them.
+fn jev_questions() -> BTreeMap<String, jev::Question> {
+    SHAPE_QUESTIONS
+        .iter()
+        .map(|question| {
+            (
+                question.id.to_string(),
+                jev::Question {
+                    instructions: question.instructions.to_string(),
+                    kind: QuestionKind::Choice {
+                        options: question
+                            .options
+                            .iter()
+                            .map(|(o, about)| (o.to_string(), Some(about.to_string())))
+                            .collect(),
+                    },
+                },
+            )
+        })
+        .collect()
+}
+
+/// The three questions about an intent as a reasoning model reads them.
+fn model_prompt(intent: &str) -> String {
+    let questions: Vec<String> = SHAPE_QUESTIONS
+        .iter()
+        .map(|question| {
+            let options: Vec<String> = question
+                .options
+                .iter()
+                .map(|(o, about)| format!("  - {o}: {about}"))
+                .collect();
+            format!(
+                "{}: {}\n{}",
+                question.id,
+                question.instructions,
+                options.join("\n")
+            )
+        })
+        .collect();
+    format!(
+        "{SHAPE_ABOUT}\n\nThe Operator's intent:\n{}\n\nAnswer each question with one of its options:\n{}\n\nAnswer with JSON only: {{\"explore\": \"<option>\", \"improvements\": \"<option>\", \"integrate\": \"<option>\"}}",
+        intent.trim(),
+        questions.join("\n")
+    )
+}
+
+/// What an objective with `intent` does (the Operator's amendment of
+/// C-54): Jev answers three typed questions about it in one request; a
+/// set confident at `answers`' threshold is used; otherwise the
+/// `escalation` model answers them (one more call when its answer cannot
+/// be read); when neither does, the defaults, with why. `stop` is asked
+/// while the model is waited for (a reading the Operator's typing
+/// replaced). Asked before Start, so the Operator sees it and may change
+/// it.
+pub fn infer(
+    answers: &dyn Answers,
+    escalation: &ModelRef,
+    effort: Option<&str>,
+    intent: &str,
+    stop: &mut dyn FnMut() -> bool,
+) -> Inferred {
+    let started = Instant::now();
+    let state = json!({ "about": SHAPE_ABOUT, "intent": intent.trim() });
+    let mut usd = Some(0.0);
+    let add = |total: Option<f64>, part: Option<f64>| Some(total? + part?);
+    let note = match answers.ask_jev_all(&state, jev_questions()) {
+        Ok((said, cost)) => {
+            usd = add(usd, cost);
+            match shape_from_jev(&said, answers.threshold()) {
+                Ok((shape, confidence)) => {
+                    return Inferred {
+                        shape,
+                        source: Source::Jev,
+                        confidence: Some(confidence),
+                        millis: started.elapsed().as_millis() as u64,
+                        usd,
+                        note: String::new(),
+                    };
+                }
+                Err(why) => why,
+            }
+        }
+        Err(failure) => {
+            usd = add(usd, failure.usd);
+            failure.error
+        }
+    };
+    let prompt = model_prompt(intent);
+    let mut problem = note.clone();
+    for _ in 0..2 {
+        match answers.chat(escalation, effort, &prompt, stop) {
+            Ok((said, cost)) => {
+                usd = add(usd, cost);
+                match read_shape(&said) {
+                    Ok(shape) => {
+                        return Inferred {
+                            shape,
+                            source: Source::Escalated,
+                            confidence: None,
+                            millis: started.elapsed().as_millis() as u64,
+                            usd,
+                            note,
+                        };
+                    }
+                    Err(error) => problem = format!("{note}; the model: {error}"),
+                }
+            }
+            Err(error) => {
+                // A request that was sent may be billed.
+                usd = None;
+                problem = format!("{note}; the model failed: {error}");
+                break;
+            }
+        }
+    }
+    Inferred {
+        shape: Shape::DEFAULT,
+        source: Source::Rules,
+        confidence: None,
+        millis: started.elapsed().as_millis() as u64,
+        usd,
+        note: problem,
+    }
 }
 
 impl Decider {
-    /// What an objective with `intent` does (the Operator's amendment of
-    /// C-54): Jev answers three typed questions about it in one request; a
-    /// confident set is used; otherwise the reasoning model answers them;
-    /// when neither does, the defaults, with why. Asked before Start, so
-    /// the Operator sees it and may change it.
-    pub fn infer(&self, intent: &str) -> Inferred {
-        let started = Instant::now();
-        let state = json!({ "about": SHAPE_ABOUT, "intent": intent.trim() });
-        let mut usd = Some(0.0);
-        let add = |total: Option<f64>, part: Option<f64>| Some(total? + part?);
-        let note = match self.ask_jev_shape(&state) {
-            Ok((answers, cost)) => {
-                usd = add(usd, cost);
-                match shape_from_jev(&answers, self.threshold) {
-                    Ok((shape, confidence)) => {
-                        return Inferred {
-                            shape,
-                            source: Source::Jev,
-                            confidence: Some(confidence),
-                            millis: started.elapsed().as_millis() as u64,
-                            usd,
-                            note: String::new(),
-                        };
-                    }
-                    Err(why) => why,
-                }
-            }
-            Err(failure) => {
-                usd = add(usd, failure.usd);
-                failure.error
-            }
-        };
-        let questions: Vec<String> = SHAPE_QUESTIONS
-            .iter()
-            .map(
-                |ShapeQuestion {
-                     id,
-                     instructions,
-                     options,
-                 }| {
-                    let options: Vec<String> = options
-                        .iter()
-                        .map(|(o, about)| format!("  - {o}: {about}"))
-                        .collect();
-                    format!("{id}: {instructions}\n{}", options.join("\n"))
-                },
-            )
-            .collect();
-        let prompt = format!(
-            "{SHAPE_ABOUT}\n\nThe Operator's intent:\n{}\n\nAnswer each question with one of its options:\n{}\n\nAnswer with JSON only: {{\"explore\": \"<option>\", \"improvements\": \"<option>\", \"integrate\": \"<option>\"}}",
-            intent.trim(),
-            questions.join("\n")
-        );
-        let mut problem = note.clone();
-        for _ in 0..2 {
-            match self.chat(&self.model, self.effort.as_deref(), &prompt, &mut || false) {
-                Ok((said, cost)) => {
-                    usd = add(usd, cost);
-                    match read_shape(&said) {
-                        Ok(shape) => {
-                            return Inferred {
-                                shape,
-                                source: Source::Escalated,
-                                confidence: None,
-                                millis: started.elapsed().as_millis() as u64,
-                                usd,
-                                note,
-                            };
-                        }
-                        Err(error) => problem = format!("{note}; the model: {error}"),
-                    }
-                }
-                Err(error) => {
-                    // A request that was sent may be billed.
-                    usd = None;
-                    problem = format!("{note}; the model failed: {error}");
-                    break;
-                }
-            }
-        }
-        Inferred {
-            shape: Shape::DEFAULT,
-            source: Source::Rules,
-            confidence: None,
-            millis: started.elapsed().as_millis() as u64,
-            usd,
-            note: problem,
-        }
-    }
-
-    /// Jev's answers to the three questions about an intent, in one
-    /// request within its deadline, with what they cost.
-    fn ask_jev_shape(
-        &self,
-        state: &Value,
-    ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
-        let started = Instant::now();
-        let questions = SHAPE_QUESTIONS
-            .iter()
-            .map(
-                |ShapeQuestion {
-                     id,
-                     instructions,
-                     options,
-                 }| {
-                    (
-                        id.to_string(),
-                        jev::Question {
-                            instructions: instructions.to_string(),
-                            kind: QuestionKind::Choice {
-                                options: options
-                                    .iter()
-                                    .map(|(o, about)| (o.to_string(), Some(about.to_string())))
-                                    .collect(),
-                            },
-                        },
-                    )
-                },
-            )
-            .collect();
-        let request = DecisionRequest {
-            model: self.jev_model.clone(),
-            state: state.clone(),
-            questions,
-        };
-        let mut handle = self
-            .providers
-            .decide_start(request, Instant::now() + self.deadline);
-        let result = loop {
-            if let Some(result) = handle.next_result(Duration::from_millis(50)) {
-                break result;
-            }
-        };
-        let model = ModelRef::new(Provider::TypeSafe, &self.jev_model);
-        match result {
-            Ok(reply) => Ok((reply.answers, reply.usage.cost_usd(&model))),
-            Err(failure) => Err(Failure {
-                source: Source::Jev,
-                error: format!("Jev: {failure}"),
-                millis: started.elapsed().as_millis() as u64,
-                usd: if failure.attempts == 0 {
-                    Some(0.0)
-                } else {
-                    failure.usage.and_then(|u| u.cost_usd(&model))
-                },
-            }),
-        }
+    /// [`infer`] with this decider's Jev and escalation model.
+    pub fn infer(&self, intent: &str, stop: &mut dyn FnMut() -> bool) -> Inferred {
+        infer(self, &self.model, self.effort.as_deref(), intent, stop)
     }
 }
 
@@ -1368,7 +1417,7 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
         assert!(shape_from_jev(&odd, 0.6).is_err());
 
         assert_eq!(
-            read_shape("Reasoning... {\"explore\": \"direct\", \"improvements\": 1, \"integrate\": \"review\"}").unwrap(),
+            read_shape("Template {\"explore\": \"<option>\", \"improvements\": \"<option>\", \"integrate\": \"<option>\"}; answer {\"explore\": \"direct\", \"improvements\": 1, \"integrate\": \"keep\"}").unwrap(),
             Shape {
                 explore: false,
                 cycles: 1,
@@ -1387,6 +1436,154 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
             Shape::DEFAULT
                 .describe()
                 .contains("does not explore first; one improvement at most; merges")
+        );
+    }
+
+    /// Jev's answers, or its failure, and what the model says in turn.
+    struct Reader {
+        jev: Result<Vec<(&'static str, &'static str, f64)>, String>,
+        said: std::cell::RefCell<Vec<Result<&'static str, &'static str>>>,
+        asked: std::cell::Cell<u32>,
+    }
+
+    impl Answers for Reader {
+        fn jev_model(&self) -> ModelRef {
+            ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+        }
+        fn threshold(&self) -> f64 {
+            0.6
+        }
+        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+            unreachable!("asked all three at once")
+        }
+        fn ask_jev_all(
+            &self,
+            state: &Value,
+            questions: BTreeMap<String, jev::Question>,
+        ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
+            assert!(state["intent"].as_str().unwrap().starts_with("Explore"));
+            assert_eq!(
+                questions.keys().collect::<Vec<_>>(),
+                ["explore", "improvements", "integrate"]
+            );
+            match &self.jev {
+                Ok(answers) => Ok((
+                    answers
+                        .iter()
+                        .map(|(id, c, confidence)| (id.to_string(), choice(c, *confidence)))
+                        .collect(),
+                    Some(0.001),
+                )),
+                Err(error) => Err(Failure {
+                    error: error.clone(),
+                    source: Source::Jev,
+                    millis: 4000,
+                    usd: Some(0.0),
+                }),
+            }
+        }
+        fn chat(
+            &self,
+            _: &ModelRef,
+            _: Option<&str>,
+            prompt: &str,
+            stop: &mut dyn FnMut() -> bool,
+        ) -> Result<(String, Option<f64>), String> {
+            assert!(prompt.contains("integrate: ") && prompt.contains("- keep: "));
+            self.asked.set(self.asked.get() + 1);
+            if stop() {
+                return Err("stopped".into());
+            }
+            match self.said.borrow_mut().remove(0) {
+                Ok(said) => Ok((said.to_string(), Some(0.01))),
+                Err(error) => Err(error.to_string()),
+            }
+        }
+    }
+
+    fn reader(
+        jev: Result<Vec<(&'static str, &'static str, f64)>, String>,
+        said: Vec<Result<&'static str, &'static str>>,
+    ) -> Reader {
+        Reader {
+            jev,
+            said: std::cell::RefCell::new(said),
+            asked: std::cell::Cell::new(0),
+        }
+    }
+
+    const INTENT: &str = "Explore the History panel and fix what you find";
+    const TWO: &str = r#"{"explore": "explore", "improvements": "2", "integrate": "adopt"}"#;
+
+    /// The Operator's amendment of C-54: a confident Jev decides alone; an
+    /// unsure or absent Jev escalates (one more call when the answer cannot
+    /// be read); nothing answering gives the defaults with why; a stopped
+    /// reading asks no more; a failed sent call's cost is unknown.
+    #[test]
+    fn an_intent_is_read_by_jev_then_the_model_then_the_defaults() {
+        let model = ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro");
+        let confident = vec![
+            ("explore", "explore", 0.9),
+            ("improvements", "2", 0.8),
+            ("integrate", "adopt", 0.95),
+        ];
+        let jev = reader(Ok(confident.clone()), vec![]);
+        let read = infer(&jev, &model, None, INTENT, &mut || false);
+        assert_eq!((read.source, read.shape.cycles), (Source::Jev, 2));
+        assert_eq!(read.confidence, Some(0.8));
+        assert_eq!(jev.asked.get(), 0, "no model is asked");
+        assert!(
+            read.by()
+                .starts_with("Jev read the intent (confidence 0.80)")
+        );
+
+        let mut unsure = confident.clone();
+        unsure[1].2 = 0.3;
+        let escalated = reader(Ok(unsure), vec![Ok("no JSON at all"), Ok(TWO)]);
+        let read = infer(&escalated, &model, None, INTENT, &mut || false);
+        assert_eq!(read.source, Source::Escalated);
+        assert!(read.shape.explore && read.shape.cycles == 2 && read.shape.adopt);
+        assert_eq!(
+            escalated.asked.get(),
+            2,
+            "one more call for an unreadable answer"
+        );
+        assert!((read.usd.unwrap() - 0.021).abs() < 1e-9, "{:?}", read.usd);
+        assert!(
+            read.by()
+                .starts_with("Jev was unsure (Jev chose 2 for improvements"),
+            "{}",
+            read.by()
+        );
+
+        let absent = reader(Err("Jev: no key".into()), vec![Ok(TWO)]);
+        let read = infer(&absent, &model, None, INTENT, &mut || false);
+        assert_eq!(read.source, Source::Escalated);
+        assert!(
+            read.by().starts_with("Jev did not answer (no key)"),
+            "{}",
+            read.by()
+        );
+
+        let nothing = reader(Err("Jev: no key".into()), vec![Err("no DeepSeek key")]);
+        let read = infer(&nothing, &model, None, INTENT, &mut || false);
+        assert_eq!((read.source, read.shape), (Source::Rules, Shape::DEFAULT));
+        assert_eq!(read.usd, None, "a sent request may be billed");
+        assert!(read.note.contains("no DeepSeek key"), "{}", read.note);
+        assert!(
+            read.by().ends_with("so the defaults apply."),
+            "{}",
+            read.by()
+        );
+
+        let stopped = reader(Err("Jev: late".into()), vec![Ok(TWO)]);
+        let read = infer(&stopped, &model, None, INTENT, &mut || true);
+        assert_eq!(read.source, Source::Rules);
+        assert!(read.note.contains("stopped"), "{}", read.note);
+        assert_eq!(
+            stopped.said.borrow().len(),
+            1,
+            "the model's answer was never taken"
         );
     }
 }

@@ -129,6 +129,10 @@ impl ObjectiveForm {
 
     fn start(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
         let intent = self.intent(cx);
+        // The switches show this intent's reading, or nothing starts.
+        if self.applied.as_deref() != Some(intent.as_str()) {
+            return;
+        }
         let inferred = self
             .studio
             .read(cx)
@@ -322,7 +326,7 @@ impl Render for ObjectiveForm {
                     .items_center()
                     .gap(r(6.0))
                     .child(div().flex_1().child(line(
-                        "No spend or time limit: it ends when its improvements are made or a cycle makes no progress, and you can pause or stop it at any time."
+                        "No spend or time limit: it ends after its improvements (each made or not) or when two explorations in a row reproduce nothing new, and you can pause or stop it at any time."
                             .into(),
                         theme.text_muted,
                     )))
