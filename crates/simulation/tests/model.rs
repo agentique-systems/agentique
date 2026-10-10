@@ -243,6 +243,27 @@ fn an_unrelated_edit_keeps_a_result_current() {
 }
 
 #[test]
+fn a_result_of_the_runner_before_exact_whole_numbers_is_outdated() {
+    // The runner that compared whole numbers as binary64 named the package
+    // version alone. Its results stay readable, but a run of an unchanged
+    // model is no longer shown as current: the numbers it compared may
+    // come out differently now.
+    let tree = load(NOTIFICATIONS);
+    let result = run_model(&tree, "Notifications::RetryThenDeliver");
+    assert!(freshness(&result, &Present::model(&tree)).is_current());
+    let mut kept = serde_json::to_value(&result).unwrap();
+    kept["provenance"]["runner"] = "agq-simulation 0.1.0 model".into();
+    let earlier: RunResult = serde_json::from_value(kept).expect("still readable");
+    assert_eq!(earlier.checks, result.checks);
+    assert_eq!(
+        freshness(&earlier, &Present::model(&tree)),
+        agq_simulation::Freshness::Outdated(
+            "another version of the runner made it (agq-simulation 0.1.0 model)".into()
+        )
+    );
+}
+
+#[test]
 fn cancellation_and_limits_end_a_run_explicitly() {
     let tree = load(NOTIFICATIONS);
     let id = tree.find("Notifications::RetryThenDeliver").unwrap();
@@ -309,5 +330,33 @@ fn a_scenario_that_cannot_run_says_why_at_the_element() {
     assert!(
         blockers.iter().any(|b| b.message.contains("no subject")),
         "{blockers:?}"
+    );
+}
+
+#[test]
+fn a_run_checks_whole_numbers_exactly_at_the_ends_of_their_range() {
+    let tree = load(
+        "package Counting {
+    private import ScalarValues::*;
+    part def Counter {
+        attribute lowest : Integer = -9223372036854775808;
+        attribute beyond : Integer = 9007199254740993;
+    }
+    verification def ExactWholeNumbers {
+        subject counter : Counter;
+        assert constraint overTheLimit { counter.beyond > 9007199254740992 }
+        then assert constraint remainder { counter.lowest % -1 == 0 }
+    }
+}",
+    );
+    let result = run_model(&tree, "Counting::ExactWholeNumbers");
+    assert_eq!(result.status, RunStatus::Completed, "{:#?}", result.stop);
+    assert_eq!(
+        verdicts(&result),
+        [
+            ("overTheLimit", Verdict::Passed),
+            ("remainder", Verdict::Passed),
+            ("no unexpected output", Verdict::Passed)
+        ]
     );
 }

@@ -163,6 +163,8 @@ fn binary(op: BinaryOp, left: &Expr, right: &Expr, env: &dyn Env) -> Result<Valu
         Less | LessOrEqual | Greater | GreaterOrEqual => {
             let ordering = match (&a, &b) {
                 (Value::Str(x), Value::Str(y)) => x.cmp(y),
+                // Exact: as binary64, neighbours above 2^53 would be equal.
+                (Value::Int(x), Value::Int(y)) => x.cmp(y),
                 _ => {
                     let (x, y) = numbers(op, &a, &b)?;
                     x.partial_cmp(&y).ok_or_else(|| {
@@ -209,7 +211,9 @@ fn binary(op: BinaryOp, left: &Expr, right: &Expr, env: &dyn Env) -> Result<Valu
             (Value::Int(_), Value::Int(0)) => {
                 Err(EvalError("remainder of division by zero".into()))
             }
-            (Value::Int(x), Value::Int(y)) => Ok(Value::Int(x % y)),
+            // Only the quotient of `MIN % -1` does not fit; the remainder,
+            // 0, does (`%` itself would panic there).
+            (Value::Int(x), Value::Int(y)) => Ok(Value::Int(x.wrapping_rem(*y))),
             _ => Err(EvalError(format!(
                 "`%` applies to whole numbers, not {} and {}",
                 a.kind(),
@@ -285,5 +289,57 @@ mod tests {
             Box::new(path),
         );
         assert_eq!(eval(&and, &NoNames), Ok(Value::Bool(false)));
+    }
+
+    #[test]
+    fn whole_numbers_compare_exactly() {
+        // Above 2^53 neighbouring whole numbers have one binary64 value;
+        // compared as whole numbers they stay apart, as `==` keeps them
+        // (deviation 22).
+        let holds =
+            |op, a, b| eval(&Expr::Binary(op, int(a), int(b)), &NoNames) == Ok(Value::Bool(true));
+        let big = 1_i64 << 53;
+        for (lower, higher) in [
+            (big, big + 1),
+            (-big - 1, -big),
+            (i64::MAX - 1, i64::MAX),
+            (i64::MIN, i64::MIN + 1),
+        ] {
+            assert!(holds(BinaryOp::Less, lower, higher), "{lower} < {higher}");
+            assert!(
+                holds(BinaryOp::Greater, higher, lower),
+                "{higher} > {lower}"
+            );
+            assert!(!holds(BinaryOp::LessOrEqual, higher, lower));
+            assert!(!holds(BinaryOp::GreaterOrEqual, lower, higher));
+            assert!(!holds(BinaryOp::Equal, lower, higher));
+            // `<=` and `>=` both hold only where `==` does.
+            assert!(holds(BinaryOp::LessOrEqual, higher, higher));
+            assert!(holds(BinaryOp::GreaterOrEqual, higher, higher));
+            assert!(holds(BinaryOp::Equal, higher, higher));
+        }
+        // A whole number and a real still compare as binary64 values, and
+        // `==` agrees with the ordering there too.
+        let real = Box::new(Expr::Const(Value::Real(big as f64)));
+        let mixed = |op| eval(&Expr::Binary(op, int(big + 1), real.clone()), &NoNames);
+        assert_eq!(mixed(BinaryOp::Equal), Ok(Value::Bool(true)));
+        assert_eq!(mixed(BinaryOp::LessOrEqual), Ok(Value::Bool(true)));
+        assert_eq!(mixed(BinaryOp::Less), Ok(Value::Bool(false)));
+    }
+
+    #[test]
+    fn a_remainder_is_exact_at_the_ends_of_the_range() {
+        let remainder = |a, b| eval(&Expr::Binary(BinaryOp::Remainder, int(a), int(b)), &NoNames);
+        // The quotient of the smallest whole number by -1 does not fit, but
+        // the remainder, 0, does.
+        assert_eq!(remainder(i64::MIN, -1), Ok(Value::Int(0)));
+        assert_eq!(remainder(i64::MAX, -1), Ok(Value::Int(0)));
+        assert_eq!(remainder(i64::MIN, i64::MAX), Ok(Value::Int(-1)));
+        assert_eq!(remainder(-7, 3), Ok(Value::Int(-1)), "the dividend's sign");
+        assert_eq!(remainder(7, -3), Ok(Value::Int(1)));
+        assert_eq!(
+            remainder(i64::MIN, 0),
+            Err(EvalError("remainder of division by zero".into()))
+        );
     }
 }

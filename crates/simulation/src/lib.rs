@@ -57,8 +57,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Instant;
 
-/// This runner's name and version, recorded in every result.
-pub const RUNNER: &str = concat!("agq-simulation ", env!("CARGO_PKG_VERSION"));
+/// This runner's name and version, recorded in every result: the package's
+/// version and, after `+`, the revision of what runs compute. The revision
+/// goes up with every change that makes a run of an unchanged model come
+/// out differently, so the results made before it are outdated rather than
+/// current (2: whole numbers compare exactly and `MIN % -1` is 0).
+pub const RUNNER: &str = concat!("agq-simulation ", env!("CARGO_PKG_VERSION"), "+2");
 
 /// What to run and how.
 #[derive(Clone, Debug, PartialEq)]

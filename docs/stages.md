@@ -2287,6 +2287,34 @@ constants are not read; scenario runs still work attribute values out
 differently (deviation 23); a change to the code alone reaches the ladder
 when the model, the links, the kept results or the checks next change.
 
+**W13.3 follow-up: exact whole numbers** (`stage13/exact-integers`; found
+by an external review of `main` at `5d893017` reading the evaluator, not by
+a failure in use; nothing here says the Operator accepted anything).
+Before: the evaluator ordered two whole numbers through binary64, so above
+2^53 neighbours compared equal (`9007199254740993 <= 9007199254740992` was
+true while `==` said they differ), and a requirement calculated a count one
+over its limit as holding; `MIN % -1` panicked (Rust's `%` overflows on
+that quotient), crashing a requirement's calculation and a scenario run.
+Now two whole numbers compare exactly, and `%` gives the exact remainder
+(`MIN % -1` is 0, which fits; an error would have called a representable
+result an overflow); a whole number compared with a `Real` still compares
+as binary64 (deviation 22 now says each). The runner's identity becomes
+`agq-simulation 0.1.0+2`: a result made by the runner before is readable but
+outdated, never current, since its comparisons may come out differently
+now. Tested before and after the fix: the evaluator (the neighbours of
+±2^53 and of both ends of the range, `<`, `<=`, `>`, `>=` and `==` agreeing;
+remainders at both ends, by zero, and with negative operands), a
+requirement over its limit by one beyond 2^53 (it said "holds"), the
+remainder in a requirement and in a scenario run (both panicked), and a
+kept result of the previous runner (it was current). On Windows (rustc
+1.97.1): `cargo test --workspace` 973 passed, 0 failed, 27 ignored (6 more
+than `main`'s 967); workspace clippy, clippy with `automation`, fmt, the
+architecture check, the tools' 21 and the companion's 44 tests pass. Not
+verified: a window (outdated results shown after adoption). Not changed: an
+integer literal outside the 64-bit range still becomes a `Real` when a run
+is compiled (`compile.rs`), recorded for a decision rather than changed
+here.
+
 **W13.6 A second system** (#122; nothing here says the Operator accepted
 anything). `models/inspection-charging/InspectionCharging.sysml`: an
 inspection drone and its charging station, after the Operator's guide
