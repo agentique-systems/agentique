@@ -3921,4 +3921,81 @@ mod tests {
         assert_eq!(tests_ran("Ran 5 tests in 0.010s\n\nOK"), Some(5));
         assert_eq!(tests_ran("Compiling things"), None);
     }
+
+    /// AR-T-007 (reproduction, `requiredChecksDecide`): a criterion's test
+    /// run passes only when it shows that tests ran. A run the criterion's
+    /// gate admits (`python -m unittest <module>`) that exits 0 and says
+    /// nothing about tests (the module ends the process as it is imported)
+    /// ran no test that can be seen: it must not pass, as a run that says
+    /// it ran 0 tests does not. Needs Python (skipped without it).
+    #[test]
+    fn a_criterion_run_that_exits_well_without_a_recognisable_test_count_does_not_pass() {
+        let python = std::process::Command::new("python")
+            .arg("--version")
+            .output()
+            .is_ok_and(|o| o.status.success());
+        if !python {
+            eprintln!("Python is not available: skipped");
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let checkout = dir.path().join("checkout");
+        std::fs::create_dir_all(&checkout).unwrap();
+        std::fs::write(checkout.join("silent.py"), "import sys\nsys.exit(0)\n").unwrap();
+        let store = Store::new(dir.path().join("objectives"));
+        let objective = store
+            .create(
+                "Check a criterion",
+                &checkout,
+                "main",
+                record::Budgets::default(),
+                record::Permissions::default(),
+            )
+            .unwrap();
+        let (events, _shown) = std::sync::mpsc::channel();
+        let setup = Setup {
+            store: store.clone(),
+            work: dir.path().join("work"),
+            builds: dir.path().join("builds"),
+            runtime: Box::new(|_, _| Err("no agent works in this test".into())),
+            keys: Vec::new(),
+            checks: Vec::new(),
+            protected: Vec::new(),
+            running_build: None,
+            speed: "instant".into(),
+            credential: Box::new(|_| None),
+            studios: Box::new(Live),
+        };
+        let driver = Driver {
+            setup: Rc::new(setup),
+            poster: Poster {
+                store,
+                objective: objective.id.clone(),
+                events: events.clone(),
+                keys: Vec::new(),
+            },
+            objective,
+            events,
+            controls: Controls::default(),
+            last: Instant::now(),
+            delegated: 0,
+        };
+        let words: Vec<String> = ["python", "-m", "unittest", "silent"]
+            .map(String::from)
+            .to_vec();
+        assert_eq!(
+            roles::test_command(&words),
+            Ok(()),
+            "a criterion may run it"
+        );
+        let outcome = driver.criterion(&checkout, &words, Duration::from_secs(120));
+        assert_ne!(
+            outcome.verdict, "not run",
+            "it ran (exit 0, nothing written): {outcome:?}"
+        );
+        assert_ne!(
+            outcome.verdict, "passed",
+            "a run with no recognisable test count passed the criterion: {outcome:?}"
+        );
+    }
 }
