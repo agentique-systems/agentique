@@ -718,6 +718,7 @@ mod tests {
             scope: Vec::new(),
             start: Default::default(),
             vary: Vec::new(),
+            hypotheses: Vec::new(),
         });
         let inherited = bounds.check(&on(None), 0.0, &targeted).unwrap();
         assert_eq!(inherited.target.project, "model");

@@ -552,7 +552,14 @@ fn a_commits_projects_and_a_projects_model_are_read() {
         vec!["model".to_string(), "models/garden".to_string()]
     );
     let scratch = dir.path().join("scratch");
-    let garden = traceability::project_model(&repository, "models/garden", &scratch).unwrap();
+    let watered = "Garden::Watered".to_string();
+    let (garden, texts) =
+        traceability::project_model(&repository, "models/garden", &scratch, &[&watered]).unwrap();
+    // The requirement's text, as the model prints it (E3).
+    assert!(
+        texts[&watered].contains("requirement def Watered"),
+        "{texts:?}"
+    );
     let names: Vec<&str> = garden.values().map(|e| e.name.as_str()).collect();
     assert!(names.contains(&"Garden::Watered"), "{names:?}");
     assert!(!scratch.exists(), "the scratch folder is removed");
@@ -561,7 +568,7 @@ fn a_commits_projects_and_a_projects_model_are_read() {
         &["Garden::Bed".to_string(), "Garden::Pond".to_string()],
     );
     assert_eq!(unknown, vec!["`Garden::Pond`".to_string()]);
-    let own = traceability::project_model(&repository, "model", &scratch).unwrap();
+    let (own, _) = traceability::project_model(&repository, "model", &scratch, &[]).unwrap();
     assert!(own.values().any(|e| e.name == "Shop::Fast"));
-    assert!(traceability::project_model(&repository, "models/notes", &scratch).is_err());
+    assert!(traceability::project_model(&repository, "models/notes", &scratch, &[]).is_err());
 }
