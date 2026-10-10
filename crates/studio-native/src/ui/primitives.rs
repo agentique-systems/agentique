@@ -261,6 +261,8 @@ pub struct Segmented {
     selected: usize,
     on_choose: Option<Choose>,
     tooltips: Vec<Option<(SharedString, Option<&'static str>)>>,
+    /// Icons only: the labels stay the choices' names and tooltips.
+    compact: bool,
 }
 
 impl Segmented {
@@ -271,7 +273,14 @@ impl Segmented {
             selected,
             on_choose: None,
             tooltips: Vec::new(),
+            compact: false,
         }
+    }
+    /// Shows the choices by their icons only (where room is short); their
+    /// labels stay their names and tooltips.
+    pub fn compact(mut self, compact: bool) -> Segmented {
+        self.compact = compact;
+        self
     }
     pub fn choice(mut self, icon: Option<IconName>, label: impl Into<SharedString>) -> Segmented {
         self.choices.push((icon, label.into()));
@@ -344,6 +353,7 @@ impl RenderOnce for Segmented {
                     .enumerate()
                     .map(|(index, (glyph, label))| {
                         let chosen = index == selected;
+                        let iconic = glyph.is_some();
                         let on_choose = self.on_choose.clone();
                         let tooltip = self.tooltips.get(index).cloned().flatten();
                         div()
@@ -379,14 +389,16 @@ impl RenderOnce for Segmented {
                                 crate::ui::target::Control::new("option", label.clone())
                                     .selected(chosen),
                             ))
-                            .child(
-                                div()
-                                    .min_w_0()
-                                    .overflow_hidden()
-                                    .text_ellipsis()
-                                    .whitespace_nowrap()
-                                    .child(label),
-                            )
+                            .when(!self.compact || !iconic, |this| {
+                                this.child(
+                                    div()
+                                        .min_w_0()
+                                        .overflow_hidden()
+                                        .text_ellipsis()
+                                        .whitespace_nowrap()
+                                        .child(label),
+                                )
+                            })
                             .when_some(tooltip, |this, (title, shortcut)| {
                                 let tooltip = crate::ui::tooltip::text(title, shortcut);
                                 this.tooltip(move |window, cx| tooltip(window, cx))

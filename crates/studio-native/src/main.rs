@@ -82,6 +82,10 @@ pub struct Args {
     /// text and layout at 100%, 150% and 200% on one display.
     #[arg(long, value_parser = clap::value_parser!(f32))]
     ui_scale: Option<f32>,
+    /// The window's size at start, `WIDTHxHEIGHT` (e.g. `1080x720`, the
+    /// smallest it may be); for checking layout at representative sizes.
+    #[arg(long, value_parser = window_size)]
+    window_size: Option<(f32, f32)>,
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
@@ -216,6 +220,19 @@ impl Args {
     }
 }
 
+/// `WIDTHxHEIGHT` in logical pixels, no smaller than the window may be.
+fn window_size(text: &str) -> Result<(f32, f32), String> {
+    let (width, height) = text
+        .split_once(['x', 'X'])
+        .ok_or("a size is WIDTHxHEIGHT, e.g. 1080x720")?;
+    let number = |n: &str| n.trim().parse::<f32>().map_err(|e| format!("{n}: {e}"));
+    let (width, height) = (number(width)?, number(height)?);
+    if width < 1080.0 || height < 720.0 {
+        return Err("the window is at least 1080x720".into());
+    }
+    Ok((width, height))
+}
+
 fn main() {
     timing::mark_process_start();
     let args = Args::parse();
@@ -247,7 +264,8 @@ fn main() {
             conversation_view::bind(cx);
             settings_view::bind(cx);
             workspace::bind(cx);
-            let bounds = Bounds::centered(None, size(px(1600.0), px(1000.0)), cx);
+            let (width, height) = args.window_size.unwrap_or((1600.0, 1000.0));
+            let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
             let options = WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {

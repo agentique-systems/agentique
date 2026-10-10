@@ -1216,6 +1216,128 @@ fn open_sample(studio: &mut Studio, folder: &Path) {
     assert_eq!(released["released"], true, "{released}");
 }
 
+/// W13.7: what the Operator works an objective with is on screen and
+/// reachable, not clipped and not covered, at the smallest window, the
+/// default and a large one, and at 125% and 150% display scaling
+/// (`--ui-scale`, on windows whose scaled size a 1080p or 1440p screen
+/// holds): the start form's intent and Start, an unfinished objective's
+/// Continue and Stop in the Conversation and the Objectives panel, and the
+/// title bar's buttons (the window's own among them). Every problem of
+/// every size is listed before the test fails.
+#[test]
+#[ignore = "opens windows: needs a desktop session"]
+fn the_objectives_controls_are_reachable_at_every_size_and_scale() {
+    let mut problems = Vec::new();
+    for (size, scale) in [
+        ("1080x720", "1"),
+        ("1600x1000", "1"),
+        ("1920x1040", "1"),
+        ("1600x1000", "1.25"),
+        ("1920x1040", "1.5"),
+    ] {
+        for unfinished in [true, false] {
+            let case = format!(
+                "{size} at {scale}{}",
+                if unfinished {
+                    ", an objective not finished"
+                } else {
+                    ""
+                }
+            );
+            let folder = folder(&format!(
+                "sizes-{size}-{}-{unfinished}",
+                scale.replace('.', "_")
+            ));
+            if unfinished {
+                seed_objective(&folder);
+            }
+            let mut studio = Studio::start_with(
+                &folder,
+                "instant",
+                &["--window-size", size, "--ui-scale", scale],
+            );
+            open_sample(&mut studio, &folder);
+            let mut ids = vec!["window-minimize", "window-maximize", "window-close"];
+            if unfinished {
+                ids.extend(["objective-bar-continue", "objective-bar-stop"]);
+            }
+            problems.extend(unreachable(&studio.observe(), &case, &ids));
+            studio.must(
+                json!({ "kind": "click", "control": "Objectives" }),
+                "look at the Objectives panel",
+            );
+            let ids = if unfinished {
+                vec!["objective-continue", "objective-stop-idle"]
+            } else {
+                vec!["objective-intent", "objective-start"]
+            };
+            problems.extend(unreachable(&studio.observe(), &case, &ids));
+            drop(studio);
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+}
+
+/// What keeps a control in `observation` from being worked: missing,
+/// hidden, outside the window, too small to hit, or overlapping another
+/// control of the title bar or of its own region (the controls `ids`).
+fn unreachable(observation: &Value, case: &str, ids: &[&str]) -> Vec<String> {
+    let mut found = Vec::new();
+    let width = observation["window"]["width"].as_f64().unwrap_or(0.0);
+    let height = observation["window"]["height"].as_f64().unwrap_or(0.0);
+    let rect = |c: &Value| {
+        let b = |i: usize| c["bounds"][i].as_f64().unwrap_or(0.0);
+        (b(0), b(1), b(0) + b(2), b(1) + b(3))
+    };
+    let controls: Vec<&Value> = observation["controls"]
+        .as_array()
+        .map(|a| a.iter().collect())
+        .unwrap_or_default();
+    for id in ids {
+        let Some(c) = controls.iter().find(|c| c["id"] == *id) else {
+            found.push(format!("{case}: {id} missing"));
+            continue;
+        };
+        let (x0, y0, x1, y1) = rect(c);
+        if !c["hidden"].is_null() {
+            found.push(format!("{case}: {id} hidden at {:?}", (x0, y0, x1, y1)));
+        } else if x1 > width + 0.5 || y1 > height + 0.5 || x0 < -0.5 || y0 < -0.5 {
+            found.push(format!(
+                "{case}: {id} outside the {width}x{height} window at {:?}",
+                (x0, y0, x1, y1)
+            ));
+        }
+        if x1 - x0 < 12.0 || y1 - y0 < 12.0 {
+            found.push(format!(
+                "{case}: {id} too small to hit at {:?}",
+                (x0, y0, x1, y1)
+            ));
+        }
+    }
+    // Buttons and options of the title bar must not cover each other.
+    let title: Vec<&&Value> = controls
+        .iter()
+        .filter(|c| c["region"] == "title" && c["hidden"].is_null())
+        .collect();
+    for (i, a) in title.iter().enumerate() {
+        for b in &title[i + 1..] {
+            let (a0, a1, a2, a3) = rect(a);
+            let (b0, b1, b2, b3) = rect(b);
+            if a0 < b2 - 1.0 && b0 < a2 - 1.0 && a1 < b3 - 1.0 && b1 < a3 - 1.0 {
+                let pair = format!(
+                    "{case}: {} and {} overlap in the title bar",
+                    a["id"].as_str().unwrap_or_default(),
+                    b["id"].as_str().unwrap_or_default()
+                );
+                if !found.contains(&pair) {
+                    found.push(pair);
+                }
+            }
+        }
+    }
+    found
+}
+
 /// The Conversation as the one place (C-54, W12.6), in a test instance
 /// started with a recorded objective and the scripted stand-in Assistant:
 /// an agent reads the objective's thread (messages, directives, results,

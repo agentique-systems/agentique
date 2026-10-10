@@ -1200,6 +1200,11 @@ impl Workspace {
         div()
             .id("title-bar")
             .flex_none()
+            // Held to the window's width, so its search gives way rather
+            // than push the window's own buttons out (W13.7).
+            .w_full()
+            .min_w_0()
+            .overflow_hidden()
             .h(r(height))
             .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
             .flex()
@@ -1246,8 +1251,12 @@ impl Workspace {
                         .flex()
                         .items_center()
                         .gap(r(4.0))
+                        // Never narrower than its icon and buttons (Pause
+                        // and Stop; Resume, Step and Stop when paused): only
+                        // what the latest agent did shortens (W13.7: at a
+                        // small window its buttons covered the views).
                         .max_w(r(460.0))
-                        .min_w_0()
+                        .min_w(r(if agents_paused { 236.0 } else { 172.0 }))
                         .px(r(8.0))
                         .h(r(26.0))
                         .rounded(r(crate::tokens::radius::CONTROL))
@@ -1264,6 +1273,7 @@ impl Workspace {
                         .child(icon(IconName::Agent).size(13.0).color(theme.accent.solid))
                         .child(
                             div()
+                                .flex_1()
                                 .min_w_0()
                                 .overflow_hidden()
                                 .text_ellipsis()
@@ -1358,8 +1368,14 @@ impl Workspace {
             // The views of the Surface.
             .when(surface_shown, |this| {
                 let studio = self.studio.clone();
+                // Icons only where the window is narrow (W13.7: at the
+                // smallest window the labels pushed the window's own
+                // buttons out of it).
+                let room = f32::from(window.viewport_size().width)
+                    / (f32::from(window.rem_size()) / 16.0);
                 this.child(
                     Segmented::new("views", view_index)
+                        .compact(room < 1200.0)
                         .choice(Some(IconName::Architecture), "Architecture")
                         .tooltip(
                             "Containment, ports and connections",
@@ -1406,7 +1422,13 @@ impl Workspace {
                     .flex()
                     .items_center()
                     .gap(r(8.0))
+                    // It gives way first when the window is narrow, down to
+                    // its icon (W13.7: at the smallest window it pushed the
+                    // window's own buttons out of it).
                     .w(r(260.0))
+                    .min_w(r(36.0))
+                    .flex_shrink(1.0)
+                    .overflow_hidden()
                     .h(r(28.0))
                     .px(r(10.0))
                     .rounded(r(crate::tokens::radius::CONTROL))
@@ -1429,7 +1451,15 @@ impl Workspace {
                             .id("title-search"),
                     ))
                     .child(icon(IconName::Search).size(14.0))
-                    .child(div().flex_1().min_w_0().child("Search or run a command"))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .overflow_hidden()
+                            .text_ellipsis()
+                            .whitespace_nowrap()
+                            .child("Search or run a command"),
+                    )
                     .child(ui::KeyCaps::new("Ctrl+K")),
             )
             .child(
