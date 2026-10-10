@@ -333,31 +333,58 @@ pub fn rows(
 ) -> Vec<Row> {
     let tree = state.tree();
     let ladders = ladders(tree, state.diagnostics(), Some(links), Some(runs), report);
-    // The requirement usages the headline counts, and the defs they use.
+    // What the headline counts: its requirement usages, then (to a fixed
+    // point) the defs a counted usage's type is or specialises, and the
+    // usages inside a counted container; a subrequirement is counted when
+    // its outermost requirement container is.
     let semantics = agq_language::Semantics::new(tree);
-    let usages: Vec<ElementId> = ladders
-        .iter()
-        .filter(|l| !l.definition && !l.nested)
-        .map(|l| l.requirement)
-        .collect();
-    let used_defs: BTreeSet<ElementId> = usages
-        .iter()
-        .flat_map(|u| semantics.types_of(*u))
-        .map(|(t, _)| t)
-        .collect();
     let requirement_like = |id: ElementId| {
         matches!(
             tree[id].kind,
             ElementKind::Requirement | ElementKind::RequirementDef
         )
     };
-    let counted = |id: ElementId| {
+    let outermost = |id: ElementId| {
         let mut outermost = id;
         while let Some(owner) = tree[outermost].owner().filter(|o| requirement_like(*o)) {
             outermost = owner;
         }
-        usages.contains(&outermost) || used_defs.contains(&outermost)
+        outermost
     };
+    let usages: Vec<ElementId> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| tree[*id].kind == ElementKind::Requirement)
+        .collect();
+    let defs: Vec<ElementId> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| tree[*id].kind == ElementKind::RequirementDef && outermost(*id) == *id)
+        .collect();
+    let mut counted_containers: BTreeSet<ElementId> = ladders
+        .iter()
+        .filter(|l| !l.definition && !l.nested)
+        .map(|l| l.requirement)
+        .collect();
+    loop {
+        let types: Vec<ElementId> = usages
+            .iter()
+            .filter(|u| counted_containers.contains(&outermost(**u)))
+            .flat_map(|u| semantics.types_of(*u))
+            .map(|(t, _)| t)
+            .collect();
+        let more: Vec<ElementId> = defs
+            .iter()
+            .filter(|d| !counted_containers.contains(*d))
+            .filter(|d| types.iter().any(|t| semantics.specializes(*t, **d)))
+            .copied()
+            .collect();
+        if more.is_empty() {
+            break;
+        }
+        counted_containers.extend(more);
+    }
+    let counted = |id: ElementId| counted_containers.contains(&outermost(id));
     ladders
         .into_iter()
         .map(|ladder| {
@@ -602,6 +629,39 @@ mod tests {
         let rows = super::rows(&state, &Links::default(), &[], None);
         let headline = rows_headline(&rows);
         assert!(!headline.contains("subrequirement"), "{headline}");
+        // Used through a specialisation, or by a usage nested in a counted
+        // requirement: counted.
+        for used in [
+            "package S {
+    requirement def Purpose {
+        requirement inner;
+    }
+    requirement def Sub :> Purpose;
+    requirement s : Sub;
+}",
+            "package S {
+    requirement def Purpose {
+        requirement inner;
+    }
+    requirement outer {
+        requirement nested : Purpose;
+    }
+}",
+        ] {
+            let state = SystemState::new(parse(&[Source::new("s.sysml", used)]), BTreeSet::new());
+            assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+            let rows = super::rows(&state, &Links::default(), &[], None);
+            let inner = rows
+                .iter()
+                .find(|r| r.name.ends_with("Purpose::inner"))
+                .expect("Purpose::inner");
+            assert!(inner.counted, "{used}");
+            assert!(
+                standing_words(inner).contains("counted with"),
+                "{}",
+                standing_words(inner)
+            );
+        }
     }
 
     #[test]
