@@ -18,7 +18,9 @@
 //!   next open finishes or discards the interrupted save.
 //! - **One writer.** [`History::open`] locks the model folder until the
 //!   `History` is dropped or the process ends. A second open fails with
-//!   [`Error::Locked`].
+//!   [`Error::Locked`] (on Unix after a short wait: a process another thread
+//!   starts briefly shares the lock file).
+//! - **Reading versions** ([`Revisions`]) takes no lock and writes nothing.
 //! - **Commits** contain only the model folder. Other work in a code
 //!   repository, staged or not, is left alone.
 //! - **Branches** are the repository's branches. Switching refuses while the
@@ -32,7 +34,7 @@ mod identity;
 mod repo;
 
 pub use identity::{FORMAT, IDENTITY_FILE, Identities};
-pub use repo::Checkpoint;
+pub use repo::{Checkpoint, Revisions};
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -105,6 +107,8 @@ pub enum Error {
     Exists(PathBuf),
     #[error("the project folder is not the working folder of its git repository")]
     NotWorkingFolder,
+    #[error("a save of the model folder is unfinished; open the project to finish it")]
+    SaveUnfinished,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -179,17 +183,36 @@ impl History {
     }
 }
 
+/// How long a lock that looks held is waited for before the folder is
+/// taken to be open elsewhere: on Unix a process another thread of this
+/// process starts holds a copy of every open file, the lock file among
+/// them, until it has started (close-on-exec closes it then), so a lock
+/// released a moment ago can still look held. On Windows a started process
+/// holds no copy, so nothing is waited for.
+const LOCK_WAIT: std::time::Duration = if cfg!(unix) {
+    std::time::Duration::from_millis(500)
+} else {
+    std::time::Duration::ZERO
+};
+
 /// Locks the model folder for this process. The operating system releases
-/// the lock when the file is closed, also when the process dies.
+/// the lock when the file is closed, also when the process dies. A lock
+/// still held after [`LOCK_WAIT`] is another holder's: [`Error::Locked`].
 fn lock(dir: &Path) -> Result<fs::File> {
     let file = fs::OpenOptions::new()
         .create(true)
         .truncate(false)
         .write(true)
         .open(dir.join(LOCK_FILE))?;
-    match file.try_lock() {
-        Ok(()) => Ok(file),
-        Err(fs::TryLockError::WouldBlock) => Err(Error::Locked),
-        Err(fs::TryLockError::Error(e)) => Err(e.into()),
+    let deadline = std::time::Instant::now() + LOCK_WAIT;
+    loop {
+        match file.try_lock() {
+            Ok(()) => return Ok(file),
+            Err(fs::TryLockError::WouldBlock) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(2));
+            }
+            Err(fs::TryLockError::WouldBlock) => return Err(Error::Locked),
+            Err(fs::TryLockError::Error(e)) => return Err(e.into()),
+        }
     }
 }

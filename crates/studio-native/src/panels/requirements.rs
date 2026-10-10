@@ -68,6 +68,8 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                 .text_size(r(theme::text::SM))
                 .line_height(r(18.0))
                 .text_color(theme.text_muted)
+                .relative()
+                .child(ui::target::target(format!("Requirements: {headline}")))
                 .child(headline),
         )
         .children(rows.into_iter().enumerate().map(|(index, row)| {
@@ -103,6 +105,12 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                                 .items_center()
                                 .gap(r(8.0))
                                 .cursor_pointer()
+                                .relative()
+                                .child(ui::target::target(format!(
+                                    "Requirement {}: {}",
+                                    row.name,
+                                    crate::requirements::standing_words(&row.ladder)
+                                )))
                                 .on_click(move |_: &ClickEvent, _, cx| {
                                     studio_show.act(cx, |studio| studio.show_element(id))
                                 })
@@ -167,6 +175,17 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                                     .tone(crate::requirements::tone(standing)),
                             )
                         })
+                        .when(row.ladder.nested && !row.ladder.definition, |this| {
+                            this.child(
+                                div()
+                                    .relative()
+                                    .child(ui::target::target(format!(
+                                        "Requirement {}: subrequirement chip",
+                                        row.name
+                                    )))
+                                    .child(Chip::new("subrequirement")),
+                            )
+                        })
                         .child(
                             div()
                                 .flex_1()
@@ -180,7 +199,22 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                         ),
                 )
                 .when(expanded, |this| {
-                    this.when_some(row.doc.clone(), |this, doc| {
+                    this.when(row.ladder.nested && !row.ladder.definition, |this| {
+                        this.child(
+                            div()
+                                .text_size(r(theme::text::SM))
+                                .line_height(r(18.0))
+                                .text_color(theme.text_secondary)
+                                .relative()
+                                .child(ui::target::target(format!(
+                                    "Requirement {}: {}",
+                                    row.name,
+                                    crate::requirements::SUBREQUIREMENT_NOTE
+                                )))
+                                .child(crate::requirements::SUBREQUIREMENT_NOTE),
+                        )
+                    })
+                    .when_some(row.doc.clone(), |this, doc| {
                         this.child(
                             div()
                                 .text_size(r(theme::text::SM))
