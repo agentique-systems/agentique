@@ -727,6 +727,41 @@ mod tests {
         assert!(repo.join("app/[id]/page.tsx").is_file());
     }
 
+    /// AR-T-011 (reproduction, `claimsKeptApart`): the tree digest says
+    /// which code a result ran, so two different contents of a changed file
+    /// give two digests. A binary file (or any not valid UTF-8) that holds
+    /// the byte 0x80 and then 0x81 is different code.
+    #[test]
+    fn a_digest_tells_apart_two_binary_contents_of_a_changed_file() {
+        let (_dir, repo) = repository();
+        std::fs::write(repo.join("README.md"), [0x80u8]).unwrap();
+        let first = tree_digest(&repo).unwrap();
+        std::fs::write(repo.join("README.md"), [0x81u8]).unwrap();
+        let second = tree_digest(&repo).unwrap();
+        assert_eq!(changed_files(&repo).unwrap(), ["README.md"]);
+        assert_ne!(
+            first, second,
+            "the bytes 0x80 and 0x81 in the same changed file give the same tree digest"
+        );
+    }
+
+    /// AR-T-011 (reproduction): a changed file emptied and the same file
+    /// deleted are different code (a module that is empty, or missing), so
+    /// their tree digests differ.
+    #[test]
+    fn a_digest_tells_an_emptied_file_from_a_deleted_one() {
+        let (_dir, repo) = repository();
+        std::fs::write(repo.join("src/lib.rs"), "").unwrap();
+        let emptied = tree_digest(&repo).unwrap();
+        std::fs::remove_file(repo.join("src/lib.rs")).unwrap();
+        let deleted = tree_digest(&repo).unwrap();
+        assert_eq!(changed_files(&repo).unwrap(), ["src/lib.rs"]);
+        assert_ne!(
+            emptied, deleted,
+            "an emptied file and a deleted file give the same tree digest"
+        );
+    }
+
     /// A worktree that cannot be made leaves no branch behind.
     #[test]
     fn a_worktree_that_cannot_be_made_leaves_no_branch() {
