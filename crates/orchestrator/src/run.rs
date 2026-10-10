@@ -1253,8 +1253,14 @@ impl Driver {
         let Some(n) = self.cycle().repairs else {
             return Ok(());
         };
-        if self.cycle().carried.is_some() {
-            return Ok(());
+        if let Some(carried) = self.cycle().carried.clone() {
+            // Merged already: the local branch follows it (again, after a
+            // pause), so the next cycle starts from it.
+            let repository = self.objective.repository.clone();
+            let base_branch = self.objective.base_branch.clone();
+            return forge::follow(&repository, &base_branch, &carried).map_err(|problem| {
+                format!("paused: the local branch could not follow: {problem}")
+            });
         }
         match self.carry(n, repaired) {
             Ok(_) => Ok(()),
@@ -1274,7 +1280,22 @@ impl Driver {
                 ));
                 Ok(())
             }
-            Err(Carry::Stopped) => Err("stopped".into()),
+            Err(Carry::Stopped) => {
+                let pushed = self
+                    .objective
+                    .cycles
+                    .iter()
+                    .find(|c| c.n == n)
+                    .and_then(|c| c.blocked.as_ref())
+                    .and_then(|b| b.carried_as.clone());
+                if let Some(pushed) = pushed {
+                    self.event(format!(
+                        "Cycle {n}'s change, carried onto the repair as {}, stays pushed on its pull request, not merged",
+                        builds::short(&pushed)
+                    ));
+                }
+                Err("stopped".into())
+            }
             Err(Carry::Paused(why)) => Err(format!("paused: {why}")),
         }
     }
@@ -1317,8 +1338,8 @@ impl Driver {
         let base_branch = self.objective.base_branch.clone();
         let id = self.id();
         let paused = |what: &str, error: String| Carry::Paused(format!("{what}: {error}"));
-        // The repair must touch what failed.
-        let repair_base = self.cycle().base.clone().unwrap_or_default();
+        // The repair must touch what failed: its own merge's change (a
+        // squash merge, one parent).
         let repair_paths = forge::run(
             &repository,
             &[
@@ -1326,7 +1347,7 @@ impl Driver {
                 "diff",
                 "--name-only",
                 "--no-renames",
-                &repair_base,
+                &format!("{repaired}~1"),
                 repaired,
             ],
             Duration::from_secs(120),
@@ -1413,15 +1434,18 @@ impl Driver {
                 // Attributed again: on the repaired base the change itself
                 // may fail now.
                 let (_, attribution) = self.attribute(&what, repaired, &carried);
-                return Err(Carry::NotCarried(match attribution {
-                    blockers::Attribution::Change(why) => format!(
+                return Err(match attribution {
+                    blockers::Attribution::Change(why) => Carry::NotCarried(format!(
                         "the repository's checks fail on the carried change, and the change may have caused it ({why})"
-                    ),
-                    blockers::Attribution::Elsewhere(why)
-                    | blockers::Attribution::Infrastructure(why) => format!(
+                    )),
+                    blockers::Attribution::Elsewhere(why) => Carry::NotCarried(format!(
                         "the repository's checks fail on the carried change again, not because of it ({why})"
-                    ),
-                }));
+                    )),
+                    // No verdict says nothing about the change: it waits.
+                    blockers::Attribution::Infrastructure(why) => Carry::Paused(format!(
+                        "the repository's checks reached no verdict on the carried change ({why})"
+                    )),
+                });
             }
             Ok(forge::Checks::Pending) => {
                 return Err(Carry::Paused(

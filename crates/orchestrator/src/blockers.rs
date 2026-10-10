@@ -78,12 +78,21 @@ impl CiFailure {
 /// there is the checks' own machinery, never a verdict on the change.
 pub fn is_setup_step(step: &str) -> bool {
     let step = step.trim().to_lowercase();
-    ["set up", "run actions/", "post ", "complete job"]
-        .iter()
-        .any(|p| step.starts_with(p))
-        || ["rustup", "apt-get", "cache"]
-            .iter()
-            .any(|w| step.contains(w))
+    // By the steps' own names: the host's, the checkout, the toolchain and
+    // the system libraries this repository's CI installs. A check's step is
+    // never one of them, whatever words its name holds.
+    [
+        "set up job",
+        "run actions/checkout",
+        "run actions/cache",
+        "run swatinem/rust-cache",
+        "run rustup show",
+        "native windowing and tls libraries",
+        "post ",
+        "complete job",
+    ]
+    .iter()
+    .any(|p| step.starts_with(p))
 }
 
 /// Reads a failed job's log (`gh run view --log-failed`: job, step and a
@@ -445,13 +454,17 @@ pub fn attribute(
     folder: &Path,
 ) -> Attribution {
     if failure.tests.is_empty() {
-        if failure.cancelled {
+        // The machinery's only when the change touches nothing the job is
+        // set up from (the workspace's manifests, the toolchain, CI).
+        let machinery = workspace.affected(paths).is_ok();
+        if failure.cancelled && machinery {
             return Attribution::Infrastructure(format!(
                 "{} was cancelled before it reached a verdict",
                 failure.check
             ));
         }
-        if !failure.steps.is_empty() && failure.steps.iter().all(|s| is_setup_step(s)) {
+        if machinery && !failure.steps.is_empty() && failure.steps.iter().all(|s| is_setup_step(s))
+        {
             return Attribution::Infrastructure(format!(
                 "{} failed setting the job up ({}), before any check ran",
                 failure.check,
@@ -743,6 +756,29 @@ workspace\tRun cargo test --locked --workspace\t2026-10-10T11:45:54.4073112Z err
         };
         assert!(matches!(
             attribute(&cancelled, &studio, &workspace(), folder.path()),
+            Attribution::Infrastructure(_)
+        ));
+        // A change to what the job is set up from: its failure.
+        let workflow = vec![".github/workflows/ci.yml".to_string()];
+        assert!(matches!(
+            attribute(&setup, &workflow, &workspace(), folder.path()),
+            Attribution::Change(_)
+        ));
+        // A check whose name holds a setup word is a check.
+        let companion = parse_failed_log(
+            "workspace",
+            "workspace\tThe Claude Agent companion's tests (Node 22 from the runner's tool cache)\t2026-10-10T11:00:00Z not ok 3 - refused",
+        );
+        assert!(matches!(
+            attribute(&companion, &studio, &workspace(), folder.path()),
+            Attribution::Change(_)
+        ));
+        let libraries = parse_failed_log(
+            "workspace",
+            "workspace\tNative windowing and TLS libraries\t2026-10-10T11:00:00Z E: Unable to fetch some archives",
+        );
+        assert!(matches!(
+            attribute(&libraries, &studio, &workspace(), folder.path()),
             Attribution::Infrastructure(_)
         ));
         let elsewhere = attribute(
