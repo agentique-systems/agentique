@@ -228,6 +228,12 @@ pub(crate) fn is_model_file(path: &str) -> bool {
 
 /// Splits model files into documents and identities. Refuses files that a
 /// git merge left with conflict markers.
+/// Whether a save of the model folder `dir` was begun and not finished (its
+/// journal is there).
+pub(crate) fn save_unfinished(dir: &Path) -> bool {
+    dir.join(JOURNAL).exists()
+}
+
 pub(crate) fn model_files(files: &BTreeMap<String, String>) -> Result<ModelFiles> {
     for (path, text) in files {
         if has_conflict_markers(text) {

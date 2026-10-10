@@ -47,7 +47,7 @@ fn write(repository: &Path, path: &str, text: &str) {
 /// Commits everything, the model's new elements given their identities
 /// first (opening the project does), and returns the commit.
 fn commit(repository: &Path, message: &str) -> String {
-    let _ = model_tools::model_at(repository, "HEAD");
+    drop(agq_system_state::Project::open(repository));
     git(repository, &["add", "-A"]);
     git(repository, &["commit", "-q", "-m", message]);
     git(repository, &["rev-parse", "HEAD"])

@@ -189,7 +189,12 @@ impl Project {
     /// at once.
     pub fn open(folder: &Path) -> Result<Project, ProjectError> {
         let (history, files) = History::open(folder)?;
-        let model = read(&files, next_on_branches(&history))?;
+        let model = read(
+            &files,
+            next_on_branches(&history.branches().unwrap_or_default(), |r| {
+                history.load_commit(r)
+            }),
+        )?;
         let mut project = Project {
             folder: folder.to_path_buf(),
             history,
@@ -325,7 +330,13 @@ impl Project {
             return Err(ProjectError::UncommittedChanges);
         }
         let target = self.history.load_commit(&format!("refs/heads/{name}"))?;
-        let model = read(&target, next_on_branches(&self.history))?;
+        let history = &self.history;
+        let model = read(
+            &target,
+            next_on_branches(&history.branches().unwrap_or_default(), |r| {
+                history.load_commit(r)
+            }),
+        )?;
         let files = self.history.switch_branch(name)?;
         self.unmatched = model.unmatched;
         let event = self
@@ -482,15 +493,72 @@ fn next_id(identities: &Identities) -> Result<u64, ProjectError> {
     Ok(next)
 }
 
+/// A project's model as committed and as saved, only read (no editing
+/// lock, nothing written; [`agq_history::Revisions`]): for comparing
+/// versions and checking a change while the project may be open for
+/// editing elsewhere. Elements without an identity entry get ids above
+/// every id a local branch tip or the saved model gives out, the same for
+/// every read of one reader (as the working model's did before), so such an
+/// element in two reads may pair with itself. Locks are those of elements
+/// that exist, as a project's are.
+pub struct ProjectReader {
+    revisions: agq_history::Revisions,
+    /// The id the next unidentified element gets.
+    floor: u64,
+}
+
+impl ProjectReader {
+    pub fn open(folder: &Path) -> Result<ProjectReader, ProjectError> {
+        let revisions = agq_history::Revisions::open(folder)?;
+        let saved = revisions
+            .saved()
+            .ok()
+            .and_then(|files| next_id(&files.identities).ok())
+            .unwrap_or(0);
+        let tips = next_on_branches(&revisions.branches().unwrap_or_default(), |r| {
+            revisions.load_commit(r)
+        });
+        Ok(ProjectReader {
+            revisions,
+            floor: saved.max(tips),
+        })
+    }
+
+    /// The model and its locks at a commit (any git revision).
+    pub fn at(&self, revision: &str) -> Result<(Tree, BTreeSet<ElementId>), ProjectError> {
+        Ok(existing(read(
+            &self.revisions.load_commit(revision)?,
+            self.floor,
+        )?))
+    }
+
+    /// The model and its locks as saved in the model folder.
+    pub fn saved(&self) -> Result<(Tree, BTreeSet<ElementId>), ProjectError> {
+        Ok(existing(read(&self.revisions.saved()?, self.floor)?))
+    }
+}
+
+/// A model read and its locks of elements that exist.
+fn existing(model: Model) -> (Tree, BTreeSet<ElementId>) {
+    let locks = model
+        .locks
+        .into_iter()
+        .filter(|id| model.tree.contains(*id))
+        .collect();
+    (model.tree, locks)
+}
+
 /// The highest next id at the tip of any branch, so that an element created
 /// on one branch never takes the id of a different element on another.
 /// Unreadable branches are skipped. Reads each branch's model folder: fine
 /// for a few branches, to be replaced by reading only `agentique.json`.
-fn next_on_branches(history: &History) -> u64 {
-    let branches = history.branches().unwrap_or_default();
+fn next_on_branches(
+    branches: &[String],
+    load: impl Fn(&str) -> agq_history::Result<agq_history::ModelFiles>,
+) -> u64 {
     branches
         .iter()
-        .filter_map(|branch| history.load_commit(&format!("refs/heads/{branch}")).ok())
+        .filter_map(|branch| load(&format!("refs/heads/{branch}")).ok())
         .filter_map(|tip| next_id(&tip.identities).ok())
         .max()
         .unwrap_or(0)

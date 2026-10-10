@@ -24,6 +24,12 @@ element id and a locator are.
   old or new, never a mix.
 - **One writer**: an open project holds `model/agentique.lock` locked; a
   second open fails with `Error::Locked`. The lock goes when the process ends.
+  Opening waits up to half a second for a lock that looks held: on Linux a
+  process another thread starts holds a copy of the lock file until it has
+  started, so a lock released a moment ago can look held.
+- **Reading versions** (`Revisions`): the model as committed and as saved,
+  only read, with no lock and nothing written, so versions can be compared
+  while the project is open for editing elsewhere.
 - **Checkpoints** are commits of the model folder only; other work in the
   code repository, staged or not, is left alone. A model file edited outside
   Agentique while the project is open is neither overwritten nor committed
