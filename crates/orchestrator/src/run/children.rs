@@ -15,13 +15,15 @@
 //! spent is counted in the parent's once (the directive keeps what was
 //! counted); the Operator may stop a child alone.
 
+use super::explore::Planner;
 use super::{Driver, Poster, Session, With};
+use crate::explore::Target;
 use crate::findings::State as Found;
 use crate::record::{
     Budgets, Cycle, DirectiveStatus, Exploring, MAX_DEPTH, Objective, Permissions, Recipient,
     RoleRef, Scope, State,
 };
-use crate::roles::Role;
+use crate::roles::{Planning, Role};
 use crate::thread::{Author, Kind, ThreadEntry};
 use crate::traceability::Elements;
 use agq_assistant::policy::Policy;
@@ -91,8 +93,15 @@ pub(super) struct Bounds {
 impl Bounds {
     /// The child the lead asked for, checked: its instruction, focus,
     /// budget (within what is left after `spent_now`, the lead's own spend
-    /// in its session so far) and steps, or why it is refused.
-    pub(super) fn check(&self, input: &Value, spent_now: f64) -> Result<Asked, String> {
+    /// in its session so far), steps and target (the W13.7 repair: its
+    /// project is one `planning` permits, the objective's target's when the
+    /// lead names none), or why it is refused.
+    pub(super) fn check(
+        &self,
+        input: &Value,
+        spent_now: f64,
+        planning: &Planning,
+    ) -> Result<Asked, String> {
         if let Some(why) = &self.refused {
             return Err(why.clone());
         }
@@ -120,6 +129,9 @@ impl Bounds {
                 self.steps
             ));
         }
+        let target = planning
+            .child(input["project"].as_str(), instruction)
+            .map_err(|problem| format!("`project`: {problem}"))?;
         Ok(Asked {
             instruction: instruction.to_string(),
             focus: input["focus"]
@@ -129,8 +141,18 @@ impl Bounds {
                 .map(str::to_string),
             usd,
             steps,
+            target,
         })
     }
+}
+
+/// What the lead's turn hands over is checked against: a proposal against
+/// the base commit's model (C-55), a plan of an exploration and a child's
+/// project against the planner (the W13.7 repair).
+pub(super) struct Against<'a> {
+    pub model: Option<&'a Result<Elements, String>>,
+    /// None where the lead may not delegate and does not plan.
+    pub planner: Option<&'a Planner>,
 }
 
 /// A child the lead asked for, checked.
@@ -140,6 +162,8 @@ pub(super) struct Asked {
     pub focus: Option<String>,
     pub usd: f64,
     pub steps: u32,
+    /// What it explores (the W13.7 repair).
+    pub target: Target,
 }
 
 impl Driver {
@@ -189,9 +213,12 @@ impl Driver {
     /// child's run and the lead's session again with the child's result.
     /// What waits for the lead (the Operator's messages, children's results)
     /// opens each of its sessions; each is offered the reproduced findings
-    /// it may choose among, and its proposal is checked against `model`,
-    /// the base commit's (C-55). What it judged findings to be is recorded
-    /// on the cycle after each session.
+    /// it may choose among, and what it hands over is checked `against` the
+    /// base commit's model (a proposal, C-55) and the planner (a plan, a
+    /// child's project). What it judged findings to be is recorded on the
+    /// cycle after each session, and a plan it accepted becomes the
+    /// objective's target at once, before any child starts (the W13.7
+    /// repair).
     pub(super) fn lead(
         &mut self,
         cwd: &Path,
@@ -199,8 +226,9 @@ impl Driver {
         brief: String,
         kit: Toolset,
         resume: bool,
-        model: Option<&Result<Elements, String>>,
+        against: Against,
     ) -> Result<Session, String> {
+        let Against { model, planner } = against;
         let proposing = kit
             .definitions
             .as_array()
@@ -262,10 +290,17 @@ impl Driver {
                     kit: Some(kit.clone()),
                     offered,
                     model,
+                    planner,
                 },
             )?;
             self.record_refused(&session);
             self.record_adjudicated(&session.adjudicated);
+            // A plan it accepted is what the objective explores from now.
+            let accepted = planner.and_then(|p| p.planning.borrow().target.clone());
+            if accepted.is_some() && accepted != self.objective.target {
+                self.objective.target = accepted;
+                self.save();
+            }
             let Some(asked) = session.delegated.clone() else {
                 return Ok(session);
             };
@@ -372,7 +407,8 @@ impl Driver {
                     asked.instruction
                 ),
                 format!(
-                    "Budget ${:.2}, {} steps; permissions: explore only (no push, merge or adopt){}",
+                    "Explores {}; budget ${:.2}, {} steps; permissions: explore only (no push, merge or adopt){}",
+                    asked.target.line(),
                     asked.usd,
                     asked.steps,
                     asked
@@ -521,7 +557,8 @@ impl Driver {
 }
 
 /// The child objective a delegation starts: explore only, within the
-/// parent's budget and permissions, one deeper, on the parent's models.
+/// parent's budget and permissions, one deeper, on the parent's models,
+/// with the target the delegation was checked to have (the W13.7 repair).
 pub(super) fn child_objective(
     parent: &Objective,
     id: &str,
@@ -547,6 +584,7 @@ pub(super) fn child_objective(
         cycle.base = theirs.base.clone();
         cycle.base_build = theirs.base_build.clone();
     }
+    child.target = Some(asked.target.clone());
     child.cycles = vec![cycle];
     child.spent = Default::default();
     child.continuation = None;
@@ -647,14 +685,44 @@ mod tests {
             usd: 1.0,
             steps: 20,
         };
-        let asked = serde_json::json!({ "instruction": "Look", "usd": 0.6, "steps": 10 });
-        assert!(bounds.check(&asked, 0.0).is_ok());
-        let after = bounds.check(&asked, 0.5).unwrap_err();
+        let planning = Planning {
+            projects: vec!["model".into(), "models/shop".into()],
+            revision: "abc".into(),
+            target: None,
+            given: Vec::new(),
+        };
+        let asked = serde_json::json!({ "instruction": "Look", "usd": 0.6, "steps": 10, "project": "model" });
+        assert!(bounds.check(&asked, 0.0, &planning).is_ok());
+        let after = bounds.check(&asked, 0.5, &planning).unwrap_err();
         assert!(
             after.contains("$0.50"),
             "the lead's own spend counts: {after}"
         );
         let too_long = serde_json::json!({ "instruction": "Look", "usd": 0.1, "steps": 30 });
-        assert!(bounds.check(&too_long, 0.0).is_err());
+        assert!(bounds.check(&too_long, 0.0, &planning).is_err());
+        // A child's project (the W13.7 repair): named before the objective
+        // has a target, one of the base commit's; after, one of its own,
+        // its own when none is named.
+        let on = |project: Option<&str>| serde_json::json!({ "instruction": "Look", "usd": 0.1, "steps": 5, "project": project });
+        let unbound = bounds.check(&on(None), 0.0, &planning).unwrap_err();
+        assert!(unbound.contains("submit_exploration first"), "{unbound}");
+        let named = bounds.check(&on(Some(r"models\shop/")), 0.0, &planning);
+        assert_eq!(named.unwrap().target.project, "models/shop");
+        let none = bounds.check(&on(Some("models/none")), 0.0, &planning);
+        assert!(none.unwrap_err().contains("holds no model"));
+        let mut targeted = planning.clone();
+        targeted.accept(Target {
+            project: "model".into(),
+            revision: "abc".into(),
+            goal: "g".into(),
+            scope: Vec::new(),
+            start: Default::default(),
+            vary: Vec::new(),
+        });
+        let inherited = bounds.check(&on(None), 0.0, &targeted).unwrap();
+        assert_eq!(inherited.target.project, "model");
+        let other = bounds.check(&on(Some("models/shop")), 0.0, &targeted);
+        let other = other.unwrap_err();
+        assert!(other.contains("this objective explores model"), "{other}");
     }
 }

@@ -16,7 +16,7 @@ mod standin;
 
 use agq_assistant::claude_agent::{ClaudeAgent, Installation, find_node};
 use agq_orchestrator::control::Options;
-use agq_orchestrator::explore::Instance;
+use agq_orchestrator::explore::{self, Instance, Opened};
 use agq_orchestrator::findings::{Check as Found, DispositionKind, State as FoundState};
 use agq_orchestrator::knowledge::Knowledge;
 use agq_orchestrator::record::{
@@ -46,10 +46,41 @@ fn git(folder: &Path, args: &[&str]) -> String {
 }
 
 /// A repository to improve, with `markers` (files that steer the scripted
-/// agents) besides its README.
+/// agents) besides its README, and two projects an exploration may open
+/// (`models/shop`, `models/garden`); with the marker `TARGET-MODEL`, its own
+/// model too (`model`, whose requirement the scripted proposal serves).
 fn repository_with(dir: &Path, markers: &[&str]) -> PathBuf {
     let repository = dir.join("repository");
     std::fs::create_dir_all(&repository).unwrap();
+    for (folder, file, text) in [
+        (
+            "models/shop",
+            "Shop.sysml",
+            "package Shop {\n    part def Store;\n}\n",
+        ),
+        (
+            "models/garden",
+            "Garden.sysml",
+            "package Garden {\n    part def Bed;\n}\n",
+        ),
+    ] {
+        std::fs::create_dir_all(repository.join(folder)).unwrap();
+        std::fs::write(repository.join(folder).join(file), text).unwrap();
+    }
+    if markers.contains(&"TARGET-MODEL") {
+        let model = repository.join("model");
+        std::fs::create_dir_all(&model).unwrap();
+        std::fs::write(
+            model.join("Demo.sysml"),
+            "package Demo {\n    requirement def LabelsReadable {\n        doc /* A button says what it does. */\n    }\n    part def Archive;\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            model.join(".gitignore"),
+            "*.tmp\nagentique.pending\nagentique.lock\n",
+        )
+        .unwrap();
+    }
     git(&repository, &["init", "-q", "-b", "main"]);
     git(&repository, &["config", "user.name", "Agentique test"]);
     git(
@@ -68,9 +99,13 @@ fn repository_with(dir: &Path, markers: &[&str]) -> PathBuf {
 /// The stand-in Studio: a build is its checkout, and its test instance has
 /// History's Archive button unlabelled unless the checkout holds `FIXED`
 /// (or the Studio has no defect at all). Every build and instance asked
-/// for is logged, with whether it got a key or the stand-in Assistant.
+/// for is logged, with whether it got a key or the stand-in Assistant, and
+/// the project it starts from; an instance says it opened a copy of that
+/// project, or a copy of other files where its folder is named
+/// `wrong_copy` (`explore`, `reproduce`).
 struct StandInStudios {
     defects: bool,
+    wrong_copy: Option<&'static str>,
     log: Arc<Mutex<Vec<String>>>,
 }
 
@@ -92,20 +127,33 @@ impl Studios for StandInStudios {
     fn instance(
         &self,
         exe: &Path,
-        _start: &Path,
-        _folder: &Path,
+        start: &Path,
+        folder: &Path,
         options: Options,
     ) -> Box<dyn Instance> {
         let fixed = exe.join("FIXED").exists();
-        self.log.lock().unwrap().push(format!(
+        let mut log = self.log.lock().unwrap();
+        log.push(format!("start {}", start.display()));
+        log.push(format!(
             "instance fixed={fixed} key={} stand-in={}",
             options.key.is_some(),
             options.stand_in
         ));
-        Box::new(StandIn::new(Defects {
+        let mut studio = StandIn::new(Defects {
             unlabelled: self.defects && !fixed,
             ..Defects::default()
-        }))
+        });
+        let from = explore::model_folder(start);
+        studio.opened = explore::model_digest(&from).ok().map(|digest| Opened {
+            folder: PathBuf::from("/stand-in/project"),
+            from,
+            digest: if self.wrong_copy.is_some_and(|name| folder.ends_with(name)) {
+                "0000000000000000".into()
+            } else {
+                digest
+            },
+        });
+        Box::new(studio)
     }
 }
 
@@ -181,6 +229,7 @@ fn setup_with(
         credential: Box::new(|_| None),
         studios: Box::new(StandInStudios {
             defects,
+            wrong_copy: None,
             log: log.clone(),
         }),
     };
@@ -383,7 +432,9 @@ fn an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it() {
 }
 
 /// Two explorations in a row that reproduce nothing new end the objective
-/// as an outcome; the cycle's worktrees all go.
+/// as an outcome; the cycle's worktrees all go. The second explores another
+/// project only because the lead's first plan permitted it (`vary`) and its
+/// second plan names it (the W13.7 repair: no alternation otherwise).
 #[test]
 fn two_explorations_without_a_new_problem_end_the_objective() {
     let Ok(node) = find_node() else {
@@ -391,7 +442,7 @@ fn two_explorations_without_a_new_problem_end_the_objective() {
         return;
     };
     let dir = tempfile::tempdir().unwrap();
-    let repository = repository_with(dir.path(), &[]);
+    let repository = repository_with(dir.path(), &["VARY"]);
     let store = Store::new(dir.path().join("objectives"));
     let (setup, _) = setup_with(dir.path(), &store, node, false);
     let mut budgets = budgets();
@@ -419,8 +470,326 @@ fn two_explorations_without_a_new_problem_end_the_objective() {
         cycle.explorations[0].start, cycle.explorations[1].start,
         "another start"
     );
+    assert_eq!(cycle.explorations[1].start, "models/garden");
+    let target = record.target.as_ref().expect("its target");
+    assert_eq!(target.project, "models/garden", "the latest plan's");
+    assert_eq!(target.vary, vec!["models/shop".to_string()], "{target:?}");
     let worktrees = git(&repository, &["worktree", "list"]);
     assert_eq!(worktrees.lines().count(), 1, "{worktrees}");
+}
+
+/// The W13.7 repair, end to end: the lead names Agentique's own model
+/// (`model`) as its plan's project. Before that plan, a child it delegates
+/// without a project is refused; once planned, a child it delegates without
+/// one takes `model`, and a child's lead that names another project is
+/// refused. The objective records the plan; every exploration of both
+/// cycles, each child, the reproduction's replays and the evaluation's
+/// replay start from a copy of `model` at the cycle's base build, each copy
+/// checked against it before the first action, and nothing alternates to
+/// another project.
+#[test]
+fn every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["TARGET-MODEL", "DELEGATE"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, log) = setup_with(dir.path(), &store, node, true);
+    let mut budgets = budgets();
+    budgets.cycles = 2;
+    let objective = exploring(
+        &store,
+        &repository,
+        "DELEGATE-ME: find and fix problems in Agentique's own model",
+        budgets,
+    );
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.cycles.len(), 2, "{}", texts(&seen));
+    let base = record.cycles[0].base.clone().expect("a base");
+    // Recorded once, at the base it was planned on.
+    let target = record.target.as_ref().expect("its target");
+    assert_eq!(
+        (target.project.as_str(), target.revision.as_str()),
+        ("model", base.as_str())
+    );
+    assert!(target.vary.is_empty());
+    // Every exploration of every cycle, and what each found.
+    for cycle in &record.cycles {
+        assert!(!cycle.explorations.is_empty(), "{}", texts(&seen));
+        for exploration in &cycle.explorations {
+            assert_eq!(exploration.start, "model", "{exploration:?}");
+            assert!(exploration.build.contains(&base[..10]), "{exploration:?}");
+        }
+        for finding in &cycle.findings {
+            assert_eq!(finding.start, "model", "{finding:?}");
+        }
+    }
+    let reproduced = record.cycles[0]
+        .findings
+        .iter()
+        .find(|f| f.state == FoundState::Reproduced)
+        .expect("a reproduced finding");
+    assert!(reproduced.replays.iter().filter(|r| r.failed()).count() >= 2);
+    // Each child the lead delegated: the parent's target, its explorations
+    // on it.
+    let children: Vec<Objective> = record
+        .directives
+        .iter()
+        .filter_map(|d| match &d.recipient {
+            Recipient::Child(child) if !child.is_empty() => store.load(child).ok(),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(children.len(), 2, "one a cycle: {}", texts(&seen));
+    for child in &children {
+        let target = child.target.as_ref().expect("a child's target");
+        assert_eq!(target.project, "model");
+        assert!(target.vary.is_empty(), "a child explores one project");
+        assert!(!child.cycles[0].explorations.is_empty());
+        for exploration in child.cycles.iter().flat_map(|c| &c.explorations) {
+            assert_eq!(exploration.start, "model");
+        }
+        // Its lead named another project: refused, and it planned `model`.
+        let theirs = store.thread(&child.id, 0);
+        assert!(
+            theirs.iter().any(|e| e.text.starts_with(
+                "Plans the exploration of models/shop (not accepted: this objective explores model"
+            )),
+            "{}",
+            texts(&theirs)
+        );
+    }
+    // Before the first plan, a child without a project was refused.
+    let unbound: Vec<&String> = record
+        .directives
+        .iter()
+        .filter_map(|d| match &d.status {
+            DirectiveStatus::Refused { reason } => Some(reason),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(unbound.len(), 1, "{unbound:?}");
+    assert!(
+        unbound[0].contains("no project to explore yet")
+            && unbound[0].contains("submit_exploration first"),
+        "{unbound:?}"
+    );
+    // Every test instance (explorations, replays, the evaluation's replay)
+    // started from the checkout's `model`.
+    let log = log.lock().unwrap().clone();
+    let starts: Vec<&String> = log.iter().filter(|l| l.starts_with("start ")).collect();
+    assert!(starts.len() >= 6, "{log:#?}");
+    for start in &starts {
+        let path = Path::new(start.trim_start_matches("start "));
+        assert_eq!(
+            path.file_name().and_then(|n| n.to_str()),
+            Some("model"),
+            "{start}"
+        );
+    }
+    // The testing knowledge's runs: the project and the base explored.
+    let knowledge = Knowledge::load(
+        &Knowledge::file(&store, &repository),
+        &Knowledge::key(&repository),
+    )
+    .unwrap();
+    assert!(knowledge.runs.len() >= 4, "{:?}", knowledge.runs);
+    for run in &knowledge.runs {
+        assert_eq!(
+            (run.start.as_str(), run.commit.as_str()),
+            ("model", base.as_str())
+        );
+    }
+    // The thread says what each exploration opened.
+    let all = store.thread(&id, 0);
+    let explores = format!("from a copy of model at {}", &base[..10]);
+    assert!(
+        all.iter()
+            .filter(|e| e.text.starts_with("Explores ") && e.text.contains(&explores))
+            .count()
+            >= 2,
+        "{}",
+        texts(&all)
+    );
+    assert!(
+        !all.iter().any(|e| e.text.contains("url-shortener")),
+        "{}",
+        texts(&all)
+    );
+}
+
+/// The W13.7 repair: a lead that plans no project is asked once more, and
+/// without a plan the cycle ends: no project is chosen for it, and nothing
+/// is explored.
+#[test]
+fn a_lead_that_plans_no_project_ends_the_cycle_without_exploring() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["NO-PLAN"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, log) = setup_with(dir.path(), &store, node, true);
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Failed, "{}", texts(&seen));
+    assert!(record.target.is_none());
+    let cycle = record.cycle().unwrap();
+    assert!(cycle.explorations.is_empty());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .contains("the lead planned no exploration"),
+        "{:?}",
+        cycle.blocker
+    );
+    // Asked twice: its session started, then resumed.
+    let sessions = seen
+        .iter()
+        .filter(|e| {
+            matches!(&e.author, Author::Agent { role, .. } if role == "lead")
+                && (e.text.starts_with("Starts its session")
+                    || e.text.starts_with("Resumes its session"))
+        })
+        .count();
+    assert_eq!(sessions, 2, "{}", texts(&seen));
+    assert!(!seen.iter().any(|e| e.text.starts_with("Explores ")));
+    assert!(
+        log.lock().unwrap().iter().all(|l| !l.starts_with("start ")),
+        "no test instance started"
+    );
+}
+
+/// The W13.7 repair: a reproduction whose test instance opened another
+/// copy says nothing about its finding: the finding stays as it was (open,
+/// never replayed, in the cycle and the testing knowledge), the cycle ends
+/// with the reason, and a later exploration that finds it again with the
+/// right copy reproduces it.
+#[test]
+fn a_reproduction_on_another_copy_leaves_its_finding_as_it_was() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (mut setup, log) = setup_with(dir.path(), &store, node.clone(), true);
+    setup.studios = Box::new(StandInStudios {
+        defects: true,
+        wrong_copy: Some("reproduce"),
+        log,
+    });
+    let first = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = first.id.clone();
+    let seen = run_to_end(setup, first, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Failed, "{}", texts(&seen));
+    let cycle = record.cycle().unwrap();
+    assert_eq!(cycle.explorations.len(), 1, "it explored");
+    let finding = &cycle.findings[0];
+    assert_eq!(finding.state, FoundState::Open, "{finding:#?}");
+    assert!(finding.replays.is_empty());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .contains("was not replayed: the test instance did not open the planned project"),
+        "{:?}",
+        cycle.blocker
+    );
+    assert!(
+        seen.iter()
+            .any(|e| e.text.starts_with("Did not replay the reproduction of")
+                && e.text.contains("The finding stays as it was")),
+        "{}",
+        texts(&seen)
+    );
+    let knowledge = Knowledge::load(
+        &Knowledge::file(&store, &repository),
+        &Knowledge::key(&repository),
+    )
+    .unwrap();
+    let known = knowledge
+        .findings
+        .iter()
+        .find(|f| f.identity == finding.identity)
+        .expect("kept");
+    assert_eq!(known.state, FoundState::Open);
+    // With the right copy, the next objective finds it again and
+    // reproduces it: one mismatch hides nothing.
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let second = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = second.id.clone();
+    let seen = run_to_end(setup, second, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let again = record
+        .cycle()
+        .unwrap()
+        .findings
+        .iter()
+        .find(|f| f.identity == finding.identity)
+        .unwrap_or_else(|| panic!("{}", texts(&seen)));
+    assert_eq!(again.state, FoundState::Reproduced);
+}
+
+/// The W13.7 repair: a test instance whose copy is not the planned
+/// project's (here, other files) is never explored in its place: the run
+/// takes no action, the thread says what was planned and what was opened,
+/// and the cycle ends with the reason.
+#[test]
+fn an_instance_that_opened_another_copy_is_not_explored() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (mut setup, log) = setup_with(dir.path(), &store, node, true);
+    setup.studios = Box::new(StandInStudios {
+        defects: true,
+        wrong_copy: Some("explore"),
+        log,
+    });
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Failed, "{}", texts(&seen));
+    let cycle = record.cycle().unwrap();
+    assert!(cycle.explorations.is_empty() && cycle.findings.is_empty());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .contains("did not open the planned project models/shop"),
+        "{:?}",
+        cycle.blocker
+    );
+    let said = seen
+        .iter()
+        .find(|e| {
+            e.text
+                .starts_with("Did not explore: the test instance did not open models/shop")
+        })
+        .unwrap_or_else(|| panic!("{}", texts(&seen)));
+    let details = said.details.as_deref().unwrap_or_default();
+    assert!(
+        details.contains("Planned: models/shop") && details.contains("digest 0000000000000000"),
+        "{details}"
+    );
 }
 
 /// C-55, end to end: the lead judges the reproduced finding a wrong
@@ -1103,7 +1472,7 @@ fn built_studio() -> Option<PathBuf> {
 #[ignore = "opens windows: run with the Studio built (no keys needed)"]
 fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
     use agq_orchestrator::control::{CONDITIONS, FAILED_BUILD, Flags, TestInstance};
-    use agq_orchestrator::explore::{self, Changes, LiveInstance, Plan};
+    use agq_orchestrator::explore::{Changes, LiveInstance, Plan};
     let Some(exe) = built_studio() else {
         panic!("build the Studio first: cargo build -p agq-studio-native");
     };
@@ -1184,6 +1553,8 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
         usd: 0.01,
         changes: Changes::default(),
         start: "models/url-shortener".into(),
+        begin: Default::default(),
+        source: None,
         conversation: false,
         turn_ms: 10_000,
         stop_ms: 10_000,

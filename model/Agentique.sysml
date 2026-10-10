@@ -782,17 +782,17 @@ package AgentiqueArchitecture {
             doc /* What an agent role hands back for a directive. */
         }
         item def Explored :> RoleResult {
-            doc /* What an exploration run found: deterministic checks that failed (an invariant, or an expectation stated before the action) while the explorer's model chose the actions. Not yet reproduced. */
+            doc /* What an exploration run found: deterministic checks that failed (an invariant, or an expectation stated before the action) while the explorer's model chose the actions. Not yet reproduced. Before its first action the run checks that its test instance opened a copy of the planned project at the build's commit (the folder copied, the digest of its files, the project the observation shows); a run whose copy does not match acts on nothing and ends the cycle, never exploring something else in its place. */
             attribute found : Natural;
         }
         item def LeadAnswer :> RoleResult {
             doc /* What the lead hands back: a plan, a delegation, or a proposal. */
         }
         item def Plan :> LeadAnswer {
-            doc /* The lead's plan before exploring, when it delegates nothing more. */
+            doc /* The lead's plan before exploring, when it delegates nothing more: the project to explore (a folder of the repository that holds a model's files, such as `model`, Agentique's own model, checked to hold one at the base commit) with the goal and, where useful, the elements it is about (resolved in that project's model) and where to start (a view, an element). Recorded on the objective as soon as the lead's turn accepts it: every later exploration (also after an adoption), each child, the replays and the evaluation's exploration keep to its projects, others only when the plan permitted them. A lead that plans no project is asked once more, and then the cycle ends; nothing alternates between projects. */
         }
         item def Delegation :> LeadAnswer {
-            doc /* The lead asks for a child objective with its delegate tool (C-54). */
+            doc /* The lead asks for a child objective with its delegate tool (C-54). The child explores the project the objective explores, or another the lead names among those it may explore; before the objective's first plan the lead must name it, and a child never explores another project than the one it was given. */
             attribute focus : String;
         }
         item def Proposal :> LeadAnswer {
@@ -813,7 +813,7 @@ package AgentiqueArchitecture {
             attribute gatesPassed : Boolean;
         }
         item def ReplayRequest {
-            doc /* Replay the findings an exploration found (and known ones not yet fixed) twice each from a fresh start of the same build: deterministic code, no model asked (C-54). */
+            doc /* Replay the findings an exploration found (and known ones not yet fixed) twice each from a fresh start of the same build: deterministic code, no model asked (C-54). Each replay checks its copy of the project as the exploration does, and one whose copy does not match diverges, never a pass. */
             attribute found : Natural;
         }
         item def Replayed {

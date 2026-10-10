@@ -118,7 +118,13 @@ what to change.
 - **Exploration** (`explore`, `findings`, `knowledge`; C-54): an explorer
   operates a test instance toward a goal (behind the `Instance` boundary:
   a Studio started fresh from a copy of the start project, inside its own
-  folder, or a stand-in in tests). Each step lists the actions valid there
+  folder, or a stand-in in tests). Before its first action a run, and each
+  replay, checks the copy against its provenance (the folder copied, the
+  digest of its model files, the project the observation shows;
+  `check_copy`) and acts on nothing when they differ (a replay's mismatch
+  leaves its finding as it was); a plan's start (a
+  view's command, an element to select) is carried out by rule after each
+  start. Each step lists the actions valid there
   that the observation offers to agents (fields with fixed input classes),
   chooses one by the rules, Jev, the explorer's model or Jev escalating,
   acts, and checks the invariants. A finding is a check that failed; it is
@@ -128,8 +134,15 @@ what to change.
   objectives' records) keeps coverage, findings and runs across runs.
 - **Exploring cycles** (`run/explore.rs`, `run/evidence.rs`; C-54): when an
   objective explores, a cycle first explores and reproduces (the lead plans
-  the goal, may delegate an area; the explorer runs in a test instance of
-  the base build at the Operator's observer speed, after replaying the
+  what it explores: the project, a folder that holds a model at the base
+  commit, with the goal and where useful the elements it is about and where
+  to start, checked when submitted and recorded on the objective at once; a
+  child explores it or a project the lead names among those permitted,
+  naming one before the first plan; later explorations, replays and the
+  evaluation's exploration keep to its projects, and a lead that plans
+  nothing is asked once more before the cycle ends; the explorer runs in a
+  test instance of the base build, on a copy of the project at its commit,
+  at the Operator's observer speed, after replaying the
   findings fixed since; at most three new findings, most severe first, are
   reproduced and reduced), then the lead proposes to fix one, whose replay
   is frozen as the criterion `replay`. Every criterion runs on the base

@@ -622,7 +622,7 @@ impl Driver {
         }
         let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
         let source = self.checkout("base", &base)?;
-        let replay = self.replay_in(&built.exe, &source, finding, Options::default());
+        let replay = self.replay_in(&built.exe, &source, finding, Options::default())?;
         Ok(match replay {
             Replay::Failed { message } => Outcome::new(
                 REPLAY,
@@ -643,22 +643,31 @@ impl Driver {
     }
 
     /// A finding replayed in a fresh test instance of `exe`, started from
-    /// its start state in `source` (the base's checkout).
+    /// its start state in `source` (the base's checkout), its copy checked
+    /// first (the W13.7 repair): one that does not match is the error. Its
+    /// project gone from the base cannot be replayed (it diverges).
     fn replay_in(
         &mut self,
         exe: &Path,
         source: &Path,
         finding: &Finding,
         options: Options,
-    ) -> Replay {
+    ) -> Result<Replay, String> {
+        let base = self.cycle().base.clone().unwrap_or_default();
+        let copy = match self.copy_of(source, &finding.start, &base) {
+            Ok(copy) => copy,
+            Err(reason) => return Ok(Replay::Diverged { at: 0, reason }),
+        };
         let mut instance = self.setup.studios.instance(
             exe,
-            &source.join(&finding.start),
+            &explore::within(source, &finding.start),
             &self.folder("replay"),
             options,
         );
         let controls = self.controls.clone();
-        findings::replay(instance.as_mut(), finding, &mut || controls.stopped())
+        findings::replay(instance.as_mut(), finding, Some(&copy), &mut || {
+            controls.stopped()
+        })
     }
 
     /// Observation criteria in test instances of `exe` (the project is
@@ -767,11 +776,14 @@ impl Driver {
         };
         if let Some(finding) = self.cycle().replay.clone() {
             let outcome = match self.replay_in(exe, start, &finding, unreviewed.clone()) {
-                Replay::Passed => Outcome::new(REPLAY, "passed", "it holds on the change"),
-                Replay::Failed { message } => {
+                Ok(Replay::Passed) => Outcome::new(REPLAY, "passed", "it holds on the change"),
+                Ok(Replay::Failed { message }) => {
                     Outcome::new(REPLAY, "failed", format!("it still fails: {message}"))
                 }
-                Replay::Diverged { at, reason } => Outcome::new(
+                // Not the project: a failure, never a pass (the W13.7
+                // repair).
+                Err(why) => Outcome::new(REPLAY, "failed", why),
+                Ok(Replay::Diverged { at, reason }) => Outcome::new(
                     REPLAY,
                     "not run",
                     format!("it could not be replayed on the change (step {at}): {reason}"),
@@ -785,9 +797,10 @@ impl Driver {
         outcomes
     }
 
-    /// A short exploration by the rules of the areas the change touched: a
-    /// failed invariant that the testing knowledge did not hold before is a
-    /// failure (an expectation is never one here: the rules state none).
+    /// A short exploration by the rules of the areas the change touched, on
+    /// the objective's target's project: a failed invariant that the
+    /// testing knowledge did not hold before is a failure (an expectation
+    /// is never one here: the rules state none).
     fn explore_changed(
         &mut self,
         exe: &Path,
@@ -805,6 +818,29 @@ impl Driver {
                 .unwrap_or_default(),
         };
         let areas: Vec<String> = changes.areas().into_iter().collect();
+        // What the objective explores, at the base (the W13.7 repair); the
+        // sample for an objective that explores nothing of its own.
+        let targeted = self.objective.target.as_ref().map(|t| t.project.clone());
+        let project = targeted
+            .clone()
+            .unwrap_or_else(|| super::explore::SAMPLE.to_string());
+        let base = self.cycle().base.clone().unwrap_or_default();
+        let source = match self.copy_of(start, &project, &base) {
+            Ok(source) => source,
+            // Its project gone from the base is a failure; the sample
+            // missing (a repository without it) explores nothing.
+            Err(problem) => {
+                return Outcome::new(
+                    CHANGED_AREAS,
+                    if targeted.is_some() {
+                        "failed"
+                    } else {
+                        "not run"
+                    },
+                    format!("it did not explore: {problem}"),
+                );
+            }
+        };
         let plan = Plan {
             goal: format!(
                 "Explore the areas the change touched: {}",
@@ -822,7 +858,9 @@ impl Driver {
             // its budget, so the budget is above nothing.
             usd: RULES_USD,
             changes,
-            start: super::explore::STARTS[0].to_string(),
+            start: project.clone(),
+            begin: Default::default(),
+            source: Some(source),
             conversation: false,
             turn_ms: findings::TURN_BUDGET_MS,
             stop_ms: findings::STOP_BUDGET_MS,
@@ -835,7 +873,7 @@ impl Driver {
         .unwrap_or_else(|_| Knowledge::new("unread"));
         let mut instance = self.setup.studios.instance(
             exe,
-            &start.join(super::explore::STARTS[0]),
+            &explore::within(start, &project),
             &self.folder("changed"),
             options,
         );
@@ -851,6 +889,15 @@ impl Driver {
             &mut watch,
         );
         drop(instance);
+        // Another copy than the project's is never explored instead: a
+        // failure, not a criterion left unrun.
+        if let Some(why) = &run.mismatch {
+            return Outcome::new(
+                CHANGED_AREAS,
+                "failed",
+                format!("the test instance did not open {project} at the base: {why}"),
+            );
+        }
         if run.actions == 0 {
             return Outcome::new(
                 CHANGED_AREAS,

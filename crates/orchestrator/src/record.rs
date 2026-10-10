@@ -995,6 +995,12 @@ pub struct Objective {
     /// agent does to the remote later. None without a remote.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    /// What its explorations explore, once its lead planned it (C-54, the
+    /// W13.7 repair): later cycles, its children, the replays and the
+    /// evaluation's exploration keep to its projects. None until planned,
+    /// and for an objective that does not explore.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<crate::explore::Target>,
 }
 
 fn is_zero_u32(value: &u32) -> bool {
@@ -1237,6 +1243,7 @@ impl Store {
             resumes: 0,
             delivered: 0,
             origin: crate::forge::origin_url(repository),
+            target: None,
         };
         self.save(&objective)?;
         Ok(objective)
@@ -1569,6 +1576,7 @@ mod tests {
             resumes: 0,
             delivered: 0,
             origin: None,
+            target: None,
         };
         objective.spent.add(
             "lead",

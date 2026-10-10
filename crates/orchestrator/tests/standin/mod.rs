@@ -5,7 +5,7 @@
 //! form. Without defects it behaves correctly, so exploration finds nothing
 //! in it; with one, the check that defect breaks fails.
 
-use agq_orchestrator::explore::{Act, Instance};
+use agq_orchestrator::explore::{Act, Instance, Opened};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 
@@ -126,6 +126,9 @@ pub struct StandIn {
     pub slow_typing: bool,
     /// The observation shows what the Assistant spent (`conversation.usd`).
     pub spend_shown: bool,
+    /// The copy of a project it says it opened (its project's folder is
+    /// always `/stand-in/project`); none, it opens no copy.
+    pub opened: Option<Opened>,
     pub starts: u32,
     /// Every action asked for, with its agent.
     pub log: Vec<String>,
@@ -147,6 +150,7 @@ impl StandIn {
             chat: None,
             slow_typing: false,
             spend_shown: true,
+            opened: None,
             starts: 0,
             log: Vec::new(),
             flaky_fired: false,
@@ -546,6 +550,18 @@ impl Instance for StandIn {
                 }
                 Ok(self.ok("key", 60))
             }
+            "select" => {
+                let element = action["element"].as_str().unwrap_or_default();
+                let name = element.rsplit("::").next().unwrap_or(element).to_string();
+                if !self.s.elements.contains(&name) {
+                    return Ok(
+                        json!({ "ok": false, "kind": "invalid", "error": format!("there is no element `{element}` in the open model") }),
+                    );
+                }
+                self.s.selection = vec![name];
+                self.moved();
+                Ok(self.ok("select", 40))
+            }
             "command" => {
                 let answer = self.command(action["id"].as_str().unwrap_or_default());
                 if !self.alive {
@@ -572,5 +588,9 @@ impl Instance for StandIn {
 
     fn folder(&self) -> Option<PathBuf> {
         None
+    }
+
+    fn opened(&self) -> Option<Opened> {
+        self.opened.clone()
     }
 }

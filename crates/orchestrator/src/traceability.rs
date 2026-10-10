@@ -886,6 +886,68 @@ pub fn has_model(repository: &Path, commit: &str) -> Result<bool, String> {
     Ok(listed.stdout.lines().any(|line| line.trim() == "model"))
 }
 
+/// The projects of `repository` at `commit`, by its tree (C-54, the W13.7
+/// repair): the folders that hold a model's `.sysml` files themselves, as
+/// the repository names them (`model`, `models/url-shortener`), in order;
+/// not the pinned standards (`standards/`) nor what the code holds
+/// (`crates/`: test fixtures, the Library's blocks).
+pub fn projects(repository: &Path, commit: &str) -> Result<Vec<String>, String> {
+    let listed = crate::forge::run(
+        repository,
+        &["git", "ls-tree", "-r", "-z", "--name-only", commit],
+        Duration::from_secs(60),
+    )?;
+    let folders: BTreeSet<String> = listed
+        .stdout
+        .split('\0')
+        .filter_map(|path| path.trim().rsplit_once('/'))
+        .filter(|(_, file)| file.ends_with(".sysml"))
+        .map(|(folder, _)| folder.to_string())
+        .filter(|folder| !folder.starts_with("standards/") && !folder.starts_with("crates/"))
+        .collect();
+    Ok(folders.into_iter().collect())
+}
+
+/// The model of project `project` of `checkout` (a checkout of a commit in
+/// which nothing ran), by identity, as the names of an exploration's plan
+/// are resolved in it: read through a fresh repository in `scratch` that
+/// holds a copy of its model files (a project other than the repository's
+/// own `model` has no history of its own to read it from), removed after.
+pub fn project_model(checkout: &Path, project: &str, scratch: &Path) -> Result<Elements, String> {
+    let _ = std::fs::remove_dir_all(scratch);
+    let read = (|| {
+        crate::explore::copy_model(&checkout.join(project), &scratch.join("model"))?;
+        let commit = agq_execution::git::init_and_commit(scratch, "the project's model")
+            .map_err(|e| e.to_string())?;
+        agq_assistant::model_tools::model_at(scratch, &commit)
+    })();
+    let _ = std::fs::remove_dir_all(scratch);
+    read.map_err(|e| format!("the model of {project} could not be read ({e})"))
+}
+
+/// The tree of project `project` of `repository` at `revision`
+/// (`git rev-parse <revision>:<project>`): its identity in the repository,
+/// when git knows it.
+pub fn project_tree(repository: &Path, revision: &str, project: &str) -> Option<String> {
+    crate::forge::run(
+        repository,
+        &["git", "rev-parse", &format!("{revision}:{project}")],
+        Duration::from_secs(60),
+    )
+    .ok()
+    .map(|found| found.stdout.trim().to_string())
+    .filter(|tree| !tree.is_empty())
+}
+
+/// The names of `names` that are no element of `model`.
+pub fn unknown<'a>(model: &Elements, names: impl IntoIterator<Item = &'a String>) -> Vec<String> {
+    names
+        .into_iter()
+        .filter(|name| find(model, name).is_none())
+        .map(|name| format!("`{}`", name.trim()))
+        .collect()
+}
+
 /// Whether `commit` is in `repository` (an approved baseline may not have
 /// been fetched).
 fn present(repository: &Path, commit: &str) -> bool {

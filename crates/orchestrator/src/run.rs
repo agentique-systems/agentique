@@ -17,8 +17,6 @@ mod evidence;
 mod explore;
 mod trace;
 
-pub use explore::STARTS;
-
 use crate::blockers;
 use crate::control::{Client, Options, TestInstance};
 use crate::explore::Instance;
@@ -628,14 +626,17 @@ struct Session {
 
 /// What a session works with besides its role's own: the test instance its
 /// control tools operate, the lead's tools for an exploring cycle, the
-/// reproduced findings it may choose among, and the base commit's model a
-/// proposal's names are resolved in (C-55).
+/// reproduced findings it may choose among, the base commit's model a
+/// proposal's names are resolved in (C-55), and the lead's planner, which
+/// checks a plan of an exploration and a child's project (the W13.7
+/// repair).
 #[derive(Default)]
 struct With<'a> {
     test: Option<&'a mut Client>,
     kit: Option<Toolset>,
     offered: Vec<(String, String)>,
     model: Option<&'a Result<Elements, String>>,
+    planner: Option<&'a explore::Planner>,
 }
 
 /// What an exploration by the rules decides with: they ask no model, so
@@ -1597,6 +1598,7 @@ impl Driver {
             kit,
             offered,
             model: base_model,
+            planner,
         } = with;
         // What the lead may delegate now, as its `delegate` tool checks it.
         let bounds = self.bounds();
@@ -1705,6 +1707,26 @@ impl Driver {
                             "Not accepted: {problem}. Submit your review again."
                         ));
                     }
+                    if call.name == roles::SUBMIT_EXPLORATION
+                        && let Some(planner) = planner
+                    {
+                        // Accepted, it is what the objective explores from
+                        // now, also for a child delegated in this turn.
+                        if let Err(problem) = planner.plan(&call.input) {
+                            refusals.post(ThreadEntry::new(
+                                Kind::Result,
+                                lead.clone(),
+                                format!(
+                                    "Plans the exploration of {} (not accepted: {problem})",
+                                    call.input["project"].as_str().unwrap_or("no project")
+                                ),
+                            ));
+                            *refusal.borrow_mut() = Some(problem.clone());
+                            return ToolResult::error(format!(
+                                "Not accepted: {problem}. Fix it and submit again."
+                            ));
+                        }
+                    }
                     if call.name == roles::SUBMIT_PROPOSAL {
                         let read = roles::read_proposal(
                             &call.input,
@@ -1801,13 +1823,22 @@ impl Driver {
                 }
                 roles::DELEGATE if role == Role::Lead => {
                     // Checked now; recorded and started when the turn ends.
-                    let checked = if delegated.borrow().is_some() {
-                        Err("one child at a time: you delegated one in this turn".into())
-                    } else {
-                        bounds.check(&call.input, cost.borrow().iter().map(|(_, c)| c.usd).sum())
+                    let checked = match planner {
+                        _ if delegated.borrow().is_some() => {
+                            Err("one child at a time: you delegated one in this turn".into())
+                        }
+                        Some(planner) => bounds.check(
+                            &call.input,
+                            cost.borrow().iter().map(|(_, c)| c.usd).sum(),
+                            &planner.planning.borrow(),
+                        ),
+                        None => Err("this session has no projects to delegate".into()),
                     };
                     match checked {
                         Ok(asked) => {
+                            if let Some(planner) = planner {
+                                planner.planning.borrow_mut().gave(&asked.target.project);
+                            }
                             *delegated.borrow_mut() = Some(asked);
                             ToolResult::answer(
                                 "Delegated: the Orchestrator starts the child objective when your turn ends, and you will receive its result as your next message. End your turn now with one short sentence.",
@@ -2260,16 +2291,22 @@ impl Driver {
             Ok(_) => None,
         };
         let policy = self.policy(&lead, false, false);
+        let delegates =
+            self.objective.explore && self.may_delegate() && self.cycle().repairs.is_none();
         let kit = Toolset {
             system: roles::instructions(Role::Lead),
-            definitions: roles::lead_tools(
-                false,
-                self.objective.explore && self.may_delegate() && self.cycle().repairs.is_none(),
-            ),
+            definitions: roles::lead_tools(false, delegates),
         };
         let mut context = match self.repair_brief() {
             Some(brief) => brief,
             None => self.findings_brief(),
+        };
+        // A child delegated while proposing explores what the objective
+        // explores (the W13.7 repair): the planner, where it may delegate.
+        let planner = if delegates {
+            Some(self.planner(&lead, &base)?)
+        } else {
+            None
         };
         if let Some(reading) = reading {
             context = format!("{reading}\n\n{context}");
@@ -2282,7 +2319,10 @@ impl Driver {
                 brief.clone(),
                 kit.clone(),
                 attempt > 0,
-                Some(&model),
+                children::Against {
+                    model: Some(&model),
+                    planner: planner.as_ref(),
+                },
             )?;
             // Accepted when it was submitted, against the findings it was
             // offered and its own judgments of them.

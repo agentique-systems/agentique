@@ -24,7 +24,9 @@
 //! results as JSON.
 
 use agq_orchestrator::decide::{Answers, Decider, Decision, Failure, Question, Source, Way};
-use agq_orchestrator::explore::{self, Changes, Deciding, Instance, LiveInstance, Plan, Run, Step};
+use agq_orchestrator::explore::{
+    self, Changes, Deciding, Instance, LiveInstance, Opened, Plan, Provenance, Run, Start, Step,
+};
 use agq_orchestrator::findings::{self, Check, Failed, Finding, Replay, State};
 use agq_orchestrator::knowledge::Knowledge;
 use agq_providers::{ModelRef, Provider};
@@ -152,6 +154,8 @@ fn plan(way: Way, seed: u64, steps: u32) -> Plan {
         usd: 1.0,
         changes: Changes::default(),
         start: "stand-in".into(),
+        begin: Default::default(),
+        source: None,
         conversation: false,
         // Short, so a turn that never ends takes no time in a test.
         turn_ms: 300,
@@ -382,7 +386,7 @@ fn planted_defects_reproduce_and_a_flaky_one_does_not() {
     ] {
         let (mut studio, run) = found(defects);
         let mut finding = run.findings[0].clone();
-        findings::reproduce(&mut studio, &mut finding, 12, &mut || false);
+        findings::reproduce(&mut studio, &mut finding, 12, None, &mut || false).unwrap();
         assert_eq!(
             finding.state,
             State::Reproduced,
@@ -397,7 +401,7 @@ fn planted_defects_reproduce_and_a_flaky_one_does_not() {
     let run = by_rules(&mut studio, 5, 80);
     assert_eq!(checks(&run), BTreeSet::from([Check::Answers]));
     let mut finding = run.findings[0].clone();
-    findings::reproduce(&mut studio, &mut finding, 12, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 12, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::NotReproduced);
     assert!(finding.note.contains("the check held"), "{}", finding.note);
     assert_eq!(finding.reduced, None);
@@ -437,7 +441,7 @@ fn reduction_keeps_only_the_steps_that_still_fail() {
         crash: true,
         ..Defects::default()
     });
-    findings::reproduce(&mut studio, &mut finding, 16, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 16, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     let reduced: Vec<&str> = finding
         .reduced
@@ -455,7 +459,7 @@ fn reduction_keeps_only_the_steps_that_still_fail() {
     let starts = studio.starts;
     let mut again = finding.clone();
     again.reduced = None;
-    findings::reduce(&mut studio, &mut again, 3, &mut || false);
+    findings::reduce(&mut studio, &mut again, 3, None, &mut || false).unwrap();
     assert!(studio.starts - starts <= 3);
 }
 
@@ -477,14 +481,16 @@ fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
     ] {
         let (mut broken, run) = found(defects);
         let mut finding = run.findings[0].clone();
-        findings::reproduce(&mut broken, &mut finding, 10, &mut || false);
+        findings::reproduce(&mut broken, &mut finding, 10, None, &mut || false).unwrap();
         assert!(
-            findings::replay(&mut broken, &finding, &mut || false).failed(),
+            findings::replay(&mut broken, &finding, None, &mut || false)
+                .unwrap()
+                .failed(),
             "{defects:?}"
         );
         let mut fixed = StandIn::new(Defects::default());
         assert_eq!(
-            findings::replay(&mut fixed, &finding, &mut || false),
+            findings::replay(&mut fixed, &finding, None, &mut || false).unwrap(),
             Replay::Passed,
             "{defects:?}"
         );
@@ -507,13 +513,17 @@ fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
         ..Defects::default()
     });
     assert!(matches!(
-        findings::replay(&mut studio, &finding, &mut || false),
+        findings::replay(&mut studio, &finding, None, &mut || false).unwrap(),
         Replay::Diverged { at: 1, .. }
     ));
     finding
         .steps
         .insert(0, step(json!({ "kind": "click", "control": "History" })));
-    assert!(findings::replay(&mut studio, &finding, &mut || false).failed());
+    assert!(
+        findings::replay(&mut studio, &finding, None, &mut || false)
+            .unwrap()
+            .failed()
+    );
 }
 
 #[test]
@@ -805,7 +815,7 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
     assert_eq!(knowledge.coverage.len(), run.covered.len());
     assert_eq!(knowledge.findings.len(), 1);
     let mut finding = knowledge.findings[0].clone();
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false).unwrap();
     knowledge.update(&finding);
     assert_eq!(knowledge.findings[0].state, State::Reproduced);
     // Fixed by a change: the next run's build replays it first and it passes.
@@ -817,7 +827,7 @@ fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
         .cloned()
         .collect::<Vec<_>>()
     {
-        let replay = findings::replay(&mut fixed, &finding, &mut || false);
+        let replay = findings::replay(&mut fixed, &finding, None, &mut || false).unwrap();
         knowledge.replayed(&finding.identity, "b2", &replay);
     }
     assert_eq!(knowledge.findings[0].state, State::Fixed);
@@ -929,7 +939,7 @@ fn a_turn_that_never_ends_is_a_finding_and_stop_must_end_it() {
     );
     let mut finding = run.findings[0].clone();
     assert!(finding.message.contains("300 ms"), "{}", finding.message);
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     assert!(finding.note.contains("Assistant"), "{}", finding.note);
     // A turn that Stop does not end either: both, and a fresh start.
@@ -1018,7 +1028,7 @@ fn an_expectation_about_the_reply_is_recorded_never_a_finding() {
     assert_eq!(checks(&run), BTreeSet::from([Check::Expectation]));
     let mut finding = run.findings[0].clone();
     assert_eq!(finding.steps.last().unwrap().by, "wait");
-    findings::reproduce(&mut studio, &mut finding, 4, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 4, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     assert!(
         finding.note.contains("never the reply's wording"),
@@ -1038,7 +1048,7 @@ fn a_hang_and_an_exit_are_one_finding_and_never_pass_a_replay() {
     let mut finding = run.findings[0].clone();
     assert_eq!(finding.message, findings::ENDED);
     assert_eq!(finding.evidence["exited"], false, "it hung");
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     // A build where the same step exits instead fails the replay too.
     let mut exits = StandIn::new(Defects {
@@ -1053,7 +1063,11 @@ fn a_hang_and_an_exit_are_one_finding_and_never_pass_a_replay() {
     ];
     crashing.control = "export".into();
     crashing.identity = findings::identity(Check::Answers, "export", findings::ENDED);
-    assert!(findings::replay(&mut exits, &crashing, &mut || false).failed());
+    assert!(
+        findings::replay(&mut exits, &crashing, None, &mut || false)
+            .unwrap()
+            .failed()
+    );
 }
 
 #[test]
@@ -1066,7 +1080,7 @@ fn an_instance_that_ends_on_undo_is_found_with_the_undo() {
     let mut finding = run.findings[0].clone();
     let last = finding.steps.last().unwrap();
     assert_eq!((last.target(), last.by.as_str()), ("undo", "check"));
-    findings::reproduce(&mut studio, &mut finding, 8, &mut || false);
+    findings::reproduce(&mut studio, &mut finding, 8, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
 }
 
@@ -1342,11 +1356,15 @@ fn each_refusal_kind_is_handled_as_it_means() {
         "{}",
         finding.message
     );
-    findings::reproduce(&mut kinded, &mut finding, 4, &mut || false);
+    findings::reproduce(&mut kinded, &mut finding, 4, None, &mut || false).unwrap();
     assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
     // Once it stops failing, its replay passes.
     kinded.times = 0;
-    assert!(findings::replay(&mut kinded, &finding, &mut || false).passed());
+    assert!(
+        findings::replay(&mut kinded, &finding, None, &mut || false)
+            .unwrap()
+            .passed()
+    );
 }
 
 #[test]
@@ -1433,6 +1451,141 @@ fn tasks() -> Vec<Task> {
                 .collect(),
         })
         .collect()
+}
+
+/// The W13.7 repair: before its first action a run checks the copy its
+/// instance opened against its plan's provenance (the folder copied, the
+/// digest of its files, the project the observation shows). The planned
+/// copy is explored and recorded; a copy of anything else ends the run
+/// without an action, never explored in its place.
+#[test]
+fn a_run_explores_only_a_copy_of_its_planned_project() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("models").join("shop");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(
+        project.join("Shop.sysml"),
+        "package Shop { part def Store; }\n",
+    )
+    .unwrap();
+    let source = Provenance::of(dir.path(), "models/shop", "abc1234").unwrap();
+    let opened = Opened {
+        folder: "/stand-in/project".into(),
+        from: project.clone(),
+        digest: source.digest.clone(),
+    };
+    let mut planned = plan(Way::Rules, 1, 6);
+    planned.start = "models/shop".into();
+    planned.source = Some(source);
+    let knowledge = Knowledge::new("stand-in");
+    let mut studio = StandIn::new(Defects::default());
+    studio.opened = Some(opened.clone());
+    let run = explore_with(&mut studio, &planned, &Scripted::default(), &knowledge);
+    assert!(run.mismatch.is_none(), "{:?}", run.mismatch);
+    assert_eq!(run.actions, 6, "{}", run.ended);
+    assert_eq!(run.opened.as_ref(), Some(&opened));
+    let other = dir.path().join("models").join("garden");
+    for (copy, why) in [
+        (
+            Some(Opened {
+                digest: "0000000000000000".into(),
+                ..opened.clone()
+            }),
+            "digest",
+        ),
+        (
+            Some(Opened {
+                from: other,
+                ..opened.clone()
+            }),
+            "copied",
+        ),
+        (
+            Some(Opened {
+                folder: "/elsewhere/project".into(),
+                ..opened.clone()
+            }),
+            "shows the project /stand-in/project",
+        ),
+        (None, "does not say which copy"),
+    ] {
+        let mut studio = StandIn::new(Defects::default());
+        studio.opened = copy;
+        let run = explore_with(&mut studio, &planned, &Scripted::default(), &knowledge);
+        let mismatch = run.mismatch.clone().unwrap_or_else(|| panic!("{why}"));
+        assert!(mismatch.contains(why), "{mismatch}");
+        assert!(
+            run.ended
+                .starts_with("the test instance did not open the planned project"),
+            "{}",
+            run.ended
+        );
+        assert_eq!(run.actions, 0);
+        assert!(run.steps.is_empty());
+        assert!(
+            studio.log.iter().all(|l| l.starts_with("start")),
+            "{:?}",
+            studio.log
+        );
+    }
+}
+
+/// The W13.7 repair: the plan's start, by rule, as the run's first steps
+/// (counted, and taken again by a replay): its view opened, its element
+/// selected. A view the instance does not offer is noted, not forced.
+#[test]
+fn a_run_starts_where_its_plan_says() {
+    let mut planned = plan(Way::Rules, 1, 5);
+    planned.begin = Start {
+        view: Some("graph".into()),
+        select: Some("Shop::Store".into()),
+    };
+    let mut studio = StandIn::new(Defects::default());
+    let run = by_plan_in(&mut studio, &planned);
+    let first: Vec<(&str, &str)> = run
+        .steps
+        .iter()
+        .take(2)
+        .map(|t| (t.step.by.as_str(), t.outcome.as_str()))
+        .collect();
+    assert_eq!(
+        first,
+        vec![("start", "ok"), ("start", "ok")],
+        "{:?}",
+        run.steps
+    );
+    assert_eq!(
+        run.steps[0].step.action,
+        json!({ "kind": "command", "id": "graph" })
+    );
+    assert_eq!(
+        run.steps[1].step.action,
+        json!({ "kind": "select", "element": "Shop::Store" })
+    );
+    assert_eq!(run.actions, 5);
+    assert!(run.notes.is_empty(), "{:?}", run.notes);
+    // A view it does not offer: noted, and the element still selected.
+    planned.begin.view = Some("requirements-view".into());
+    let mut studio = StandIn::new(Defects::default());
+    let run = by_plan_in(&mut studio, &planned);
+    assert!(
+        run.notes
+            .iter()
+            .any(|n| n.contains("`requirements-view` is not a command this instance offers")),
+        "{:?}",
+        run.notes
+    );
+    assert_eq!(run.steps[0].step.action["kind"], "select");
+}
+
+/// A run of `plan` by its way in `studio`, nothing scripted for a model.
+fn by_plan_in(studio: &mut StandIn, plan: &Plan) -> Run {
+    explore_with(
+        studio,
+        plan,
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    )
 }
 
 #[test]
@@ -1558,6 +1711,8 @@ fn live_exploration_compared_by_way_of_deciding() {
                     .unwrap()
                     .to_string_lossy()
                     .into_owned(),
+                begin: Default::default(),
+                source: None,
                 // Nothing to the instance's Assistant: it has no key of its
                 // own yet (W12.5).
                 conversation: false,
@@ -1570,7 +1725,7 @@ fn live_exploration_compared_by_way_of_deciding() {
             // Each finding reproduced (a few, within a bounded number of
             // replays each).
             for finding in run.findings.iter_mut().take(4) {
-                findings::reproduce(&mut instance, finding, 6, &mut || false);
+                findings::reproduce(&mut instance, finding, 6, None, &mut || false).unwrap();
             }
             drop(instance);
             let reached: Vec<&String> = task

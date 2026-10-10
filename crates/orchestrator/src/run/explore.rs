@@ -6,24 +6,107 @@
 //! are reproduced and reduced; the testing knowledge keeps all of it. Two
 //! explorations in a row that reproduce nothing new end the objective as
 //! "nothing new reproduced", an outcome, not a failure.
+//!
+//! The lead's plan names what the objective explores (the W13.7 repair):
+//! the project, checked to hold a model at the base commit, with the goal
+//! and where useful the elements it is about and where to start. A plan the
+//! lead's turn accepts is recorded on the objective at once; a child takes
+//! it, or a project the lead names among those it permits (before the first
+//! plan, the lead must name one); later explorations (also after an
+//! adoption), replays and the evaluation's exploration keep to its
+//! projects. An exploration without a plan is asked for once more, and
+//! without one the cycle ends: nothing alternates between projects. The
+//! copy each test instance opens, for an exploration or a replay, is
+//! checked against the project at the build's commit before the first
+//! action; a mismatch acts on nothing.
 
 use super::{Driver, Next, Watch};
+use crate::builds::short;
 use crate::control::{InstanceKey, Options};
 use crate::decide::Way;
-use crate::explore::{self, Changes, Plan, Run};
+use crate::explore::{self, Changes, Plan, Provenance, Run, Target};
 use crate::findings::{self, Disposition, DispositionKind, Finding, State as Found};
 use crate::knowledge::Knowledge;
 use crate::record::{Cost, Exploration, Exploring, Phase, Recipient, Scope};
 use crate::roles::{self, Role};
 use crate::thread::{Author, Kind, ThreadEntry};
+use crate::traceability;
 use agq_assistant::turn::Toolset;
 use agq_providers::{Credential, ModelRef};
+use serde_json::Value;
+use std::cell::RefCell;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-/// The start states explorations alternate between (C-54): a copy of the
-/// URL shortener sample, and of Agentique's own model as a project.
-pub const STARTS: [&str; 2] = ["models/url-shortener", "model"];
+/// The project an objective's evaluation explores when the objective
+/// explores nothing of its own (it has no target): the URL shortener
+/// sample. An objective that explores always has its lead's target.
+pub const SAMPLE: &str = "models/url-shortener";
+
+/// What the lead's turn checks a plan of an exploration and a child's
+/// project against (C-54, the W13.7 repair): the planning (the base
+/// commit's projects, the commit, and what the objective explores so far,
+/// which a plan it accepts becomes at once), and where a project's model is
+/// read to resolve a plan's names (a checkout of the base in which nothing
+/// ran, and a scratch folder).
+pub(super) struct Planner {
+    pub planning: RefCell<roles::Planning>,
+    /// Whether the lead's turn had a plan accepted.
+    pub accepted: std::cell::Cell<bool>,
+    checkout: PathBuf,
+    scratch: PathBuf,
+}
+
+impl Planner {
+    /// The lead's `submit_exploration`, checked (its names resolved in the
+    /// project's model at the base commit) and accepted: what the objective
+    /// explores from now; or why not.
+    pub fn plan(&self, input: &Value) -> Result<Target, String> {
+        let planned = roles::read_exploration(input, &self.planning.borrow())?;
+        let names: Vec<&String> = planned
+            .scope
+            .iter()
+            .chain(planned.start.select.iter())
+            .collect();
+        if !names.is_empty() {
+            let model =
+                traceability::project_model(&self.checkout, &planned.project, &self.scratch)?;
+            let unknown = traceability::unknown(&model, names);
+            if !unknown.is_empty() {
+                return Err(format!(
+                    "{} {} not an element of the model of {} at {}",
+                    unknown.join(", "),
+                    if unknown.len() == 1 { "is" } else { "are" },
+                    planned.project,
+                    short(&planned.revision)
+                ));
+            }
+        }
+        self.accepted.set(true);
+        Ok(self.planning.borrow_mut().accept(planned))
+    }
+
+    /// What the lead is told of the projects it may name.
+    fn brief(&self) -> String {
+        let planning = self.planning.borrow();
+        let projects = if planning.projects.is_empty() {
+            "none".to_string()
+        } else {
+            planning.projects.join(", ")
+        };
+        match &planning.target {
+            Some(target) => format!(
+                "This objective explores {}, as its first plan recorded: `project` names {}, and a child explores it unless you name another of them.\nProjects at this commit: {projects}.",
+                target.line(),
+                target.projects().join(" or ")
+            ),
+            None => format!(
+                "Projects at this commit (`project` names the one the objective is about; `model` is Agentique's own model): {projects}. A child you delegate before planning needs its `project`."
+            ),
+        }
+    }
+}
 
 /// The new findings a cycle reproduces at most, most severe first.
 pub const REPRODUCED: usize = 3;
@@ -227,23 +310,50 @@ impl Driver {
         let project = Knowledge::key(&repository);
         let knowledge = Knowledge::load(&file, &project)?;
         let options = self.explore_options();
-        // First, the findings fixed since: one that fails again is a
-        // regression, reproduced with the new findings.
+        // First, the findings fixed since (of the projects it explores): one
+        // that fails again is a regression, reproduced with the new
+        // findings.
         let mut regressions = Vec::new();
-        for fixed in knowledge.to_replay(&built.build) {
+        let to_replay: Vec<&Finding> = knowledge
+            .to_replay(&built.build)
+            .into_iter()
+            .filter(|f| self.explores(&f.start))
+            .collect();
+        for fixed in to_replay {
             if self.controls.stopped() {
                 return Err("stopped".into());
             }
-            let start = checkout.join(&fixed.start);
+            // Its project gone from this base: it cannot be replayed here.
+            let source = match self.copy_of(&checkout, &fixed.start, &built.commit) {
+                Ok(source) => source,
+                Err(why) => {
+                    self.event(format!(
+                        "A fixed finding could not be replayed in {}: {why}",
+                        built.build
+                    ));
+                    continue;
+                }
+            };
             let mut instance = self.setup.studios.instance(
                 &built.exe,
-                &start,
+                &explore::within(&checkout, &fixed.start),
                 &self.folder("replay"),
                 options.clone(),
             );
             let controls = self.controls.clone();
-            let replay = findings::replay(instance.as_mut(), fixed, &mut || controls.stopped());
+            let replay = findings::replay(instance.as_mut(), fixed, Some(&source), &mut || {
+                controls.stopped()
+            });
             drop(instance);
+            let replay = match replay {
+                Ok(replay) => replay,
+                Err(why) => {
+                    return Err(self.not_replayed(
+                        &format!("a fixed finding ({})", finding_line(fixed)),
+                        &why,
+                    ));
+                }
+            };
             Knowledge::change(&file, &project, |k| {
                 k.replayed(&fixed.identity, &built.build, &replay)
             })?;
@@ -282,7 +392,27 @@ impl Driver {
             .iter()
             .map(|c| c.explorations.len() as u32)
             .sum();
-        let start = STARTS[((self.cycle().n + n) % 2) as usize];
+        // What the objective explores, at the build's commit; nothing
+        // alternates (the W13.7 repair). A scope and start planned at
+        // another commit are not taken over unchecked.
+        let mut target = self
+            .objective
+            .target
+            .clone()
+            .ok_or("no project was planned for this exploration")?;
+        let mut dropped = String::new();
+        if target.revision != built.commit && !(target.scope.is_empty() && target.start.is_empty())
+        {
+            dropped = format!(
+                "\nIts scope and start were planned at {}, not this commit: left out.",
+                short(&target.revision)
+            );
+            target.scope.clear();
+            target.start = Default::default();
+        }
+        target.revision = built.commit.clone();
+        let start = target.project.clone();
+        let source = self.copy_of(&checkout, &start, &built.commit)?;
         let changes = self.changes_since(knowledge.last_commit(), &base);
         let budgets = &self.objective.budgets;
         let left_usd = budgets.usd_left(self.objective.spent.usd);
@@ -305,7 +435,9 @@ impl Driver {
             seconds: (left_seconds as u64).min(EXPLORE_SECONDS),
             usd: run_usd,
             changes,
-            start: start.to_string(),
+            start: start.clone(),
+            begin: target.start.clone(),
+            source: Some(source.clone()),
             conversation: options.key.is_some(),
             turn_ms: findings::TURN_BUDGET_MS,
             stop_ms: findings::STOP_BUDGET_MS,
@@ -315,8 +447,9 @@ impl Driver {
                 Kind::Event,
                 Author::agent("explorer", self.model_of("explorer")),
                 format!(
-                    "Explores {} from a copy of {start}: {} ({} steps, {:?}{})",
+                    "Explores {} from a copy of {start} at {}: {} ({} steps, {:?}{})",
                     built.build,
+                    short(&built.commit),
                     goal,
                     plan.steps,
                     plan.way,
@@ -328,7 +461,11 @@ impl Driver {
                 ),
             )
             .with_details(format!(
-                "Recent changes: {}",
+                "Explores {}{dropped}\nCopied from {} (the project's tree {}; its model files' digest {}).\nRecent changes: {}",
+                target.line(),
+                source.folder.display(),
+                source.tree.as_deref().unwrap_or("not known"),
+                source.digest,
                 if plan.changes.paths.is_empty() {
                     "none known".to_string()
                 } else {
@@ -338,7 +475,7 @@ impl Driver {
         );
         let mut instance = self.setup.studios.instance(
             &built.exe,
-            &checkout.join(start),
+            &explore::within(&checkout, &start),
             &self.folder("explore"),
             options,
         );
@@ -365,6 +502,38 @@ impl Driver {
             self.save();
             return Err("stopped".into());
         }
+        // Not the planned project: nothing was explored, and nothing else
+        // takes its place (C-54, the W13.7 repair).
+        if let Some(why) = &run.mismatch {
+            self.post(
+                ThreadEntry::new(
+                    Kind::Result,
+                    Author::agent("explorer", self.model_of("explorer")),
+                    format!(
+                        "Did not explore: the test instance did not open {start} at {} ({why})",
+                        short(&built.commit)
+                    ),
+                )
+                .with_details(format!(
+                    "Planned: {start} at {} (digest {}), copied from {}.\nOpened: {}",
+                    source.revision,
+                    source.digest,
+                    source.folder.display(),
+                    match &run.opened {
+                        Some(opened) => format!(
+                            "{} from {} (digest {})",
+                            opened.folder.display(),
+                            opened.from.display(),
+                            opened.digest
+                        ),
+                        None => "nothing the instance reported".to_string(),
+                    }
+                )),
+            );
+            return Err(format!(
+                "the exploration did not open the planned project {start}: {why}"
+            ));
+        }
         // The build and commit explored, as the Orchestrator chose them (a
         // debug build may not know its own commit).
         let mut run = run;
@@ -383,9 +552,16 @@ impl Driver {
                 )
             })
             .collect();
+        let here: Vec<String> = self
+            .cycle()
+            .findings
+            .iter()
+            .map(|f| f.identity.clone())
+            .collect();
         let new: Vec<Finding> = knowledge
             .new_findings(&run.findings, &built.build)
             .into_iter()
+            .filter(|f| !here.contains(&f.identity))
             .map(|mut f| {
                 // The build it was found in, as the Orchestrator chose it:
                 // its reproduction is reused on the base only if that is it.
@@ -440,6 +616,16 @@ impl Driver {
         cycle.findings.extend(regressions);
         cycle.exploring = Some(Exploring::Reproduce);
         Ok(Phase::Propose)
+    }
+
+    /// A replay whose test instance did not open the planned project (the
+    /// W13.7 repair): said in the thread, the finding left as it was (it
+    /// says nothing about it), and why the cycle ends.
+    fn not_replayed(&self, what: &str, why: &str) -> String {
+        self.event(format!(
+            "Did not replay {what}: {why}. The finding stays as it was."
+        ));
+        format!("{what} was not replayed: {why}")
     }
 
     /// The model the objective recorded for `role`.
@@ -562,19 +748,30 @@ impl Driver {
                 return Err("stopped".into());
             }
             let mut finding = self.cycle().findings[i].clone();
+            let source = self.copy_of(&checkout, &finding.start, &built.commit)?;
             let mut instance = self.setup.studios.instance(
                 &built.exe,
-                &checkout.join(&finding.start),
+                &explore::within(&checkout, &finding.start),
                 &self.folder("reproduce"),
                 options.clone(),
             );
             let controls = self.controls.clone();
-            findings::reproduce(instance.as_mut(), &mut finding, REPLAYS, &mut || {
-                controls.stopped()
-            });
+            let reproduced = findings::reproduce(
+                instance.as_mut(),
+                &mut finding,
+                REPLAYS,
+                Some(&source),
+                &mut || controls.stopped(),
+            );
             drop(instance);
             if self.controls.stopped() {
                 return Err("stopped".into());
+            }
+            if let Err(why) = reproduced {
+                return Err(self.not_replayed(
+                    &format!("the reproduction of {}", finding_line(&finding)),
+                    &why,
+                ));
             }
             Knowledge::change(&file, &project, |k| k.update(&finding))?;
             let reproduced = finding.state == Found::Reproduced;
@@ -635,19 +832,38 @@ impl Driver {
             known.state = Found::Open;
             known.replays.clear();
             known.reduced = None;
+            let source = match self.copy_of(&checkout, &known.start, &built.commit) {
+                Ok(source) => source,
+                Err(why) => {
+                    self.event(format!(
+                        "A known finding could not be reproduced on this base: {why}"
+                    ));
+                    continue;
+                }
+            };
             let mut instance = self.setup.studios.instance(
                 &built.exe,
-                &checkout.join(&known.start),
+                &explore::within(&checkout, &known.start),
                 &self.folder("reproduce"),
                 self.explore_options(),
             );
             let controls = self.controls.clone();
-            findings::reproduce(instance.as_mut(), &mut known, REPLAYS, &mut || {
-                controls.stopped()
-            });
+            let reproduced = findings::reproduce(
+                instance.as_mut(),
+                &mut known,
+                REPLAYS,
+                Some(&source),
+                &mut || controls.stopped(),
+            );
             drop(instance);
             if self.controls.stopped() {
                 return Err("stopped".into());
+            }
+            if let Err(why) = reproduced {
+                return Err(self.not_replayed(
+                    &format!("the reproduction of {}", finding_line(&known)),
+                    &why,
+                ));
             }
             Knowledge::change(&file, &project, |k| k.update(&known))?;
             if known.state == Found::Reproduced {
@@ -683,8 +899,9 @@ impl Driver {
 
     /// Reproduced findings the testing knowledge keeps that no cycle has
     /// fixed and this objective tried to fix fewer than [`TRIES`] times,
-    /// not in the cycle yet: they stay eligible after a cycle that failed,
-    /// once reproduced again on the cycle's base.
+    /// not in the cycle yet, of the projects it explores: they stay
+    /// eligible after a cycle that failed, once reproduced again on the
+    /// cycle's base.
     pub(super) fn untried(&self) -> Vec<Finding> {
         let repository = &self.objective.repository;
         let Ok(knowledge) = Knowledge::load(
@@ -710,6 +927,8 @@ impl Driver {
             .iter()
             .filter(|f| matches!(f.state, Found::Reproduced | Found::FailingAgain))
             .filter(|f| !here.contains(&f.identity.as_str()) && tried(&f.identity) < TRIES)
+            // Of the projects the objective explores (its target's).
+            .filter(|f| self.explores(&f.start))
             // Judged a wrong expectation or an unreliable reproduction: not
             // offered again; an ambiguous requirement: not until the
             // Operator answers it (C-55).
@@ -734,14 +953,22 @@ impl Driver {
             .count()
     }
 
-    /// The lead plans the exploration: what the explorer looks at (its
-    /// directive to the explorer), after any child it delegates. Without a
-    /// plan, the explorer's goal is the objective's intent. An objective two
-    /// deep has no plan of its lead's: its goal is its intent.
+    /// The lead plans the exploration: what the objective explores (the
+    /// project, the goal, where useful the elements it is about and where
+    /// to start), checked when submitted and recorded on the objective as
+    /// soon as it is accepted, and its directive to the explorer, after any
+    /// child it delegates. A lead that plans nothing is asked once more
+    /// (with why its plan was refused, if it was); without a plan, an
+    /// objective that already explores a project goes on toward its intent,
+    /// and one that does not ends the cycle (the W13.7 repair: no project
+    /// is chosen for it). An objective two deep has no plan of its lead's:
+    /// its goal is its intent, on the project it was given.
     fn plan_exploration(&mut self) -> Result<String, String> {
         let n = self.cycle().n;
         let explored = self.cycle().explorations.len() + 1;
         let handed = format!("cycle-{n}/exploration-{explored}");
+        // Planned and handed over before a restart: not asked again (the
+        // objective's target is that plan's).
         if let Some(directive) = self
             .objective
             .directives
@@ -756,30 +983,81 @@ impl Driver {
         }
         let base = self.cycle_base()?;
         let lead = self.checkout("lead", &base)?;
+        let planner = self.planner(&lead, &base)?;
         let policy = self.policy(&lead, false, false);
-        let context = format!(
-            "Plan this cycle's exploration (exploration {explored} of cycle {n}).\n\n{}",
-            self.testing_summary()
-        );
-        let brief = roles::brief(Role::Lead, &self.objective, &context);
         let kit = Toolset {
             system: roles::planning_instructions(),
             definitions: roles::lead_tools(true, self.may_delegate()),
         };
-        let session = self.lead(&lead, policy, brief, kit, false, None)?;
-        let goal = session
-            .submitted
-            .as_ref()
-            .and_then(|v| v["goal"].as_str())
-            .map(str::trim)
-            .filter(|g| !g.is_empty())
-            .map(str::to_string);
-        let (goal, text) = match goal {
-            Some(goal) => (goal.clone(), format!("Explore: {goal}")),
-            None => (
-                intent.clone(),
-                "Explore toward the objective (the lead gave no other goal)".to_string(),
+        let mut brief = roles::brief(
+            Role::Lead,
+            &self.objective,
+            &format!(
+                "Plan this cycle's exploration (exploration {explored} of cycle {n}).\n\n{}\n\n{}",
+                planner.brief(),
+                self.testing_summary()
             ),
+        );
+        // Asked once more when it planned nothing, or only had its plans
+        // refused; a budget used up or a stop ends the planning with why.
+        let mut refused = None;
+        for attempt in 0..2 {
+            let session = self.lead(
+                &lead,
+                policy.clone(),
+                brief,
+                kit.clone(),
+                attempt > 0,
+                super::children::Against {
+                    model: None,
+                    planner: Some(&planner),
+                },
+            )?;
+            if planner.accepted.get() {
+                break;
+            }
+            if let Some((_, reason)) = self.over() {
+                return Err(if self.controls.stopped() {
+                    "stopped".into()
+                } else {
+                    reason
+                });
+            }
+            refused = session.refusal;
+            if refused.is_none() && self.objective.target.is_some() {
+                break;
+            }
+            brief = format!(
+                "You ended without a plan that was accepted{}. Plan this exploration with submit_exploration: an objective explores only the project its lead names.\n\n{}",
+                refused
+                    .as_ref()
+                    .map(|why| format!(" (the last was refused: {why})"))
+                    .unwrap_or_default(),
+                planner.brief()
+            );
+        }
+        let Some(target) = self.objective.target.clone() else {
+            return Err(format!(
+                "the lead planned no exploration{}: an objective explores only a project its lead names",
+                refused
+                    .map(|why| format!(" (its plan was refused: {why})"))
+                    .unwrap_or_default()
+            ));
+        };
+        let (goal, text) = if planner.accepted.get() {
+            (target.goal.clone(), format!("Explore: {}", target.goal))
+        } else {
+            (
+                intent,
+                match refused {
+                    Some(why) => format!(
+                        "Explore toward the objective (the lead's plans were refused: {why})"
+                    ),
+                    None => {
+                        "Explore toward the objective (the lead gave no other goal)".to_string()
+                    }
+                },
+            )
         };
         self.direct(
             "lead",
@@ -792,9 +1070,49 @@ impl Driver {
             },
             Some(handed),
             text,
-            String::new(),
+            format!("Explores {}", target.line()),
         );
         Ok(goal)
+    }
+
+    /// What the lead's turn checks plans and children against: the base
+    /// commit's projects, read by its tree, and what the objective explores
+    /// so far; a project's model is read in `lead`, a checkout of `base`.
+    pub(super) fn planner(&self, lead: &Path, base: &str) -> Result<Planner, String> {
+        Ok(Planner {
+            planning: RefCell::new(roles::Planning {
+                projects: traceability::projects(&self.objective.repository, base)?,
+                revision: base.to_string(),
+                target: self.objective.target.clone(),
+                given: Vec::new(),
+            }),
+            accepted: Default::default(),
+            checkout: lead.to_path_buf(),
+            scratch: self.folder("project-model"),
+        })
+    }
+
+    /// Where a copy of `project` of `checkout` (a checkout of `revision`)
+    /// comes from: its folder, its files' digest, and the project's tree in
+    /// the repository when git knows it.
+    pub(super) fn copy_of(
+        &self,
+        checkout: &Path,
+        project: &str,
+        revision: &str,
+    ) -> Result<Provenance, String> {
+        let mut source = Provenance::of(checkout, project, revision)?;
+        source.tree = traceability::project_tree(&self.objective.repository, revision, project);
+        Ok(source)
+    }
+
+    /// Whether the objective explores `project`: one of its target's, or
+    /// any while it has none.
+    pub(super) fn explores(&self, project: &str) -> bool {
+        self.objective
+            .target
+            .as_ref()
+            .is_none_or(|target| target.projects().contains(&project))
     }
 
     /// What the testing knowledge says, for the lead: coverage, the
@@ -834,9 +1152,14 @@ impl Driver {
             .take(5)
             .map(|r| {
                 format!(
-                    "- run {} in {} ({:?}): {} steps, {} new coverage, {} finding(s): {}",
+                    "- run {} in {}{} ({:?}): {} steps, {} new coverage, {} finding(s): {}",
                     r.n,
                     r.build,
+                    if r.start.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" on {}", r.start)
+                    },
                     r.way,
                     r.steps,
                     r.new_coverage,
