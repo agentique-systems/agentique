@@ -117,10 +117,6 @@ pub const TRIES: usize = 2;
 /// Replays a finding's reproduction and reduction may take.
 const REPLAYS: usize = 6;
 
-/// The ways of deciding successive explorations take: Jev escalating when
-/// unsure, then the explorer's model, then the rules.
-const WAYS: [Way; 3] = [Way::Escalating, Way::Model, Way::Rules];
-
 /// How long one exploration may take at most.
 const EXPLORE_SECONDS: u64 = 1800;
 
@@ -386,12 +382,6 @@ impl Driver {
             }
         }
         let n = self.cycle().explorations.len() as u32 + 1;
-        let made: u32 = self
-            .objective
-            .cycles
-            .iter()
-            .map(|c| c.explorations.len() as u32)
-            .sum();
         // What the objective explores, at the build's commit; nothing
         // alternates (the W13.7 repair). A scope and start planned at
         // another commit are not taken over unchecked.
@@ -420,13 +410,15 @@ impl Driver {
         // A quarter of the spend budget at most; without one, the run's
         // steps bound it (`f64::MAX` keeps its record a number).
         let run_usd = left_usd.min(budgets.usd.map_or(f64::MAX, |usd| usd / 4.0));
-        // Without models for exploring (an objective recorded without them),
-        // the rules decide: they ask no model.
+        // Jev first, escalating only when unsure (the W13.7 repair: no
+        // longer the explorer's model or the rules in turn); without models
+        // for exploring (an objective recorded without them), the rules
+        // decide: they ask no model.
         let modelled = crate::models::with_deciding(&self.objective.models, |_| ()).is_ok();
         let plan = Plan {
             goal: goal.clone(),
             way: if modelled {
-                WAYS[made as usize % WAYS.len()]
+                Way::Escalating
             } else {
                 Way::Rules
             },
@@ -442,7 +434,7 @@ impl Driver {
             turn_ms: findings::TURN_BUDGET_MS,
             stop_ms: findings::STOP_BUDGET_MS,
         };
-        self.post(
+        let explores = self.post(
             ThreadEntry::new(
                 Kind::Event,
                 Author::agent("explorer", self.model_of("explorer")),
@@ -479,8 +471,15 @@ impl Driver {
             &self.folder("explore"),
             options,
         );
+        // Its progress folds under that entry (the W13.7 repair).
         let mut watch = Watch {
             controls: self.controls.clone(),
+            report: Some(super::Report {
+                poster: self.poster.clone(),
+                author: Author::agent("explorer", self.model_of("explorer")),
+                under: (explores.seq > 0).then_some(explores.seq),
+                directive: self.objective.running_for("explorer").map(|d| d.id.clone()),
+            }),
         };
         let run = if modelled {
             crate::models::with_deciding(&self.objective.models, |deciding| {
@@ -504,7 +503,8 @@ impl Driver {
         }
         // Not the planned project: nothing was explored, and nothing else
         // takes its place (C-54, the W13.7 repair).
-        if let Some(why) = &run.mismatch {
+        if let Some(mismatch) = &run.mismatch {
+            let why = mismatch.reason();
             self.post(
                 ThreadEntry::new(
                     Kind::Result,
@@ -570,6 +570,11 @@ impl Driver {
                 f
             })
             .collect();
+        // Known but never replayed: offered again, said apart from the new.
+        let resurfaced = new
+            .iter()
+            .filter(|f| knowledge.findings.iter().any(|k| k.identity == f.identity))
+            .count();
         let found: Vec<String> = new.iter().map(|f| f.identity.clone()).collect();
         let regressed: Vec<String> = regressions.iter().map(|f| f.identity.clone()).collect();
         self.post(
@@ -577,19 +582,23 @@ impl Driver {
                 Kind::Result,
                 Author::agent("explorer", self.model_of("explorer")),
                 format!(
-                    "Explored {} steps: {} new coverage, {} new finding(s), {} regression(s); ${:.3}; {}",
+                    "Explored {} steps: {} new coverage, {} new finding(s){}, {} regression(s); ${:.3}; {}",
                     run.actions,
                     run.new_coverage.len(),
-                    new.len(),
+                    new.len() - resurfaced,
+                    if resurfaced > 0 {
+                        format!(" and {resurfaced} found before but never replayed")
+                    } else {
+                        String::new()
+                    },
                     regressions.len(),
                     run.usd,
                     run.ended
                 ),
             )
             .with_details(
-                new.iter()
-                    .chain(&regressions)
-                    .map(finding_line)
+                std::iter::once(format!("Where the time went: {}", run.time()))
+                    .chain(new.iter().chain(&regressions).map(finding_line))
                     .chain(adjudicated)
                     .chain(run.recoveries.iter().map(|r| format!("recovered: {} ({})", r.kind, r.detail)))
                     .chain(run.conditions.iter().map(|c| format!("condition: {c}")))
@@ -621,7 +630,7 @@ impl Driver {
     /// A replay whose test instance did not open the planned project (the
     /// W13.7 repair): said in the thread, the finding left as it was (it
     /// says nothing about it), and why the cycle ends.
-    fn not_replayed(&self, what: &str, why: &str) -> String {
+    fn not_replayed(&self, what: &str, why: &explore::Mismatch) -> String {
         self.event(format!(
             "Did not replay {what}: {why}. The finding stays as it was."
         ));
@@ -638,8 +647,8 @@ impl Driver {
     }
 
     /// An exploration's spend, by the role whose model decided: Jev's under
-    /// `decisions`, the explorer's model under `explorer`, an escalation
-    /// under `escalation`, and the instance's Assistant (on the explorer's
+    /// `decisions`, the explorer's model under `explorer` (also when Jev
+    /// escalated to it), and the instance's Assistant (on the explorer's
     /// key) under `explorer`.
     fn count_exploration(&mut self, run: &Run) {
         for taken in &run.steps {
@@ -649,8 +658,7 @@ impl Driver {
             let role = match chosen.decision.source {
                 crate::decide::Source::Rules => continue,
                 crate::decide::Source::Jev => "decisions",
-                crate::decide::Source::Model => "explorer",
-                crate::decide::Source::Escalated => "escalation",
+                crate::decide::Source::Model | crate::decide::Source::Escalated => "explorer",
             };
             let Some(model) = self.model_of(role) else {
                 continue;

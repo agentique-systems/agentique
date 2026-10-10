@@ -74,12 +74,238 @@ pub struct Act<'a> {
 /// What supervises a run: before each step, whether to go on (it may wait
 /// while the run is paused); during a long wait (a turn of the Assistant, a
 /// model's answer, a fresh start, a replay), whether it was stopped, which
-/// never waits. A closure goes on while it returns true and stops only
-/// between steps.
+/// never waits; and what the run is doing, for whoever watches it. A
+/// closure goes on while it returns true and stops only between steps.
 pub trait Supervisor {
     fn go_on(&mut self) -> bool;
     fn stopped(&mut self) -> bool {
         false
+    }
+    /// What the run is doing (the W13.7 repair): nothing by default.
+    fn progress(&mut self, _progress: &Progress) {}
+}
+
+/// How often a run says it still waits for a model's answer.
+pub const HEARTBEAT: Duration = Duration::from_secs(10);
+
+/// What a run reports while it goes (the W13.7 repair), for whoever
+/// watches it: only what happened and what it waits for, never a model's
+/// reasoning. `step` counts the run's actions, `of` is its step budget,
+/// `seconds` its time so far.
+#[derive(Debug)]
+pub enum Progress<'a> {
+    /// A model is about to be asked for step `step`; `by` says who decides.
+    Deciding {
+        step: u32,
+        of: u32,
+        by: String,
+        project: &'a str,
+        goal: &'a str,
+        seconds: u64,
+    },
+    /// Still waiting for `by`'s answer, `waited` seconds so far.
+    Waiting {
+        step: u32,
+        of: u32,
+        by: String,
+        waited: u64,
+    },
+    /// An action was taken (or refused, or failed).
+    Took {
+        step: u32,
+        of: u32,
+        taken: &'a Taken,
+        seconds: u64,
+    },
+}
+
+/// Seconds as a person reads them: `41 s`, `2 min 5 s`.
+fn duration(seconds: u64) -> String {
+    if seconds < 60 {
+        format!("{seconds} s")
+    } else {
+        format!("{} min {} s", seconds / 60, seconds % 60)
+    }
+}
+
+/// Milliseconds as seconds with a tenth: `41.2 s`.
+fn tenths(ms: u64) -> String {
+    format!("{:.1} s", ms as f64 / 1000.0)
+}
+
+impl Progress<'_> {
+    /// Its line in the thread, and what folds under it.
+    pub fn entry(&self) -> (String, String) {
+        match self {
+            Progress::Deciding {
+                step,
+                of,
+                by,
+                project,
+                goal,
+                seconds,
+            } => (
+                format!("Step {step}/{of}: asks {by} · {} in", duration(*seconds)),
+                format!(
+                    "Project: {project}\nGoal: {goal}\nNext: the action chosen is taken in the test instance and checked"
+                ),
+            ),
+            Progress::Waiting {
+                step,
+                of,
+                by,
+                waited,
+            } => (
+                format!("Step {step}/{of}: waiting for {by} · {}", duration(*waited)),
+                String::new(),
+            ),
+            Progress::Took {
+                step,
+                of,
+                taken,
+                seconds,
+            } => (
+                format!("Step {step}/{of}: {}", taken.line()),
+                taken.details(*seconds),
+            ),
+        }
+    }
+}
+
+/// Who chose a step: the rules, Jev with its confidence, or a model.
+fn decided_by(chosen: &Chosen) -> String {
+    let d = &chosen.decision;
+    match d.source {
+        Source::Rules if d.note.is_empty() => "rules".to_string(),
+        Source::Rules => format!("rules ({})", d.note),
+        Source::Jev => format!("Jev {:.2}", d.confidence.unwrap_or(0.0)),
+        Source::Model => "the explorer's model".to_string(),
+        Source::Escalated => "escalated to the reasoning model".to_string(),
+    }
+}
+
+/// What a step did, in words, with what it acted on.
+fn acted(step: &Step) -> String {
+    let action = &step.action;
+    let label = if step.label.is_empty() {
+        step.target().to_string()
+    } else {
+        step.label.clone()
+    };
+    match action["kind"].as_str().unwrap_or_default() {
+        "click" => format!("clicks “{label}”"),
+        "command" => format!("runs “{label}”"),
+        "fill" => format!(
+            "types “{}” into “{label}”",
+            action["text"]
+                .as_str()
+                .unwrap_or_default()
+                .chars()
+                .take(24)
+                .collect::<String>()
+        ),
+        "key" => format!("presses {}", action["keys"].as_str().unwrap_or_default()),
+        "select" => format!("selects {label}"),
+        "await-turn" => format!("waits for {label}"),
+        other => other.to_string(),
+    }
+}
+
+/// Where one step's time went (the W13.7 repair), in milliseconds:
+/// deciding (Jev, the models) and the instance (carrying the action out,
+/// observing after); with the model asked, at its effort, its calls (a
+/// reply that could not be read is asked again), the characters of its
+/// prompts and the tokens the provider reported.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Timing {
+    #[serde(default)]
+    pub jev_ms: u64,
+    #[serde(default)]
+    pub model_ms: u64,
+    #[serde(default)]
+    pub act_ms: u64,
+    #[serde(default)]
+    pub observe_ms: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effort: Option<String>,
+    #[serde(default)]
+    pub calls: u32,
+    #[serde(default)]
+    pub prompt_chars: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens: Option<Tokens>,
+}
+
+/// Tokens a provider reported: input (with the cache's), output, and the
+/// output that was reasoning.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Tokens {
+    pub input: u64,
+    pub output: u64,
+    pub reasoning: u64,
+}
+
+/// One step's typed decisions, asked through `answers` and measured where
+/// they are asked: Jev's time, the models' time, calls, prompts and the
+/// tokens reported.
+struct Measured<'a> {
+    answers: &'a dyn Answers,
+    timing: std::cell::RefCell<Timing>,
+}
+
+impl<'a> Measured<'a> {
+    fn new(answers: &'a dyn Answers) -> Measured<'a> {
+        Measured {
+            answers,
+            timing: Default::default(),
+        }
+    }
+}
+
+impl Answers for Measured<'_> {
+    fn jev_model(&self) -> ModelRef {
+        self.answers.jev_model()
+    }
+
+    fn threshold(&self) -> f64 {
+        self.answers.threshold()
+    }
+
+    fn ask_jev(&self, question: &Question) -> Result<Decision, decide::Failure> {
+        let started = Instant::now();
+        let answer = self.answers.ask_jev(question);
+        self.timing.borrow_mut().jev_ms += started.elapsed().as_millis() as u64;
+        answer
+    }
+
+    fn chat(
+        &self,
+        model: &ModelRef,
+        effort: Option<&str>,
+        prompt: &str,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<decide::Answered, String> {
+        let started = Instant::now();
+        let answer = self.answers.chat(model, effort, prompt, stop);
+        let mut timing = self.timing.borrow_mut();
+        timing.model_ms += started.elapsed().as_millis() as u64;
+        timing.model = Some(model.to_string());
+        timing.effort = effort.map(str::to_string);
+        timing.calls += 1;
+        timing.prompt_chars += prompt.chars().count() as u64;
+        if let Ok(decide::Answered {
+            usage: Some(usage), ..
+        }) = &answer
+        {
+            let tokens = timing.tokens.get_or_insert_with(Tokens::default);
+            tokens.input += usage.input_tokens + usage.cache_read_tokens + usage.cache_write_tokens;
+            tokens.output += usage.output_tokens;
+            tokens.reasoning += usage.reasoning_tokens;
+        }
+        answer
     }
 }
 
@@ -401,6 +627,37 @@ pub struct Opened {
     pub digest: String,
 }
 
+/// Why a test instance is not on a copy of the planned project (the W13.7
+/// repair).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "reason", rename_all = "lowercase")]
+pub enum Mismatch {
+    /// The copy is not the project's (copied from elsewhere, other files, or
+    /// not said): the Orchestrator's own copying went wrong, not the build.
+    Copy(String),
+    /// The instance shows another project, or none: the build under test
+    /// did not open what it was given.
+    Shown(String),
+}
+
+impl Mismatch {
+    /// Why, in a phrase.
+    pub fn reason(&self) -> &str {
+        let (Mismatch::Copy(reason) | Mismatch::Shown(reason)) = self;
+        reason
+    }
+}
+
+impl std::fmt::Display for Mismatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "the test instance did not open the planned project: {}",
+            self.reason()
+        )
+    }
+}
+
 /// Whether `instance` opened a copy of `source` (the W13.7 repair): copied
 /// from its folder, with its files' digest, and shown as the project in
 /// `observation`, its first after the start. Returns what the instance
@@ -410,36 +667,38 @@ pub fn check_copy(
     instance: &dyn Instance,
     source: &Provenance,
     observation: &Value,
-) -> (Option<Opened>, Result<(), String>) {
+) -> (Option<Opened>, Result<(), Mismatch>) {
     let Some(opened) = instance.opened() else {
         return (
             None,
-            Err("the instance does not say which copy it opened, so it cannot be checked".into()),
+            Err(Mismatch::Copy(
+                "the instance does not say which copy it opened, so it cannot be checked".into(),
+            )),
         );
     };
     let revision = crate::builds::short(&source.revision);
     let checked = if !same_folder(&opened.from, &source.folder) {
-        Err(format!(
+        Err(Mismatch::Copy(format!(
             "it copied {}, not {} of {revision}",
             opened.from.display(),
             source.folder.display()
-        ))
+        )))
     } else if opened.digest != source.digest {
-        Err(format!(
+        Err(Mismatch::Copy(format!(
             "its copy's files (digest {}) are not those of {revision} (digest {})",
             opened.digest, source.digest
-        ))
+        )))
     } else {
         match observation["project"]["folder"]
             .as_str()
             .or_else(|| observation["identity"]["project"].as_str())
         {
             Some(folder) if same_folder(Path::new(folder), &opened.folder) => Ok(()),
-            Some(folder) => Err(format!(
+            Some(folder) => Err(Mismatch::Shown(format!(
                 "it shows the project {folder}, not its copy {}",
                 opened.folder.display()
-            )),
-            None => Err("it shows no project open".into()),
+            ))),
+            None => Err(Mismatch::Shown("it shows no project open".into())),
         }
     };
     (Some(opened), checked)
@@ -783,6 +1042,9 @@ pub struct Candidate {
     pub label: String,
     /// A field: a model may give its own text.
     pub field: bool,
+    /// It opens a view or a panel (a tab or an option outside a dialog, or
+    /// a command that shows a view): navigation, which changes nothing.
+    pub navigates: bool,
 }
 
 /// The Operator's own where an observation does not say with `operatorOnly`
@@ -906,6 +1168,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
         about: "press Escape".into(),
         label: "Escape".into(),
         field: false,
+        navigates: false,
     };
     if observation["screen"] == "settings" {
         return vec![escape];
@@ -995,6 +1258,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                     area: area.clone(),
                     label: label.clone(),
                     field: true,
+                    navigates: false,
                 });
             }
         } else if role == "field" {
@@ -1015,6 +1279,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                     area: area.clone(),
                     label: label.clone(),
                     field: true,
+                    navigates: false,
                 });
             }
         } else {
@@ -1031,6 +1296,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                 action: json!({ "kind": "click", "control": id }),
                 key,
                 about,
+                navigates: matches!(role, "tab" | "option") && region != "dialog",
                 area,
                 label,
                 field: false,
@@ -1056,6 +1322,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
                 area: "command".into(),
                 label,
                 field: false,
+                navigates: id.ends_with("-view") || id.starts_with("show-"),
             });
         }
     }
@@ -1074,6 +1341,7 @@ pub fn candidates(observation: &Value, folder: Option<&Path>) -> Vec<Candidate> 
             area,
             label,
             field: false,
+            navigates: false,
         });
     }
     list.push(escape);
@@ -1199,6 +1467,46 @@ fn seeded(seed: u64, key: &str) -> u64 {
     hash
 }
 
+/// The view or panel `goal` names, if one is offered and not opened yet in
+/// this run (the W13.7 repair): a navigation whose label the goal names as
+/// a view, a panel or a tab (“the Requirements view”, “the History
+/// panel”). The rules take it, and no model is asked.
+fn route(candidates: &[Candidate], goal: &str, covered: &BTreeMap<String, u32>) -> Option<usize> {
+    let goal = goal.to_lowercase();
+    candidates.iter().position(|c| {
+        let label = c.label.trim().to_lowercase();
+        let named = if label.ends_with(" view") {
+            goal.contains(&label)
+        } else {
+            ["view", "panel", "tab"]
+                .iter()
+                .any(|place| goal.contains(&format!("{label} {place}")))
+        };
+        c.navigates && !label.is_empty() && named && !covered.contains_key(&c.key)
+    })
+}
+
+/// The choice of a route the goal names, by rule.
+fn named_route(index: usize) -> (usize, Chosen) {
+    (
+        index,
+        Chosen {
+            input: None,
+            expect: None,
+            why: String::new(),
+            decision: Decision {
+                choice: String::new(),
+                source: Source::Rules,
+                confidence: None,
+                millis: 0,
+                usd: Some(0.0),
+                note: "the goal names it".into(),
+            },
+            counted: 0.0,
+        },
+    )
+}
+
 /// The rules' order: actions never covered in the testing knowledge, then
 /// those not covered in this run, then the least covered; within each,
 /// those meeting the goal's words, then recent changes; then by the seed.
@@ -1225,20 +1533,22 @@ fn rank(
 }
 
 /// The models a run may ask, as the caller resolved them (the Orchestrator
-/// passes its `explorer`, `decisions` and `escalation` roles).
+/// passes its `explorer` and `decisions` roles).
 pub struct Deciding<'a> {
     /// Jev (its model, threshold and deadline are its own) and the models:
     /// a [`decide::Decider`], or a stand-in in tests.
     pub answers: &'a dyn Answers,
-    /// The explorer's model and effort: the Model way.
+    /// The explorer's model and effort: the Model way, and the model Jev
+    /// escalates a step to when it is unsure (the W13.7 repair: a step is
+    /// the explorer's choice, so not the escalation role's reasoning
+    /// model, which took a minute or more a step).
     pub explorer: ModelRef,
     pub effort: Option<String>,
-    /// The model Jev escalates to, and its effort.
-    pub escalation: ModelRef,
-    pub escalation_effort: Option<String>,
 }
 
 /// How many of the rules' best actions Jev chooses among, and the model.
+/// (Fewer for the model hid what follows an action, such as Send after
+/// typing a request, so a step's prompt is made smaller by its state.)
 const JEV_OPTIONS: usize = 8;
 const MODEL_OPTIONS: usize = 24;
 
@@ -1292,7 +1602,6 @@ fn question(
         .map(|(i, index)| (format!("a{:02}", i + 1), index))
         .collect();
     let mut options = BTreeMap::new();
-    let mut coverage = serde_json::Map::new();
     for (id, index) in &shown {
         let c = &candidates[*index];
         let before = knowledge.count(&c.key);
@@ -1302,15 +1611,14 @@ fn question(
             (_, 0) => "covered before, not in this run".to_string(),
             (_, n) => format!("covered {n} time(s) in this run"),
         };
+        // What it covered is said here once (the W13.7 repair: no longer
+        // also in the state).
         options.insert(id.clone(), Some(format!("{} — {note}", c.about)));
-        coverage.insert(id.clone(), json!({ "before": before, "thisRun": here }));
     }
-    let mut state = state.clone();
-    state["coverage"] = Value::Object(coverage);
     (
         Question {
             instructions: INSTRUCTIONS.into(),
-            state,
+            state: state.clone(),
             options,
         },
         shown,
@@ -1526,8 +1834,8 @@ impl Choosing<'_> {
 }
 
 /// Chooses the next action by `way`: the rules' first; Jev among the
-/// rules' best, used when confident; the model among more of them, its
-/// answer checked; Jev escalating to the model. Whatever fails falls back
+/// rules' best, used when confident; the explorer's model among more of
+/// them, its answer checked; Jev escalating to the explorer's model. Whatever fails falls back
 /// to the rules, with its time and cost kept; `stop` is asked while a model
 /// is waited for.
 fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usize, Chosen) {
@@ -1588,8 +1896,8 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
     };
     if way == Way::Escalating {
         choosing.model(
-            &deciding.escalation,
-            deciding.escalation_effort.as_deref(),
+            &deciding.explorer,
+            deciding.effort.as_deref(),
             spent,
             note,
             Source::Escalated,
@@ -1661,6 +1969,82 @@ pub struct Taken {
     pub detail: String,
     #[serde(default)]
     pub took_ms: Option<u64>,
+    /// Where its time went (the W13.7 repair).
+    #[serde(default)]
+    pub timing: Timing,
+}
+
+impl Taken {
+    /// The step in a line: what it did, how it came out, who chose it, and
+    /// its time.
+    pub fn line(&self) -> String {
+        let t = &self.timing;
+        let who = match &self.chosen {
+            Some(chosen) => decided_by(chosen),
+            None => self.step.by.clone(),
+        };
+        let mut line = format!("{} — {} · {who}", acted(&self.step), self.outcome);
+        if t.jev_ms + t.model_ms > 0 {
+            line.push_str(&format!(" · {} deciding", tenths(t.jev_ms + t.model_ms)));
+        }
+        line.push_str(&format!(" · {} acting", tenths(t.act_ms + t.observe_ms)));
+        line
+    }
+
+    /// What folds under its line: why it was chosen, what was expected,
+    /// the instance's answer, where its time went, the model's calls and
+    /// tokens, and its cost; `seconds` is the run's time so far.
+    pub fn details(&self, seconds: u64) -> String {
+        let t = &self.timing;
+        let mut details = Vec::new();
+        if let Some(chosen) = &self.chosen
+            && !chosen.why.is_empty()
+        {
+            details.push(format!("Why: {}", chosen.why));
+        }
+        if let Some(expect) = &self.step.expect {
+            details.push(format!("Expected: {expect}"));
+        }
+        if !self.detail.is_empty() {
+            details.push(format!("Answer: {}", self.detail));
+        }
+        details.push(format!(
+            "Time: Jev {}, model {}, acting {}, observing {}; {} into the run",
+            tenths(t.jev_ms),
+            tenths(t.model_ms),
+            tenths(t.act_ms),
+            tenths(t.observe_ms),
+            duration(seconds)
+        ));
+        if let Some(model) = &t.model {
+            details.push(format!(
+                "Model: {model}{}, {} call(s), {} prompt characters, {}",
+                t.effort
+                    .as_ref()
+                    .map(|e| format!(" at {e}"))
+                    .unwrap_or_default(),
+                t.calls,
+                t.prompt_chars,
+                match &t.tokens {
+                    Some(tokens) => format!(
+                        "{} input and {} output tokens ({} reasoning)",
+                        tokens.input, tokens.output, tokens.reasoning
+                    ),
+                    None => "no tokens reported".to_string(),
+                }
+            ));
+        }
+        if let Some(chosen) = &self.chosen {
+            details.push(match chosen.decision.usd {
+                Some(usd) => format!("Cost: ${usd:.4}"),
+                None => format!("Cost: unknown, counted as at most ${:.4}", chosen.counted),
+            });
+            if !chosen.decision.note.is_empty() {
+                details.push(format!("Note: {}", chosen.decision.note));
+            }
+        }
+        details.join("\n")
+    }
 }
 
 /// A way out of a state exploration did not choose.
@@ -1744,7 +2128,11 @@ pub struct Run {
     /// Why the copy its instance opened is not what the plan's source says:
     /// the run then took no action (never a substitution).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mismatch: Option<String>,
+    pub mismatch: Option<Mismatch>,
+    /// Milliseconds spent starting its instance, fresh starts included (the
+    /// W13.7 repair).
+    #[serde(default)]
+    pub start_ms: u64,
 }
 
 /// The value at percentile `p` (0 to 1) of `values`; 0 when there are none.
@@ -1761,6 +2149,66 @@ impl Run {
     /// A latency percentile of the decisions.
     pub fn latency(&self, p: f64) -> u64 {
         percentile(&self.latencies, p)
+    }
+
+    /// Where its time went, in a line (the W13.7 repair): deciding by Jev
+    /// and by the models, the instance (acting, observing), starting it,
+    /// and the rest, as shares of its time; the models' calls with their
+    /// median and slowest step, and what they were asked and reported.
+    pub fn time(&self) -> String {
+        let total = ((self.seconds * 1000.0) as u64).max(1);
+        let sum =
+            |part: fn(&Timing) -> u64| -> u64 { self.steps.iter().map(|t| part(&t.timing)).sum() };
+        let (jev, model) = (sum(|t| t.jev_ms), sum(|t| t.model_ms));
+        let (act, observe) = (sum(|t| t.act_ms), sum(|t| t.observe_ms));
+        let other = total.saturating_sub(jev + model + act + observe + self.start_ms);
+        let share = |ms: u64| ms * 100 / total;
+        let asked: Vec<u64> = self
+            .steps
+            .iter()
+            .filter(|t| t.timing.calls > 0)
+            .map(|t| t.timing.model_ms)
+            .collect();
+        let calls: u32 = self.steps.iter().map(|t| t.timing.calls).sum();
+        let prompts = sum(|t| t.prompt_chars);
+        let tokens = self.steps.iter().filter_map(|t| t.timing.tokens).fold(
+            None,
+            |all: Option<Tokens>, t| {
+                let all = all.unwrap_or_default();
+                Some(Tokens {
+                    input: all.input + t.input,
+                    output: all.output + t.output,
+                    reasoning: all.reasoning + t.reasoning,
+                })
+            },
+        );
+        let mut line = format!(
+            "time {}: model {}%, Jev {}%, the instance {}% (acting {}%, observing {}%), starting it {}%, other {}%",
+            duration(total / 1000),
+            share(model),
+            share(jev),
+            share(act + observe),
+            share(act),
+            share(observe),
+            share(self.start_ms),
+            share(other)
+        );
+        if calls > 0 {
+            line.push_str(&format!(
+                "; {calls} model call(s) in {} step(s), p50 {}, slowest {}; {prompts} prompt characters",
+                asked.len(),
+                tenths(percentile(&asked, 0.5)),
+                tenths(percentile(&asked, 1.0)),
+            ));
+            match tokens {
+                Some(t) => line.push_str(&format!(
+                    ", {} output tokens ({} reasoning)",
+                    t.output, t.reasoning
+                )),
+                None => line.push_str(", no tokens reported"),
+            }
+        }
+        line
     }
 }
 
@@ -1810,6 +2258,8 @@ struct Explorer<'a> {
     reported: BTreeSet<String>,
     restarts: usize,
     started: Instant,
+    /// The time of the step being taken, until it is recorded.
+    pending: Timing,
 }
 
 /// Explores `instance` as `plan` says, deciding by `plan.way` with
@@ -1856,6 +2306,7 @@ pub fn explore(
             seconds: 0.0,
             opened: None,
             mismatch: None,
+            start_ms: 0,
         },
         since: Vec::new(),
         now: Value::Null,
@@ -1869,6 +2320,7 @@ pub fn explore(
         reported: BTreeSet::new(),
         restarts: 0,
         started: Instant::now(),
+        pending: Timing::default(),
     };
     explorer.run.ended = match explorer.go() {
         Ok(()) => "the step budget was used".into(),
@@ -1941,6 +2393,7 @@ impl Explorer<'_> {
         self.escapes = 0;
         let (supervisor, started, seconds) =
             (&mut *self.supervisor, self.started, self.plan.seconds);
+        let starting = Instant::now();
         let restarted = self
             .instance
             .restart(&mut || halted(supervisor, started, seconds));
@@ -1950,16 +2403,14 @@ impl Explorer<'_> {
             }
             return Err(format!("the test instance did not start: {error}"));
         }
-        let now = self
-            .instance
-            .observe()
-            .map_err(|e| format!("the test instance does not answer: {e}"))?;
+        let now = self.instance.observe();
+        self.run.start_ms += starting.elapsed().as_millis() as u64;
+        let now = now.map_err(|e| format!("the test instance does not answer: {e}"))?;
         // What it opened is the plan's project, or the run ends here.
-        if let Err(why) = self.check_opened(&now) {
-            self.run.mismatch = Some(why.clone());
-            return Err(format!(
-                "the test instance did not open the planned project: {why}"
-            ));
+        if let Err(mismatch) = self.check_opened(&now) {
+            let ended = mismatch.to_string();
+            self.run.mismatch = Some(mismatch);
+            return Err(ended);
         }
         if self.run.build.is_empty() {
             self.run.build = now["identity"]["build"]
@@ -1986,7 +2437,7 @@ impl Explorer<'_> {
     /// Whether the instance opened a copy of the plan's source: copied from
     /// its folder, with its files' digest, and shown as the project in the
     /// observation `now`. A plan without a source checks nothing.
-    fn check_opened(&mut self, now: &Value) -> Result<(), String> {
+    fn check_opened(&mut self, now: &Value) -> Result<(), Mismatch> {
         let Some(source) = &self.plan.source else {
             return Ok(());
         };
@@ -2109,7 +2560,10 @@ impl Explorer<'_> {
     }
 
     fn observe(&mut self) -> Result<Option<Value>, String> {
-        match self.instance.observe() {
+        let observing = Instant::now();
+        let observed = self.instance.observe();
+        self.pending.observe_ms += observing.elapsed().as_millis() as u64;
+        match observed {
             Ok(now) => {
                 self.seen(&now);
                 Ok(Some(now))
@@ -2158,19 +2612,70 @@ impl Explorer<'_> {
             self.plan.seed,
         );
         let state = self.state();
+        // A view or panel the goal names, not opened yet in this run: the
+        // rules take it, and no model is asked (the W13.7 repair).
+        let routed = (!matches!(self.plan.way, Way::Rules | Way::Cancel))
+            .then(|| route(&candidates, &self.plan.goal, &self.run.covered))
+            .flatten();
+        let step = self.run.actions + 1;
+        let asking = self.asking();
+        if routed.is_none()
+            && candidates.len() > 1
+            && let Some((by, _)) = &asking
+        {
+            self.supervisor.progress(&Progress::Deciding {
+                step,
+                of: self.plan.steps,
+                by: by.clone(),
+                project: &self.plan.start,
+                goal: &self.plan.goal,
+                seconds: self.started.elapsed().as_secs(),
+            });
+        }
+        // Asked through a measure of where the decision's time goes.
+        let measured = Measured::new(self.deciding.answers);
+        let deciding = Deciding {
+            answers: &measured,
+            explorer: self.deciding.explorer.clone(),
+            effort: self.deciding.effort.clone(),
+        };
         let choosing = Choosing {
-            deciding: self.deciding,
+            deciding: &deciding,
             candidates: &candidates,
             ranked: &ranked,
             state: &state,
             knowledge: self.knowledge,
             covered: &self.run.covered,
         };
-        let (supervisor, started, seconds) =
-            (&mut *self.supervisor, self.started, self.plan.seconds);
-        let (index, chosen) = choose(self.plan.way, &choosing, &mut || {
-            halted(supervisor, started, seconds)
-        });
+        let (index, chosen) = match routed {
+            Some(index) => named_route(index),
+            None => {
+                let (supervisor, started, seconds, of) = (
+                    &mut *self.supervisor,
+                    self.started,
+                    self.plan.seconds,
+                    self.plan.steps,
+                );
+                let waiting_for = asking.map(|(_, model)| model).unwrap_or_default();
+                let asked = Instant::now();
+                let mut beats = 0;
+                choose(self.plan.way, &choosing, &mut || {
+                    // Still waiting: said at most every HEARTBEAT.
+                    let waited = asked.elapsed().as_secs();
+                    if waited / HEARTBEAT.as_secs() > beats {
+                        beats = waited / HEARTBEAT.as_secs();
+                        supervisor.progress(&Progress::Waiting {
+                            step,
+                            of,
+                            by: waiting_for.clone(),
+                            waited,
+                        });
+                    }
+                    halted(supervisor, started, seconds)
+                })
+            }
+        };
+        self.pending = measured.timing.into_inner();
         self.run.actions += 1;
         self.run.latencies.push(chosen.decision.millis);
         self.run.usd += chosen.counted;
@@ -2226,7 +2731,10 @@ impl Explorer<'_> {
                 observed: self.now["screenRevision"].as_u64().unwrap_or_default(),
                 action: &step.action,
             };
-            let answer = match self.instance.act(&act) {
+            let acting = Instant::now();
+            let answered = self.instance.act(&act);
+            self.pending.act_ms += acting.elapsed().as_millis() as u64;
+            let answer = match answered {
                 Ok(answer) => answer,
                 Err(error) => {
                     self.run.unwanted.ended += 1;
@@ -2472,9 +2980,11 @@ impl Explorer<'_> {
         };
         let (supervisor, started, seconds) =
             (&mut *self.supervisor, self.started, self.plan.seconds);
+        let waiting = Instant::now();
         let waited = findings::await_turn(self.instance, budget_ms, &mut || {
             halted(supervisor, started, seconds)
         });
+        self.pending.act_ms += waiting.elapsed().as_millis() as u64;
         match waited {
             findings::Waited::Stopped => Err(self.why_halted()),
             findings::Waited::Gone(error) => {
@@ -2517,7 +3027,10 @@ impl Explorer<'_> {
             observed: self.now["screenRevision"].as_u64().unwrap_or_default(),
             action: &step.action,
         };
-        let answer = match self.instance.act(&act) {
+        let acting = Instant::now();
+        let answered = self.instance.act(&act);
+        self.pending.act_ms += acting.elapsed().as_millis() as u64;
+        let answer = match answered {
             Ok(answer) => answer,
             Err(error) => {
                 self.record(&step, None, "ended", error.clone(), None);
@@ -2576,6 +3089,14 @@ impl Explorer<'_> {
             outcome: outcome.into(),
             detail,
             took_ms,
+            timing: std::mem::take(&mut self.pending),
+        });
+        let taken = self.run.steps.last().expect("just recorded");
+        self.supervisor.progress(&Progress::Took {
+            step: self.run.actions,
+            of: self.plan.steps,
+            taken,
+            seconds: self.started.elapsed().as_secs(),
         });
     }
 
@@ -2641,6 +3162,28 @@ impl Explorer<'_> {
         // Escape "carried out" is no progress out of a dead end.
         self.escapes = escapes;
         Ok(())
+    }
+
+    /// Who decides a step by the plan's way, and whose answer a wait is
+    /// for: none for the rules.
+    fn asking(&self) -> Option<(String, String)> {
+        let at = |model: &ModelRef, effort: &Option<String>| match effort {
+            Some(effort) => format!("{} at {effort}", model.model),
+            None => model.model.clone(),
+        };
+        let deciding = self.deciding;
+        match self.plan.way {
+            Way::Rules | Way::Cancel => None,
+            Way::Jev => Some(("Jev".into(), "Jev".into())),
+            Way::Model => {
+                let model = at(&deciding.explorer, &deciding.effort);
+                Some((model.clone(), model))
+            }
+            Way::Escalating => {
+                let model = at(&deciding.explorer, &deciding.effort);
+                Some((format!("Jev, then {model} if Jev is unsure"), model))
+            }
+        }
     }
 
     /// The state a typed decision reads.

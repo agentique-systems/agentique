@@ -317,22 +317,19 @@ pub fn decider(models: &[RoleModel]) -> Result<Decider, String> {
 
 /// What an exploring objective's run decides with (W12.4's [`Deciding`]),
 /// from its recorded roles in one call: typed decisions by the [`decider`]
-/// of its `decisions` and `escalation` roles, the explorer's model and
-/// effort from its `explorer` role, and the escalation model and effort
-/// from its `escalation` role. `run` gets them for the run's length.
+/// of its `decisions` and `escalation` roles, and the explorer's model and
+/// effort from its `explorer` role, to which Jev escalates a step it is
+/// unsure of (the W13.7 repair). `run` gets them for the run's length.
 pub fn with_deciding<T>(
     models: &[RoleModel],
     run: impl FnOnce(&Deciding) -> T,
 ) -> Result<T, String> {
     let decider = decider(models)?;
     let explorer = for_role(models, "explorer")?;
-    let escalation = for_role(models, "escalation")?;
     let deciding = Deciding {
         answers: &decider,
         explorer: explorer.model.clone(),
         effort: explorer.effort.clone(),
-        escalation: escalation.model.clone(),
-        escalation_effort: escalation.effort.clone(),
     };
     Ok(run(&deciding))
 }
@@ -448,15 +445,14 @@ mod tests {
         assert_eq!(decider.jev_model, "jev-1.13.0");
         assert_eq!(decider.model.to_string(), "anthropic/claude-opus-5-5");
         assert_eq!(decider.effort.as_deref(), Some("high"));
-        // Exploration's deciding, from the explorer, decisions and
-        // escalation roles in one call (W12.5 passes the record's models).
+        // Exploration's deciding, from the explorer and decisions roles in
+        // one call (W12.5 passes the record's models): Jev escalates a step
+        // to the explorer's model (the W13.7 repair).
         let seen = with_deciding(&models, |deciding| {
             (
                 deciding.answers.jev_model().to_string(),
                 deciding.explorer.to_string(),
                 deciding.effort.clone(),
-                deciding.escalation.to_string(),
-                deciding.escalation_effort.clone(),
             )
         })
         .unwrap();
@@ -465,8 +461,6 @@ mod tests {
             (
                 "typesafe/jev-1.13.0".to_string(),
                 "deepseek/deepseek-flash".to_string(),
-                Some("high".to_string()),
-                "anthropic/claude-opus-5-5".to_string(),
                 Some("high".to_string()),
             )
         );

@@ -193,17 +193,39 @@ pub trait Answers {
             usd: Some(0.0),
         })
     }
-    /// One call to `model`: what it said and what it cost (`None` when
-    /// unknown), or why it failed (a request that was sent may be billed,
-    /// so a failed call's cost is unknown). `stop` is asked while it is
-    /// waited for; a stopped call is cancelled and fails.
+    /// One call to `model`: what it said, what it cost (`None` when
+    /// unknown) and the tokens the provider reported, or why it failed (a
+    /// request that was sent may be billed, so a failed call's cost is
+    /// unknown). `stop` is asked while it is waited for; a stopped call is
+    /// cancelled and fails.
     fn chat(
         &self,
         model: &ModelRef,
         effort: Option<&str>,
         prompt: &str,
         stop: &mut dyn FnMut() -> bool,
-    ) -> Result<(String, Option<f64>), String>;
+    ) -> Result<Answered, String>;
+}
+
+/// What a model answered to one call: its text, what it cost (`None` when
+/// unknown) and the tokens the provider reported (none when it reported
+/// none).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Answered {
+    pub text: String,
+    pub usd: Option<f64>,
+    pub usage: Option<agq_providers::Usage>,
+}
+
+impl Answered {
+    /// `text`, costing `usd`, with no tokens reported.
+    pub fn text(text: impl Into<String>, usd: Option<f64>) -> Answered {
+        Answered {
+            text: text.into(),
+            usd,
+            usage: None,
+        }
+    }
 }
 
 /// Reads what a model said into the option it chose and what else it said,
@@ -228,7 +250,7 @@ pub fn ask_model<T>(
     let mut usd = Some(0.0);
     let mut problem = String::new();
     for _ in 0..2 {
-        let (said, cost) = answers
+        let answered = answers
             .chat(model, effort, &prompt, stop)
             .map_err(|error| Failure {
                 source: Source::Model,
@@ -236,8 +258,8 @@ pub fn ask_model<T>(
                 millis: started.elapsed().as_millis() as u64,
                 usd: None,
             })?;
-        usd = usd.and_then(|total| Some(total + cost?));
-        match read(&said) {
+        usd = usd.and_then(|total| Some(total + answered.usd?));
+        match read(&answered.text) {
             Ok((choice, rest)) => {
                 let decision = Decision {
                     choice,
@@ -295,7 +317,8 @@ pub enum Source {
     Rules,
     /// Jev, confident in time.
     Jev,
-    /// The reasoning model, after Jev escalated.
+    /// A model, after Jev escalated: the reasoning model for a dialog in
+    /// the way, the explorer's model for an exploration's step.
     Escalated,
     /// The reasoning model alone.
     Model,
@@ -512,7 +535,7 @@ impl Answers for Decider {
         effort: Option<&str>,
         prompt: &str,
         stop: &mut dyn FnMut() -> bool,
-    ) -> Result<(String, Option<f64>), String> {
+    ) -> Result<Answered, String> {
         let request = ChatRequest {
             model: model.clone(),
             effort: effort.map(str::to_string),
@@ -551,7 +574,11 @@ impl Answers for Decider {
                 _ => None,
             })
             .collect();
-        Ok((said, reply.usage.cost_usd(model)))
+        Ok(Answered {
+            text: said,
+            usd: reply.usage.cost_usd(model),
+            usage: Some(reply.usage),
+        })
     }
 }
 
@@ -1144,9 +1171,9 @@ pub fn infer(
             break;
         }
         match answers.chat(escalation, effort, &prompt, stop) {
-            Ok((said, cost)) => {
-                usd = add(usd, cost);
-                match read_shape(&said) {
+            Ok(answered) => {
+                usd = add(usd, answered.usd);
+                match read_shape(&answered.text) {
                     Ok(shape) => {
                         return Inferred {
                             shape,
@@ -1331,9 +1358,9 @@ mod tests {
             _: Option<&str>,
             prompt: &str,
             _: &mut dyn FnMut() -> bool,
-        ) -> Result<(String, Option<f64>), String> {
+        ) -> Result<Answered, String> {
             self.1.borrow_mut().push(prompt.to_string());
-            Ok((self.0.borrow_mut().remove(0), Some(0.01)))
+            Ok(Answered::text(self.0.borrow_mut().remove(0), Some(0.01)))
         }
     }
 
@@ -1524,14 +1551,14 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
             _: Option<&str>,
             prompt: &str,
             stop: &mut dyn FnMut() -> bool,
-        ) -> Result<(String, Option<f64>), String> {
+        ) -> Result<Answered, String> {
             assert!(prompt.contains("integrate: ") && prompt.contains("- keep: "));
             self.asked.set(self.asked.get() + 1);
             if stop() {
                 return Err("stopped".into());
             }
             match self.said.borrow_mut().remove(0) {
-                Ok(said) => Ok((said.to_string(), Some(0.01))),
+                Ok(said) => Ok(Answered::text(said, Some(0.01))),
                 Err(error) => Err(error.to_string()),
             }
         }

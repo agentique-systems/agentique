@@ -17,7 +17,7 @@
 //! reproduction is set aside, and an ambiguous requirement goes to the
 //! Operator.
 
-use crate::explore::{Act, Instance, Provenance, Step};
+use crate::explore::{Act, Instance, Mismatch, Provenance, Step};
 use crate::observed::{self, Refusal};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -950,7 +950,7 @@ pub fn replay(
     finding: &Finding,
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) -> Result<Replay, String> {
+) -> Result<Replay, Mismatch> {
     replay_steps(instance, finding, finding.replay_steps(), source, stop)
 }
 
@@ -960,7 +960,7 @@ fn replay_steps(
     steps: &[Step],
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) -> Result<Replay, String> {
+) -> Result<Replay, Mismatch> {
     if let Some(source) = source {
         let mut checked = Ok(());
         let replay = replay_on(
@@ -968,11 +968,7 @@ fn replay_steps(
             finding,
             steps,
             &mut |instance, now| {
-                if let (_, Err(why)) = crate::explore::check_copy(instance, source, now) {
-                    checked = Err(format!(
-                        "the test instance did not open the planned project: {why}"
-                    ));
-                }
+                checked = crate::explore::check_copy(instance, source, now).1;
                 checked.is_ok()
             },
             stop,
@@ -1161,7 +1157,19 @@ pub fn reproduce(
     replays: usize,
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) -> Result<(), String> {
+) -> Result<(), Mismatch> {
+    // A mismatch, also while reducing, leaves it as it was.
+    let before = finding.clone();
+    reproduced(instance, finding, replays, source, stop).inspect_err(|_| *finding = before)
+}
+
+fn reproduced(
+    instance: &mut dyn Instance,
+    finding: &mut Finding,
+    replays: usize,
+    source: Option<&Provenance>,
+    stop: &mut dyn FnMut() -> bool,
+) -> Result<(), Mismatch> {
     let mut outcomes = Vec::new();
     for _ in 0..2 {
         let outcome = replay_steps(instance, finding, &finding.steps, source, stop)?;
@@ -1235,33 +1243,34 @@ pub fn reduce(
     replays: usize,
     source: Option<&Provenance>,
     stop: &mut dyn FnMut() -> bool,
-) -> Result<(), String> {
+) -> Result<(), Mismatch> {
     if replays < 2 {
         return Ok(());
     }
     let trials = replays - 1;
     let mut used = 0;
-    let mut halted = false;
-    // A copy that did not match ends the reduction: it says nothing.
-    let mut mismatch = None;
+    // A stop, or a copy that did not match, ends the reduction: the copy
+    // says nothing, and is the error.
+    let halted = std::cell::Cell::new(false);
+    let mismatch = std::cell::RefCell::new(None);
     let mut steps = finding.steps.clone();
     let mut fails = |instance: &mut dyn Instance, steps: &[Step], used: &mut usize| {
         *used += 1;
         match replay_steps(instance, finding, steps, source, stop) {
             Ok(outcome) => {
-                halted |= stopped(&outcome);
+                halted.set(halted.get() || stopped(&outcome));
                 outcome.failed()
             }
             Err(why) => {
-                halted = true;
-                mismatch = Some(why);
+                halted.set(true);
+                *mismatch.borrow_mut() = Some(why);
                 false
             }
         }
     };
     let n = steps.len();
     let mut keep = 0;
-    while keep < n && used < trials {
+    while keep < n && used < trials && !halted.get() {
         if fails(instance, &steps[n - keep..], &mut used) {
             steps = steps[n - keep..].to_vec();
             break;
@@ -1272,9 +1281,9 @@ pub fn reduce(
     while run * 2 <= steps.len() / 2 {
         run *= 2;
     }
-    while run >= 1 && used < trials {
+    while run >= 1 && used < trials && !halted.get() {
         let mut i = 0;
-        while i < steps.len() && used < trials && steps.len() > 1 {
+        while i < steps.len() && used < trials && steps.len() > 1 && !halted.get() {
             let mut fewer = steps.clone();
             fewer.drain(i..(i + run).min(steps.len()));
             if fails(instance, &fewer, &mut used) {
@@ -1285,11 +1294,11 @@ pub fn reduce(
         }
         run /= 2;
     }
-    let confirmed = steps.len() < n && fails(instance, &steps, &mut used);
-    if let Some(why) = mismatch {
+    let confirmed = steps.len() < n && !halted.get() && fails(instance, &steps, &mut used);
+    if let Some(why) = mismatch.take() {
         return Err(why);
     }
-    if halted {
+    if halted.get() {
         finding.note = "its reduction was stopped; the full steps are kept".into();
     } else if confirmed {
         // The reduced steps failed twice: on their trial and here.

@@ -645,18 +645,26 @@ fn by_rules(answers: &crate::decide::Decider) -> crate::explore::Deciding<'_> {
     let none = agq_providers::ModelRef::new(agq_providers::Provider::DeepSeek, "none");
     crate::explore::Deciding {
         answers,
-        explorer: none.clone(),
+        explorer: none,
         effort: None,
-        escalation: none,
-        escalation_effort: None,
     }
 }
 
 /// What supervises an exploration or a replay in the driver: the
 /// Operator's Pause holds it between steps (Step lets one through), Stop
-/// ends it.
+/// ends it, and its progress goes to the thread when it has a report.
 struct Watch {
     controls: Controls,
+    report: Option<Report>,
+}
+
+/// Where a run's progress goes (the W13.7 repair): the objective's thread,
+/// as the explorer's activity folded under the entry that started it.
+struct Report {
+    poster: Poster,
+    author: Author,
+    under: Option<u64>,
+    directive: Option<String>,
 }
 
 impl crate::explore::Supervisor for Watch {
@@ -672,6 +680,18 @@ impl crate::explore::Supervisor for Watch {
 
     fn stopped(&mut self) -> bool {
         self.controls.stopped()
+    }
+
+    fn progress(&mut self, progress: &crate::explore::Progress) {
+        let Some(report) = &self.report else {
+            return;
+        };
+        let (text, details) = progress.entry();
+        let mut entry = ThreadEntry::new(Kind::Activity, report.author.clone(), text)
+            .with_details(details)
+            .for_directive(report.directive.as_deref());
+        entry.under = report.under;
+        report.poster.post(entry);
     }
 }
 
@@ -3001,7 +3021,7 @@ impl Driver {
         // The replay and the changed areas start from the base's start
         // projects, which the change cannot alter.
         let start = self.checkout("base", &base)?;
-        outcomes.extend(self.evaluate_by_behaviour(&exe, &start, &user_facing));
+        outcomes.extend(self.evaluate_by_behaviour(&exe, &start, &user_facing)?);
         if !judged.is_empty() {
             let options = Options {
                 speed: Some(self.setup.speed.clone()),

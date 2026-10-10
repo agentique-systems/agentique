@@ -124,9 +124,15 @@ what to change.
   `check_copy`) and acts on nothing when they differ (a replay's mismatch
   leaves its finding as it was); a plan's start (a
   view's command, an element to select) is carried out by rule after each
-  start. Each step lists the actions valid there
+  start. While it runs it reports through its supervisor (`progress`:
+  before a decision a model makes, while it waits at most every 10 s, after
+  each action), which the driver posts to the thread under the exploration's
+  entry, and each step keeps where its time went (`Timing`), summarised by
+  `Run::time`. Each step lists the actions valid there
   that the observation offers to agents (fields with fixed input classes),
-  chooses one by the rules, Jev, the explorer's model or Jev escalating,
+  chooses one by the rules, Jev, the explorer's model or Jev escalating to
+  the explorer's model (an objective's explorations always escalate; a view
+  the goal names is opened by rule),
   acts, and checks the invariants. A finding is a check that failed; it is
   reproduced by two replays from a fresh start (no model asked) and
   reduced; `replay` is what a cycle's criterion runs. The testing

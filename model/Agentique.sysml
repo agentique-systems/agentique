@@ -831,7 +831,7 @@ package AgentiqueArchitecture {
             out item replayed : Replayed;
         }
         part def Explorer :> Agents::Agent {
-            doc /* Chooses each action of an exploration run among the valid ones, by one typed question per step (not a session); the run checks invariants and stated expectations after every action and reports what failed (C-54). */
+            doc /* Chooses each action of an exploration run among the valid ones, by one typed question per step (not a session): Jev first, and a step Jev is unsure of escalates to the explorer's own model (not the escalation role's reasoning model); a view or panel the goal names is opened by rule, asking no model. The run checks invariants and stated expectations after every action and reports what failed (C-54). It reports its progress in the objective's thread as it goes (before a decision a model makes, while it waits for one, after each action) and where each step's time went, only what happened. */
             :>> mode = Agents::AgentMode::fast;
             port work : RolePort;
             port app : ~ControlPort;

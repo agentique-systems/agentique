@@ -443,8 +443,8 @@ pub const AGENTS: &[Setting] = &[
     agent_row(
         "agents.explorer.effort",
         "Explorer effort",
-        "How much the explorer's model thinks; empty uses the model's default.",
-        "high",
+        "How much the explorer's model thinks for a step Jev is unsure of; empty uses the model's default.",
+        "low",
         EFFORTS,
     ),
     agent_row(
@@ -968,7 +968,8 @@ mod tests {
                 "implementer anthropic/claude-sonnet-5-5 high -> deepseek/deepseek-v4-pro high",
                 "reviewer anthropic/claude-opus-5-5 high -> deepseek/deepseek-v4-pro max",
                 "evaluator anthropic/claude-sonnet-5-5 medium -> deepseek/deepseek-v4-pro high",
-                "explorer deepseek/deepseek-flash high -> none",
+                // Low since the W13.7 repair's measurement (ROADMAP §7.6).
+                "explorer deepseek/deepseek-flash low -> none",
                 "escalation anthropic/claude-opus-5-5 high -> deepseek/deepseek-v4-pro max",
                 "decisions typesafe/jev-1.13.0 - -> none",
             ]

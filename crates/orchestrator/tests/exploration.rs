@@ -23,7 +23,9 @@
 //! `AGENTIQUE_EVALUATION_OUT` names a file (outside the repository) for the
 //! results as JSON.
 
-use agq_orchestrator::decide::{Answers, Decider, Decision, Failure, Question, Source, Way};
+use agq_orchestrator::decide::{
+    Answered, Answers, Decider, Decision, Failure, Question, Source, Way,
+};
 use agq_orchestrator::explore::{
     self, Changes, Deciding, Instance, LiveInstance, Opened, Plan, Provenance, Run, Start, Step,
 };
@@ -121,13 +123,13 @@ impl Answers for Scripted {
         _effort: Option<&str>,
         prompt: &str,
         _stop: &mut dyn FnMut() -> bool,
-    ) -> Result<(String, Option<f64>), String> {
+    ) -> Result<Answered, String> {
         self.prompts.borrow_mut().push(prompt.to_string());
         if let Some(reads) = &self.reads {
-            return Ok((reads(prompt), Some(0.002)));
+            return Ok(Answered::text(reads(prompt), Some(0.002)));
         }
         match self.said.borrow_mut().pop_front() {
-            Some(Ok(text)) => Ok((text, Some(0.002))),
+            Some(Ok(text)) => Ok(Answered::text(text, Some(0.002))),
             Some(Err(error)) => Err(error),
             None => Err("no answer scripted".into()),
         }
@@ -139,8 +141,6 @@ fn deciding(answers: &dyn Answers) -> Deciding<'_> {
         answers,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: None,
-        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
-        escalation_effort: None,
     }
 }
 
@@ -1236,7 +1236,7 @@ fn a_decision_of_unknown_cost_counts_at_the_most_it_could_have_cost() {
             _: Option<&str>,
             _: &str,
             _: &mut dyn FnMut() -> bool,
-        ) -> Result<(String, Option<f64>), String> {
+        ) -> Result<Answered, String> {
             // Sent, and failed: its cost is unknown.
             Err("the connection was reset".into())
         }
@@ -1513,7 +1513,13 @@ fn a_run_explores_only_a_copy_of_its_planned_project() {
         studio.opened = copy;
         let run = explore_with(&mut studio, &planned, &Scripted::default(), &knowledge);
         let mismatch = run.mismatch.clone().unwrap_or_else(|| panic!("{why}"));
-        assert!(mismatch.contains(why), "{mismatch}");
+        assert!(mismatch.reason().contains(why), "{mismatch}");
+        // Only what the instance shows is the build's; the rest is the copy.
+        assert_eq!(
+            matches!(mismatch, explore::Mismatch::Shown(_)),
+            why.starts_with("shows"),
+            "{mismatch:?}"
+        );
         assert!(
             run.ended
                 .starts_with("the test instance did not open the planned project"),
@@ -1586,6 +1592,168 @@ fn by_plan_in(studio: &mut StandIn, plan: &Plan) -> Run {
         &Scripted::default(),
         &Knowledge::new("stand-in"),
     )
+}
+
+/// A supervisor that keeps the lines of what the run reported.
+#[derive(Default)]
+struct Reported(Vec<String>);
+
+impl explore::Supervisor for Reported {
+    fn go_on(&mut self) -> bool {
+        true
+    }
+
+    fn progress(&mut self, progress: &explore::Progress) {
+        self.0.push(progress.entry().0);
+    }
+}
+
+/// A model whose first answer takes a little over `HEARTBEAT` (asking
+/// `stop` while it is waited for, as a provider's call does), and which
+/// chooses the first option, reporting its tokens.
+struct Slow(std::cell::Cell<u32>);
+
+impl Answers for Slow {
+    fn jev_model(&self) -> ModelRef {
+        ModelRef::new(Provider::TypeSafe, "jev-1.13.0")
+    }
+
+    fn threshold(&self) -> f64 {
+        0.6
+    }
+
+    fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+        unreachable!("the model is asked")
+    }
+
+    fn chat(
+        &self,
+        _: &ModelRef,
+        _: Option<&str>,
+        _: &str,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<Answered, String> {
+        self.0.set(self.0.get() + 1);
+        if self.0.get() == 1 {
+            let until = std::time::Instant::now()
+                + explore::HEARTBEAT
+                + std::time::Duration::from_millis(400);
+            while std::time::Instant::now() < until {
+                if stop() {
+                    return Err("stopped".into());
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+        }
+        Ok(Answered {
+            text: r#"{"choice": "a01", "why": "the first"}"#.into(),
+            usd: Some(0.001),
+            usage: Some(agq_providers::Usage {
+                input_tokens: 1000,
+                output_tokens: 200,
+                reasoning_tokens: 150,
+                ..Default::default()
+            }),
+        })
+    }
+}
+
+/// The W13.7 repair: a run reports what it does as it goes: before a model
+/// is asked (the step, who decides, the goal), while it waits (at most
+/// every `HEARTBEAT`), and after each action (what it did, how it came
+/// out, who chose it, its time); each step keeps where its time went (the
+/// model's calls, prompt and tokens, acting and observing), and the run
+/// says it in a line.
+#[test]
+fn a_run_reports_its_decisions_its_waits_and_its_steps_with_their_time() {
+    let answers = Slow(std::cell::Cell::new(0));
+    let mut reported = Reported::default();
+    let run = explore::explore(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Model, 1, 2),
+        &deciding(&answers),
+        &Knowledge::new("stand-in"),
+        &mut reported,
+    );
+    let lines = &reported.0;
+    assert!(
+        lines[0].starts_with("Step 1/2: asks deepseek-flash · 0 s in"),
+        "{lines:#?}"
+    );
+    assert!(
+        lines[1].starts_with("Step 1/2: waiting for deepseek-flash · 10 s"),
+        "{lines:#?}"
+    );
+    assert!(
+        lines[2].starts_with("Step 1/2: ") && lines[2].contains("— ok · the explorer's model"),
+        "{lines:#?}"
+    );
+    assert_eq!(
+        lines.iter().filter(|l| l.contains("waiting for")).count(),
+        1,
+        "{lines:#?}"
+    );
+    assert!(lines.iter().any(|l| l.starts_with("Step 2/2: asks")));
+    let first = &run.steps[0].timing;
+    assert!(first.model_ms >= 10_000, "{first:?}");
+    assert_eq!(first.calls, 1);
+    assert_eq!(first.model.as_deref(), Some("deepseek/deepseek-flash"));
+    assert!(first.prompt_chars > 1000, "{first:?}");
+    assert_eq!(
+        first.tokens,
+        Some(explore::Tokens {
+            input: 1000,
+            output: 200,
+            reasoning: 150
+        })
+    );
+    let details = run.steps[0].details(11);
+    assert!(details.contains("Why: the first"), "{details}");
+    assert!(
+        details.contains("1 call(s)") && details.contains("200 output tokens (150 reasoning)"),
+        "{details}"
+    );
+    let time = run.time();
+    assert!(time.starts_with("time "), "{time}");
+    assert!(
+        time.contains("2 model call(s) in 2 step(s)") && time.contains("400 output tokens"),
+        "{time}"
+    );
+}
+
+/// The W13.7 repair: a view or panel the goal names is opened by the rules
+/// without asking a model; the model is asked for the rest. The rules
+/// themselves order actions as before.
+#[test]
+fn a_view_the_goal_names_is_opened_by_rule_without_a_model() {
+    let answers = Scripted {
+        reads: Some(Box::new(|_| r#"{"choice": "a01"}"#.to_string())),
+        ..Scripted::default()
+    };
+    let mut planned = plan(Way::Model, 1, 3);
+    planned.goal = "Open the History panel and read what its buttons say".into();
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &planned,
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let first = &run.steps[0];
+    assert_eq!(first.step.label, "History", "{:?}", run.steps);
+    let decision = &first.chosen.as_ref().unwrap().decision;
+    assert_eq!(
+        (decision.source, decision.note.as_str()),
+        (Source::Rules, "the goal names it")
+    );
+    assert_eq!(first.timing.calls, 0);
+    assert_eq!(answers.prompts.borrow().len(), 2, "the model for the rest");
+    // Taken once: the next steps are the model's.
+    assert!(
+        run.steps[1..]
+            .iter()
+            .filter_map(|t| t.chosen.as_ref())
+            .all(|c| c.decision.source == Source::Model)
+    );
 }
 
 #[test]
@@ -1673,8 +1841,6 @@ fn live_exploration_compared_by_way_of_deciding() {
         answers: &decider,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: Some("low".into()),
-        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
-        escalation_effort: Some("low".into()),
     };
     let base = std::env::temp_dir().join(format!("agq-explore-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
@@ -1810,4 +1976,89 @@ fn live_exploration_compared_by_way_of_deciding() {
     let _ = std::fs::remove_dir_all(&base);
     // A measurement, not a check: each way ran.
     assert!(!scores.is_empty());
+}
+
+/// The W13.7 repair's measurement of where a step's time goes, by way of
+/// deciding, model and effort (live: no windows, the stand-in Studio; needs
+/// the TypeSafe AI and DeepSeek keys and spends a few cents). The stand-in's
+/// observation is smaller than a real Studio's, so its prompts are shorter;
+/// what differs between the lines is the models' answering. Prints a line
+/// per configuration:
+///
+/// ```text
+/// cargo test -p agq-orchestrator --test exploration live_step_time -- --ignored --nocapture
+/// ```
+///
+/// `AGENTIQUE_STEPS` sets the steps of each run (default 6), and
+/// `AGENTIQUE_CONFIGURATIONS` a part of the names of those to run.
+#[test]
+#[ignore = "live: needs the TypeSafe AI and DeepSeek keys, spends a few cents"]
+fn live_step_time_by_way_model_and_effort() {
+    let flash = ModelRef::new(Provider::DeepSeek, "deepseek-flash");
+    let pro = ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro");
+    let steps: u32 = std::env::var("AGENTIQUE_STEPS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(6);
+    let configurations = [
+        ("Jev, then v4-pro at max", Way::Escalating, &pro, "max"),
+        ("Jev, then v4-pro at high", Way::Escalating, &pro, "high"),
+        ("Jev, then flash at high", Way::Escalating, &flash, "high"),
+        ("Jev, then flash at low", Way::Escalating, &flash, "low"),
+        ("flash at high", Way::Model, &flash, "high"),
+        ("flash at low", Way::Model, &flash, "low"),
+    ];
+    let decider = Decider::default();
+    let mut spent = 0.0;
+    let wanted = std::env::var("AGENTIQUE_CONFIGURATIONS").unwrap_or_default();
+    for (name, way, model, effort) in configurations {
+        if !name.contains(wanted.as_str()) {
+            continue;
+        }
+        assert!(spent < 1.0, "the measurement's spend passed $1: stopped");
+        let deciding = Deciding {
+            answers: &decider,
+            explorer: model.clone(),
+            effort: Some(effort.to_string()),
+        };
+        let mut studio = StandIn::new(Defects::default());
+        let mut planned = plan(way, 3, steps);
+        planned.usd = 0.3;
+        planned.seconds = 900;
+        let run = explore::explore(
+            &mut studio,
+            &planned,
+            &deciding,
+            &Knowledge::new("stand-in"),
+            &mut || true,
+        );
+        spent += run.usd;
+        let chosen: Vec<&explore::Chosen> =
+            run.steps.iter().filter_map(|t| t.chosen.as_ref()).collect();
+        let by = |source: Source| {
+            chosen
+                .iter()
+                .filter(|c| c.decision.source == source)
+                .count()
+        };
+        let failed = chosen
+            .iter()
+            .filter(|c| c.decision.source == Source::Rules && c.decision.note.contains("failed"))
+            .count();
+        let decided: Vec<u64> = chosen.iter().map(|c| c.decision.millis).collect();
+        println!(
+            "{name}: {} decisions (Jev {}, model {}, escalated {}, rules {}, of which a model failed {}); decision p50 {} ms, p95 {} ms; ${:.4}; {}",
+            chosen.len(),
+            by(Source::Jev),
+            by(Source::Model),
+            by(Source::Escalated),
+            by(Source::Rules),
+            failed,
+            explore::percentile(&decided, 0.5),
+            explore::percentile(&decided, 0.95),
+            run.usd,
+            run.time()
+        );
+    }
+    println!("spent ${spent:.4}");
 }

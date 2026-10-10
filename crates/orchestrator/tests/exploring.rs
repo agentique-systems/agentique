@@ -17,7 +17,9 @@ mod standin;
 use agq_assistant::claude_agent::{ClaudeAgent, Installation, find_node};
 use agq_orchestrator::control::Options;
 use agq_orchestrator::explore::{self, Instance, Opened};
-use agq_orchestrator::findings::{Check as Found, DispositionKind, State as FoundState};
+use agq_orchestrator::findings::{
+    Check as Found, DispositionKind, Failed, Finding, State as FoundState,
+};
 use agq_orchestrator::knowledge::Knowledge;
 use agq_orchestrator::record::{
     Access, Budgets, DirectiveStatus, Objective, Permissions, Recipient, RoleModel, State, Store,
@@ -101,12 +103,22 @@ fn repository_with(dir: &Path, markers: &[&str]) -> PathBuf {
 /// (or the Studio has no defect at all). Every build and instance asked
 /// for is logged, with whether it got a key or the stand-in Assistant, and
 /// the project it starts from; an instance says it opened a copy of that
-/// project, or a copy of other files where its folder is named
-/// `wrong_copy` (`explore`, `reproduce`).
+/// project, except where its folder is named as `wrong` says (`explore`,
+/// `reproduce`, `replay`): there a copy of other files, or a copy the
+/// instance does not show.
 struct StandInStudios {
     defects: bool,
-    wrong_copy: Option<&'static str>,
+    wrong: Option<(&'static str, Wrong)>,
     log: Arc<Mutex<Vec<String>>>,
+}
+
+/// How a stand-in instance's copy is wrong.
+#[derive(Clone, Copy, PartialEq)]
+enum Wrong {
+    /// Other files than the project's: the copying went wrong.
+    Files,
+    /// The instance shows another project than its copy: the build.
+    Shown,
 }
 
 impl Studios for StandInStudios {
@@ -144,10 +156,18 @@ impl Studios for StandInStudios {
             ..Defects::default()
         });
         let from = explore::model_folder(start);
+        let wrong = self
+            .wrong
+            .filter(|(name, _)| folder.ends_with(name))
+            .map(|(_, wrong)| wrong);
         studio.opened = explore::model_digest(&from).ok().map(|digest| Opened {
-            folder: PathBuf::from("/stand-in/project"),
+            folder: PathBuf::from(if wrong == Some(Wrong::Shown) {
+                "/elsewhere/project"
+            } else {
+                "/stand-in/project"
+            }),
             from,
-            digest: if self.wrong_copy.is_some_and(|name| folder.ends_with(name)) {
+            digest: if wrong == Some(Wrong::Files) {
                 "0000000000000000".into()
             } else {
                 digest
@@ -229,7 +249,7 @@ fn setup_with(
         credential: Box::new(|_| None),
         studios: Box::new(StandInStudios {
             defects,
-            wrong_copy: None,
+            wrong: None,
             log: log.clone(),
         }),
     };
@@ -388,6 +408,41 @@ fn an_exploring_cycle_reproduces_a_finding_shows_it_on_the_base_and_fixes_it() {
             texts(&all)
         );
     }
+    // Its progress (the W13.7 repair): each step folded under the entry
+    // that started the exploration, and where its time went in its result.
+    let explores = all
+        .iter()
+        .find(|e| e.text.starts_with("Explores debug-"))
+        .unwrap();
+    let steps: Vec<&ThreadEntry> = all
+        .iter()
+        .filter(|e| e.kind == Kind::Activity && e.under == Some(explores.seq))
+        .collect();
+    assert!(
+        steps
+            .first()
+            .is_some_and(|e| e.text.starts_with("Step 1/30: ") && e.text.contains(" · rules")),
+        "{}",
+        texts(&all)
+    );
+    // A line for each action, and for each check's (undo, redo).
+    assert!(
+        steps.len() >= cycle.explorations[0].steps as usize,
+        "a line a step: {}",
+        steps.len()
+    );
+    let explored = all
+        .iter()
+        .find(|e| e.text.starts_with("Explored "))
+        .unwrap();
+    assert!(
+        explored
+            .details
+            .as_deref()
+            .unwrap_or_default()
+            .starts_with("Where the time went: time "),
+        "{explored:?}"
+    );
     // The testing knowledge keeps the run and the finding.
     let knowledge = Knowledge::load(
         &Knowledge::file(&store, &repository),
@@ -686,7 +741,7 @@ fn a_reproduction_on_another_copy_leaves_its_finding_as_it_was() {
     let (mut setup, log) = setup_with(dir.path(), &store, node.clone(), true);
     setup.studios = Box::new(StandInStudios {
         defects: true,
-        wrong_copy: Some("reproduce"),
+        wrong: Some(("reproduce", Wrong::Files)),
         log,
     });
     let first = exploring(&store, &repository, "Find and fix problems", budgets());
@@ -743,6 +798,119 @@ fn a_reproduction_on_another_copy_leaves_its_finding_as_it_was() {
     assert_eq!(again.state, FoundState::Reproduced);
 }
 
+/// The W13.7 repair: a fixed finding replayed first on another copy says
+/// nothing about it: it stays fixed, unreplayed, and the cycle ends with
+/// the reason before anything is explored.
+#[test]
+fn a_fixed_findings_replay_on_another_copy_leaves_it_fixed() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    // A finding of `models/shop` a merged change fixed.
+    let mut fixed = Finding::new(
+        Failed {
+            check: Found::ReadableLabels,
+            control: "archive-x".into(),
+            message: "a button in inspector has no readable label".into(),
+            evidence: serde_json::json!({}),
+        },
+        Vec::new(),
+        "b0",
+        "c0",
+        "models/shop",
+    );
+    fixed.set_state(FoundState::Fixed, "fixed in c1");
+    fixed.fixed_in = Some("c1".into());
+    let file = Knowledge::file(&store, &repository);
+    let key = Knowledge::key(&repository);
+    Knowledge::change(&file, &key, |k| k.findings.push(fixed.clone())).unwrap();
+    let (mut setup, log) = setup_with(dir.path(), &store, node, true);
+    setup.studios = Box::new(StandInStudios {
+        defects: true,
+        wrong: Some(("replay", Wrong::Files)),
+        log,
+    });
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Failed, "{}", texts(&seen));
+    let cycle = record.cycle().unwrap();
+    assert!(cycle.explorations.is_empty());
+    assert!(
+        cycle
+            .blocker
+            .as_deref()
+            .unwrap_or_default()
+            .starts_with("a fixed finding (readable-labels"),
+        "{:?}",
+        cycle.blocker
+    );
+    let known = Knowledge::load(&file, &key).unwrap();
+    let still = known
+        .findings
+        .iter()
+        .find(|f| f.identity == fixed.identity)
+        .unwrap();
+    assert_eq!(still.state, FoundState::Fixed);
+    assert!(still.replays.is_empty() && still.checked_in.is_none());
+}
+
+/// The W13.7 repair: in the evaluation of a change, a replay on a copy
+/// that went wrong is the Orchestrator's failure, not the change's: the
+/// cycle stops with the reason and nothing goes back to the implementer;
+/// the change's build showing another project fails the criterion.
+#[test]
+fn an_evaluations_replay_on_another_copy_stops_and_another_project_shown_fails() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    for (wrong, stops) in [(Wrong::Files, true), (Wrong::Shown, false)] {
+        let dir = tempfile::tempdir().unwrap();
+        let repository = repository_with(dir.path(), &[]);
+        let store = Store::new(dir.path().join("objectives"));
+        let (mut setup, log) = setup_with(dir.path(), &store, node.clone(), true);
+        setup.studios = Box::new(StandInStudios {
+            defects: true,
+            wrong: Some(("replay", wrong)),
+            log,
+        });
+        let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+        let id = objective.id.clone();
+        let seen = run_to_end(setup, objective, |_, _| {});
+        let record = store.load(&id).unwrap();
+        let cycle = record.cycle().unwrap();
+        let blocker = cycle.blocker.clone().unwrap_or_default();
+        let repaired = seen.iter().any(|e| e.text == "Cycle 1: Repairing");
+        if stops {
+            assert!(!repaired, "{}", texts(&seen));
+            assert!(
+                blocker.contains("did not open the planned project: its copy's files"),
+                "{blocker}"
+            );
+        } else {
+            let replay = cycle.attempts[0]
+                .criteria
+                .iter()
+                .find(|o| o.name == "replay")
+                .unwrap_or_else(|| panic!("{}", texts(&seen)));
+            assert_eq!(replay.verdict, "failed");
+            assert!(
+                replay
+                    .detail
+                    .contains("shows the project /stand-in/project"),
+                "{replay:?}"
+            );
+            assert!(repaired, "back to the implementer: {}", texts(&seen));
+        }
+    }
+}
+
 /// The W13.7 repair: a test instance whose copy is not the planned
 /// project's (here, other files) is never explored in its place: the run
 /// takes no action, the thread says what was planned and what was opened,
@@ -759,7 +927,7 @@ fn an_instance_that_opened_another_copy_is_not_explored() {
     let (mut setup, log) = setup_with(dir.path(), &store, node, true);
     setup.studios = Box::new(StandInStudios {
         defects: true,
-        wrong_copy: Some("explore"),
+        wrong: Some(("explore", Wrong::Files)),
         log,
     });
     let objective = exploring(&store, &repository, "Find and fix problems", budgets());
@@ -1565,8 +1733,6 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
         answers: &answers,
         explorer: none.clone(),
         effort: None,
-        escalation: none,
-        escalation_effort: None,
     };
     let run = explore::explore(
         &mut live,

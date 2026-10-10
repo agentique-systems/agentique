@@ -652,6 +652,7 @@ mod tests {
             seconds: 3.0,
             opened: None,
             mismatch: None,
+            start_ms: 0,
         }
     }
 
