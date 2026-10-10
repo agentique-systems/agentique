@@ -18,8 +18,9 @@
 
 use crate::studio::{Dirty, Studio};
 use agq_assistant::claude_agent::{self, Installation};
+use agq_orchestrator::decide::{Inferred, Shape};
 use agq_orchestrator::record::{
-    Access, Budgets, DirectiveStatus, Objective, Permissions, Resuming, State, Store,
+    Access, Budgets, Cost, DirectiveStatus, Objective, Permissions, Resuming, State, Store,
 };
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
 use agq_orchestrator::thread::{self, Author, Kind, ThreadEntry};
@@ -35,7 +36,9 @@ const SHOWN: usize = 2000;
 /// The longest a directive's text takes to stream in, whatever its length.
 const STREAM_AT_MOST: Duration = Duration::from_secs(6);
 
-/// What the Operator starts: the start form's fields (C-54).
+/// What the Operator starts: the start form's fields (C-54, as the
+/// Operator amended it): the intent, and what it does as read from the
+/// intent and possibly changed.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StartRequest {
     pub intent: String,
@@ -43,6 +46,30 @@ pub struct StartRequest {
     pub explore: bool,
     pub budgets: Budgets,
     pub permissions: Permissions,
+    /// What the intent was read as before Start, and by whom.
+    pub inferred: Option<Inferred>,
+}
+
+impl StartRequest {
+    /// An objective that does what `shape` says: its improvements, no
+    /// spend or time limit, and the permissions to merge and adopt.
+    pub fn new(intent: &str, shape: Shape, inferred: Option<Inferred>) -> StartRequest {
+        StartRequest {
+            intent: intent.trim().to_string(),
+            explore: shape.explore,
+            budgets: Budgets {
+                cycles: shape.cycles,
+                ..Budgets::default()
+            },
+            permissions: Permissions {
+                push: shape.merge,
+                merge: shape.merge,
+                adopt: shape.merge && shape.adopt,
+                ..Permissions::default()
+            },
+            inferred,
+        }
+    }
 }
 
 /// What the start form shows when it opens: the composer's message, or
@@ -50,40 +77,54 @@ pub struct StartRequest {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Proposal {
     pub intent: String,
-    pub explore: bool,
-    pub budgets: Budgets,
     /// The Assistant proposed it.
     pub by_assistant: bool,
 }
 
 impl Proposal {
-    /// `intent` with the start form's defaults: three improvements for an
-    /// objective that explores (it explores, fixes and explores again), one
-    /// otherwise.
-    pub fn new(intent: &str, explore: bool) -> Proposal {
+    pub fn new(intent: &str) -> Proposal {
         Proposal {
             intent: intent.trim().to_string(),
-            explore,
-            budgets: Budgets {
-                usd: 5.0,
-                cycles: if explore { 3 } else { 1 },
-                ..Budgets::default()
-            },
             by_assistant: false,
         }
     }
 
-    /// What the Assistant proposed, on the defaults where it said nothing.
+    /// What the Assistant proposed.
     pub fn from_assistant(proposed: &agq_assistant::tools::ObjectiveProposal) -> Proposal {
-        let mut proposal = Proposal::new(&proposed.intent, proposed.explore);
-        let budgets = &mut proposal.budgets;
-        budgets.usd = proposed.usd.unwrap_or(budgets.usd);
-        budgets.cycles = proposed.cycles.unwrap_or(budgets.cycles);
-        budgets.attempts = proposed.attempts.unwrap_or(budgets.attempts);
-        budgets.hours = proposed.hours.unwrap_or(budgets.hours);
-        budgets.steps = proposed.steps.unwrap_or(budgets.steps);
-        proposal.by_assistant = true;
-        proposal
+        Proposal {
+            by_assistant: true,
+            ..Proposal::new(&proposed.intent)
+        }
+    }
+}
+
+/// An intent being read, or read: what the objective does (the Operator's
+/// amendment of C-54). Jev answers off the window's thread.
+pub struct Reading {
+    pub intent: String,
+    /// `None` while it is read.
+    pub inferred: Option<Inferred>,
+    receiver: Option<Receiver<Inferred>>,
+    /// Set when another reading replaces this one: its model call stops.
+    replaced: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl Drop for Reading {
+    fn drop(&mut self) {
+        self.replaced
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+/// What an objective does when its intent could not be read, and why.
+fn defaults(why: String) -> Inferred {
+    Inferred {
+        shape: Shape::DEFAULT,
+        source: agq_orchestrator::decide::Source::Rules,
+        confidence: None,
+        millis: 0,
+        usd: Some(0.0),
+        note: why,
     }
 }
 
@@ -96,6 +137,8 @@ pub struct StartForm {
     pub proposal: Option<Proposal>,
     /// Counts the proposals given, so the form takes each once.
     pub given: u64,
+    /// The intent last read, and what it was read as.
+    pub reading: Option<Reading>,
 }
 
 #[derive(Default)]
@@ -186,7 +229,14 @@ impl ObjectivesState {
 
     /// Whether the workspace's tick should poll.
     pub fn wants_poll(&self) -> bool {
-        self.handle.is_some() || !self.looked || !self.streaming.is_empty()
+        self.handle.is_some()
+            || !self.looked
+            || !self.streaming.is_empty()
+            || self
+                .form
+                .reading
+                .as_ref()
+                .is_some_and(|r| r.receiver.is_some())
     }
 
     /// The shown objective or one of its children, by id.
@@ -553,6 +603,31 @@ impl Studio {
             request.permissions,
         )?;
         objective.explore = request.explore;
+        // Reading the intent was a typed decision: the cost of the reading
+        // used is the objective's, under the decisions role, by the model
+        // that answered (§4.16); a reading that asked nothing costs nothing.
+        if let Some(inferred) = &request.inferred
+            && inferred.usd != Some(0.0)
+        {
+            let model = match inferred.source {
+                agq_orchestrator::decide::Source::Jev => "decisions",
+                _ => "escalation",
+            };
+            if let Some(role) = resolved.models.iter().find(|m| m.role == model) {
+                objective.spent.add(
+                    "decisions",
+                    &role.model,
+                    Cost {
+                        usd: inferred.usd.unwrap_or(0.0),
+                        tokens: 0,
+                        unknown: inferred.usd.is_none(),
+                    },
+                );
+            }
+        }
+        objective.inferred = request.inferred;
+        // The reading was used: the same intent is read again next time.
+        self.objectives.form.reading = None;
         objective.models = resolved.models;
         objective.roles_unavailable = resolved.unavailable.into_iter().collect();
         store.save(&objective)?;
@@ -606,14 +681,78 @@ impl Studio {
             return;
         }
         let intent = self.conversation.input.clone();
-        if let Err(problem) = self.open_start_form(Proposal::new(&intent, false)) {
+        if let Err(problem) = self.open_start_form(Proposal::new(&intent)) {
             self.status = format!("Not shown: {problem}");
         }
     }
 
-    /// Puts the start form back in the Objectives panel.
+    /// Reads `intent` for what the objective does (the Operator's
+    /// amendment of C-54): Jev on the `decisions` role's model, escalating
+    /// to the `escalation` role's, off the window's thread; the form shows
+    /// it when it arrives (`poll_objective`). Without those roles' models,
+    /// the defaults, with why.
+    pub fn read_intent(&mut self, intent: &str) {
+        let intent = intent.trim().to_string();
+        // Read once per intent: the same text, being read or read by Jev or
+        // the model, is not asked again (typing a character and taking it
+        // back); one that fell back to the defaults is asked again (a key
+        // may have been added since).
+        if self.objectives.form.reading.as_ref().is_some_and(|r| {
+            r.intent == intent
+                && r.inferred
+                    .as_ref()
+                    .is_none_or(|i| i.source != agq_orchestrator::decide::Source::Rules)
+        }) {
+            return;
+        }
+        // Jev on the decisions role's model, escalating to the escalation
+        // role's, as Settings and the credentials resolve them; a role that
+        // does not resolve is skipped, with why.
+        let each = self.agent_models_each();
+        let role = |name: &str| {
+            each.iter()
+                .find(|(r, _)| *r == name)
+                .map(|(_, model)| model.clone())
+                .unwrap_or_else(|| Err("not configured".into()))
+                .map_err(|why| format!("the {name} role: {why}"))
+        };
+        let (decisions, escalation) = (role("decisions"), role("escalation"));
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let replaced = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let stop = replaced.clone();
+        let read = intent.clone();
+        std::thread::spawn(move || {
+            let mut decider = agq_orchestrator::decide::Decider::default();
+            if let Ok(model) = &decisions {
+                decider.jev_model = model.model.model.clone();
+            }
+            let inferred = agq_orchestrator::decide::infer(
+                &decider,
+                decisions.as_ref().map(|_| ()).map_err(Clone::clone),
+                escalation
+                    .as_ref()
+                    .map(|model| (&model.model, model.effort.as_deref()))
+                    .map_err(Clone::clone),
+                &read,
+                &mut || stop.load(std::sync::atomic::Ordering::SeqCst),
+            );
+            let _ = sender.send(inferred);
+        });
+        // The reading it replaces, if any, is dropped and so stopped.
+        self.objectives.form.reading = Some(Reading {
+            intent,
+            inferred: None,
+            receiver: Some(receiver),
+            replaced,
+        });
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
+    }
+
+    /// Puts the start form back in the Objectives panel, forgetting its
+    /// reading.
     pub fn close_start_form(&mut self) {
         self.objectives.form.in_conversation = false;
+        self.objectives.form.reading = None;
         self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
@@ -928,6 +1067,27 @@ impl Studio {
     /// anything changed.
     pub fn poll_objective(&mut self) -> bool {
         let mut changed = false;
+        if let Some(reading) = &mut self.objectives.form.reading
+            && let Some(receiver) = &reading.receiver
+        {
+            // A reading that ended without an answer (its thread failed)
+            // gives the defaults, never a form that waits forever.
+            let arrived = match receiver.try_recv() {
+                Ok(inferred) => Some(inferred),
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(Inferred {
+                    // Calls it made may have been paid.
+                    usd: None,
+                    ..defaults("the reading ended without an answer".into())
+                }),
+                Err(std::sync::mpsc::TryRecvError::Empty) => None,
+            };
+            if let Some(inferred) = arrived {
+                reading.inferred = Some(inferred);
+                reading.receiver = None;
+                self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
+                changed = true;
+            }
+        }
         if !self.objectives.looked {
             self.objectives.looked = true;
             let store = self.objective_store();
@@ -1065,11 +1225,10 @@ impl Studio {
         }
         let cycle = objective.cycle();
         Some(format!(
-            "Objective: cycle {} · {} · ${:.2} of ${:.2}",
+            "Objective: cycle {} · {} · {}",
             cycle.map(|c| c.n).unwrap_or(0),
             cycle.map(|c| c.phase.label()).unwrap_or("starting"),
-            objective.spent.usd,
-            objective.budgets.usd
+            objective.budgets.spent_text(objective.spent.usd)
         ))
     }
 }
@@ -1177,22 +1336,119 @@ mod tests {
         assert_eq!(ids, vec!["child-a", "child-b", "grandchild"]);
     }
 
-    /// The Assistant's proposal fills the form; what it left out takes the
-    /// form's defaults, three improvements when it explores.
+    /// An intent is read once while it is being read or was read by a
+    /// model; one that fell back to the defaults is read again (a key may
+    /// have been added); a reading replaced by another is told to stop;
+    /// without the roles that read it, the defaults, with why; a reading
+    /// is forgotten when the form closes (the Operator's amendment of
+    /// C-54).
     #[test]
-    fn a_proposal_takes_the_forms_defaults_where_it_says_nothing() {
-        let proposed = agq_assistant::tools::ObjectiveProposal {
-            intent: "Find and fix problems".into(),
+    fn an_intent_is_read_once_and_without_its_models_gives_the_defaults() {
+        use std::sync::atomic::Ordering;
+        let (mut app, _folder) = crate::edit::app_tests::studio("read-intent");
+        app.runtime.credentials.clear();
+        let read = |app: &mut Studio| {
+            let deadline = std::time::Instant::now() + Duration::from_secs(10);
+            loop {
+                app.poll_objective();
+                if let Some(inferred) = &app.objectives.form.reading.as_ref().unwrap().inferred {
+                    break inferred.clone();
+                }
+                assert!(std::time::Instant::now() < deadline, "never read");
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        };
+        app.read_intent(" Explore the History panel ");
+        // Being read: the same text is not asked again.
+        let first = app
+            .objectives
+            .form
+            .reading
+            .as_ref()
+            .unwrap()
+            .replaced
+            .clone();
+        app.read_intent("Explore the History panel");
+        assert!(!first.load(Ordering::SeqCst), "the same reading goes on");
+        let inferred = read(&mut app);
+        assert_eq!(
+            app.objectives.form.reading.as_ref().unwrap().intent,
+            "Explore the History panel"
+        );
+        assert_eq!(inferred.shape, Shape::DEFAULT);
+        assert_eq!(inferred.source, agq_orchestrator::decide::Source::Rules);
+        assert!(
+            inferred.note.contains("the decisions role"),
+            "{}",
+            inferred.note
+        );
+        assert!(
+            inferred.note.contains("no escalation model"),
+            "{}",
+            inferred.note
+        );
+        assert!(inferred.by().ends_with("so the defaults apply."));
+        // The defaults: the same text is read again.
+        app.read_intent("Explore the History panel");
+        assert!(
+            app.objectives
+                .form
+                .reading
+                .as_ref()
+                .unwrap()
+                .inferred
+                .is_none()
+        );
+        // Another replaces it, and the replaced reading is told to stop.
+        let replaced = app
+            .objectives
+            .form
+            .reading
+            .as_ref()
+            .unwrap()
+            .replaced
+            .clone();
+        app.read_intent("Rename the Add button");
+        assert!(replaced.load(Ordering::SeqCst));
+        let now = app.objectives.form.reading.as_ref().unwrap();
+        assert!(now.intent == "Rename the Add button" && now.inferred.is_none());
+        assert!(app.objectives.wants_poll());
+        // Closing the form forgets it.
+        app.close_start_form();
+        assert!(app.objectives.form.reading.is_none());
+    }
+
+    /// What the intent is read as becomes the request: its improvements,
+    /// no spend or time limit, merge and adopt as read (the Operator's
+    /// amendment of C-54); the Assistant's proposal is an intent.
+    #[test]
+    fn a_request_does_what_the_intent_was_read_as() {
+        let shape = Shape {
             explore: true,
-            usd: Some(2.0),
-            ..Default::default()
+            cycles: 2,
+            merge: true,
+            adopt: false,
+        };
+        let request = StartRequest::new(" Find and fix ", shape, None);
+        assert_eq!(request.intent, "Find and fix");
+        assert!(request.explore && request.budgets.cycles == 2);
+        assert_eq!((request.budgets.usd, request.budgets.hours), (None, None));
+        assert!(request.budgets.check().is_ok());
+        assert!(request.permissions.merge && !request.permissions.adopt);
+        let review = StartRequest::new(
+            "x",
+            Shape {
+                merge: false,
+                adopt: true,
+                ..shape
+            },
+            None,
+        );
+        assert!(!review.permissions.push && !review.permissions.adopt);
+        let proposed = agq_assistant::tools::ObjectiveProposal {
+            intent: " Find and fix problems ".into(),
         };
         let proposal = Proposal::from_assistant(&proposed);
-        assert!(proposal.by_assistant && proposal.explore);
-        assert_eq!(proposal.budgets.usd, 2.0);
-        assert_eq!(proposal.budgets.cycles, 3);
-        assert_eq!(proposal.budgets.attempts, Budgets::default().attempts);
-        assert_eq!(Proposal::new(" Tidy ", false).budgets.cycles, 1);
-        assert_eq!(Proposal::new(" Tidy ", false).intent, "Tidy");
+        assert!(proposal.by_assistant && proposal.intent == "Find and fix problems");
     }
 }

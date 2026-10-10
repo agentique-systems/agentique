@@ -623,8 +623,9 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     );
     assert_eq!(studio.observe()["screen"], "surface", "nothing happened");
 
-    // The Objectives panel: its fields and switches are labelled as the
-    // Operator reads them, and are the Operator's.
+    // The Objectives panel: its intent and Start are labelled as the
+    // Operator reads them, and are the Operator's (its switches show once
+    // the intent is read).
     studio.must(
         json!({ "kind": "click", "control": "Objectives" }),
         "look at the Objectives panel",
@@ -636,20 +637,22 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
             "objective-intent",
             "What should Agentique improve in itself?",
         ),
-        ("objective-usd", "Spend budget (USD)"),
-        ("objective-cycles", "Improvements"),
-        (
-            "objective-merge",
-            "Merge reviewed changes that pass every check",
-        ),
+        ("objective-start", "Start"),
     ] {
         let found = control(&objectives, id).unwrap_or_else(|| panic!("{id}: {objectives}"));
         assert_eq!(found["label"], label, "{found}");
         assert_eq!(found["operatorOnly"], true, "{found}");
     }
-    let merge = control(&objectives, "objective-merge").unwrap();
-    assert_eq!(merge["role"], "switch");
-    assert_eq!(merge["value"], "on");
+    // The Operator's amendment of C-54: no budgets to fill in; Start waits
+    // until the intent is read, and the switches show what it was read as.
+    for gone in ["objective-usd", "objective-cycles", "objective-hours"] {
+        assert!(control(&objectives, gone).is_none(), "{gone}");
+    }
+    assert_eq!(
+        control(&objectives, "objective-start").unwrap()["enabled"],
+        false
+    );
+    assert!(control(&objectives, "objective-merge").is_none());
 
     // One agent acts in the window at a time (C-54): `journey` holds it;
     // another agent's action is refused with who holds it (not as stale),
@@ -1113,7 +1116,7 @@ fn seed_objective(folder: &Path) -> Seeded {
         Scope {
             focus: Some("History".into()),
             budgets: Some(Budgets {
-                usd: 0.5,
+                usd: Some(0.5),
                 ..Budgets::default()
             }),
             ..scope("Explore the History panel")

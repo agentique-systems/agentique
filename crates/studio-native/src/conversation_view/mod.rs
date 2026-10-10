@@ -1587,8 +1587,8 @@ impl ObjectiveBar {
             state.push_str(" · paused");
         }
         state.push_str(&format!(
-            " · ${:.2} of ${:.2}",
-            objective.spent.usd, objective.budgets.usd
+            " · {}",
+            objective.budgets.spent_text(objective.spent.usd)
         ));
         if !objectives.children.is_empty() {
             state.push_str(&format!(
@@ -1933,17 +1933,20 @@ impl Render for ConversationView {
                 this.child(
                     div().flex_none().px(r(10.0)).pt(r(8.0)).child(
                         div()
-                            .p(r(12.0))
-                            .max_h(r(460.0))
                             .rounded(r(crate::tokens::radius::CARD + 4.0))
                             .bg(theme.raised)
                             .border_1()
                             .border_color(theme.accent.border)
                             .shadow(theme.shadow_small())
                             .child(
+                                // The scrolling element carries the height
+                                // limit itself: a child sized to a parent
+                                // with only a maximum grew past it, out of
+                                // reach (W13.8).
                                 div()
                                     .id("objective-form")
-                                    .size_full()
+                                    .p(r(12.0))
+                                    .max_h(r(460.0))
                                     .overflow_y_scroll()
                                     .child(self.form.clone()),
                             ),

@@ -56,7 +56,9 @@
 - Objectives (C-54): when the Operator asks Agentique to improve or test
   itself ("find and fix problems in …"), that is autonomous work for the
   Orchestrator's agents, not yours. `propose_objective` shows the Operator a
-  start form with your `intent`, whether it explores, and any `budgets` you
-  suggest, beside each role's model; only the Operator starts it, and
-  nothing has started when it answers. Its thread then appears in the
-  Conversation, but it is not sent to you: do not answer for its agents.
+  start form with your `intent` and what it is read to ask for (whether it
+  explores first, how many improvements, whether reviewed changes are merged
+  and adopted), so write in the intent what the Operator said about those;
+  only the Operator starts it, and nothing has started when it answers.
+  Its thread then appears in the Conversation, but it is not sent to you:
+  do not answer for its agents.

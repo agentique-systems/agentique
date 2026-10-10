@@ -916,7 +916,7 @@ fn the_start_form_opens_from_the_message_and_the_assistants_proposal() {
                 vec![tool(
                     "p1",
                     tools::PROPOSE_OBJECTIVE,
-                    json!({ "intent": "Find and fix problems in the Library panel", "explore": true, "budgets": { "usd": 2 } }),
+                    json!({ "intent": "Find and fix problems in the Library panel" }),
                 )],
                 "tool_use",
             ),
@@ -932,7 +932,7 @@ fn the_start_form_opens_from_the_message_and_the_assistants_proposal() {
     assert!(form.in_conversation);
     let proposal = form.proposal.clone().unwrap();
     assert_eq!(proposal.intent, "Make the Inspector clearer");
-    assert!(!proposal.by_assistant && !proposal.explore);
+    assert!(!proposal.by_assistant);
     assert_eq!(
         app.conversation.input, "Make the Inspector clearer",
         "the message stays until the objective starts"
@@ -948,12 +948,7 @@ fn the_start_form_opens_from_the_message_and_the_assistants_proposal() {
         answer.content
     );
     let proposal = app.objectives.form.proposal.clone().unwrap();
-    assert!(app.objectives.form.in_conversation && proposal.by_assistant && proposal.explore);
-    assert_eq!(proposal.budgets.usd, 2.0);
-    assert_eq!(
-        proposal.budgets.cycles, 3,
-        "three improvements when it explores"
-    );
+    assert!(app.objectives.form.in_conversation && proposal.by_assistant);
     assert!(app.objectives.handle.is_none() && app.objectives.current.is_none());
     assert_valid(&app);
     // One objective at a time: an unfinished one keeps the form closed.
@@ -1010,6 +1005,7 @@ fn objectives_are_the_operators_and_a_test_instance_lets_agents_reply() {
         explore: false,
         budgets: Budgets::default(),
         permissions: Permissions::default(),
+        inferred: None,
     };
     let refused = app.start_objective(request.clone()).unwrap_err();
     assert!(refused.contains("Operator's own"), "{refused}");
@@ -1088,6 +1084,7 @@ fn a_test_instance_runs_no_objective() {
             explore: false,
             budgets: Budgets::default(),
             permissions: Permissions::default(),
+            inferred: None,
         })
         .unwrap_err();
     assert!(started.contains("test instance"), "{started}");

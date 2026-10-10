@@ -400,24 +400,11 @@ pub fn definitions() -> Value {
         },
         {
             "name": PROPOSE_OBJECTIVE,
-            "description": "Propose an objective: autonomous work on Agentique's own repository that the Orchestrator's agents (a lead, an implementer, a reviewer, an evaluator, and an explorer when it explores) carry through cycles of proposing, implementing, checking, reviewing, merging and adopting an improvement. Use it when the Operator asks Agentique to improve or test itself, not for changes to the open project's model (make those yourself). The Operator sees a start form with your intent and budgets, the permissions and each role's model, and starts it or not; you cannot start it, and nothing has started when this answers.",
+            "description": "Propose an objective: autonomous work on Agentique's own repository that the Orchestrator's agents (a lead, an implementer, a reviewer, an evaluator, and an explorer when it explores) carry through cycles of proposing, implementing, checking, reviewing, merging and adopting an improvement. Use it when the Operator asks Agentique to improve or test itself, not for changes to the open project's model (make those yourself). The Operator sees a start form with your intent and what it was read to ask for (whether it explores first, how many improvements, whether reviewed changes are merged and adopted), may change it, and starts it or not; so say those in the intent when the Operator did. You cannot start it, and nothing has started when this answers.",
             "input_schema": {
                 "type": "object",
                 "properties": {
-                    "intent": name("What the objective should achieve, in the Operator's terms, e.g. \"Find and fix problems in the Library panel\"."),
-                    "explore": { "type": "boolean", "description": "Whether its cycles first explore the running application in a test instance to find problems (default false)." },
-                    "budgets": {
-                        "type": "object",
-                        "description": "Suggested budgets; the Operator may change them. Leave out what you have no reason to suggest.",
-                        "properties": {
-                            "usd": { "type": "number", "description": "Spend at most, in USD ($0.05 to $100)." },
-                            "cycles": { "type": "integer", "description": "Improvements at most (1 to 10)." },
-                            "attempts": { "type": "integer", "description": "Attempts per improvement (1 to 10)." },
-                            "hours": { "type": "number", "description": "Hours worked at most (0.1 to 48)." },
-                            "steps": { "type": "integer", "description": "Actions an exploration may take (1 to 500)." }
-                        },
-                        "additionalProperties": false
-                    }
+                    "intent": name("What the objective should achieve, in the Operator's terms, e.g. \"Find and fix problems in the Library panel\".")
                 },
                 "required": ["intent"],
                 "additionalProperties": false

@@ -272,8 +272,10 @@ fn directive_chip(
             }
             if let Some(budgets) = &record.scope.budgets {
                 parts.push(format!(
-                    "${:.2}, {}, {}",
-                    budgets.usd,
+                    "{}, {}, {}",
+                    budgets
+                        .usd
+                        .map_or_else(|| "no spend limit".into(), |usd| format!("${usd:.2}")),
                     crate::conversation::plural(
                         budgets.cycles as usize,
                         "improvement",
@@ -1449,7 +1451,7 @@ mod tests {
         let mut explore = scope("Explore the History panel");
         explore.focus = Some("History".into());
         explore.budgets = Some(Budgets {
-            usd: 0.5,
+            usd: Some(0.5),
             ..Budgets::default()
         });
         let d1 = root.direct(

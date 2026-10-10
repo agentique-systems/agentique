@@ -25,18 +25,24 @@ pub enum State {
     Failed,
 }
 
-/// What an objective may spend.
+/// What an objective may spend. Spend and time are unlimited unless set
+/// (the Operator's amendment of C-54): its cycles, attempts, exploration
+/// steps and model calls bound it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Budgets {
-    /// US dollars, at the models' own prices.
-    pub usd: f64,
+    /// US dollars at most, at the models' own prices; `None` for no limit
+    /// (left out of the record, which a previous build then skips).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usd: Option<f64>,
     /// Cycles (improvements) at most.
     pub cycles: u32,
     /// Attempts per cycle at most (the first and each repair).
     pub attempts: u32,
-    /// Hours worked (not counting time paused) at most.
-    pub hours: f64,
+    /// Hours worked (not counting time paused) at most; `None` for no
+    /// limit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hours: Option<f64>,
     /// Actions an exploration run may take (C-54).
     #[serde(default = "default_steps")]
     pub steps: u32,
@@ -66,10 +72,10 @@ fn default_steps() -> u32 {
 impl Default for Budgets {
     fn default() -> Self {
         Budgets {
-            usd: 5.0,
+            usd: None,
             cycles: 1,
             attempts: 4,
-            hours: 6.0,
+            hours: None,
             steps: DEFAULT_STEPS,
             calls: BTreeMap::new(),
         }
@@ -83,6 +89,26 @@ impl Budgets {
         Budgets {
             cycles: 3,
             ..Budgets::default()
+        }
+    }
+
+    /// US dollars left after `spent`; unbounded without a spend budget.
+    pub fn usd_left(&self, spent: f64) -> f64 {
+        self.usd.map_or(f64::INFINITY, |usd| (usd - spent).max(0.0))
+    }
+
+    /// Hours left after `seconds` worked; unbounded without a time budget.
+    pub fn hours_left(&self, seconds: f64) -> f64 {
+        self.hours
+            .map_or(f64::INFINITY, |hours| hours - seconds / 3600.0)
+    }
+
+    /// What was spent against the spend budget, as the Operator reads it:
+    /// `$1.20 of $5.00`, or `$1.20, no limit`.
+    pub fn spent_text(&self, spent: f64) -> String {
+        match self.usd {
+            Some(usd) => format!("${spent:.2} of ${usd:.2}"),
+            None => format!("${spent:.2}, no limit"),
         }
     }
 
@@ -100,8 +126,8 @@ impl Budgets {
     /// a start form shows the problems and starts nothing.
     pub fn check(&self) -> Result<(), Vec<String>> {
         let mut problems = Vec::new();
-        if !(0.05..=100.0).contains(&self.usd) {
-            problems.push("the spend budget is between $0.05 and $100".to_string());
+        if self.usd.is_some_and(|usd| !(0.05..=100.0).contains(&usd)) {
+            problems.push("a spend budget is between $0.05 and $100".to_string());
         }
         if !(1..=10).contains(&self.cycles) {
             problems.push("an objective makes 1 to 10 improvements".into());
@@ -109,8 +135,11 @@ impl Budgets {
         if !(1..=10).contains(&self.attempts) {
             problems.push("a cycle has 1 to 10 attempts".into());
         }
-        if !(0.1..=48.0).contains(&self.hours) {
-            problems.push("the time budget is between 0.1 and 48 hours".into());
+        if self
+            .hours
+            .is_some_and(|hours| !(0.1..=48.0).contains(&hours))
+        {
+            problems.push("a time budget is between 0.1 and 48 hours".into());
         }
         if !(1..=500).contains(&self.steps) {
             problems.push("an exploration takes 1 to 500 steps".into());
@@ -871,6 +900,11 @@ pub struct Objective {
     /// Its cycles start by exploring the running build (C-54).
     #[serde(default, skip_serializing_if = "is_false")]
     pub explore: bool,
+    /// What it does as inferred from its intent before Start, and who
+    /// inferred it (the Operator's amendment of C-54); what it was started
+    /// with is `explore`, `budgets.cycles` and `permissions`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inferred: Option<crate::decide::Inferred>,
     /// The objective that delegated it, for a child objective (C-54).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
@@ -1093,6 +1127,7 @@ impl Store {
             models: Vec::new(),
             roles_unavailable: BTreeMap::new(),
             explore: false,
+            inferred: None,
             parent: None,
             depth: 0,
             requested_by: None,
@@ -1395,7 +1430,13 @@ mod tests {
             intent: "Fix it".into(),
             created: "2026-10-04T00:00:00Z".into(),
             state: State::Running,
-            budgets: Budgets::default(),
+            // Limits set, as every objective had before the Operator's
+            // amendment of C-54.
+            budgets: Budgets {
+                usd: Some(5.0),
+                hours: Some(6.0),
+                ..Budgets::default()
+            },
             permissions: Permissions::default(),
             repository: PathBuf::from("C:/agentique"),
             base_branch: "main".into(),
@@ -1418,6 +1459,7 @@ mod tests {
                 "typesafe/jev-1.13.0 needs a TypeSafe AI key".to_string(),
             )]),
             explore: false,
+            inferred: None,
             parent: None,
             depth: 0,
             requested_by: None,
@@ -1587,7 +1629,7 @@ mod tests {
                 instruction: "Explore the History panel".into(),
                 focus: None,
                 budgets: Some(Budgets {
-                    usd: 0.5,
+                    usd: Some(0.5),
                     ..Budgets::default()
                 }),
                 permissions: Some(Permissions::default()),
@@ -1947,16 +1989,67 @@ mod tests {
         assert_eq!(Budgets::exploring().cycles, 3);
         assert!(Budgets::exploring().check().is_ok());
         let wrong = Budgets {
-            usd: 0.0,
+            usd: Some(0.0),
             cycles: 0,
             attempts: 11,
-            hours: 0.0,
+            hours: Some(0.0),
             steps: 0,
             calls: BTreeMap::from([("explorer".to_string(), 5), ("lead".to_string(), 0)]),
         };
         let problems = wrong.check().unwrap_err();
         assert_eq!(problems.len(), 7, "{problems:?}");
         assert_eq!(Budgets::default().calls_of("reviewer"), 60);
+    }
+
+    /// The Operator's amendment of C-54 (§7.6): spend and time unlimited,
+    /// left out of the record, with what the intent was read as. The
+    /// previous build's reader cannot parse such a record (so its list
+    /// leaves it out and its check after adoption refuses, as §7.6 says);
+    /// this build reads and lists it whole; a record with limits still
+    /// parses in the previous build's reader.
+    #[test]
+    fn an_unlimited_record_is_unreadable_to_the_previous_build() {
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct PreviousBudgets {
+            usd: f64,
+            hours: f64,
+        }
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct Previous {
+            budgets: PreviousBudgets,
+        }
+        let mut objective = with_models();
+        objective.budgets.usd = None;
+        objective.budgets.hours = None;
+        objective.inferred = Some(crate::decide::Inferred {
+            shape: crate::decide::Shape {
+                explore: true,
+                cycles: 2,
+                merge: true,
+                adopt: true,
+            },
+            source: crate::decide::Source::Jev,
+            confidence: Some(0.91),
+            millis: 800,
+            usd: Some(0.001),
+            note: String::new(),
+        });
+        let text = serde_json::to_string_pretty(&objective).unwrap();
+        assert!(!text.contains("\"usd\": null") && !text.contains("\"hours\""));
+        assert!(serde_json::from_str::<Previous>(&text).is_err());
+        assert_eq!(serde_json::from_str::<Objective>(&text).unwrap(), objective);
+        let limited = serde_json::to_string(&with_models()).unwrap();
+        assert!(serde_json::from_str::<Previous>(&limited).is_ok());
+
+        let folder = std::env::temp_dir().join(format!("agq-unlimited-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&folder);
+        let store = Store::new(folder.clone());
+        store.save(&objective).unwrap();
+        assert_eq!(store.list().len(), 1);
+        assert_eq!(store.load(&objective.id).unwrap().budgets.usd, None);
+        let _ = std::fs::remove_dir_all(&folder);
     }
 
     #[test]

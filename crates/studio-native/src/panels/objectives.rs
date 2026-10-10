@@ -329,10 +329,9 @@ fn child_line(
                         .child(format!("↳ {}", child.intent)),
                 )
                 .child(div().text_color(theme.text_muted).child(format!(
-                    "{asked} · {} · ${:.2} of ${:.2}",
+                    "{asked} · {} · {}",
                     state_word(child, running),
-                    child.spent.usd,
-                    child.budgets.usd
+                    child.budgets.spent_text(child.spent.usd)
                 ))),
         )
         .children(stop)
@@ -409,9 +408,8 @@ fn summary(objective: &Objective, running: bool, theme: &ui::Theme) -> gpui::Any
         line(objective.intent.clone(), true),
         line(
             format!(
-                "{state} · ${:.2} of ${:.2}{} · {} tokens · {:.0} min",
-                objective.spent.usd,
-                objective.budgets.usd,
+                "{state} · {}{} · {} tokens · {:.0} min",
+                objective.budgets.spent_text(objective.spent.usd),
                 if objective.spent.unknown {
                     " (some usage unpriced)"
                 } else {

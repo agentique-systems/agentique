@@ -322,7 +322,7 @@ decisions named in each row.
 | A chat product with the architecture on the side | Never; the Surface stays an equal way to work (C-3) |
 | Local models and Gemini | Not in this phase (C-35); the provider layer keeps the door open (Q-12) |
 | Typed fast-decision APIs other than Jev | Not in this phase; Jev is a model provider for fast agents (C-35, Q-11) |
-| Spending limits on the Operator's own conversation | Not in this phase; costs are shown, not capped (C-37). An objective has budgets (spend, attempts, time) because nobody approves each step (C-53) |
+| Spending limits on the Operator's own conversation | Not in this phase; costs are shown, not capped (C-37). An objective's work is bounded because nobody approves each step (C-53): by its cycles, attempts, exploration steps and model calls, lack of progress and the Operator's Stop; spend and time are unlimited unless set (C-54 as amended, §7.6) |
 | A marketplace, cloud registry, package manager or vendor catalogue of building blocks | Not a goal; the Library is local, and a project keeps its own copies of what it uses (C-49) |
 | Unattended production deployment, destructive migrations or irreversible external actions; remote worker fleets; a security sandbox Agentique does not have | Not in this phase; implementation work is local, bounded by an objective's permissions and budgets, and the isolation the host really offers is reported as it is (C-50, C-53) |
 | General physical or numerical simulation, broad language support for implementation, a general-purpose workflow language | Not in this phase; the run contract stays open to them (C-50, §4.14) |
@@ -555,7 +555,7 @@ objective and watches; agents do the work in the visible application.
 
 | Step | What happens | Observable success | Failure and recovery behaviour |
 |---|---|---|---|
-| J1 | **Intent.** The Operator writes an objective in the Objectives panel ("Fix a correctness problem in …", "Make … easier to understand"), with budgets and the permissions it carries, and starts it. | The objective, its budgets and permissions are shown and saved before any agent starts. | A missing key, runtime or repository says what is missing; nothing starts half-configured. |
+| J1 | **Intent.** The Operator writes an objective in the Objectives panel ("Fix a correctness problem in …", "Make … easier to understand"); what it does (its improvements, whether it merges and adopts) is read from the intent, and the Operator starts it. | What it was read as, by whom, and the permissions it carries are shown and saved before any agent starts. | A missing key, runtime or repository says what is missing; nothing starts half-configured. |
 | J2 | **Understand and propose.** A lead agent inspects the architecture, the code and the running application, and proposes one improvement with acceptance criteria and a plan. | The proposal names the parts it affects, why, the acceptance criteria (each with how it is checked) and the plan; the criteria are frozen for the cycle. | A proposal without a checkable criterion is refused and asked again, within the attempt budget. |
 | J3 | **Implement.** An implementer agent works in the cycle's worktree with the full development tools, changing the model only through Agentique's operations. | The Studio shows which agent is doing what (reading, editing, running checks), with the files and elements involved. | A file tool's write outside the worktree or to a protected path is refused with the reason; commands are not confined, so a change touching a path it may not is refused before merging (§4.16). |
 | J4 | **Check and evaluate.** Deterministic checks run on a clean checkout; the changed Agentique is built and started as a test instance, and an evaluator agent operates it through the control interface and checks the behavioural criteria. | Every required check and criterion ends with an explicit outcome; the evaluator's actions are visible in the test instance's window and in the activity record. | A failing check is repaired within bounds; the same failure twice, or no progress, ends the cycle with a blocker report. A required check not run is never a pass. |
@@ -573,7 +573,7 @@ watches; agents explore, delegate, fix and adopt in visible windows.
 
 | Step | What happens | Observable success | Failure and recovery behaviour |
 |---|---|---|---|
-| K1 | **Intent.** The Operator writes one broad intent in the Conversation ("Find and fix problems in …") and starts it as an objective, with exploration on, budgets and permissions. | Before any agent starts, the Conversation (and the Objectives panel) shows each role's effective model, why a fallback was chosen, the credential and who is billed. | A role with neither its model nor a fallback available, or a credential Agentique may not use, is named; nothing starts half-configured. |
+| K1 | **Intent.** The Operator writes one broad intent in the Conversation ("Find and fix problems in …") and starts it as an objective; it is read as exploring, with its improvements and permissions, which the Operator may change. | As it starts, its thread shows what the intent was read as and by whom, and each role's effective model, why a fallback was chosen, the credential and who is billed. | A role with neither its model nor a fallback available, or a credential Agentique may not use, is named; nothing starts half-configured. |
 | K2 | **Explore.** An explorer operates a test instance of the running build through the control interface. Each action is chosen from the observation, the intent, what is not yet covered, earlier findings and recent changes, among the actions that are valid there; fast typed decisions choose where they can and escalate when unsure. | The test instance's window shows the typing, clicks, focus and scrolling, the agent, its goal, each decision and its outcome, at the speed the Operator set; Pause, Step and Resume take effect between characters, Stop at once. | A crash, a hang, an unexpected dialog or a refused stale action is recovered from (restart from the same start, cancel by rule, observe again) and recorded; it never ends the run silently. |
 | K3 | **Reproduce.** A finding is a deterministic check that failed: an invariant of the application or an expectation stated before the action. It is replayed from a fresh start of the same build and reduced to the steps that still reproduce it. | Each finding shows its check, its steps, the build and whether it reproduced; only reproduced findings go on. | A finding that does not reproduce is kept as such and proposes nothing. |
 | K4 | **Delegate.** The lead may delegate a child objective (for example, to explore one area further) with its `delegate` tool; the directive streams into the objective's thread in the Conversation. | The Operator sees who asked whom, the child's budget and permissions within the parent's, its progress and its result returning to the parent, and can steer or stop it there. | A child that would exceed the parent's permissions, budget or depth is refused with the reason. |
@@ -835,8 +835,8 @@ per-project history. This phase adds:
 - Errors (network, limits, invalid tool calls, refusals) are explained plainly
   and never lose the Operator's input; each links to the setting that fixes it
   when one exists.
-- **Objectives' threads (C-54):** an objective started here, with its
-  budgets, permissions and effective models shown first; its thread inline,
+- **Objectives' threads (C-54):** an objective started here from its
+  intent, with what the intent was read as shown first; its thread inline,
   with the Operator's messages, directives (author → recipient, scope,
   status), results and system events told apart, each agent's entries marked
   with its role and model, tool activity and diffs folded under each step;
@@ -955,8 +955,9 @@ interfaces studied (R-24):
   for every model change, unless an objective names the element. Model undo
   never pretends to undo an external action (§4.15).
 - **Objectives (C-53).** An objective is the Operator's preauthorization for
-  autonomous work: its intent, budgets (spend, attempts, time), and the
-  permissions it carries (the repository, pushing branches, opening and
+  autonomous work: its intent, its budgets (cycles, attempts, exploration
+  steps and model calls; spend and time when set), and the permissions it
+  carries (the repository, pushing branches, opening and
   merging pull requests when the gates pass, building and adopting). Within
   it, nobody approves each step; the Orchestrator (§4.16) proceeds when the
   deterministic checks and an independent review pass, and stops when they do
@@ -2146,13 +2147,18 @@ judged so, and a finding judged a wrong expectation or unreliable is not
 offered again, so repeated disagreement with a model-generated expectation
 does not turn into a change.
 
-**Budgets and progress.** An objective has a spend budget (USD, from usage at
-the models' own prices, typed decisions included), a cycle budget, an attempt
-budget per phase and a time budget (§1.6, §4.2 and C-37 say "spend, attempts,
-time" for short; the cycle budget counts attempts at the objective level), and
-since C-54 an exploration budget in steps and a budget of model calls per role,
-all set by the Operator. Before each phase the Orchestrator checks
-what is left; a budget used up stops the objective with its record. Repeated
+**Budgets and progress.** An objective has a cycle budget (the improvements it
+makes), an attempt budget per phase, an exploration budget in steps and a
+budget of model calls per role (C-54), and may have a spend budget (USD, from
+usage at the models' own prices, typed decisions included) and a time budget
+(§1.6, §4.2 and C-37 say "spend, attempts, time" for short). The Operator
+starts an objective from its intent: whether it explores, its cycles and
+whether it may merge and adopt are inferred from the intent by a typed
+decision and shown before Start, where the Operator may change them; spend
+and time are unlimited unless set (a child objective's are), and the costs
+of its work are counted and shown either way
+(the Operator's amendment of C-54, §7.6). Before each phase the Orchestrator
+checks what is left; a budget used up stops the objective with its record. Repeated
 identical failures (the same check with the same failure), a proposal that
 repeats a failed one, or rounds without fewer failures count as no progress
 and stop the cycle with a blocker report.
@@ -2359,9 +2365,10 @@ child objectives, Pause, Step, Resume, Stop). Both read the same objective
 records and use the same application commands (start, message, pause, step,
 resume, stop). The Assistant is the Operator's entry point and answers
 ordinary requests on its own role's model. Autonomous work becomes an
-objective: the Operator starts it from the Conversation (or the panel) with
-its budgets, permissions and effective models shown first, or the Assistant
-proposes one with a tool and the Operator starts it; starting stays the
+objective: the Operator starts it from the Conversation (or the panel) from
+its intent, with what the intent was read as (whether it explores, its
+improvements, whether it merges and adopts) shown first and open to change,
+or the Assistant proposes one with a tool and the Operator starts it; starting stays the
 Operator's own. From then on the objective's **thread** appears in the
 Conversation in time order: the Operator's messages, agents' directives and
 results, and system events (phases, checks, pull requests, merges, builds,
@@ -2467,7 +2474,8 @@ criterion with evidence. A change to user-facing code (the code of the part
 `Studio`, by its links, outside tests) needs a behavioural criterion and an
 evaluation in a test instance, whatever its other criteria. A judgment's
 failure is identified by its criterion and verdict, not its wording.
-Attempts, time, steps and model calls per role are budgets the Operator sets;
+Attempts, steps and model calls per role are budgets with defaults, and spend
+and time are budgets when set (the Operator's amendment of C-54, §7.6);
 a cycle's worktrees are removed when it ends (the work of a failed or
 interrupted cycle is kept, the three most recent); one build runs at a time;
 merged branches are deleted. A test instance can be started in a stated
@@ -3351,6 +3359,10 @@ staying aligned with the purpose (§1.1).
   case and failure cases (authorisation refused, a timeout and its recovery,
   a limit exceeded, a shared element counted once); one reusable definition
   in several contextual usages without copying it.
+- **W13.8 The start of an objective** (the Operator's amendment of C-54,
+  made during W13.7): the intent alone, read by a typed decision for what
+  the objective does and shown before Start; spend and time unlimited
+  unless set.
 - **W13.7 Proof:** W12.7's proof with a modelling or simulation objective,
   and a second cycle in the adopted build that uses the first one's
   knowledge; the alignment and evidence checks visible in both;
@@ -3422,7 +3434,7 @@ Confirmed in the interview of 2026-09-27:
 | C-34 | Provider independence through rig for every provider, Claude included, using escape hatches where rig lacks a feature. Clarified 2026-09-27: a provider released rig does not support (TypeSafe AI's Jev, a typed decision API) gets a thin client inside `agq-providers`, behind the same boundary, until rig releases it |
 | C-35 | Providers in this phase: Anthropic, OpenAI, OpenRouter and DeepSeek (model `deepseek-flash`, effort `high`), and TypeSafe AI's Jev as a model provider for fast ("system 1") agents in designed systems, never for the Assistant. Amended 2026-09-27: the product works end to end with only a DeepSeek key configured. Amended by C-53: Jev also makes bounded typed decisions in Agentique's own operation (the Orchestrator), never as the reasoning agent |
 | C-36 | API keys are stored in the Windows Credential Manager |
-| C-37 | Costs are shown; there are no spending limits. Amended by C-53: an objective's autonomous work has budgets (spend, attempts, time) |
+| C-37 | Costs are shown; there are no spending limits. Amended by C-53: an objective's autonomous work has budgets (spend, attempts, time); by the Operator's amendment of C-54 (§7.6), spend and time only when set |
 | C-38 | Three autonomy modes, after Claude Code and Codex: ask before every change; act, but ask on major decisions; act freely, asking only on locks |
 | C-39 | Long tasks show a visible plan, and the Operator can steer (queue messages, stop and send, stop, undo the turn) |
 | C-40 | Memory: short notes the Assistant proposes and the Operator approves, per project and app-wide; nothing is remembered silently |
@@ -3676,6 +3688,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-10 | Deviation 14 widened under C-55 (W13.6): from durations in milliseconds to every quantity, a plain number in the unit its attribute's documentation states; measurement expressions (`1200[g]`) stay unsupported and nothing is converted or dimension-checked. The second system, `models/inspection-charging/` (an inspection drone and its charging station, after the Operator's guide), states its units so | The drone's mass budget and bounded wait are calculations; the ISQ and SI libraries are not pinned (§6.10 "Waits") |
 | 2026-10-10 | Self-model under C-55, as built (W13.4, the purpose's obligations): `Purpose` gains eight informal subrequirements (explicit architecture; executable or reported; claims kept apart; the same mechanisms for itself; the Operator keeps control; aligned evolution; the root system; generalise the mechanism), each naming the requirements that make it concrete or "none yet", made through `apply_changes` with the lock of `Purpose` confirmed on the Operator's C-55 instruction; `satisfy purpose by agentique` is declared now that the Requirements panel keeps a declaration apart from evidence, and a dogfood test asserts the purpose stands "only declared", never as holding | §1.1: the purpose's obligations held in the model it governs; the claims of §4.14 apply to it too |
 | 2026-10-10 | Deviation 20 widened under C-55 (W13.6): a usage that subsets another usage takes its configuration and its redefinitions replace that usage's values (the upgraded drone states only what changed from the survey drone); the standard reads `:>` between usages as "is one of" and forbids overriding a bound value | Reuse of a configuration without copying it, recorded as Agentique's reading rather than given the standard's name |
+| 2026-10-10 | **C-54 amended by the Operator** (the start of an objective, during W13.7: the start form's card could not be scrolled, so Start was out of reach, and the form asked for too much): an objective is started from its intent alone. What it does (whether it explores first, how many improvements, whether a reviewed change that passes every check is merged, and then built, tried and adopted) is inferred from the intent by a typed decision (Jev, the `decisions` role, escalating to the `escalation` role's model when unsure, as every typed decision does; the defaults when neither answers, said so) and shown before Start with who inferred it, where the Operator may change whether it explores, merges or adopts; the start form no longer asks for spend, time, attempts or exploration steps, nor lists each role's model (the thread still records each role's model as the objective starts, and a role without a model still stops the start with why). Spend and time are unlimited unless set (a child objective's are: the lead gives it a spend budget, and its time is an hour at most): an objective is bounded by its cycles, its attempts per cycle (4), its exploration steps (20 per run), each role's model calls, lack of progress and the Operator's Pause and Stop; costs are still counted and shown. Persistence, named before it is built and decided by the Operator (R-16; asked, "leave the limits out", over writing the largest number, which older builds would read): in `objective.json`, `budgets.usd` and `budgets.hours` become optional and are left out when unlimited, and what the intent was read as is a new optional field `inferred`. A build before this change cannot read such a record: its list (`Store::list`, and so `active()`) leaves it out, so it neither shows nor continues it and could start another objective beside it; and its check after adoption (`Store::readable`) refuses, so while such a record exists a build before this change cannot be adopted and the launcher stays on, or returns to, the last known good build. This departs from the condition of the C-54 locked-parts row (the format stays 1 only if the previous reader ignores the new fields); the `objectives` data format stays 1 by this decision. Builds from this change on read both kinds of record. The Assistant's `propose_objective` proposes an intent only (what it does is read from it). The Orchestrator does not open a pull request without the permission to merge: a reviewed change it may not merge stays on its branch and the cycle ends there, as the form says | The Operator's instruction in this session ("just explore if needed, unlimited budget, ... infer from intent", and that the inference is Jev's); the Operator still sees and may change the consequential choices before Start |
 
 ### 7.7 The original requirements
 

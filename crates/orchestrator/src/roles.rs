@@ -221,7 +221,7 @@ fn delegate() -> Value {
             "properties": {
                 "instruction": { "type": "string", "description": "What the child explores and why." },
                 "focus": { "type": "string", "description": "The area, in the words of the screens and panels." },
-                "usd": { "type": "number", "description": "Its spend budget in US dollars, within what is left of this objective's." },
+                "usd": { "type": "number", "description": "Its spend budget in US dollars: more than nothing, and within what is left of this objective's when this objective has a spend limit." },
                 "steps": { "type": "integer", "description": "Its exploration's actions, at most this objective's step budget." }
             },
             "required": ["instruction", "usd", "steps"],

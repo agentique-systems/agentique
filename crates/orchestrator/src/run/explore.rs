@@ -284,9 +284,12 @@ impl Driver {
             .sum();
         let start = STARTS[((self.cycle().n + n) % 2) as usize];
         let changes = self.changes_since(knowledge.last_commit(), &base);
-        let left_usd = (self.objective.budgets.usd - self.objective.spent.usd).max(0.0);
-        let left_seconds =
-            (self.objective.budgets.hours * 3600.0 - self.objective.spent.seconds).max(60.0);
+        let budgets = &self.objective.budgets;
+        let left_usd = budgets.usd_left(self.objective.spent.usd);
+        let left_seconds = (budgets.hours_left(self.objective.spent.seconds) * 3600.0).max(60.0);
+        // A quarter of the spend budget at most; without one, the run's
+        // steps bound it (`f64::MAX` keeps its record a number).
+        let run_usd = left_usd.min(budgets.usd.map_or(f64::MAX, |usd| usd / 4.0));
         // Without models for exploring (an objective recorded without them),
         // the rules decide: they ask no model.
         let modelled = crate::models::with_deciding(&self.objective.models, |_| ()).is_ok();
@@ -300,7 +303,7 @@ impl Driver {
             seed: seed(&self.objective.id, self.cycle().n, n),
             steps: self.objective.budgets.steps,
             seconds: (left_seconds as u64).min(EXPLORE_SECONDS),
-            usd: left_usd.min(self.objective.budgets.usd / 4.0),
+            usd: run_usd,
             changes,
             start: start.to_string(),
             conversation: options.key.is_some(),

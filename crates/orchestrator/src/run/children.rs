@@ -82,7 +82,7 @@ pub(super) struct Bounds {
     /// Why it may not delegate at all, if it may not.
     pub refused: Option<String>,
     /// US dollars left of the objective's spend budget when the lead's
-    /// session started.
+    /// session started (unbounded without one).
     pub usd: f64,
     /// The most steps a child's exploration may take.
     pub steps: u32,
@@ -105,9 +105,13 @@ impl Bounds {
             .as_f64()
             .ok_or("a child needs a budget, `usd`")?;
         if !(usd > 0.0 && usd <= left) {
-            return Err(format!(
-                "a child's budget is more than nothing and at most what is left of this objective's: ${left:.2}"
-            ));
+            return Err(if left.is_finite() {
+                format!(
+                    "a child's budget is more than nothing and at most what is left of this objective's: ${left:.2}"
+                )
+            } else {
+                "a child's budget is more than nothing".into()
+            });
         }
         let steps = input["steps"].as_u64().ok_or("a child needs `steps`")? as u32;
         if steps == 0 || steps > self.steps {
@@ -147,7 +151,7 @@ impl Driver {
 
     /// What the lead may delegate now.
     pub(super) fn bounds(&self) -> Bounds {
-        let left = (self.objective.budgets.usd - self.objective.spent.usd).max(0.0);
+        let left = self.objective.budgets.usd_left(self.objective.spent.usd);
         let running = self.objective.directives.iter().any(|d| {
             matches!(&d.recipient, Recipient::Child(c) if !c.is_empty())
                 && d.status == DirectiveStatus::Running
@@ -174,9 +178,11 @@ impl Driver {
         }
     }
 
-    /// Hours left of the time budget.
+    /// Hours left of the time budget; unbounded without one.
     fn hours_left(&self) -> f64 {
-        self.objective.budgets.hours - self.objective.spent.seconds / 3600.0
+        self.objective
+            .budgets
+            .hours_left(self.objective.spent.seconds)
     }
 
     /// The lead's turn: its session, and for each child it delegates, the
@@ -333,10 +339,10 @@ impl Driver {
         // Within the time left (`bounds` refused one with too little), an
         // hour at most.
         let budgets = Budgets {
-            usd: asked.usd,
+            usd: Some(asked.usd),
             cycles: 1,
             attempts: 2,
-            hours: self.hours_left().min(1.0),
+            hours: Some(self.hours_left().min(1.0)),
             steps: asked.steps,
             calls: self.objective.budgets.calls.clone(),
         };

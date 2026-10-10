@@ -2090,7 +2090,8 @@ it). Read against the code and the model before any change:
 | W13.4 The self-model | #118, #122 | Merged (below); the purpose's obligations in review in #122 (below) |
 | W13.5 Alignment in the loop | #120 | Merged (below) |
 | W13.6 A second system | #122 | In review (below) |
-| W13.7 Proof | — | Not started |
+| W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | — | In progress (`stage13/start`) |
+| W13.7 Proof | — | Started: blocked by W13.8 (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2348,3 +2349,42 @@ example the Operator keeps control: `OneChangePath`, `ChildWorkBounded`,
 `OnlyGivenCredentials`), "partly" or "none yet". `satisfy purpose by
 agentique` is declared: a dogfood test asserts the purpose stands "only
 declared" and is never calculated to hold. Dogfood: 5 passed.
+
+**W13.8 The start of an objective** (`stage13/start`; the Operator's
+amendment of C-54, made when W13.7 could not start: the start form's card
+in the Conversation could not be scrolled, so Start was out of reach, and
+the Operator found the form asked for too much). The Operator writes only
+the intent. It is read once typing stops: Jev answers three typed questions
+in one request (explore first or not; one, two, three or five improvements;
+merge and adopt, merge only, or keep each reviewed change on its branch,
+pushing and merging nothing, so the cycle ends there), and a set below the
+confidence threshold escalates to the `escalation` role's model; when
+neither answers, the defaults (one improvement without exploring, merged
+and adopted), with why; without the decisions role it escalates directly,
+and without the escalation role an unsure Jev gives the defaults. The same
+intent is read once (a reading that fell back to the defaults is read again);
+a reading replaced by further typing is told to stop, and a model call
+already under way is cancelled at once, but what it had used is paid and
+counted nowhere: only the reading used is the objective's cost, and a
+reading is used once. The form shows what it was read as and who read it,
+with switches for exploring, merging and adopting that the Operator may
+change, and Start waits until the intent is read. Spend and time are
+unlimited unless set (a child objective's are);
+attempts (4), exploration steps (20 per run) and model calls per role keep
+their defaults, and the form no longer lists each role's model (the thread
+does as the objective starts). The thread's first entries say what the
+intent was read as, by whom, what the Operator changed, and that no spend
+or time limit is set; the reading's cost is the objective's, under the
+decisions role. The card's scrolling element now carries its own height
+limit. The Assistant's `propose_objective` proposes an intent only. Read
+live before building: an exploring intent with one fix (Jev, 0.95, 0.4 s),
+a stated change (Jev, 0.95), and "keep improving … don't merge anything"
+(Jev unsure of the count at 0.36, escalated: explores, five improvements,
+merging nothing, 6.8 s); and the proof's intent asking for a second fix in
+the adopted build (Jev, 0.98: explores, two improvements, adopts).
+Persistence as the Operator decided in §7.6 (a build before this change
+cannot read an unlimited record: its list leaves it out and its check after
+adoption refuses; tested for the old reader's parse). An independent review
+found the "pull requests only" choice promised a pull request the
+Orchestrator does not open, the persistence record incomplete, readings
+repeated and never stopped, and stale governing text; corrected.

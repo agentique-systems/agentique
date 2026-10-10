@@ -788,23 +788,24 @@ impl Driver {
         self.count_time();
         let budgets = &self.objective.budgets;
         let spent = &self.objective.spent;
-        if spent.usd >= budgets.usd {
+        if let Some(usd) = budgets.usd
+            && spent.usd >= usd
+        {
             return Some((
                 State::Failed,
                 format!(
-                    "The spend budget is used up (${:.2} of ${:.2}).",
-                    spent.usd, budgets.usd
+                    "The spend budget is used up (${:.2} of ${usd:.2}).",
+                    spent.usd
                 ),
             ));
         }
         let hours = spent.seconds / 3600.0;
-        if hours >= budgets.hours {
+        if let Some(limit) = budgets.hours
+            && hours >= limit
+        {
             return Some((
                 State::Failed,
-                format!(
-                    "The time budget is used up ({hours:.1} of {} hours).",
-                    budgets.hours
-                ),
+                format!("The time budget is used up ({hours:.1} of {limit} hours)."),
             ));
         }
         if self.controls.stopped() {
@@ -836,6 +837,33 @@ impl Driver {
             author,
             self.objective.intent.clone(),
         ));
+        // What it does, as inferred from the intent and as started
+        // (the Operator's amendment of C-54).
+        let objective = &self.objective;
+        let started = crate::decide::Shape {
+            explore: objective.explore,
+            cycles: objective.budgets.cycles,
+            merge: objective.permissions.merge,
+            adopt: objective.permissions.adopt,
+        };
+        if let Some(inferred) = objective.inferred.clone() {
+            let changed = if inferred.shape == started {
+                String::new()
+            } else {
+                format!(". You changed it: it {}", started.describe())
+            };
+            self.event(format!(
+                "{} It {}{changed}",
+                inferred.by(),
+                inferred.shape.describe()
+            ));
+        }
+        let budgets = &self.objective.budgets;
+        if self.objective.parent.is_none() && budgets.usd.is_none() && budgets.hours.is_none() {
+            self.event(
+                "No spend or time limit is set: it ends after its improvements (each made or not), when two explorations in a row reproduce nothing new, or when you stop it",
+            );
+        }
         for model in self.objective.models.clone() {
             let why = model
                 .fallback
@@ -1237,7 +1265,11 @@ impl Driver {
         // What is left of the spend budget, as a ceiling the SDK enforces
         // within the session (on Anthropic's API, where its prices are the
         // model's own; the totals below stop the objective in any case).
-        agent.spend_ceiling = Some(self.objective.budgets.usd - self.objective.spent.usd);
+        agent.spend_ceiling = self
+            .objective
+            .budgets
+            .usd
+            .map(|usd| usd - self.objective.spent.usd);
         let controls = self.controls.clone();
         controls.step.store(false, Ordering::SeqCst);
         controls
@@ -1459,7 +1491,7 @@ impl Driver {
         };
         let mut execute = checked(&toolset.definitions, &mut executor);
         let spent_before = self.objective.spent.usd;
-        let budget = self.objective.budgets.usd;
+        let budget = self.objective.budgets.usd.unwrap_or(f64::INFINITY);
         let count = |model: &agq_providers::ModelRef, add: Cost| {
             let mut costs = cost.borrow_mut();
             match costs.iter_mut().find(|(m, _)| m == model) {
