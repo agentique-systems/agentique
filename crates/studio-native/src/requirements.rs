@@ -13,6 +13,7 @@ use agq_language::{Element, ElementId, ElementKind, Parent, Reference};
 use agq_simulation::{Mode, RunResult};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::{Operation, SystemState};
+use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::path::Path;
 
@@ -26,6 +27,10 @@ pub struct Row {
     pub problems: Vec<String>,
     /// Its evidence, kept apart.
     pub ladder: Ladder,
+    /// For a subrequirement: whether the headline counts it with a
+    /// requirement that contains it (its outermost container is a
+    /// requirement usage, or a requirement def some usage is typed by).
+    pub counted: bool,
 }
 
 impl Studio {
@@ -57,12 +62,10 @@ impl Studio {
         rows
     }
 
-    /// One requirement's ladder, for the Inspector.
-    pub fn requirement_ladder(&self, id: ElementId) -> Option<Ladder> {
-        self.requirements()
-            .into_iter()
-            .find(|row| row.id == id)
-            .map(|row| row.ladder)
+    /// A requirement's row: its ladder, and for a subrequirement whether
+    /// the headline counts it.
+    pub fn requirement_row(&self, id: ElementId) -> Option<Row> {
+        self.requirements().into_iter().find(|row| row.id == id)
     }
 
     /// `check_requirements` for the Assistant: the headline and every
@@ -205,62 +208,85 @@ pub(crate) fn code_current(result: &RunResult, repository: Option<&Path>) -> boo
     })
 }
 
-/// The headline over the rows: what the requirement usages stand on, and
-/// how many subrequirement rows it leaves to the requirements that contain
-/// them, and how many of those have evidence of their own (which it does not
-/// count). Without a requirement usage to count them with, the headline as
-/// it is.
+/// The headline over the rows: what the requirement usages stand on, then
+/// the subrequirement rows it leaves out: those counted with a requirement
+/// that contains them, and those with their own `satisfy` or scenario
+/// results, which it does not count (a subrequirement nothing counted
+/// contains is in neither).
 pub fn rows_headline(rows: &[Row]) -> String {
     let ladders: Vec<Ladder> = rows.iter().map(|row| row.ladder.clone()).collect();
-    let usages = ladders.iter().any(|l| !l.nested && !l.definition);
-    let nested: Vec<&Ladder> = ladders.iter().filter(|l| l.nested).collect();
-    if nested.is_empty() || !usages {
-        return headline(&ladders);
+    let nested: Vec<&Row> = rows.iter().filter(|r| r.ladder.nested).collect();
+    let own = nested.iter().filter(|r| own_rungs(&r.ladder)).count();
+    let counted = nested
+        .iter()
+        .filter(|r| r.counted && !own_rungs(&r.ladder))
+        .count();
+    let mut parts = vec![headline(&ladders)];
+    match counted {
+        0 => {}
+        1 => parts.push("1 subrequirement counted with the requirement that contains it".into()),
+        n => parts.push(format!(
+            "{n} subrequirements counted with the requirements that contain them"
+        )),
     }
-    let own = nested.iter().filter(|l| own_evidence(l)).count();
-    let counted = match nested.len() {
-        1 => "1 subrequirement counted with the requirement that contains it".to_string(),
-        n => format!("{n} subrequirements counted with the requirements that contain them"),
-    };
-    let own = match (nested.len(), own) {
-        (_, 0) => String::new(),
-        (1, _) => ", with evidence of its own the headline does not count".to_string(),
-        (_, 1) => ", 1 of them with evidence of its own the headline does not count".to_string(),
-        (_, k) => format!(", {k} of them with evidence of their own the headline does not count"),
-    };
-    format!("{} · {counted}{own}", headline(&ladders))
+    match own {
+        0 => {}
+        1 => parts.push(
+            "1 subrequirement with its own satisfy or scenario results, which the headline does not count"
+                .into(),
+        ),
+        k => parts.push(format!(
+            "{k} subrequirements with their own satisfy or scenario results, which the headline does not count"
+        )),
+    }
+    parts.join(" · ")
 }
 
-/// Whether a subrequirement has evidence of its own (a `satisfy` naming it,
-/// a scenario verifying it, a calculation of its own): then its standing is
-/// its own, not its container's.
-fn own_evidence(ladder: &Ladder) -> bool {
-    ladder.standing() != Standing::Nothing
+/// Whether a subrequirement has rungs of its own: a `satisfy` naming it, or
+/// a scenario result verifying it. Calculations marked "within" are its
+/// container's and are counted with it; a calculation of its own always has
+/// a `satisfy` naming it. (Linked tests are not counted for any
+/// requirement's standing.)
+pub fn own_rungs(ladder: &Ladder) -> bool {
+    !ladder.declared.is_empty()
+        || ladder
+            .scenarios
+            .iter()
+            .flat_map(|s| &s.results)
+            .any(|r| r.passes() || r.fails() || r.inconclusive())
 }
 
-/// What a subrequirement is, said once for the panel and the Inspector: for
-/// one with evidence of its own, that the evidence shown is its own.
-pub fn subrequirement_note(ladder: &Ladder) -> &'static str {
-    if own_evidence(ladder) {
-        "A subrequirement with evidence of its own: the evidence shown here is its own, and the headline does not count it. It is also evaluated within the requirement that contains it (in a requirement def, within each requirement that uses the def)."
-    } else {
+/// What a subrequirement is, said once for the panel and the Inspector.
+pub fn subrequirement_note(row: &Row) -> &'static str {
+    if own_rungs(&row.ladder) {
+        "A subrequirement with its own satisfy or scenario results: they are shown here and the headline does not count them. Calculations marked \u{201c}within\u{201d} are its container's, counted with it."
+    } else if row.counted {
         "A subrequirement: evaluated within the requirement that contains it (in a requirement def, within each requirement that uses the def) and counted with it, not on its own."
+    } else {
+        "A subrequirement no requirement usage contains (its def is not used): nothing counts it yet."
     }
 }
 
-/// A row's standing in words: for a subrequirement, that it is counted with
-/// the requirement that contains it, or that its evidence is its own.
-pub fn standing_words(ladder: &Ladder) -> String {
+/// A row's standing in words: for a subrequirement, whether it is counted
+/// with the requirement that contains it, has results of its own, or is
+/// not counted at all.
+pub fn standing_words(row: &Row) -> String {
+    let ladder = &row.ladder;
     if ladder.definition {
         ladder.summary()
-    } else if ladder.nested && own_evidence(ladder) {
+    } else if ladder.nested && own_rungs(ladder) {
         format!(
-            "{} · a subrequirement with evidence of its own, which the headline does not count",
+            "{} · a subrequirement with its own satisfy or scenario results, which the headline does not count",
+            ladder.label()
+        )
+    } else if ladder.nested && row.counted {
+        format!(
+            "{} · a subrequirement, counted with the requirement that contains it",
             ladder.label()
         )
     } else if ladder.nested {
         format!(
-            "{} · a subrequirement, counted with the requirement that contains it",
+            "{} · a subrequirement no requirement usage contains, not counted",
             ladder.label()
         )
     } else {
@@ -307,6 +333,31 @@ pub fn rows(
 ) -> Vec<Row> {
     let tree = state.tree();
     let ladders = ladders(tree, state.diagnostics(), Some(links), Some(runs), report);
+    // The requirement usages the headline counts, and the defs they use.
+    let semantics = agq_language::Semantics::new(tree);
+    let usages: Vec<ElementId> = ladders
+        .iter()
+        .filter(|l| !l.definition && !l.nested)
+        .map(|l| l.requirement)
+        .collect();
+    let used_defs: BTreeSet<ElementId> = usages
+        .iter()
+        .flat_map(|u| semantics.types_of(*u))
+        .map(|(t, _)| t)
+        .collect();
+    let requirement_like = |id: ElementId| {
+        matches!(
+            tree[id].kind,
+            ElementKind::Requirement | ElementKind::RequirementDef
+        )
+    };
+    let counted = |id: ElementId| {
+        let mut outermost = id;
+        while let Some(owner) = tree[outermost].owner().filter(|o| requirement_like(*o)) {
+            outermost = owner;
+        }
+        usages.contains(&outermost) || used_defs.contains(&outermost)
+    };
     ladders
         .into_iter()
         .map(|ladder| {
@@ -335,6 +386,7 @@ pub fn rows(
                     .into_iter()
                     .flat_map(|d| state.diagnostics_for(d).map(|p| p.message.clone()))
                     .collect(),
+                counted: ladder.nested && counted(id),
                 ladder,
             }
         })
@@ -429,11 +481,9 @@ mod tests {
         let rows = rows(&state, &Links::default(), &[], None);
         let words = |name: &str| {
             standing_words(
-                &rows
-                    .iter()
+                rows.iter()
                     .find(|row| row.name.ends_with(name))
-                    .unwrap_or_else(|| panic!("no row {name}"))
-                    .ladder,
+                    .unwrap_or_else(|| panic!("no row {name}")),
             )
         };
         assert!(
@@ -461,40 +511,50 @@ mod tests {
             ),
             "{headline}"
         );
-        // The rows the headline counts and those it leaves to their
-        // containers are every row with a standing.
-        assert_eq!(rows.iter().filter(|r| !r.ladder.definition).count(), 2);
     }
 
-    /// Several subrequirements read in the plural; one with evidence of its
-    /// own (a `satisfy` naming it) says so on its row and in the headline,
-    /// never that it is counted with its container; a def with no usage
-    /// keeps the headline as it is.
+    /// A subrequirement with its own `satisfy` says so on its row and in
+    /// the headline, never that it is counted with its container; one whose
+    /// only calculations are its container's ("within") is still counted
+    /// with it; one of a def no usage uses is counted by nothing (also in a
+    /// model whose other requirements are used).
     #[test]
-    fn a_subrequirement_with_evidence_of_its_own_is_not_said_to_be_counted() {
+    fn a_subrequirement_says_whether_and_how_the_headline_counts_it() {
         let text = "package S {
+    attribute def Mass;
+    part def Kit {
+        attribute mass : ScalarValues::Real;
+    }
+    part light : Kit {
+        attribute :>> mass = 5;
+    }
+    part p;
     requirement def Purpose {
+        subject kit : Kit;
         requirement inner;
         requirement other;
+        requirement light {
+            require constraint { kit.mass <= 10 }
+        }
     }
     requirement purpose : Purpose;
-    part p;
+    satisfy purpose by light;
     satisfy Purpose::inner by p;
+    requirement def Unused {
+        requirement nobody;
+    }
 }";
         let state = SystemState::new(parse(&[Source::new("s.sysml", text)]), BTreeSet::new());
         assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
         let rows = rows(&state, &Links::default(), &[], None);
-        let words = |name: &str| {
-            standing_words(
-                &rows
-                    .iter()
-                    .find(|row| row.name.ends_with(name))
-                    .unwrap_or_else(|| panic!("no row {name}"))
-                    .ladder,
-            )
+        let row = |name: &str| {
+            rows.iter()
+                .find(|row| row.name.ends_with(name))
+                .unwrap_or_else(|| panic!("no row {name}"))
         };
+        let words = |name: &str| standing_words(row(name));
         assert!(
-            words("inner").contains("evidence of its own"),
+            words("inner").contains("its own satisfy or scenario results"),
             "{}",
             words("inner")
         );
@@ -508,10 +568,28 @@ mod tests {
             "{}",
             words("other")
         );
+        // Its calculation is the container's: counted with it.
+        assert!(
+            !row("Purpose::light").ladder.calculated.is_empty(),
+            "the container's calculation reaches it"
+        );
+        assert!(!own_rungs(&row("Purpose::light").ladder));
+        assert!(
+            words("Purpose::light").contains("counted with the requirement"),
+            "{}",
+            words("Purpose::light")
+        );
+        assert!(
+            words("nobody").contains("not counted"),
+            "{}",
+            words("nobody")
+        );
+        assert!(subrequirement_note(row("nobody")).contains("nothing counts it"));
+        assert!(subrequirement_note(row("inner")).contains("container's"));
         let headline = rows_headline(&rows);
         assert!(
             headline.ends_with(
-                "2 subrequirements counted with the requirements that contain them, 1 of them with evidence of its own the headline does not count"
+                "2 subrequirements counted with the requirements that contain them · 1 subrequirement with its own satisfy or scenario results, which the headline does not count"
             ),
             "{headline}"
         );
@@ -522,11 +600,8 @@ mod tests {
 }";
         let state = SystemState::new(parse(&[Source::new("s.sysml", unused)]), BTreeSet::new());
         let rows = super::rows(&state, &Links::default(), &[], None);
-        assert!(
-            !rows_headline(&rows).contains("subrequirement"),
-            "{}",
-            rows_headline(&rows)
-        );
+        let headline = rows_headline(&rows);
+        assert!(!headline.contains("subrequirement"), "{headline}");
     }
 
     #[test]
@@ -574,7 +649,7 @@ mod tests {
             assert!(started.elapsed().as_secs() < 20, "the run finishes");
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
-        let ladder = app.requirement_ladder(screened).unwrap();
+        let ladder = app.requirement_row(screened).unwrap().ladder;
         assert_eq!(ladder.standing(), Standing::Verified);
         let after = app.check_requirements(Some(screened));
         assert!(

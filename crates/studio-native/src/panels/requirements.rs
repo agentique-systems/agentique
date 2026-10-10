@@ -109,7 +109,7 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                                 .child(ui::target::target(format!(
                                     "Requirement {}: {}",
                                     row.name,
-                                    crate::requirements::standing_words(&row.ladder)
+                                    crate::requirements::standing_words(&row)
                                 )))
                                 .on_click(move |_: &ClickEvent, _, cx| {
                                     studio_show.act(cx, |studio| studio.show_element(id))
@@ -212,9 +212,9 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                                 .child(ui::target::target(format!(
                                     "Requirement {}: {}",
                                     row.name,
-                                    crate::requirements::subrequirement_note(&row.ladder)
+                                    crate::requirements::subrequirement_note(&row)
                                 )))
-                                .child(crate::requirements::subrequirement_note(&row.ladder)),
+                                .child(crate::requirements::subrequirement_note(&row)),
                         )
                     })
                     .when_some(row.doc.clone(), |this, doc| {

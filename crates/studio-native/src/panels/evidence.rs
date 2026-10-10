@@ -441,13 +441,14 @@ fn evidence(
     }
     // The requirement's whole ladder (C-55), as the Requirements panel and
     // the Assistant's `check_requirements` read it.
-    let ladder = studio.read(cx).requirement_ladder(element)?;
+    let row = studio.read(cx).requirement_row(element)?;
+    let ladder = row.ladder.clone();
     let section = div()
         .flex()
         .flex_col()
         .gap(r(4.0))
         .child(super::group("Evidence", None, cx));
-    let words = crate::requirements::standing_words(&ladder);
+    let words = crate::requirements::standing_words(&row);
     let section = section.relative().child(ui::target::target(format!(
         "Evidence of {}: {words}",
         ladder.name
@@ -496,9 +497,9 @@ fn evidence(
                         .child(ui::target::target(format!(
                             "Evidence of {}: {}",
                             ladder.name,
-                            crate::requirements::subrequirement_note(&ladder)
+                            crate::requirements::subrequirement_note(&row)
                         )))
-                        .child(crate::requirements::subrequirement_note(&ladder)),
+                        .child(crate::requirements::subrequirement_note(&row)),
                 )
             })
             .child(super::requirements::ladder(
