@@ -12,7 +12,9 @@
 //! the Conversation: in a test instance started with a recorded objective
 //! and the scripted stand-in Assistant (reading it, expanding a step's tool
 //! calls, replying, starting a turn), and in the Operator's own window
-//! (where all of it is refused to agents).
+//! (where all of it is refused to agents). Since W13.7 one more checks that
+//! what the Operator works an objective with is reachable at the smallest
+//! window and at display scaling up to 200%.
 //!
 //! It needs a desktop session (it opens a window), so it is ignored by
 //! default:
@@ -650,14 +652,15 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     }
     let start = control(&objectives, "objective-start").unwrap();
     assert_eq!(start["enabled"], false);
-    // On screen, inside the window: a row's text once pushed it out of
-    // the panel (W13.8).
+    // On screen and within the form: a row's text once pushed it out of
+    // the panel (W13.8). Bounds are cut to what shows, so a Start pushed
+    // partly past the panel's edge is not hidden; its right edge is
+    // compared with the intent field's, which spans the form (the field's
+    // frame adds a few pixels; the panel's padding is more).
     assert!(start["hidden"].is_null(), "{start}");
-    let right = start["bounds"][0].as_f64().unwrap() + start["bounds"][2].as_f64().unwrap();
-    assert!(
-        right <= objectives["window"]["width"].as_f64().unwrap(),
-        "{start}"
-    );
+    let right = |c: &Value| c["bounds"][0].as_f64().unwrap() + c["bounds"][2].as_f64().unwrap();
+    let intent = control(&objectives, "objective-intent").unwrap();
+    assert!(right(start) <= right(intent) + 10.0, "{start} {intent}");
     assert!(control(&objectives, "objective-merge").is_none());
 
     // One agent acts in the window at a time (C-54): `journey` holds it;
@@ -1213,6 +1216,219 @@ fn open_sample(studio: &mut Studio, folder: &Path) {
     );
     let released = studio.call(json!({ "op": "release", "agent": "journey" }));
     assert_eq!(released["released"], true, "{released}");
+}
+
+/// W13.7: what the Operator works an objective with is on screen and
+/// reachable at the smallest window, the default and a large one, at 100%,
+/// 125%, 150% and 200% display scaling (`--ui-scale`), while agents run and
+/// while they are paused: the start form's intent and Start, an unfinished
+/// objective's Continue and Stop in the Conversation and the Objectives
+/// panel, and the title bar's buttons. A control must be shown, inside the
+/// window, big enough to hit and not covered by another of the title bar;
+/// the window's own buttons must be whole (bounds are cut to what shows, so
+/// their width and Close's right edge are checked exactly). Every problem
+/// of every case is listed before the test fails.
+#[test]
+#[ignore = "opens windows: needs a desktop session"]
+fn the_objectives_controls_are_reachable_at_every_size_and_scale() {
+    let mut problems = Vec::new();
+    for (size, scale) in [
+        ("1080x720", "1"),
+        ("1600x1000", "1"),
+        ("1920x1040", "1"),
+        ("1600x1000", "1.25"),
+        ("1920x1040", "1.5"),
+        ("1080x720", "1.5"),
+        ("1600x1000", "2"),
+        ("1080x720", "2"),
+    ] {
+        for unfinished in [true, false] {
+            let case = format!(
+                "{size} at {scale}{}",
+                if unfinished {
+                    ", an objective not finished"
+                } else {
+                    ""
+                }
+            );
+            let folder = folder(&format!(
+                "sizes-{size}-{}-{unfinished}",
+                scale.replace('.', "_")
+            ));
+            if unfinished {
+                seed_objective(&folder);
+            }
+            let mut studio = Studio::start_with(
+                &folder,
+                "instant",
+                &["--window-size", size, "--ui-scale", scale],
+            );
+            open_sample(&mut studio, &folder);
+            let first = studio.observe();
+            problems.extend(window_size_as_asked(&first, &case, size));
+            let mut ids = vec!["window-minimize", "window-maximize", "window-close"];
+            if unfinished {
+                ids.extend(["objective-bar-continue", "objective-bar-stop"]);
+            }
+            problems.extend(unreachable(&first, &case, &ids));
+            problems.extend(window_buttons_whole(&first, &case, scale));
+            // Where room allows (800 units or more), the search and the
+            // views are shown too; below it they may give way.
+            let room =
+                first["window"]["width"].as_f64().unwrap_or(0.0) / scale.parse::<f64>().unwrap();
+            if room >= 800.0 {
+                problems.extend(unreachable(
+                    &first,
+                    &case,
+                    &["title-search", "Architecture", "Requirements"],
+                ));
+            }
+            studio.must(
+                json!({ "kind": "click", "control": "Objectives" }),
+                "look at the Objectives panel",
+            );
+            let ids = if unfinished {
+                vec!["objective-continue", "objective-stop-idle", "window-close"]
+            } else {
+                vec!["objective-intent", "objective-start", "window-close"]
+            };
+            let panel = studio.observe();
+            problems.extend(unreachable(&panel, &case, &ids));
+            problems.extend(window_buttons_whole(&panel, &case, scale));
+            // Agents paused: their chip's Resume, Step and Stop.
+            studio.gate("pause");
+            let paused = studio.observe();
+            let case = format!("{case}, agents paused");
+            problems.extend(unreachable(
+                &paused,
+                &case,
+                &[
+                    "agents-resume",
+                    "agents-step",
+                    "agents-stop",
+                    "window-close",
+                ],
+            ));
+            problems.extend(window_buttons_whole(&paused, &case, scale));
+            studio.gate("run");
+            drop(studio);
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+}
+
+/// The window is the size asked for (in logical pixels).
+fn window_size_as_asked(observation: &Value, case: &str, size: &str) -> Vec<String> {
+    let (w, h) = size.split_once('x').unwrap();
+    let asked = (w.parse::<f64>().unwrap(), h.parse::<f64>().unwrap());
+    let got = (
+        observation["window"]["width"].as_f64().unwrap_or(0.0),
+        observation["window"]["height"].as_f64().unwrap_or(0.0),
+    );
+    if (got.0 - asked.0).abs() > 1.0 || (got.1 - asked.1).abs() > 1.0 {
+        vec![format!("{case}: the window is {got:?}, not {asked:?}")]
+    } else {
+        Vec::new()
+    }
+}
+
+/// The window's own buttons whole: each its full width (46 at 100%), Close
+/// ending at the window's right edge.
+fn window_buttons_whole(observation: &Value, case: &str, scale: &str) -> Vec<String> {
+    let scale: f64 = scale.parse().unwrap();
+    let width = observation["window"]["width"].as_f64().unwrap_or(0.0);
+    let mut found = Vec::new();
+    for id in ["window-maximize", "window-close"] {
+        let Some(c) = control(observation, id) else {
+            found.push(format!("{case}: {id} missing"));
+            continue;
+        };
+        let w = c["bounds"][2].as_f64().unwrap_or(0.0);
+        if (w - 46.0 * scale).abs() > 1.0 {
+            found.push(format!("{case}: {id} is {w} wide, not {}", 46.0 * scale));
+        }
+    }
+    if let Some(close) = control(observation, "window-close") {
+        let right =
+            close["bounds"][0].as_f64().unwrap_or(0.0) + close["bounds"][2].as_f64().unwrap_or(0.0);
+        if (right - width).abs() > 1.0 {
+            found.push(format!(
+                "{case}: Close ends at {right}, not the window's edge {width}"
+            ));
+        }
+    }
+    found
+}
+
+/// What keeps a control in `observation` from being worked: missing,
+/// hidden (but below its panel's fold, which scrolls), outside the window or
+/// too small to hit (the controls `ids`), and any two controls of the title
+/// bar covering each other.
+fn unreachable(observation: &Value, case: &str, ids: &[&str]) -> Vec<String> {
+    let mut found = Vec::new();
+    let width = observation["window"]["width"].as_f64().unwrap_or(0.0);
+    let height = observation["window"]["height"].as_f64().unwrap_or(0.0);
+    let rect = |c: &Value| {
+        let b = |i: usize| c["bounds"][i].as_f64().unwrap_or(0.0);
+        (b(0), b(1), b(0) + b(2), b(1) + b(3))
+    };
+    let controls: Vec<&Value> = observation["controls"]
+        .as_array()
+        .map(|a| a.iter().collect())
+        .unwrap_or_default();
+    for id in ids {
+        let Some(c) = controls.iter().find(|c| c["id"] == *id) else {
+            found.push(format!("{case}: {id} missing"));
+            continue;
+        };
+        let (x0, y0, x1, y1) = rect(c);
+        // Below its panel's fold, across inside the window: the panel
+        // scrolls to it (as the first journey shows for the Inspector).
+        let below_fold = matches!(
+            c["region"].as_str(),
+            Some("inspector" | "conversation" | "left-body")
+        ) && x0 >= -0.5
+            && x1 <= width + 0.5
+            && y0 >= 0.0;
+        if !c["hidden"].is_null() && !below_fold {
+            found.push(format!("{case}: {id} hidden at {:?}", (x0, y0, x1, y1)));
+        } else if !c["hidden"].is_null() {
+            // Reachable by scrolling; its size is still checked below.
+        } else if x1 > width + 0.5 || y1 > height + 0.5 || x0 < -0.5 || y0 < -0.5 {
+            found.push(format!(
+                "{case}: {id} outside the {width}x{height} window at {:?}",
+                (x0, y0, x1, y1)
+            ));
+        }
+        if x1 - x0 < 12.0 || y1 - y0 < 12.0 {
+            found.push(format!(
+                "{case}: {id} too small to hit at {:?}",
+                (x0, y0, x1, y1)
+            ));
+        }
+    }
+    // Buttons and options of the title bar must not cover each other.
+    let title: Vec<&&Value> = controls
+        .iter()
+        .filter(|c| c["region"] == "title" && c["hidden"].is_null())
+        .collect();
+    for (i, a) in title.iter().enumerate() {
+        for b in &title[i + 1..] {
+            let (a0, a1, a2, a3) = rect(a);
+            let (b0, b1, b2, b3) = rect(b);
+            if a0 < b2 - 1.0 && b0 < a2 - 1.0 && a1 < b3 - 1.0 && b1 < a3 - 1.0 {
+                let pair = format!(
+                    "{case}: {} and {} overlap in the title bar",
+                    a["id"].as_str().unwrap_or_default(),
+                    b["id"].as_str().unwrap_or_default()
+                );
+                if !found.contains(&pair) {
+                    found.push(pair);
+                }
+            }
+        }
+    }
+    found
 }
 
 /// The Conversation as the one place (C-54, W12.6), in a test instance
