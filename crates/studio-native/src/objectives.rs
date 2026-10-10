@@ -552,6 +552,7 @@ impl Studio {
                 agq_providers::runtime_credential(credential).ok().flatten()
             }),
             studios: Box::new(run::Live),
+            answers: None,
         })
     }
 

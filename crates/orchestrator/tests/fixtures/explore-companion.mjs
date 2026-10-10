@@ -19,7 +19,14 @@
 //   `models/shop` (which must be refused, else 12);
 // - VARY: the first plan permits `models/garden` too, and the plan of a
 //   second exploration names it;
-// - NO-PLAN: the planning lead never plans.
+// - NO-PLAN: the planning lead never plans;
+// - HYPOTHESES: a plan tests a hypothesis governed by
+//   `Demo::LabelsReadable` (of the repository's own model, whatever the
+//   project), after one naming `Demo::Nope`, which must be refused (else
+//   13); the proposing lead says when its brief listed the hypotheses, and
+//   when one was contradicted it fixes that finding: judged a defect, its
+//   proposal serving `Demo::Fast` must be refused (else 14), then one
+//   serving `Demo::LabelsReadable` is accepted.
 // The lead plans the History panel (of `models/shop`, a project the test
 // repository holds; a plan the Orchestrator refuses ends the script with
 // 10), and names that project for a child it delegates before planning;
@@ -100,11 +107,22 @@ const project = here("TARGET-MODEL")
   : here("VARY") && o.prompt.includes("(exploration 2 of")
     ? "models/garden"
     : "models/shop";
+const hypothesis = (requirement) => ({
+  claim: "Every button in the History panel says what it does",
+  requirement,
+  workflow: "Open the History panel and read its buttons",
+  expected: "Each button has a readable label",
+});
 const plan = async (goal) => {
+  if (here("HYPOTHESES")) {
+    const unknown = await call("submit_exploration", { project, goal, hypotheses: [hypothesis("Demo::Nope")] });
+    if (!unknown.isError) process.exit(13);
+  }
   const planned = await call("submit_exploration", {
     project,
     goal,
     ...(here("VARY") ? { vary: ["models/shop", "models/garden"] } : {}),
+    ...(here("HYPOTHESES") ? { hypotheses: [hypothesis("Demo::LabelsReadable")] } : {}),
   });
   if (planned.isError) process.exit(10);
 };
@@ -159,8 +177,12 @@ if (role === "lead" && planning && here("NO-PLAN")) {
     end("Planned.");
   }
 } else if (role === "lead") {
-  const finding = o.prompt.includes("f1:") ? "f1" : undefined;
-  const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];
+  const contradicted = (o.prompt.match(/contradicted \(finding (f\d+)\)/) ?? [])[1];
+  const finding = contradicted ?? (o.prompt.includes("f1:") ? "f1" : undefined);
+  const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1]
+    ?? (here("HYPOTHESES") && o.prompt.includes("How this objective's hypotheses were answered")
+      ? "the brief listed the hypotheses"
+      : undefined);
   // A finding is judged before it is fixed (C-55): WRONG-EXPECTATION and
   // AMBIGUOUS judge it otherwise, and nothing is proposed.
   const otherwise = here("WRONG-EXPECTATION")
@@ -180,6 +202,25 @@ if (role === "lead" && planning && here("NO-PLAN")) {
   if (otherwise) {
     end(`Judged it ${otherwise}: nothing to fix.`);
   } else {
+  if (contradicted) {
+    // The finding of a hypothesis governed by Demo::LabelsReadable: a
+    // change serving another requirement is refused.
+    const elsewhere = await call("submit_proposal", {
+      title: "Label the History panel's Archive button",
+      kind: "usability",
+      why: "The Archive button has no readable label.",
+      serves: ["Demo::Fast"],
+      benefit: "The Operator can tell what the Archive button does.",
+      complexity: "Changes one label; nothing at the root changes.",
+      parts: ["Demo"],
+      plan: ["Label it", "Test it"],
+      criteria: [
+        { id: "c1", statement: "The fix is there", check: { kind: "command", program: ["node", "--test", "fixed.test.mjs"] } },
+      ],
+      finding,
+    });
+    if (!elsewhere.isError) process.exit(14);
+  }
   const answer = await call("submit_proposal", {
     title: "Label the History panel's Archive button",
     kind: "usability",

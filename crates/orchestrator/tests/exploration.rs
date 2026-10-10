@@ -141,6 +141,8 @@ fn deciding(answers: &dyn Answers) -> Deciding<'_> {
         answers,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: None,
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+        escalation_effort: Some("high".into()),
     }
 }
 
@@ -155,6 +157,7 @@ fn plan(way: Way, seed: u64, steps: u32) -> Plan {
         changes: Changes::default(),
         start: "stand-in".into(),
         begin: Default::default(),
+        hypotheses: Vec::new(),
         source: None,
         conversation: false,
         // Short, so a turn that never ends takes no time in a test.
@@ -1803,6 +1806,255 @@ fn a_run_reports_its_decisions_its_waits_and_its_steps_with_their_time() {
     );
 }
 
+/// The W13.7 repair, E3: a run tests its plan's hypotheses first, each
+/// with a share of its steps, by the escalation role's model (an
+/// engineering question), whose prompt holds the hypothesis, its
+/// requirement's text and the expectations judged wrong before (with why).
+/// Only the expectation it marks as answering answers one: it agrees, or
+/// it is contradicted and the failed expectation is its finding, linked to
+/// it and its requirement, with what was expected and observed; an
+/// incidental expectation, or one about the Assistant's reply, answers
+/// nothing, and a hypothesis without an answer in its share is not
+/// answered (no finding). Jev navigates after a reasoning step that did not
+/// answer. Discovery goes on after; the rules answer none.
+#[test]
+fn a_run_tests_its_hypotheses_first_and_says_how_each_was_answered() {
+    let answers = Scripted {
+        reads: Some(Box::new(|prompt: &str| {
+            if prompt.contains("History has its Checkpoint button") {
+                let id = option(prompt, "“History”").unwrap();
+                format!(
+                    r#"{{"choice": "{id}", "expect": {{"anyLabelContains": "Checkpoint"}}, "answers": true}}"#
+                )
+            } else if prompt.contains("Validating says the model is invalid") {
+                let id = option(prompt, "“Validate”").unwrap();
+                format!(
+                    r#"{{"choice": "{id}", "expect": {{"statusContains": "is invalid"}}, "answers": true}}"#
+                )
+            } else if prompt.contains("Something incidental holds") {
+                // An expectation, but not the answer.
+                r#"{"choice": "a01", "expect": {"screen": "surface"}}"#.to_string()
+            } else if prompt.contains("The Assistant says so") {
+                // About the reply: recorded, never the answer.
+                r#"{"choice": "a01", "expect": {"replyContains": "so"}, "answers": true}"#
+                    .to_string()
+            } else {
+                r#"{"choice": "a01"}"#.to_string()
+            }
+        })),
+        ..Scripted::default()
+    };
+    let hypothesis = |claim: &str, requirement: Option<&str>| explore::Hypothesis {
+        claim: claim.into(),
+        requirement: requirement.map(str::to_string),
+        requirement_text: requirement
+            .map(|r| format!("requirement def {r} {{ doc /* Validation says what it found. */ }}")),
+        behaviour: requirement.is_none().then(|| "It does".to_string()),
+        workflow: "Look around the inspector".into(),
+        expected: "What the claim says".into(),
+        select: false,
+    };
+    let mut planned = plan(Way::Model, 1, 16);
+    planned.hypotheses = vec![
+        hypothesis("History has its Checkpoint button", None),
+        hypothesis("Validating says the model is invalid", Some("Valid")),
+        hypothesis("Something incidental holds", None),
+        hypothesis("The Assistant says so", None),
+    ];
+    // An expectation judged wrong before, from the testing knowledge.
+    let mut knowledge = Knowledge::new("stand-in");
+    let mut wrong = Finding::new(
+        Failed {
+            check: Check::Expectation,
+            control: "save".into(),
+            message: r#"expected {"statusContains":"Saved"}: the status says Ready"#.into(),
+            evidence: json!({}),
+        },
+        Vec::new(),
+        "b0",
+        "c0",
+        "stand-in",
+    );
+    wrong.disposition = Some(findings::Disposition {
+        kind: findings::DispositionKind::WrongExpectation,
+        reason: "Nothing is saved there".into(),
+        requirement: None,
+        objective: "o".into(),
+        cycle: 1,
+        role: "lead".into(),
+        at: "t".into(),
+        build: None,
+    });
+    knowledge.findings.push(wrong);
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &planned,
+        &answers,
+        &knowledge,
+    );
+    assert_eq!(run.actions, 16, "discovery goes on after: {}", run.ended);
+    let verdicts: Vec<&explore::Verdict> = run.answers.iter().map(|a| &a.verdict).collect();
+    assert_eq!(verdicts.len(), 4, "{:#?}", run.answers);
+    assert_eq!(verdicts[0], &explore::Verdict::Agrees);
+    assert_eq!(
+        run.answers[0].expected,
+        Some(json!({ "anyLabelContains": "Checkpoint" }))
+    );
+    let explore::Verdict::Contradicted { finding, observed } = verdicts[1] else {
+        panic!("{:#?}", run.answers);
+    };
+    assert!(!observed.is_empty() && !observed.starts_with("expected"));
+    for not_answered in &verdicts[2..] {
+        assert_eq!(
+            *not_answered,
+            &explore::Verdict::NotAnswered {
+                why: "no answering expectation was checked within its 3 steps".into()
+            }
+        );
+    }
+    // Its finding: the expectation that failed, linked.
+    let found = run
+        .findings
+        .iter()
+        .find(|f| &f.identity == finding)
+        .unwrap();
+    assert_eq!(found.check, Check::Expectation);
+    assert_eq!(
+        (found.hypothesis.as_deref(), found.requirement.as_deref()),
+        (Some("Validating says the model is invalid"), Some("Valid"))
+    );
+    assert_eq!(
+        run.findings.len(),
+        1,
+        "a hypothesis not answered is no finding"
+    );
+    // A hypothesis's reasoning steps are the escalation role's model's (at
+    // most high); Jev navigates between; the discovery after is the
+    // explorer's.
+    let asked = |by: &str| -> BTreeSet<Option<String>> {
+        run.steps
+            .iter()
+            .filter(|t| t.step.by == by && t.timing.calls > 0)
+            .map(|t| t.timing.model.clone())
+            .collect()
+    };
+    assert_eq!(
+        asked("hypothesis"),
+        BTreeSet::from([Some("deepseek/deepseek-v4-pro".to_string())])
+    );
+    assert!(
+        run.steps
+            .iter()
+            .filter(|t| t.step.by == "hypothesis" && t.timing.calls > 0)
+            .all(|t| t.timing.effort.as_deref() == Some("high"))
+    );
+    assert!(
+        answers
+            .questions
+            .borrow()
+            .iter()
+            .any(|q| q.prompt("").contains("Something incidental holds")),
+        "Jev navigated after a reasoning step that did not answer"
+    );
+    assert_eq!(
+        asked("explorer"),
+        BTreeSet::from([Some("deepseek/deepseek-flash".to_string())])
+    );
+    // Its prompt: the hypothesis, its requirement's text, and what was
+    // judged wrong before, with why; Jev's prompts carry none of that.
+    let prompts = answers.prompts.borrow();
+    let second = prompts
+        .iter()
+        .find(|p| p.contains("Validating says the model is invalid"))
+        .unwrap();
+    assert!(second.contains("Validation says what it found"), "{second}");
+    assert!(
+        second.contains("Nothing is saved there"),
+        "the judged-wrong expectation and why"
+    );
+    assert!(second.contains("engineering hypothesis"));
+    assert!(
+        answers
+            .questions
+            .borrow()
+            .iter()
+            .all(|q| !q.prompt("").contains("judgedWrong")),
+        "Jev's prompt stays small"
+    );
+    let line = run.answers[1].line(|_| Some("finding f1".into()));
+    assert!(
+        line.starts_with(
+            r#"contradicted (finding f1): Validating says the model is invalid [Valid] — expected {"statusContains":"is invalid"}: "#
+        ),
+        "{line}"
+    );
+    // The rules state no expectation: they answer none, and say why.
+    let mut by_rules = planned.clone();
+    by_rules.way = Way::Rules;
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &by_rules,
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    );
+    assert!(run.answers.iter().all(|a| a.verdict
+        == explore::Verdict::NotAnswered {
+            why: "the rules state no expectation".into()
+        }));
+    assert_eq!(run.answers.len(), 4);
+}
+
+/// The review of E3: a stop while a hypothesis is tested ends the run; it
+/// and those after are not answered (no finding), and say why.
+#[test]
+fn a_stop_while_a_hypothesis_is_tested_leaves_it_not_answered() {
+    /// Stopped once a model is asked.
+    struct StopsWhenAsked(bool);
+    impl explore::Supervisor for StopsWhenAsked {
+        fn go_on(&mut self) -> bool {
+            true
+        }
+        fn stopped(&mut self) -> bool {
+            self.0
+        }
+        fn progress(&mut self, progress: &explore::Progress) {
+            if matches!(progress, explore::Progress::Deciding { .. }) {
+                self.0 = true;
+            }
+        }
+    }
+    let answers = Scripted {
+        reads: Some(Box::new(|_| r#"{"choice": "a01"}"#.to_string())),
+        ..Scripted::default()
+    };
+    let mut planned = plan(Way::Model, 1, 10);
+    planned.hypotheses = ["One holds", "Two holds"]
+        .map(|claim| explore::Hypothesis {
+            claim: claim.into(),
+            requirement: None,
+            requirement_text: None,
+            behaviour: Some("It does".into()),
+            workflow: "Look".into(),
+            expected: "It".into(),
+            select: false,
+        })
+        .to_vec();
+    let run = explore::explore(
+        &mut StandIn::new(Defects::default()),
+        &planned,
+        &deciding(&answers),
+        &Knowledge::new("stand-in"),
+        &mut StopsWhenAsked(false),
+    );
+    assert_eq!(run.ended, "stopped");
+    assert_eq!(run.answers.len(), 2);
+    assert!(run.answers.iter().all(|a| a.verdict
+        == explore::Verdict::NotAnswered {
+            why: "the run ended: stopped".into()
+        }));
+    assert!(run.findings.is_empty());
+}
+
 /// The W13.7 repair: a view or panel the goal names is opened by the rules
 /// without asking a model; the model is asked for the rest. The rules
 /// themselves order actions as before.
@@ -1923,6 +2175,8 @@ fn live_exploration_compared_by_way_of_deciding() {
         answers: &decider,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: Some("low".into()),
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+        escalation_effort: Some("max".into()),
     };
     let base = std::env::temp_dir().join(format!("agq-explore-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
@@ -1960,6 +2214,7 @@ fn live_exploration_compared_by_way_of_deciding() {
                     .to_string_lossy()
                     .into_owned(),
                 begin: Default::default(),
+                hypotheses: Vec::new(),
                 source: None,
                 // Nothing to the instance's Assistant: it has no key of its
                 // own yet (W12.5).
@@ -2102,6 +2357,8 @@ fn live_step_time_by_way_model_and_effort() {
             answers: &decider,
             explorer: model.clone(),
             effort: Some(effort.to_string()),
+            escalation: pro.clone(),
+            escalation_effort: Some("max".into()),
         };
         let mut studio = StandIn::new(Defects::default());
         let mut planned = plan(way, 3, steps);
@@ -2158,4 +2415,92 @@ fn live_step_time_by_way_model_and_effort() {
         );
     }
     println!("spent ${spent:.4}");
+}
+
+/// The review of E3, measured live (no windows: the stand-in Studio, its
+/// History's Archive button unlabelled): hypotheses tested by the
+/// escalation role's deepseek-v4-pro (configured at max, so at most
+/// high), Jev navigating between and deepseek-flash at low for the
+/// discovery after. Prints each answer with the time and the reasoning
+/// calls its steps took, and the run's time:
+///
+/// ```text
+/// cargo test -p agq-orchestrator --test exploration live_hypotheses -- --ignored --nocapture
+/// ```
+#[test]
+#[ignore = "live: needs the TypeSafe AI and DeepSeek keys, spends a few cents"]
+fn live_hypotheses_on_the_stand_in() {
+    let decider = Decider::default();
+    let deciding = Deciding {
+        answers: &decider,
+        explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        effort: Some("low".into()),
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+        escalation_effort: Some("max".into()),
+    };
+    let hypothesis =
+        |claim: &str, behaviour: &str, workflow: &str, expected: &str| explore::Hypothesis {
+            claim: claim.into(),
+            requirement: None,
+            requirement_text: None,
+            behaviour: Some(behaviour.into()),
+            workflow: workflow.into(),
+            expected: expected.into(),
+            select: false,
+        };
+    let mut planned = plan(Way::Escalating, 5, 16);
+    planned.goal = "Check what the History panel and validation say".into();
+    planned.usd = 0.6;
+    planned.seconds = 1200;
+    planned.hypotheses = vec![
+        hypothesis(
+            "Every button in the History panel says what it does",
+            "A button's label says what it does",
+            "Open the History panel and read its buttons",
+            "Each button has a readable label: Checkpoint, Export, Freeze, Archive",
+        ),
+        hypothesis(
+            "Validating the model says whether it is valid",
+            "Validation reports its result in the status line",
+            "Press Validate in the title bar",
+            "The status line says the model is valid or lists what is wrong",
+        ),
+    ];
+    let mut studio = StandIn::new(Defects {
+        unlabelled: true,
+        ..Defects::default()
+    });
+    let run = explore::explore(
+        &mut studio,
+        &planned,
+        &deciding,
+        &Knowledge::new("stand-in"),
+        &mut || true,
+    );
+    let tested: Vec<&explore::Taken> = run
+        .steps
+        .iter()
+        .filter(|t| t.step.by == "hypothesis")
+        .collect();
+    let ms = |t: &explore::Taken| {
+        t.timing.jev_ms + t.timing.model_ms + t.timing.act_ms + t.timing.observe_ms
+    };
+    let calls: Vec<u64> = tested
+        .iter()
+        .filter(|t| t.timing.calls > 0)
+        .map(|t| t.timing.model_ms)
+        .collect();
+    for answer in &run.answers {
+        println!("{}", answer.line(|_| None));
+    }
+    println!(
+        "hypothesis steps: {} ({} reasoning calls, p50 {} ms, slowest {} ms; {} s in all); ${:.4} for the run; {}",
+        tested.len(),
+        calls.len(),
+        explore::percentile(&calls, 0.5),
+        calls.iter().max().copied().unwrap_or(0),
+        tested.iter().map(|t| ms(t)).sum::<u64>() / 1000,
+        run.usd,
+        run.time()
+    );
 }

@@ -626,6 +626,7 @@ mod tests {
                 changes: Default::default(),
                 start: "url-shortener".into(),
                 begin: Default::default(),
+                hypotheses: Vec::new(),
                 source: None,
                 conversation: false,
                 turn_ms: 1000,
@@ -653,6 +654,7 @@ mod tests {
             opened: None,
             mismatch: None,
             start_ms: 0,
+            answers: Vec::new(),
         }
     }
 

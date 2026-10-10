@@ -2092,7 +2092,7 @@ it). Read against the code and the model before any change:
 | W13.6 A second system | #122 | In review (below) |
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
-| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130 | E1 merged; E2 in review (below) |
+| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2697,3 +2697,37 @@ deepseek-v4-pro at max (the old way) was stopped by the system for low
 memory and not run again, so coverage and unwanted actions are not compared;
 for it there is only the 6-step measurement above (decisions p50 17 s, model
 calls p50 75 s).
+
+*E3, exploration that serves engineering questions* (`stage13/explore-questions`;
+the Orchestrator's lock confirmed for its docs on the Operator's instruction
+for these repairs). The lead's plan may give `hypotheses` (at most five):
+a claim, the requirement of the project's model that governs it (resolved at
+the commit, its text read from the model through a copy of the project) or
+the intended behaviour, the workflow in the screens' words, and the expected
+observation. A run tests them first, each with a share of its steps (its
+steps divided among them and what is not covered after, three at least),
+decided by the escalation role's reasoning model (an engineering question,
+as E2's review asked; a view or panel the workflow names is still opened by
+rule), whose prompt holds the hypothesis, the requirement's text and the
+expectations the testing knowledge holds as judged wrong before; its spend
+counts under the escalation role; the existing expectation mechanism answers it: the
+expectation the explorer states is checked on the next observation, and the
+hypothesis agrees, is contradicted (the failed expectation is the finding,
+linked to the hypothesis and its requirement), or is not answered (no
+expectation checked within its share, or the run ended; never a finding).
+The rules answer none. Coverage-driven discovery follows. The answers go to
+the "Explored" result, the exploration's record and the proposing lead's
+brief; a contradicted hypothesis is still only a finding, judged against its
+requirement (the dispositions of C-55, unchanged), and a proposal that fixes
+it names that requirement in `serves`. The planning instructions lead to
+hypotheses about meaning (counts against the rows they summarise, what is
+counted with what, which configuration evidence refers to, whether something
+unsupported or out of date says so), not to this objective. Tests: the
+engine's three answers with the finding linked and the prompt's contents,
+the rules answering none, a hypothesis's requirement refused when unknown
+and its text carried, the report in the thread and the lead's brief, the
+reading of hypotheses and the proposal's requirement, a hypothesis's step
+counted for the escalation role. Not verified: a live run of the reasoning
+model forming expectations on a real Studio, and how long a hypothesis
+takes with it (E2 measured deepseek-v4-pro at max at about 75 s a call on
+the stand-in).

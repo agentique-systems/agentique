@@ -319,19 +319,24 @@ pub fn decider(models: &[RoleModel]) -> Result<Decider, String> {
 /// from its recorded roles in one call: Jev through the [`decider`] of its
 /// `decisions` and `escalation` roles, and the explorer's model and effort
 /// from its `explorer` role, to which Jev escalates a step it is unsure of
-/// (the W13.7 repair). No step of a run asks the escalation role's model
-/// (the decider takes it for the typed decisions that escalate, such as
-/// reading an objective's intent). `run` gets them for the run's length.
+/// (the W13.7 repair), and the escalation role's model and effort, which
+/// decide the steps that test a hypothesis (E3); the decider takes it too,
+/// for the typed decisions that escalate, such as reading an objective's
+/// intent. `run` gets them for the run's length.
 pub fn with_deciding<T>(
     models: &[RoleModel],
+    stand_in: Option<&dyn crate::decide::Answers>,
     run: impl FnOnce(&Deciding) -> T,
 ) -> Result<T, String> {
     let decider = decider(models)?;
     let explorer = for_role(models, "explorer")?;
+    let escalation = for_role(models, "escalation")?;
     let deciding = Deciding {
-        answers: &decider,
+        answers: stand_in.unwrap_or(&decider),
         explorer: explorer.model.clone(),
         effort: explorer.effort.clone(),
+        escalation: escalation.model.clone(),
+        escalation_effort: escalation.effort.clone(),
     };
     Ok(run(&deciding))
 }
@@ -450,7 +455,7 @@ mod tests {
         // Exploration's deciding, from the explorer and decisions roles in
         // one call (W12.5 passes the record's models): Jev escalates a step
         // to the explorer's model (the W13.7 repair).
-        let seen = with_deciding(&models, |deciding| {
+        let seen = with_deciding(&models, None, |deciding| {
             (
                 deciding.answers.jev_model().to_string(),
                 deciding.explorer.to_string(),
@@ -473,7 +478,7 @@ mod tests {
             .cloned()
             .collect();
         assert!(
-            with_deciding(&sessions, |_| ())
+            with_deciding(&sessions, None, |_| ())
                 .unwrap_err()
                 .contains("no model was resolved")
         );
