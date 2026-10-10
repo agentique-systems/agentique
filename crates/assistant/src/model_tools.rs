@@ -14,7 +14,7 @@ use crate::conversation::ToolResult;
 use crate::tools::{Prepared, cap, prepare};
 use crate::turn::ToolCall;
 use agq_language::{ElementId, Tree};
-use agq_system_state::{Actor, ApplyError, Project};
+use agq_system_state::{Actor, ApplyError, Project, ProjectReader};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -114,11 +114,10 @@ pub fn locked_code(
     links: &[String],
     allowed: &[String],
 ) -> Result<Vec<String>, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let before = project.tree_at(base).map_err(|e| e.to_string())?;
-    let locks_before = project.locks_at(base).map_err(|e| e.to_string())?;
-    let after = project.state().tree();
-    let locks_now = project.state().locks().clone();
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (before, locks_before) = project.at(base).map_err(|e| e.to_string())?;
+    let (after, locks_now) = project.saved().map_err(|e| e.to_string())?;
+    let after = &after;
     let allowed_ids: BTreeSet<ElementId> = allowed
         .iter()
         .filter_map(|name| after.find(name).or_else(|| before.find(name)))
@@ -163,11 +162,10 @@ pub fn locked_changes(
     base: &str,
     allowed: &[String],
 ) -> Result<Vec<String>, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let before = project.tree_at(base).map_err(|e| e.to_string())?;
-    let locks_before = project.locks_at(base).map_err(|e| e.to_string())?;
-    let after = project.state().tree();
-    let locks_now = project.state().locks().clone();
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (before, locks_before) = project.at(base).map_err(|e| e.to_string())?;
+    let (after, locks_now) = project.saved().map_err(|e| e.to_string())?;
+    let after = &after;
     let mut found = Vec::new();
     if locks_before != locks_now {
         found.push("the locks".to_string());
@@ -252,23 +250,20 @@ fn described(tree: &Tree, locks: &BTreeSet<ElementId>) -> BTreeMap<u64, Describe
 }
 
 /// The model of the repository checked out in `folder`, as committed in
-/// `commit`, by identity. The project in `folder` is opened to read it, and
-/// closed again.
+/// `commit`, by identity. It is only read ([`ProjectReader`]): no editing
+/// lock, nothing written.
 pub fn model_at(folder: &Path, commit: &str) -> Result<BTreeMap<u64, Described>, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let tree = project.tree_at(commit).map_err(|e| e.to_string())?;
-    let locks = project.locks_at(commit).map_err(|e| e.to_string())?;
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (tree, locks) = project.at(commit).map_err(|e| e.to_string())?;
     Ok(described(&tree, &locks))
 }
 
 /// The model of the repository checked out in `folder`, as committed in
-/// `from` and in `to`, compared by identity.
+/// `from` and in `to`, compared by identity; only read.
 pub fn compare_commits(folder: &Path, from: &str, to: &str) -> Result<Compared, String> {
-    let project = Project::open(folder).map_err(|e| e.to_string())?;
-    let before = project.tree_at(from).map_err(|e| e.to_string())?;
-    let locks_before = project.locks_at(from).map_err(|e| e.to_string())?;
-    let after = project.tree_at(to).map_err(|e| e.to_string())?;
-    let locks_after = project.locks_at(to).map_err(|e| e.to_string())?;
+    let project = ProjectReader::open(folder).map_err(|e| e.to_string())?;
+    let (before, locks_before) = project.at(from).map_err(|e| e.to_string())?;
+    let (after, locks_after) = project.at(to).map_err(|e| e.to_string())?;
     let comparison = agq_system_state::compare(&before, &after);
     let raw = |ids: &[ElementId]| ids.iter().map(|id| id.raw()).collect();
     Ok(Compared {
@@ -406,5 +401,72 @@ mod tests {
         assert!(compared.deleted.is_empty());
         assert_eq!(compared.after[&compared.created[0]].owners[0], store.raw());
         assert!(compared.after[&compared.created[0]].locked, "inside a lock");
+    }
+
+    /// Reading the model as committed, comparing commits and checking a
+    /// change against a base only read: they take no editing lock and write
+    /// nothing (not even an identity for an element the saved model gives
+    /// none, or a `.gitignore`), so they work while the project is open for
+    /// editing (the Studio, an agent's session) and never make an open fail.
+    /// A lock whose element is gone is no lock.
+    #[test]
+    fn reading_versions_takes_no_editing_lock_and_writes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path();
+        std::fs::create_dir_all(folder.join("model")).unwrap();
+        std::fs::write(
+            folder.join("model/Shop.sysml"),
+            "package Shop {\n    part def Store;\n}\n",
+        )
+        .unwrap();
+        let mut project = Project::open(folder).unwrap();
+        let store = project.state().tree().find("Shop::Store").unwrap();
+        project
+            .apply(Change::new(
+                Actor::Operator,
+                "Lock Store",
+                vec![Operation::Lock { element: store }],
+            ))
+            .unwrap();
+        drop(project);
+        let base = agq_execution::git::init_and_commit(folder, "Start").unwrap();
+        let editing = Project::open(folder).unwrap();
+        // Edited outside: an element without an identity, and Store gone
+        // while agentique.json still locks it.
+        std::fs::write(
+            folder.join("model/Shop.sysml"),
+            "package Shop {\n    part def Cart;\n}\n",
+        )
+        .unwrap();
+        std::fs::remove_file(folder.join("model/.gitignore")).unwrap();
+        let identities = std::fs::read_to_string(folder.join("model/agentique.json")).unwrap();
+        assert!(
+            model_at(folder, &base)
+                .unwrap()
+                .values()
+                .any(|e| e.name == "Shop::Store")
+        );
+        assert!(
+            compare_commits(folder, &base, &base)
+                .unwrap()
+                .created
+                .is_empty()
+        );
+        assert_eq!(
+            locked_changes(folder, &base, &[]).unwrap(),
+            vec!["the locks".to_string(), "Shop::Store".to_string()],
+            "the lock went with Store"
+        );
+        assert_eq!(
+            locked_code(folder, &base, &[], &[], &[]).unwrap(),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            std::fs::read_to_string(folder.join("model/agentique.json")).unwrap(),
+            identities,
+            "no identity written"
+        );
+        assert!(!folder.join("model/.gitignore").exists(), "nothing written");
+        drop(editing);
     }
 }

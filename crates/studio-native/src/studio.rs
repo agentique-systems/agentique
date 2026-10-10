@@ -585,17 +585,10 @@ impl Studio {
             self.save_session();
             self.project = None;
         }
-        let mut opened = Project::open(folder);
-        // The folder's lock was this window's own. On Linux a process started
-        // at that moment by another thread holds a copy of the lock file until
-        // it has started, so the lock may outlive the project by a moment:
-        // wait for it briefly rather than call our own folder taken.
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while reopening && matches!(opened, Err(ProjectError::Locked)) && Instant::now() < deadline
-        {
-            std::thread::sleep(Duration::from_millis(20));
-            opened = Project::open(folder);
-        }
+        // On Unix a lock this window just released may look held for a
+        // moment (a process another thread starts shares the lock file):
+        // opening waits that out (`agq_history`).
+        let opened = Project::open(folder);
         match opened {
             Ok(project) => self.install_project(project),
             Err(ProjectError::Locked) => {
