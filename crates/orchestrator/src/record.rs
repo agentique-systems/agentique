@@ -761,6 +761,9 @@ pub struct Exploration {
     pub reproduced: u32,
     pub usd: f64,
     pub ended: String,
+    /// How it answered its hypotheses (the W13.7 repair, E3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub answers: Vec<crate::explore::Answer>,
 }
 
 impl Cycle {
@@ -1807,6 +1810,7 @@ mod tests {
             reproduced: 1,
             usd: 0.0,
             ended: "the step budget was used".into(),
+            answers: Vec::new(),
         });
         let finding = crate::findings::Finding::new(
             crate::findings::Failed {

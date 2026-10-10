@@ -19,7 +19,11 @@
 //   `models/shop` (which must be refused, else 12);
 // - VARY: the first plan permits `models/garden` too, and the plan of a
 //   second exploration names it;
-// - NO-PLAN: the planning lead never plans.
+// - NO-PLAN: the planning lead never plans;
+// - HYPOTHESES (with TARGET-MODEL): a plan tests a hypothesis governed by
+//   `Demo::LabelsReadable`, after one naming `Demo::Nope`, which must be
+//   refused (else 13); the proposing lead says what its brief said of the
+//   hypotheses.
 // The lead plans the History panel (of `models/shop`, a project the test
 // repository holds; a plan the Orchestrator refuses ends the script with
 // 10), and names that project for a child it delegates before planning;
@@ -100,11 +104,22 @@ const project = here("TARGET-MODEL")
   : here("VARY") && o.prompt.includes("(exploration 2 of")
     ? "models/garden"
     : "models/shop";
+const hypothesis = (requirement) => ({
+  claim: "Every button in the History panel says what it does",
+  requirement,
+  workflow: "Open the History panel and read its buttons",
+  expected: "Each button has a readable label",
+});
 const plan = async (goal) => {
+  if (here("HYPOTHESES")) {
+    const unknown = await call("submit_exploration", { project, goal, hypotheses: [hypothesis("Demo::Nope")] });
+    if (!unknown.isError) process.exit(13);
+  }
   const planned = await call("submit_exploration", {
     project,
     goal,
     ...(here("VARY") ? { vary: ["models/shop", "models/garden"] } : {}),
+    ...(here("HYPOTHESES") ? { hypotheses: [hypothesis("Demo::LabelsReadable")] } : {}),
   });
   if (planned.isError) process.exit(10);
 };
@@ -160,7 +175,10 @@ if (role === "lead" && planning && here("NO-PLAN")) {
   }
 } else if (role === "lead") {
   const finding = o.prompt.includes("f1:") ? "f1" : undefined;
-  const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];
+  const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1]
+    ?? (here("HYPOTHESES") && o.prompt.includes("The hypotheses this cycle's exploration tested")
+      ? "the brief listed the hypotheses"
+      : undefined);
   // A finding is judged before it is fixed (C-55): WRONG-EXPECTATION and
   // AMBIGUOUS judge it otherwise, and nothing is proposed.
   const otherwise = here("WRONG-EXPECTATION")

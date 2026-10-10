@@ -217,7 +217,24 @@ fn submit_exploration() -> Value {
                     },
                     "additionalProperties": false
                 },
-                "vary": { "type": "array", "items": { "type": "string" }, "description": "Only when the objective asks for several projects: other projects later explorations of this objective may explore. Leave it out to explore `project` every time." }
+                "vary": { "type": "array", "items": { "type": "string" }, "description": "Only when the objective asks for several projects: other projects later explorations of this objective may explore. Leave it out to explore `project` every time." },
+                "hypotheses": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "description": "What the exploration tests first, each with a share of its steps (then it explores what is not covered): engineering hypotheses about whether what the application shows agrees with the project's model and its requirements. The explorer works through each workflow and states an expectation the next observation is checked against: one that fails is a finding of that hypothesis; one it could not state is reported as not answered, never a finding.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "claim": { "type": "string", "description": "What should hold, in one sentence." },
+                            "requirement": { "type": "string", "description": "The requirement of the project's model that governs it, by qualified name (read_model shows them); its text is given to the explorer." },
+                            "behaviour": { "type": "string", "description": "The intended behaviour in plain words, when no requirement states it." },
+                            "workflow": { "type": "string", "description": "The steps in the GUI that test it, in the screens' words (such as: open the Requirements view; select the requirement X)." },
+                            "expected": { "type": "string", "description": "What should then be observed (text, counts, a state shown), in words." }
+                        },
+                        "required": ["claim", "workflow", "expected"],
+                        "additionalProperties": false
+                    }
+                }
             },
             "required": ["project", "goal"],
             "additionalProperties": false
@@ -289,7 +306,7 @@ pub fn lead_tools(planning: bool, may_delegate: bool) -> Value {
 /// The lead's instructions while it plans an exploration.
 pub fn planning_instructions() -> String {
     format!(
-        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its target with submit_exploration: the project the objective is about (the brief lists the projects at this commit; `model` is Agentique's own model) and the goal, in the words of the screens and panels, with the elements it is about and where to start when that helps. The project is recorded on the objective and every later exploration keeps to it; name others in `vary` only when the objective asks for several. If one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
+        "{COMMON}\n\nYour role: lead, planning this cycle's exploration (C-54). The Orchestrator is about to explore the running build in a test instance, to find problems a deterministic check shows (an invariant of the application, or an expectation stated before an action); what reproduces goes to you to choose one to fix. Look at what the brief says was covered and found before and at what changed recently (reading only; you run no commands), then hand the explorer its target with submit_exploration: the project the objective is about (the brief lists the projects at this commit; `model` is Agentique's own model) and the goal, in the words of the screens and panels, with the elements it is about and where to start when that helps. The project is recorded on the objective and every later exploration keeps to it; name others in `vary` only when the objective asks for several. Give it `hypotheses` to test: what the application should show if it agrees with the project's model and its requirements, each with the requirement that governs it (read the model: read_model, find_elements), the workflow in the screens' words and the observation you expect. Good hypotheses test meaning, not controls: whether counts and summaries agree with the rows they summarise, whether what one element contains is counted with it, whether evidence or a result refers to the configuration it claims, whether something unsupported, unknown or out of date is said to be so. Do not repeat an expectation the brief lists as judged wrong before. If one area deserves a deeper look of its own, delegate it as a child objective first (its result comes back to you). Be brief: this is planning, not the fix."
     )
 }
 
@@ -378,7 +395,7 @@ fn earlier(objective: &Objective) -> String {
 pub fn instructions(role: Role) -> String {
     let specific = match role {
         Role::Lead => {
-            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Say what it is for (C-55): `serves` names the requirements of the project's model it serves (requirement defs or usages, by qualified name; read_model shows them), `benefit` what the Operator will see, `complexity` what it adds, removes or generalises at the root (a root part, a dependency, a crate); `parts` names the existing elements and contracts it affects (for elements it creates, their future owner), and the review compares them with what the change touches; its evidence is its acceptance criteria, frozen with it (and the replay of the finding it fixes). The purpose and the model's requirements bound what any cycle changes: in a project whose model declares a root purpose requirement (`Purpose`, `purpose`; Agentique's does, for ROADMAP §1.1), that requirement, everything it owns and ROADMAP.md are the Operator's, and a change to them fails the gates even when the objective names them; describe a change you think the purpose needs in `why`, for the Operator. When the brief lists reproduced findings (C-54), judge each you consider with adjudicate_finding before choosing one (C-55): against the requirements and the intended semantics, never by how often its check failed (an explorer's expectation is a model's guess, and repeated disagreement with it does not establish a defect). Only a finding judged a defect is fixed (`finding`), and its replay becomes a frozen criterion; a wrong expectation or an unreliable reproduction is set aside, and an ambiguous requirement goes to the Operator as a question; when you judge none a defect, end without a proposal. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
+            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Say what it is for (C-55): `serves` names the requirements of the project's model it serves (requirement defs or usages, by qualified name; read_model shows them), `benefit` what the Operator will see, `complexity` what it adds, removes or generalises at the root (a root part, a dependency, a crate); `parts` names the existing elements and contracts it affects (for elements it creates, their future owner), and the review compares them with what the change touches; its evidence is its acceptance criteria, frozen with it (and the replay of the finding it fixes). The purpose and the model's requirements bound what any cycle changes: in a project whose model declares a root purpose requirement (`Purpose`, `purpose`; Agentique's does, for ROADMAP §1.1), that requirement, everything it owns and ROADMAP.md are the Operator's, and a change to them fails the gates even when the objective names them; describe a change you think the purpose needs in `why`, for the Operator. When the brief lists reproduced findings (C-54), judge each you consider with adjudicate_finding before choosing one (C-55): against the requirements and the intended semantics, never by how often its check failed (an explorer's expectation is a model's guess, and repeated disagreement with it does not establish a defect). Only a finding judged a defect is fixed (`finding`), and its replay becomes a frozen criterion; a finding that contradicts a hypothesis is judged against the requirement that governs it, and a proposal fixing it names that requirement in `serves`; a wrong expectation or an unreliable reproduction is set aside, and an ambiguous requirement goes to the Operator as a question; when you judge none a defect, end without a proposal. No criterion may pass on the original build, and at least one must fail there with evidence: the replay, an observation, or a test that compiles and runs on the base (the change's new and changed test files are brought over, so put a new test in a test file that compiles against the base, such as a crate's tests/ folder). A change to the Studio (a part named Studio) needs a behavioural criterion (an observation or judgment, or the replay). Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
         }
         Role::Implementer => {
             "Your role: implementer. Implement the frozen proposal in this worktree, and only it: the review compares what you change with the elements it names. Add tests for the criteria; keep every existing test and check (rule 10). Never change the model's root purpose requirement (`Purpose`, `purpose`) or, in a project that declares one (Agentique does), ROADMAP.md (C-55): that fails the gates, whatever the objective names. Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
@@ -713,11 +730,13 @@ impl Planning {
             }
         };
         // What the plan said about its own project only.
-        let (scope, start) = match &self.target {
-            Some(target) if target.project == project => {
-                (target.scope.clone(), target.start.clone())
-            }
-            _ => (Vec::new(), Default::default()),
+        let (scope, start, hypotheses) = match &self.target {
+            Some(target) if target.project == project => (
+                target.scope.clone(),
+                target.start.clone(),
+                target.hypotheses.clone(),
+            ),
+            _ => (Vec::new(), Default::default(), Vec::new()),
         };
         Ok(Target {
             project,
@@ -726,6 +745,7 @@ impl Planning {
             scope,
             start,
             vary: Vec::new(),
+            hypotheses,
         })
     }
 }
@@ -733,9 +753,12 @@ impl Planning {
 /// A plan from `submit_exploration`'s input, checked against `planning`
 /// (C-54, the W13.7 repair): a project the objective may explore (one of
 /// the base commit's; once it has a target, one of the target's), a goal,
-/// other projects only among those, a view as a command's id. The names of
-/// `scope` and `start.select` are the caller's to resolve in the project's
-/// model. Its revision is the base commit.
+/// other projects only among those, a view as a command's id, and its
+/// hypotheses (E3), each a claim, a requirement or the intended behaviour,
+/// a workflow and an expected observation, at most [`HYPOTHESES`]. The
+/// names of `scope`, `start.select` and the hypotheses' requirements are
+/// the caller's to resolve in the project's model. Its revision is the base
+/// commit.
 pub fn read_exploration(input: &Value, planning: &Planning) -> Result<Target, String> {
     let project = planning.project(input["project"].as_str().unwrap_or_default())?;
     let goal = input["goal"].as_str().unwrap_or_default().trim();
@@ -782,6 +805,20 @@ pub fn read_exploration(input: &Value, planning: &Planning) -> Result<Target, St
             "`start.view` is a command's id, such as `requirements-view`, not `{view}`"
         ));
     }
+    let hypotheses = input["hypotheses"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+        .map(|(i, h)| {
+            read_hypothesis(h).map_err(|problem| format!("hypothesis {}: {problem}", i + 1))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if hypotheses.len() > HYPOTHESES {
+        return Err(format!(
+            "a plan tests at most {HYPOTHESES} hypotheses, each with a share of the steps"
+        ));
+    }
     Ok(Target {
         project,
         revision: planning.revision.clone(),
@@ -789,7 +826,39 @@ pub fn read_exploration(input: &Value, planning: &Planning) -> Result<Target, St
         scope: texts(&input["scope"]),
         start,
         vary,
+        hypotheses,
     })
+}
+
+/// The hypotheses a plan tests at most.
+pub const HYPOTHESES: usize = 5;
+
+/// A hypothesis of a plan: its claim, its requirement (a qualified name) or
+/// the intended behaviour, its workflow and its expected observation.
+fn read_hypothesis(input: &Value) -> Result<crate::explore::Hypothesis, String> {
+    let text = |field: &str| {
+        input[field]
+            .as_str()
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .map(str::to_string)
+    };
+    let needed = |field: &str| text(field).ok_or(format!("`{field}` is needed"));
+    let hypothesis = crate::explore::Hypothesis {
+        claim: needed("claim")?,
+        requirement: text("requirement"),
+        requirement_text: None,
+        behaviour: text("behaviour"),
+        workflow: needed("workflow")?,
+        expected: needed("expected")?,
+    };
+    if hypothesis.requirement.is_none() && hypothesis.behaviour.is_none() {
+        return Err(
+            "name the `requirement` of the project's model that governs it, or state the intended `behaviour`"
+                .into(),
+        );
+    }
+    Ok(hypothesis)
 }
 
 /// A review from `submit_review`'s input, checked (C-55): its verdict one
@@ -996,6 +1065,26 @@ pub fn read_proposal(input: &Value, given: &Given) -> Result<Proposal, String> {
         );
     }
     Ok(proposal)
+}
+
+/// Whether a proposal that fixes the finding of a hypothesis serves the
+/// requirement governing it (the W13.7 repair, E3): that a finding
+/// reproduced is no authority to change; what the change is for is the
+/// requirement the finding showed the application contradicts.
+pub fn serves_the_finding(proposal: &Proposal, requirement: Option<&str>) -> Result<(), String> {
+    match requirement {
+        Some(requirement)
+            if !proposal
+                .serves
+                .iter()
+                .any(|s| s.trim() == requirement.trim()) =>
+        {
+            Err(format!(
+                "the finding it fixes contradicts {requirement}: `serves` names that requirement"
+            ))
+        }
+        _ => Ok(()),
+    }
 }
 
 /// Whether a criterion of the lead's takes the id of the replay's.
@@ -1609,6 +1698,7 @@ mod tests {
                 select: None,
             },
             vary: Vec::new(),
+            hypotheses: Vec::new(),
         });
         assert_eq!(
             planning.target.as_ref().unwrap().vary,
@@ -1621,6 +1711,94 @@ mod tests {
         let other = planning.child(Some("models/shop"), "Look there").unwrap();
         assert!(other.scope.is_empty() && other.start.is_empty());
         assert!(planning.child(Some("models/none"), "x").is_err());
+    }
+
+    /// The W13.7 repair, E3: a proposal fixing a hypothesis's finding
+    /// serves the requirement that governs it; a hypothesis names its
+    /// requirement or the intended behaviour, its workflow and what is
+    /// expected.
+    #[test]
+    fn a_hypothesis_names_what_governs_it_and_a_fix_serves_it() {
+        let proposal = Proposal {
+            serves: vec!["Shop::Fast".into()],
+            ..read(
+                &aligned(json!({
+                    "title": "Fix it", "kind": "correctness", "why": "x.rs:3",
+                    "parts": [], "plan": ["a"],
+                    "criteria": [{ "id": "c1", "statement": "s", "check": { "kind": "command", "program": ["cargo", "test", "-p", "agq-x", "t"] } }]
+                })),
+                &[],
+            )
+            .unwrap()
+        };
+        assert!(serves_the_finding(&proposal, None).is_ok());
+        assert!(serves_the_finding(&proposal, Some("Shop::Fast")).is_ok());
+        let other = serves_the_finding(&proposal, Some("Shop::Counted")).unwrap_err();
+        assert!(other.contains("contradicts Shop::Counted"), "{other}");
+        let planning = Planning {
+            projects: vec!["model".into()],
+            revision: "abc".into(),
+            target: None,
+            given: Vec::new(),
+        };
+        let plan = |hypothesis: Value| {
+            read_exploration(
+                &json!({ "project": "model", "goal": "Check the counts", "hypotheses": [hypothesis] }),
+                &planning,
+            )
+        };
+        let read = plan(json!({
+            "claim": "The headline counts agree with the rows",
+            "requirement": " Shop::Counted ",
+            "workflow": "Open the Requirements view",
+            "expected": "3 of 4 hold",
+        }))
+        .unwrap();
+        let hypothesis = &read.hypotheses[0];
+        assert_eq!(hypothesis.requirement.as_deref(), Some("Shop::Counted"));
+        assert!(
+            hypothesis.requirement_text.is_none(),
+            "the Orchestrator reads it"
+        );
+        assert!(
+            plan(json!({ "claim": "c", "behaviour": "b", "workflow": "w", "expected": "e" }))
+                .is_ok()
+        );
+        for (wrong, why) in [
+            (
+                json!({ "claim": "c", "workflow": "w", "expected": "e" }),
+                "requirement",
+            ),
+            (
+                json!({ "claim": "c", "behaviour": "b", "expected": "e" }),
+                "`workflow`",
+            ),
+            (
+                json!({ "claim": " ", "behaviour": "b", "workflow": "w", "expected": "e" }),
+                "`claim`",
+            ),
+            (
+                json!({ "claim": "c", "behaviour": "b", "workflow": "w" }),
+                "`expected`",
+            ),
+        ] {
+            let refused = plan(wrong).unwrap_err();
+            assert!(
+                refused.contains("hypothesis 1") && refused.contains(why),
+                "{refused}"
+            );
+        }
+        let six: Vec<Value> = (0..6)
+            .map(|_| json!({ "claim": "c", "behaviour": "b", "workflow": "w", "expected": "e" }))
+            .collect();
+        assert!(
+            read_exploration(
+                &json!({ "project": "model", "goal": "g", "hypotheses": six }),
+                &planning
+            )
+            .unwrap_err()
+            .contains("at most 5")
+        );
     }
 
     /// C-55: a review states both judgments; a blank one is refused.

@@ -141,6 +141,8 @@ fn deciding(answers: &dyn Answers) -> Deciding<'_> {
         answers,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: None,
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+        escalation_effort: Some("high".into()),
     }
 }
 
@@ -155,6 +157,7 @@ fn plan(way: Way, seed: u64, steps: u32) -> Plan {
         changes: Changes::default(),
         start: "stand-in".into(),
         begin: Default::default(),
+        hypotheses: Vec::new(),
         source: None,
         conversation: false,
         // Short, so a turn that never ends takes no time in a test.
@@ -1803,6 +1806,152 @@ fn a_run_reports_its_decisions_its_waits_and_its_steps_with_their_time() {
     );
 }
 
+/// The W13.7 repair, E3: a run tests its plan's hypotheses first, each
+/// with a share of its steps, by the escalation role's model (an
+/// engineering question), whose prompt holds the hypothesis, its
+/// requirement's text and the expectations judged wrong before. The check of the expectation stated for one answers it: it
+/// agrees, or it is contradicted and the failed expectation is its finding,
+/// linked to it and its requirement; one without an expectation in its
+/// share is not answered (no finding). Discovery goes on after; the rules
+/// answer none.
+#[test]
+fn a_run_tests_its_hypotheses_first_and_says_how_each_was_answered() {
+    let answers = Scripted {
+        reads: Some(Box::new(|prompt: &str| {
+            if prompt.contains("History has its Checkpoint button") {
+                let id = option(prompt, "“History”").unwrap();
+                format!(r#"{{"choice": "{id}", "expect": {{"anyLabelContains": "Checkpoint"}}}}"#)
+            } else if prompt.contains("Validating says the model is invalid") {
+                let id = option(prompt, "“Validate”").unwrap();
+                format!(r#"{{"choice": "{id}", "expect": {{"statusContains": "is invalid"}}}}"#)
+            } else {
+                r#"{"choice": "a01"}"#.to_string()
+            }
+        })),
+        ..Scripted::default()
+    };
+    let hypothesis = |claim: &str, requirement: Option<&str>| explore::Hypothesis {
+        claim: claim.into(),
+        requirement: requirement.map(str::to_string),
+        requirement_text: requirement
+            .map(|r| format!("requirement def {r} {{ doc /* Validation says what it found. */ }}")),
+        behaviour: requirement.is_none().then(|| "It does".to_string()),
+        workflow: "Look around the inspector".into(),
+        expected: "What the claim says".into(),
+    };
+    let mut planned = plan(Way::Model, 1, 12);
+    planned.hypotheses = vec![
+        hypothesis("History has its Checkpoint button", None),
+        hypothesis("Validating says the model is invalid", Some("Valid")),
+        hypothesis("Nothing will answer this", None),
+    ];
+    // An expectation judged wrong before, from the testing knowledge.
+    let mut knowledge = Knowledge::new("stand-in");
+    let mut wrong = Finding::new(
+        Failed {
+            check: Check::Expectation,
+            control: "save".into(),
+            message: r#"expected {"statusContains":"Saved"}: the status says Ready"#.into(),
+            evidence: json!({}),
+        },
+        Vec::new(),
+        "b0",
+        "c0",
+        "stand-in",
+    );
+    wrong.disposition = Some(findings::Disposition {
+        kind: findings::DispositionKind::WrongExpectation,
+        reason: "Nothing is saved there".into(),
+        requirement: None,
+        objective: "o".into(),
+        cycle: 1,
+        role: "lead".into(),
+        at: "t".into(),
+        build: None,
+    });
+    knowledge.findings.push(wrong);
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &planned,
+        &answers,
+        &knowledge,
+    );
+    assert_eq!(run.actions, 12, "discovery goes on after: {}", run.ended);
+    let verdicts: Vec<&explore::Verdict> = run.answers.iter().map(|a| &a.verdict).collect();
+    assert_eq!(verdicts.len(), 3, "{:#?}", run.answers);
+    assert_eq!(verdicts[0], &explore::Verdict::Agrees);
+    let explore::Verdict::Contradicted { finding } = verdicts[1] else {
+        panic!("{:#?}", run.answers);
+    };
+    assert_eq!(
+        verdicts[2],
+        &explore::Verdict::NotAnswered {
+            why: "no expectation was checked within its 3 steps".into()
+        }
+    );
+    // Its finding: the expectation that failed, linked.
+    let found = run
+        .findings
+        .iter()
+        .find(|f| &f.identity == finding)
+        .unwrap();
+    assert_eq!(found.check, Check::Expectation);
+    assert_eq!(
+        (found.hypothesis.as_deref(), found.requirement.as_deref()),
+        (Some("Validating says the model is invalid"), Some("Valid"))
+    );
+    assert_eq!(
+        run.findings.len(),
+        1,
+        "a hypothesis not answered is no finding"
+    );
+    // A hypothesis's steps are the escalation role's model's; the
+    // discovery after, the explorer's.
+    let asked = |by: &str| -> BTreeSet<Option<String>> {
+        run.steps
+            .iter()
+            .filter(|t| t.step.by == by && t.timing.calls > 0)
+            .map(|t| t.timing.model.clone())
+            .collect()
+    };
+    assert_eq!(
+        asked("hypothesis"),
+        BTreeSet::from([Some("deepseek/deepseek-v4-pro".to_string())])
+    );
+    assert_eq!(
+        asked("explorer"),
+        BTreeSet::from([Some("deepseek/deepseek-flash".to_string())])
+    );
+    // Its prompt: the hypothesis, its requirement's text, and what was
+    // judged wrong before.
+    let prompts = answers.prompts.borrow();
+    let second = prompts
+        .iter()
+        .find(|p| p.contains("Validating says the model is invalid"))
+        .unwrap();
+    assert!(second.contains("Validation says what it found"), "{second}");
+    assert!(second.contains("Saved"), "the judged-wrong expectation");
+    assert!(second.contains("engineering hypothesis"));
+    assert_eq!(
+        run.answers[1].line(|_| Some("f1".into())),
+        "contradicted (finding f1): Validating says the model is invalid [Valid]"
+    );
+    // The rules state no expectation: they answer none, and say why.
+    let mut by_rules = planned.clone();
+    by_rules.way = Way::Rules;
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &by_rules,
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    );
+    assert!(run.answers.iter().all(|a| a.verdict
+        == explore::Verdict::NotAnswered {
+            why: "the rules state no expectation".into()
+        }));
+    assert_eq!(run.answers.len(), 3);
+}
+
 /// The W13.7 repair: a view or panel the goal names is opened by the rules
 /// without asking a model; the model is asked for the rest. The rules
 /// themselves order actions as before.
@@ -1923,6 +2072,8 @@ fn live_exploration_compared_by_way_of_deciding() {
         answers: &decider,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: Some("low".into()),
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+        escalation_effort: Some("max".into()),
     };
     let base = std::env::temp_dir().join(format!("agq-explore-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
@@ -1960,6 +2111,7 @@ fn live_exploration_compared_by_way_of_deciding() {
                     .to_string_lossy()
                     .into_owned(),
                 begin: Default::default(),
+                hypotheses: Vec::new(),
                 source: None,
                 // Nothing to the instance's Assistant: it has no key of its
                 // own yet (W12.5).
@@ -2102,6 +2254,8 @@ fn live_step_time_by_way_model_and_effort() {
             answers: &decider,
             explorer: model.clone(),
             effort: Some(effort.to_string()),
+            escalation: pro.clone(),
+            escalation_effort: Some("max".into()),
         };
         let mut studio = StandIn::new(Defects::default());
         let mut planned = plan(way, 3, steps);

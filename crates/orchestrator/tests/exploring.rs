@@ -677,6 +677,75 @@ fn every_exploration_child_and_replay_of_a_targeted_objective_opens_its_project(
     );
 }
 
+/// The W13.7 repair, E3, through the Driver: a hypothesis whose
+/// requirement is not one of the project's model is refused; the accepted
+/// plan carries the requirement's text, read from the model; the rules
+/// answer no hypothesis, which the thread and the exploration's record say
+/// (never a finding); and the proposing lead's brief lists it.
+#[test]
+fn a_planned_hypothesis_carries_its_requirement_and_is_reported() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["TARGET-MODEL", "HYPOTHESES"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let target = record.target.as_ref().expect("its target");
+    let hypothesis = &target.hypotheses[0];
+    assert_eq!(
+        hypothesis.requirement.as_deref(),
+        Some("Demo::LabelsReadable")
+    );
+    assert!(
+        hypothesis
+            .requirement_text
+            .as_deref()
+            .unwrap_or_default()
+            .contains("requirement def LabelsReadable"),
+        "{hypothesis:?}"
+    );
+    assert!(
+        seen.iter().any(|e| e
+            .text
+            .starts_with("Plans the exploration of model (not accepted")
+            && e.text.contains("Demo::Nope")),
+        "{}",
+        texts(&seen)
+    );
+    let exploration = &record.cycles[0].explorations[0];
+    assert_eq!(
+        exploration.answers[0].verdict,
+        agq_orchestrator::explore::Verdict::NotAnswered {
+            why: "the rules state no expectation".into()
+        }
+    );
+    let explored = seen
+        .iter()
+        .find(|e| e.text.starts_with("Explored "))
+        .unwrap();
+    assert!(
+        explored
+            .details
+            .as_deref()
+            .unwrap_or_default()
+            .contains("hypothesis not answered (the rules state no expectation): Every button"),
+        "{explored:?}"
+    );
+    // The proposing lead was told (its proposal says so).
+    let proposal = record.cycles[0].proposal.as_ref().expect("a proposal");
+    assert!(
+        proposal.why.contains("the brief listed the hypotheses"),
+        "{}",
+        proposal.why
+    );
+}
+
 /// The W13.7 repair: a lead that plans no project is asked once more, and
 /// without a plan the cycle ends: no project is chosen for it, and nothing
 /// is explored.
@@ -1722,6 +1791,7 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
         changes: Changes::default(),
         start: "models/url-shortener".into(),
         begin: Default::default(),
+        hypotheses: Vec::new(),
         source: None,
         conversation: false,
         turn_ms: 10_000,
@@ -1733,6 +1803,8 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
         answers: &answers,
         explorer: none.clone(),
         effort: None,
+        escalation: none.clone(),
+        escalation_effort: None,
     };
     let run = explore::explore(
         &mut live,

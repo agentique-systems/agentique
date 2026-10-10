@@ -571,6 +571,74 @@ pub struct Target {
     /// `project`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub vary: Vec<String>,
+    /// What the exploration tests, first (the W13.7 repair, E3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hypotheses: Vec<Hypothesis>,
+}
+
+/// An engineering hypothesis an exploration tests (the W13.7 repair, E3):
+/// what should hold, the requirement of the project's model that governs
+/// it (resolved at the revision, its text read from the model) or the
+/// intended behaviour in plain words, the workflow in the screens' words
+/// that tests it, and what the explorer should then observe. The explorer
+/// works through its workflow and states a checkable expectation; the
+/// check on the next observation answers it.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Hypothesis {
+    pub claim: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirement: Option<String>,
+    /// The requirement as the model prints it (bounded).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirement_text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub behaviour: Option<String>,
+    pub workflow: String,
+    pub expected: String,
+}
+
+/// How an exploration answered a hypothesis.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Answer {
+    pub claim: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirement: Option<String>,
+    pub verdict: Verdict,
+}
+
+/// Whether the application agrees with a hypothesis: the expectation the
+/// explorer stated for it held, it failed (the finding it became, by
+/// identity), or no expectation was checked (with why: never a finding).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "verdict", rename_all = "kebab-case")]
+pub enum Verdict {
+    Agrees,
+    Contradicted { finding: String },
+    NotAnswered { why: String },
+}
+
+impl Answer {
+    /// In a line, for the thread and the lead: the verdict, then the claim.
+    pub fn line(&self, finding_id: impl Fn(&str) -> Option<String>) -> String {
+        let verdict = match &self.verdict {
+            Verdict::Agrees => "agrees".to_string(),
+            Verdict::Contradicted { finding } => match finding_id(finding) {
+                Some(id) => format!("contradicted (finding {id})"),
+                None => "contradicted".to_string(),
+            },
+            Verdict::NotAnswered { why } => format!("not answered ({why})"),
+        };
+        format!(
+            "{verdict}: {}{}",
+            self.claim,
+            self.requirement
+                .as_ref()
+                .map(|r| format!(" [{r}]"))
+                .unwrap_or_default()
+        )
+    }
 }
 
 impl Target {
@@ -859,7 +927,8 @@ pub struct Step {
     /// What the explorer expected it to show.
     #[serde(default)]
     pub expect: Option<Value>,
-    /// `explorer` (chosen), `check` (the undo check's undo and redo, Stop
+    /// `explorer` (chosen), `hypothesis` (chosen to test one, by the
+    /// escalation role's model: E3), `check` (the undo check's undo and redo, Stop
     /// after a turn ran past its budget), `wait` (for a turn of the
     /// Assistant to end: `label` is `the turn`, or `the stop` after Stop),
     /// `recovery` (a dialog cancelled by rule, Escape out of a dead end) or
@@ -1598,6 +1667,24 @@ pub struct Deciding<'a> {
     /// model, which took a minute or more a step).
     pub explorer: ModelRef,
     pub effort: Option<String>,
+    /// The escalation role's reasoning model and effort: a step testing a
+    /// hypothesis (an engineering question: which workflow shows the
+    /// answer, what the requirement says it must show) is its to decide
+    /// (the W13.7 repair, E3).
+    pub escalation: ModelRef,
+    pub escalation_effort: Option<String>,
+}
+
+impl Deciding<'_> {
+    /// The model a step asks, at its effort: the escalation role's for a
+    /// step testing a hypothesis, else the explorer's.
+    pub fn asked(&self, hypothesis: bool) -> (&ModelRef, Option<&str>) {
+        if hypothesis {
+            (&self.escalation, self.escalation_effort.as_deref())
+        } else {
+            (&self.explorer, self.effort.as_deref())
+        }
+    }
 }
 
 /// How many of the rules' best actions Jev chooses among, and the model.
@@ -1635,12 +1722,16 @@ pub struct Chosen {
 
 const INSTRUCTIONS: &str = "An explorer tests the Agentique application by operating it toward a goal, to find problems. Choose its next action among the options; each is valid on this screen and safe in this test instance. Prefer behaviour not covered before, toward the areas the goal names; do not repeat the last actions; leave a dialog or panel once its behaviour is covered.";
 
+/// The instructions of a step that tests a hypothesis (E3).
+const HYPOTHESIS: &str = "An explorer tests one engineering hypothesis about the Agentique application in a test instance: the state's `hypothesis` gives the claim, the requirement that governs it (with its text) or the intended behaviour, the workflow in the GUI that tests it, and what should then be observed. Choose the next action among the options that carries the workflow forward. When the next observation will show whether the claim holds, add \"expect\" with what it must show if the application behaves as the requirement says (concrete text, counts or states, in the grammar given): that check answers the hypothesis. Never state an expectation the state lists as judged wrong before.";
+
 const FORMAT: &str = "{\"choice\": \"<one option id>\", \"why\": \"<one short line>\"}, with \"input\": \"<the text to type>\" added only when the option types into a field (it replaces the option's text; for the Conversation, the request to send; never a path that leads elsewhere), and \"expect\": {...} added only when the action must make something true in the next observation, with any of: screen, dialog (a kind, or null), statusContains, selectionContains, control (an id or label) with labelContains, valueContains or enabled, anyLabelContains, and replyContains (text the Assistant's reply will hold)";
 
 /// The typed question for the next action: the best `n` of the rules'
 /// order as options `a01`, `a02`, … (zero-padded, so they read in order),
 /// with the ids and the candidates they stand for.
 fn question(
+    instructions: &str,
     candidates: &[Candidate],
     ranked: &[usize],
     n: usize,
@@ -1671,7 +1762,7 @@ fn question(
     }
     (
         Question {
-            instructions: INSTRUCTIONS.into(),
+            instructions: instructions.into(),
             state: state.clone(),
             options,
         },
@@ -1818,6 +1909,8 @@ fn joined(notes: [String; 2]) -> String {
 
 /// What `choose` decides with.
 struct Choosing<'a> {
+    /// What a model is told the step is for.
+    instructions: &'a str,
     deciding: &'a Deciding<'a>,
     candidates: &'a [Candidate],
     ranked: &'a [usize],
@@ -1839,6 +1932,7 @@ impl Choosing<'_> {
         stop: &mut dyn FnMut() -> bool,
     ) -> (usize, Chosen) {
         let (q, shown) = question(
+            self.instructions,
             self.candidates,
             self.ranked,
             MODEL_OPTIONS,
@@ -1908,6 +2002,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
         );
     }
     let (q, shown) = question(
+        choosing.instructions,
         choosing.candidates,
         choosing.ranked,
         JEV_OPTIONS,
@@ -1984,6 +2079,10 @@ pub struct Plan {
     /// an element selected, by rule after each start.
     #[serde(default, skip_serializing_if = "Start::is_empty")]
     pub begin: Start,
+    /// The hypotheses it tests first, in order, each with a share of its
+    /// steps (the W13.7 repair, E3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hypotheses: Vec<Hypothesis>,
     /// Where its project comes from: the run checks its instance's copy
     /// against it before its first action, and ends when it does not match.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2190,6 +2289,10 @@ pub struct Run {
     /// W13.7 repair).
     #[serde(default)]
     pub start_ms: u64,
+    /// How it answered its plan's hypotheses, in order (the W13.7 repair,
+    /// E3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub answers: Vec<Answer>,
 }
 
 /// The value at percentile `p` (0 to 1) of `values`; 0 when there are none.
@@ -2317,6 +2420,13 @@ struct Explorer<'a> {
     started: Instant,
     /// The time of the step being taken, until it is recorded.
     pending: Timing,
+    /// The hypothesis being tested (E3), the steps spent on it, the one
+    /// whose expectation the next check answers, and that check's result
+    /// (the identity of the expectation that failed, if it failed).
+    hypothesis: usize,
+    spent_on: u32,
+    expecting: Option<usize>,
+    checked: Option<Option<String>>,
 }
 
 /// Explores `instance` as `plan` says, deciding by `plan.way` with
@@ -2364,6 +2474,7 @@ pub fn explore(
             opened: None,
             mismatch: None,
             start_ms: 0,
+            answers: Vec::new(),
         },
         since: Vec::new(),
         now: Value::Null,
@@ -2378,11 +2489,25 @@ pub fn explore(
         restarts: 0,
         started: Instant::now(),
         pending: Timing::default(),
+        hypothesis: 0,
+        spent_on: 0,
+        expecting: None,
+        checked: None,
     };
     explorer.run.ended = match explorer.go() {
         Ok(()) => "the step budget was used".into(),
         Err(why) => why,
     };
+    // What it did not get to is not answered, never a finding.
+    let ended = explorer.run.ended.clone();
+    while explorer.hypothesis < plan.hypotheses.len() {
+        explorer.answer(
+            explorer.hypothesis,
+            Verdict::NotAnswered {
+                why: format!("the run ended: {ended}"),
+            },
+        );
+    }
     let mut run = explorer.run;
     run.seconds = explorer.started.elapsed().as_secs_f64();
     run.new_coverage = run
@@ -2399,6 +2524,17 @@ impl Explorer<'_> {
         if self.plan.way == Way::Cancel {
             return Err("the cancelling rule decides dialogs in the way, not exploration".into());
         }
+        // The rules state no expectation: they answer no hypothesis.
+        if matches!(self.plan.way, Way::Rules) {
+            while self.hypothesis < self.plan.hypotheses.len() {
+                self.answer(
+                    self.hypothesis,
+                    Verdict::NotAnswered {
+                        why: "the rules state no expectation".into(),
+                    },
+                );
+            }
+        }
         self.start(false)?;
         while self.run.actions < self.plan.steps {
             if !self.supervisor.go_on() {
@@ -2406,6 +2542,7 @@ impl Explorer<'_> {
             }
             self.within_budgets()?;
             self.step()?;
+            self.settle();
         }
         // A request sent last: its turn ends (and is checked) within the run.
         if observed::turn_running(&self.now) {
@@ -2661,28 +2798,62 @@ impl Explorer<'_> {
         if candidates.is_empty() {
             return self.dead_end();
         }
+        // A hypothesis first (E3): toward its workflow, decided by the
+        // escalation role's model (an engineering question; a model, since
+        // Jev states no expectation).
+        let testing = self.testing();
+        let (way, aim) = match &testing {
+            Some(h) => (Way::Model, format!("{} {}", h.workflow, h.claim)),
+            None => (self.plan.way, self.plan.goal.clone()),
+        };
+        if testing.is_some() {
+            self.expecting = None;
+        }
+        let toward = testing
+            .as_ref()
+            .map(|_| Focus::new(&aim, &self.plan.changes));
         let ranked = rank(
             &candidates,
             self.knowledge,
             &self.run.covered,
-            &self.focus,
+            toward.as_ref().unwrap_or(&self.focus),
             self.plan.seed,
         );
-        let state = self.state();
-        // A view or panel the goal names, not opened yet in this run: the
-        // rules take it, and no model is asked (the W13.7 repair).
-        let routed = (!matches!(self.plan.way, Way::Rules | Way::Cancel))
-            .then(|| route(&candidates, &self.plan.goal, &self.run.covered))
+        let mut state = self.state();
+        if let Some(h) = &testing {
+            state["hypothesis"] = json!({
+                "claim": h.claim,
+                "requirement": h.requirement,
+                "requirementText": h.requirement_text,
+                "behaviour": h.behaviour,
+                "workflow": h.workflow,
+                "expected": h.expected,
+                "stepsLeft": self.share().saturating_sub(self.spent_on),
+            });
+        }
+        // A view or panel the goal (or the workflow) names, not opened yet
+        // in this run: the rules take it, and no model is asked (the W13.7
+        // repair).
+        let routed = (!matches!(way, Way::Rules | Way::Cancel))
+            .then(|| route(&candidates, &aim, &self.run.covered))
             .flatten();
         let step = self.run.actions + 1;
         // Asked through a measure of where the decision's time goes.
         let measured = Measured::new(self.deciding.answers);
+        let (model_asked, effort) = self.deciding.asked(testing.is_some());
         let deciding = Deciding {
             answers: &measured,
-            explorer: self.deciding.explorer.clone(),
-            effort: self.deciding.effort.clone(),
+            explorer: model_asked.clone(),
+            effort: effort.map(str::to_string),
+            escalation: self.deciding.escalation.clone(),
+            escalation_effort: self.deciding.escalation_effort.clone(),
         };
         let choosing = Choosing {
+            instructions: if testing.is_some() {
+                HYPOTHESIS
+            } else {
+                INSTRUCTIONS
+            },
             deciding: &deciding,
             candidates: &candidates,
             ranked: &ranked,
@@ -2693,7 +2864,7 @@ impl Explorer<'_> {
         let (index, chosen) = match routed {
             Some(index) => named_route(index),
             None => {
-                let (by, model) = self.asking();
+                let (by, model) = self.asking(testing.is_some());
                 let (supervisor, started, seconds, of) = (
                     &mut *self.supervisor,
                     self.started,
@@ -2703,7 +2874,7 @@ impl Explorer<'_> {
                 let heartbeat = (supervisor.heartbeat().as_millis() as u64).max(1);
                 let mut asked: Option<Instant> = None;
                 let mut beats = 0;
-                choose(self.plan.way, &choosing, &mut || {
+                choose(way, &choosing, &mut || {
                     // A model's call starts (Jev, the rules and a named
                     // route ask no stop): said once, and its wait counted
                     // from here.
@@ -2770,7 +2941,12 @@ impl Explorer<'_> {
             screen: screen_of(&self.now),
             label: candidate.label.clone(),
             expect: chosen.expect.clone(),
-            by: "explorer".into(),
+            by: if testing.is_some() {
+                "hypothesis"
+            } else {
+                "explorer"
+            }
+            .into(),
         };
         // A stop, or the time budget, that came while the decision was made
         // takes no more action; the decision is recorded (what it cost
@@ -2780,7 +2956,80 @@ impl Explorer<'_> {
             self.record(&step, Some(chosen), "not taken", why.clone(), None);
             return Err(why);
         }
+        if testing.is_some() {
+            self.spent_on += 1;
+            if step.expect.is_some() {
+                self.expecting = Some(self.hypothesis);
+            }
+        }
         self.take(step, Some(chosen), &why)
+    }
+
+    /// The hypothesis the next step tests, if any is left and a model
+    /// decides (the rules state no expectation).
+    fn testing(&self) -> Option<Hypothesis> {
+        if matches!(self.plan.way, Way::Rules | Way::Cancel) {
+            return None;
+        }
+        self.plan.hypotheses.get(self.hypothesis).cloned()
+    }
+
+    /// A hypothesis's share of the steps: the plan's divided among them and
+    /// what is not covered after, three at least.
+    fn share(&self) -> u32 {
+        (self.plan.steps / (self.plan.hypotheses.len() as u32 + 1)).max(3)
+    }
+
+    /// Answers the hypothesis being tested (E3): by the check of the
+    /// expectation stated for it (it agrees, or the expectation that failed
+    /// is its finding), or not answered once its share of steps is spent
+    /// without one.
+    fn settle(&mut self) {
+        let checked = self.checked.take();
+        if let (Some(i), Some(failed)) = (self.expecting, checked) {
+            self.expecting = None;
+            let verdict = match failed {
+                None => Verdict::Agrees,
+                Some(identity) => {
+                    let h = &self.plan.hypotheses[i];
+                    if let Some(finding) = self
+                        .run
+                        .findings
+                        .iter_mut()
+                        .find(|f| f.identity == identity && f.hypothesis.is_none())
+                    {
+                        finding.hypothesis = Some(h.claim.clone());
+                        finding.requirement = h.requirement.clone();
+                    }
+                    Verdict::Contradicted { finding: identity }
+                }
+            };
+            self.answer(i, verdict);
+        } else if self.expecting.is_none()
+            && self.testing().is_some()
+            && self.spent_on >= self.share()
+        {
+            let share = self.share();
+            self.answer(
+                self.hypothesis,
+                Verdict::NotAnswered {
+                    why: format!("no expectation was checked within its {share} steps"),
+                },
+            );
+        }
+    }
+
+    /// Records how hypothesis `i` was answered; the next is tested.
+    fn answer(&mut self, i: usize, verdict: Verdict) {
+        let h = &self.plan.hypotheses[i];
+        self.run.answers.push(Answer {
+            claim: h.claim.clone(),
+            requirement: h.requirement.clone(),
+            verdict,
+        });
+        self.hypothesis = i + 1;
+        self.spent_on = 0;
+        self.expecting = None;
     }
 
     /// Acts, checks what the action did, and records it.
@@ -2924,6 +3173,7 @@ impl Explorer<'_> {
                 answer: Some(&answer),
                 after: &after,
             });
+            self.note_checked(&step, &failed);
             let steps = self.since.clone();
             self.report(failed, &steps);
             self.note_reply(&step, &after);
@@ -3070,6 +3320,7 @@ impl Explorer<'_> {
                     answer: Some(&answer),
                     after: &after,
                 });
+                self.note_checked(&step, &failed);
                 let steps = self.since.clone();
                 self.report(failed, &steps);
                 self.note_reply(&step, &after);
@@ -3121,6 +3372,19 @@ impl Explorer<'_> {
         self.expected_dialog = after["dialog"].clone();
         self.now = after;
         Ok(Some(ok))
+    }
+
+    /// The result of checking what `step` was expected to show, when it had
+    /// an expectation: the identity of the expectation that failed, or none.
+    fn note_checked(&mut self, step: &Step, failed: &[Failed]) {
+        if step.expect.is_some() {
+            self.checked = Some(
+                failed
+                    .iter()
+                    .find(|f| f.check == Check::Expectation)
+                    .map(Failed::identity),
+            );
+        }
     }
 
     /// What the explorer expected the Assistant's reply to say, checked
@@ -3228,17 +3492,18 @@ impl Explorer<'_> {
         Ok(())
     }
 
-    /// Who decides a step by the plan's way, and whose answer a wait is
-    /// for: none for the rules.
     /// Who a step's model call asks, as its progress says it, and the
-    /// model waited for: the explorer's (only a model call says so).
-    fn asking(&self) -> (String, String) {
-        let deciding = self.deciding;
-        let model = match &deciding.effort {
-            Some(effort) => format!("{} at {effort}", deciding.explorer.model),
-            None => deciding.explorer.model.clone(),
+    /// model waited for: the escalation role's for a step testing a
+    /// hypothesis (an engineering question, E3), else the explorer's (only
+    /// a model call says so).
+    fn asking(&self, testing: bool) -> (String, String) {
+        let (model, effort) = self.deciding.asked(testing);
+        let model = match effort {
+            Some(effort) => format!("{} at {effort}", model.model),
+            None => model.model.clone(),
         };
         match self.plan.way {
+            _ if testing => (format!("{model} for a hypothesis"), model),
             Way::Escalating => (format!("{model}, Jev being unsure"), model),
             _ => (model.clone(), model),
         }
@@ -3275,7 +3540,26 @@ impl Explorer<'_> {
                 "lastReply": observed::last_reply(now).chars().take(300).collect::<String>(),
             },
             "lastActions": last,
+            "judgedWrong": self.judged_wrong(),
         })
+    }
+
+    /// Expectations the lead judged wrong before (C-55, from the testing
+    /// knowledge), so the explorer does not state them again (E3).
+    fn judged_wrong(&self) -> Vec<String> {
+        self.knowledge
+            .findings
+            .iter()
+            .rev()
+            .filter(|f| {
+                f.check == Check::Expectation
+                    && f.disposition
+                        .as_ref()
+                        .is_some_and(|d| d.kind == findings::DispositionKind::WrongExpectation)
+            })
+            .map(|f| f.message.chars().take(200).collect())
+            .take(8)
+            .collect()
     }
 }
 

@@ -245,6 +245,12 @@ pub struct Finding {
     /// What the lead judged it to be before anything was fixed (C-55).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disposition: Option<Disposition>,
+    /// The hypothesis whose expectation it is, and the requirement that
+    /// governs it, when it is one (the W13.7 repair, E3).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hypothesis: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirement: Option<String>,
 }
 
 /// What a finding is judged to be (C-55): only a defect is fixed.
@@ -340,6 +346,8 @@ impl Finding {
             pull_request: None,
             checked_in: None,
             disposition: None,
+            hypothesis: None,
+            requirement: None,
         }
     }
 

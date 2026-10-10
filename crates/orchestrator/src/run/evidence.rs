@@ -868,6 +868,7 @@ impl Driver {
             changes,
             start: project.clone(),
             begin: Default::default(),
+            hypotheses: Vec::new(),
             source: Some(source),
             conversation: false,
             turn_ms: findings::TURN_BUDGET_MS,

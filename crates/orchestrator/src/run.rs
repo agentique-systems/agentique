@@ -645,8 +645,10 @@ fn by_rules(answers: &crate::decide::Decider) -> crate::explore::Deciding<'_> {
     let none = agq_providers::ModelRef::new(agq_providers::Provider::DeepSeek, "none");
     crate::explore::Deciding {
         answers,
-        explorer: none,
+        explorer: none.clone(),
         effort: None,
+        escalation: none,
+        escalation_effort: None,
     }
 }
 
@@ -1755,7 +1757,17 @@ impl Driver {
                                 dispositions: &dispositions.borrow(),
                                 model: base_model,
                             },
-                        );
+                        )
+                        .and_then(|proposal| {
+                            // A hypothesis's finding: the change serves the
+                            // requirement it contradicts (E3).
+                            let requirement = proposal
+                                .finding
+                                .as_ref()
+                                .and_then(|id| cycle_findings.iter().find(|f| &f.identity == id))
+                                .and_then(|f| f.requirement.as_deref());
+                            roles::serves_the_finding(&proposal, requirement).map(|()| proposal)
+                        });
                         match read {
                             Ok(proposal) => *accepted.borrow_mut() = Some(proposal),
                             Err(problem) => {
@@ -2482,8 +2494,34 @@ impl Driver {
             return String::new();
         }
         let (offered, text) = self.offered_findings();
+        // How this cycle's explorations answered their hypotheses (E3).
+        let answers: Vec<String> = self
+            .cycle()
+            .explorations
+            .iter()
+            .flat_map(|e| &e.answers)
+            .map(|a| {
+                format!(
+                    "- {}",
+                    a.line(|identity| {
+                        offered
+                            .iter()
+                            .find(|(_, offered)| offered == identity)
+                            .map(|(id, _)| id.clone())
+                    })
+                )
+            })
+            .collect();
         format!(
-            "Reproduced findings of this cycle{}:\n{}\n\n{}",
+            "{}Reproduced findings of this cycle{}:\n{}\n\n{}",
+            if answers.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "The hypotheses this cycle's exploration tested (a contradiction reproduced is still only a finding: judge it against the requirement before anything is changed):\n{}\n\n",
+                    answers.join("\n")
+                )
+            },
             if offered.is_empty() {
                 ""
             } else {

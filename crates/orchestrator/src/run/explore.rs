@@ -45,7 +45,8 @@ use std::time::Duration;
 pub const SAMPLE: &str = "models/url-shortener";
 
 /// What a step of a run spent, and the role it counts for: a model asked
-/// for the explorer, Jev alone for the decisions. A step the rules took
+/// for the explorer, or for the escalation role when the step tested a
+/// hypothesis (E3), Jev alone for the decisions. A step the rules took
 /// after a call failed, timed out or was stopped counts what was tried
 /// (the review of the W13.7 repair: it was dropped), and a decision made
 /// as the run stopped counts though nothing was acted on.
@@ -54,6 +55,7 @@ fn spent_on(taken: &explore::Taken) -> Option<(&'static str, Cost)> {
     let chosen = taken.chosen.as_ref()?;
     let role = match chosen.decision.source {
         Source::Rules if chosen.counted <= 0.0 => return None,
+        _ if taken.step.by == "hypothesis" => "escalation",
         Source::Model | Source::Escalated => "explorer",
         _ if taken.timing.calls > 0 => "explorer",
         _ => "decisions",
@@ -66,6 +68,16 @@ fn spent_on(taken: &explore::Taken) -> Option<(&'static str, Cost)> {
             unknown: chosen.decision.usd.is_none(),
         },
     ))
+}
+
+/// The most of a requirement's text a hypothesis gives the explorer.
+const REQUIREMENT_TEXT: usize = 1500;
+
+/// Whether `problems` already say `name` is no element.
+fn unknown_named(problems: &[String], name: &str) -> bool {
+    problems
+        .iter()
+        .any(|p| p.contains(&format!("`{}`", name.trim())))
 }
 
 /// What the lead's turn checks a plan of an exploration and a child's
@@ -87,24 +99,57 @@ impl Planner {
     /// project's model at the base commit) and accepted: what the objective
     /// explores from now; or why not.
     pub fn plan(&self, input: &Value) -> Result<Target, String> {
-        let planned = roles::read_exploration(input, &self.planning.borrow())?;
+        let mut planned = roles::read_exploration(input, &self.planning.borrow())?;
+        let required: Vec<&String> = planned
+            .hypotheses
+            .iter()
+            .filter_map(|h| h.requirement.as_ref())
+            .collect();
         let names: Vec<&String> = planned
             .scope
             .iter()
             .chain(planned.start.select.iter())
+            .chain(required.iter().copied())
             .collect();
         if !names.is_empty() {
-            let model =
-                traceability::project_model(&self.checkout, &planned.project, &self.scratch)?;
+            let (model, texts) = traceability::project_model(
+                &self.checkout,
+                &planned.project,
+                &self.scratch,
+                &required,
+            )?;
+            let mut problems = Vec::new();
             let unknown = traceability::unknown(&model, names);
             if !unknown.is_empty() {
-                return Err(format!(
+                problems.push(format!(
                     "{} {} not an element of the model of {} at {}",
                     unknown.join(", "),
                     if unknown.len() == 1 { "is" } else { "are" },
                     planned.project,
                     short(&planned.revision)
                 ));
+            }
+            // A hypothesis's requirement is one, and the explorer reads its
+            // text (E3).
+            for hypothesis in &mut planned.hypotheses {
+                let Some(name) = hypothesis.requirement.clone() else {
+                    continue;
+                };
+                match traceability::requirement(&model, &name) {
+                    Ok(_) => {
+                        hypothesis.requirement = Some(name.trim().to_string());
+                        hypothesis.requirement_text = texts
+                            .get(name.trim())
+                            .map(|text| crate::thread::capped(text, REQUIREMENT_TEXT));
+                    }
+                    Err(problem) if !unknown_named(&problems, &name) => {
+                        problems.push(format!("a hypothesis's requirement: {problem}"));
+                    }
+                    Err(_) => {}
+                }
+            }
+            if !problems.is_empty() {
+                return Err(problems.join("; "));
             }
         }
         self.accepted.set(true);
@@ -247,11 +292,18 @@ fn finding_text(id: &str, finding: &Finding, disposition: Option<&Disposition>) 
         evidence = crate::thread::capped(&evidence, 1200);
     }
     format!(
-        "{id}: {}\n  check: {}; build {}; start {}\n  steps:\n{}{}\n  evidence: {evidence}{}",
+        "{id}: {}\n  check: {}; build {}; start {}{}\n  steps:\n{}{}\n  evidence: {evidence}{}",
         finding_line(finding),
         finding.check.name(),
         finding.build,
         finding.start,
+        match (&finding.hypothesis, &finding.requirement) {
+            (Some(claim), Some(requirement)) => {
+                format!("\n  tests the hypothesis: {claim} (governed by {requirement})")
+            }
+            (Some(claim), None) => format!("\n  tests the hypothesis: {claim}"),
+            _ => String::new(),
+        },
         steps(&finding.steps),
         match &finding.reduced {
             Some(reduced) => format!("\n  reduced to:\n{}", steps(reduced)),
@@ -415,14 +467,16 @@ impl Driver {
             .clone()
             .ok_or("no project was planned for this exploration")?;
         let mut dropped = String::new();
-        if target.revision != built.commit && !(target.scope.is_empty() && target.start.is_empty())
+        if target.revision != built.commit
+            && !(target.scope.is_empty() && target.start.is_empty() && target.hypotheses.is_empty())
         {
             dropped = format!(
-                "\nIts scope and start were planned at {}, not this commit: left out.",
+                "\nIts scope, start and hypotheses were planned at {}, not this commit: left out.",
                 short(&target.revision)
             );
             target.scope.clear();
             target.start = Default::default();
+            target.hypotheses.clear();
         }
         target.revision = built.commit.clone();
         let start = target.project.clone();
@@ -453,6 +507,7 @@ impl Driver {
             changes,
             start: start.clone(),
             begin: target.start.clone(),
+            hypotheses: target.hypotheses.clone(),
             source: Some(source.clone()),
             conversation: options.key.is_some(),
             turn_ms: findings::TURN_BUDGET_MS,
@@ -622,6 +677,16 @@ impl Driver {
             )
             .with_details(
                 std::iter::once(format!("Where the time went: {}", run.time()))
+                    .chain(run.answers.iter().map(|a| {
+                        format!(
+                            "hypothesis {}",
+                            a.line(|identity| {
+                                new.iter().position(|f| f.identity == identity).map(|i| {
+                                    crate::knowledge::finding_id(self.cycle().findings.len() + i)
+                                })
+                            })
+                        )
+                    }))
                     .chain(new.iter().chain(&regressions).map(finding_line))
                     .chain(adjudicated)
                     .chain(run.recoveries.iter().map(|r| format!("recovered: {} ({})", r.kind, r.detail)))
@@ -644,6 +709,7 @@ impl Driver {
             reproduced: 0,
             usd: run.usd,
             ended: run.ended.clone(),
+            answers: run.answers.clone(),
         });
         cycle.findings.extend(new);
         cycle.findings.extend(regressions);
@@ -1413,6 +1479,13 @@ mod tests {
         assert_eq!(
             spent_on(&taken(Source::Rules, 0.002, None, 0)),
             Some(("decisions", cost(0.002, 0, true)))
+        );
+        // A step testing a hypothesis asks the escalation role (E3).
+        let mut testing = taken(Source::Model, 0.05, Some(0.05), 1);
+        testing.step.by = "hypothesis".into();
+        assert_eq!(
+            spent_on(&testing),
+            Some(("escalation", cost(0.05, 1000, false)))
         );
     }
 }
