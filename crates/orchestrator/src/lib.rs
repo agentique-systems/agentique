@@ -35,6 +35,7 @@
 //!   the base and delegated child objectives (C-54).
 #![forbid(unsafe_code)]
 
+pub mod blockers;
 pub mod builds;
 pub mod control;
 pub mod decide;

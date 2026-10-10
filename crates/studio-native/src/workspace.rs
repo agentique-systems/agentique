@@ -1197,25 +1197,40 @@ impl Workspace {
                 .h_full()
                 .window_control_area(WindowControlArea::Drag)
         };
-        div()
-            .id("title-bar")
-            .flex_none()
-            .h(r(height))
-            .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
+        // Two parts (W13.7): what gives way when room is short (the
+        // project, the agents' chip, the views, the search), shrinking and
+        // then cut at its end; and what never does (the panels' switches,
+        // Settings, and the window's own buttons), so no state of the bar
+        // pushes them out of the window.
+        let gives_way = div()
             .flex()
+            .flex_1()
+            .min_w_0()
+            .h_full()
+            .overflow_hidden()
             .items_center()
             .gap(r(8.0))
-            .bg(theme.chrome)
-            // The project, and how its saving stands.
+            .child(div().w(r(4.0)).h_full().window_control_area(WindowControlArea::Drag))
+            // The project, and how its saving stands: the name is cut short
+            // (an ellipsis) while the mark and the saving state stay whole;
+            // only when room is very short does the group itself give way.
             .child(
                 div()
                     .flex()
+                    .min_w_0()
+                    .flex_shrink(4.0)
+                    .overflow_hidden()
                     .items_center()
                     .gap(r(8.0))
-                    .child(brand_mark(&theme).window_control_area(WindowControlArea::Drag))
+                    .child(
+                        brand_mark(&theme)
+                            .flex_none()
+                            .window_control_area(WindowControlArea::Drag),
+                    )
                     .child(match &project {
                         Some(name) => Button::new("project", name.clone())
                             .ghost()
+                            .truncate()
                             .trailing(IconName::ChevronDown)
                             .tooltip("Open another project", Some("Ctrl+O"))
                             .on_click(run(studio_entity.clone(), CommandId::OpenProject))
@@ -1232,7 +1247,7 @@ impl Workspace {
                             .into_any_element(),
                     })
                     .when(project.is_some(), |this| {
-                        this.child(save_state(&saved, uncommitted, &theme))
+                        this.child(div().flex_none().child(save_state(&saved, uncommitted, &theme)))
                     }),
             )
             .child(drag())
@@ -1246,8 +1261,19 @@ impl Workspace {
                         .flex()
                         .items_center()
                         .gap(r(4.0))
+                        // Never narrower than its icon and buttons (Pause
+                        // and Stop; Resume, Step and Stop when paused; Resume
+                        // when stopped), measured from the font: only what
+                        // the latest agent did shortens (W13.7: at a small
+                        // window its buttons covered the views).
                         .max_w(r(460.0))
-                        .min_w_0()
+                        .min_w(r(if agents_stopped {
+                            128.0
+                        } else if agents_paused {
+                            240.0
+                        } else {
+                            180.0
+                        }))
                         .px(r(8.0))
                         .h(r(26.0))
                         .rounded(r(crate::tokens::radius::CONTROL))
@@ -1264,6 +1290,7 @@ impl Workspace {
                         .child(icon(IconName::Agent).size(13.0).color(theme.accent.solid))
                         .child(
                             div()
+                                .flex_1()
                                 .min_w_0()
                                 .overflow_hidden()
                                 .text_ellipsis()
@@ -1358,8 +1385,16 @@ impl Workspace {
             // The views of the Surface.
             .when(surface_shown, |this| {
                 let studio = self.studio.clone();
-                this.child(
+                // Icons only where the window is narrow (W13.7: at the
+                // smallest window the labels pushed the window's own
+                // buttons out of it).
+                let room = f32::from(window.viewport_size().width)
+                    / (f32::from(window.rem_size()) / 16.0);
+                // At a very short room the views give way entirely before
+                // the agents' chip does (they stay on 1, 2 and 3).
+                this.child(div().min_w_0().overflow_hidden().child(
                     Segmented::new("views", view_index)
+                        .compact(room < 1200.0)
                         .choice(Some(IconName::Architecture), "Architecture")
                         .tooltip(
                             "Containment, ports and connections",
@@ -1383,7 +1418,7 @@ impl Workspace {
                             ][index];
                             studio.act(cx, |studio| studio.execute(id));
                         }),
-                )
+                ))
             })
             .when(settings_open, |this| {
                 this.child(
@@ -1398,7 +1433,7 @@ impl Workspace {
                 )
             })
             .child(drag())
-            // Search, and the panels' switches.
+            // Search.
             .child(
                 div()
                     .id("search")
@@ -1406,7 +1441,13 @@ impl Workspace {
                     .flex()
                     .items_center()
                     .gap(r(8.0))
+                    // It may shrink when room is short, to its icon and at a
+                    // very short room away (W13.7: at the smallest window it
+                    // pushed the window's own buttons out of it); Ctrl+K
+                    // stays.
                     .w(r(260.0))
+                    .min_w_0()
+                    .overflow_hidden()
                     .h(r(28.0))
                     .px(r(10.0))
                     .rounded(r(crate::tokens::radius::CONTROL))
@@ -1429,12 +1470,32 @@ impl Workspace {
                             .id("title-search"),
                     ))
                     .child(icon(IconName::Search).size(14.0))
-                    .child(div().flex_1().min_w_0().child("Search or run a command"))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .overflow_hidden()
+                            .text_ellipsis()
+                            .whitespace_nowrap()
+                            .child("Search or run a command"),
+                    )
                     .child(ui::KeyCaps::new("Ctrl+K")),
-            )
+            );
+        div()
+            .id("title-bar")
+            .flex_none()
+            .w_full()
+            .h(r(height))
+            .flex()
+            .items_center()
+            .gap(r(8.0))
+            .bg(theme.chrome)
+            .child(gives_way)
+            // The panels' switches and Settings.
             .child(
                 div()
                     .flex()
+                    .flex_none()
                     .items_center()
                     .gap(r(2.0))
                     .child(
@@ -1472,7 +1533,12 @@ impl Workspace {
                             .on_click(run(studio_entity.clone(), CommandId::Settings)),
                     ),
             )
-            .child(window_controls(maximized, &theme))
+            .child(
+                div()
+                    .flex_none()
+                    .h_full()
+                    .child(window_controls(maximized, &theme)),
+            )
     }
 
     fn status_bar(&mut self, cx: &mut Context<Self>) -> impl IntoElement {

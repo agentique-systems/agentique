@@ -261,6 +261,8 @@ pub struct Segmented {
     selected: usize,
     on_choose: Option<Choose>,
     tooltips: Vec<Option<(SharedString, Option<&'static str>)>>,
+    /// Icons only: the labels stay the choices' names and tooltips.
+    compact: bool,
 }
 
 impl Segmented {
@@ -271,7 +273,14 @@ impl Segmented {
             selected,
             on_choose: None,
             tooltips: Vec::new(),
+            compact: false,
         }
+    }
+    /// Shows the choices by their icons only (where room is short); each
+    /// label stays its name and leads its tooltip.
+    pub fn compact(mut self, compact: bool) -> Segmented {
+        self.compact = compact;
+        self
     }
     pub fn choice(mut self, icon: Option<IconName>, label: impl Into<SharedString>) -> Segmented {
         self.choices.push((icon, label.into()));
@@ -344,6 +353,8 @@ impl RenderOnce for Segmented {
                     .enumerate()
                     .map(|(index, (glyph, label))| {
                         let chosen = index == selected;
+                        let iconic = glyph.is_some();
+                        let label_shown = label.clone();
                         let on_choose = self.on_choose.clone();
                         let tooltip = self.tooltips.get(index).cloned().flatten();
                         div()
@@ -379,15 +390,23 @@ impl RenderOnce for Segmented {
                                 crate::ui::target::Control::new("option", label.clone())
                                     .selected(chosen),
                             ))
-                            .child(
-                                div()
-                                    .min_w_0()
-                                    .overflow_hidden()
-                                    .text_ellipsis()
-                                    .whitespace_nowrap()
-                                    .child(label),
-                            )
+                            .when(!self.compact || !iconic, |this| {
+                                this.child(
+                                    div()
+                                        .min_w_0()
+                                        .overflow_hidden()
+                                        .text_ellipsis()
+                                        .whitespace_nowrap()
+                                        .child(label),
+                                )
+                            })
                             .when_some(tooltip, |this, (title, shortcut)| {
+                                // Icons only: the tooltip names the choice.
+                                let title: SharedString = if self.compact && iconic {
+                                    format!("{label_shown}: {title}").into()
+                                } else {
+                                    title
+                                };
                                 let tooltip = crate::ui::tooltip::text(title, shortcut);
                                 this.tooltip(move |window, cx| tooltip(window, cx))
                             })
@@ -531,7 +550,7 @@ pub fn inline_message(tone: Tone, message: impl Into<SharedString>, cx: &App) ->
     let (_, fg, _) = tone.colours(theme);
     div()
         .flex()
-        .items_center()
+        .items_start()
         .gap(r(6.0))
         .text_size(r(theme::text::SM))
         .text_color(if tone == Tone::Neutral {
@@ -540,9 +559,15 @@ pub fn inline_message(tone: Tone, message: impl Into<SharedString>, cx: &App) ->
             fg
         })
         .when(tone == Tone::Danger || tone == Tone::Warning, |this| {
-            this.child(icon(IconName::Alert).size(12.0).color(fg))
+            this.child(
+                div()
+                    .mt(r(2.0))
+                    .child(icon(IconName::Alert).size(12.0).color(fg)),
+            )
         })
-        .child(message.into())
+        // Text in a flex row wraps only when it may shrink: a long
+        // message stays within its panel.
+        .child(div().flex_1().min_w_0().child(message.into()))
 }
 
 /// An empty state that teaches (§3.4): what this place is for and the one

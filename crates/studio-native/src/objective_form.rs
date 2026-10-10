@@ -258,6 +258,7 @@ impl Render for ObjectiveForm {
             .child(
                 div()
                     .flex()
+                    .flex_wrap()
                     .items_center()
                     .gap(r(6.0))
                     .child(crate::panels::group("New objective", None, cx))
