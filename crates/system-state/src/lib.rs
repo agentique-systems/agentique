@@ -31,7 +31,7 @@
 
 mod project;
 
-pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError};
+pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError, ProjectReader};
 
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Expression, Field, Literal,
