@@ -2392,3 +2392,25 @@ opened it, Start and Cancel were drawn off the right edge of the
 Conversation panel: the sentence about limits shared their row and did
 not wrap. It has a line of its own, and the journey now checks that Start
 is on screen inside the window (that check fails on the first version).
+
+**W13.7 repair: a failure of the repository's checks attributed**
+(`stage13/ci-dependency`). The Orchestrator reads a failed check's log into
+its failing tests and their crates (`blockers.rs`) and places them against
+the crates the change touches or affects. The change's own failure goes
+back to the implementer, as before. A failure elsewhere stops the cycle,
+keeping the reviewed change on its pull request; where the objective may
+merge, a repair cycle proposes only the repair. Once that is merged, the
+blocked change is carried onto it only if its patch is unchanged, and is
+merged only when the repository's checks pass on it. Tested:
+- #125's actual log reads as one failing test in `agq-orchestrator`, which a
+  Studio-only change cannot affect;
+- a change to a crate the Orchestrator depends on, to the model, or a
+  failing lint stays the change's;
+- the record's repair rules (one repair, not an improvement, only where the
+  objective may merge, a repair not repaired in turn), and a previous
+  build's record still reads;
+- a reviewed patch carried onto a moved base, and one the base changed
+  under it refused.
+
+Not tested end to end: the host's side (pushing, the pull request's checks,
+merging) has no stand-in in the tests; the fresh proof exercises it.

@@ -19,6 +19,7 @@ mod trace;
 
 pub use explore::STARTS;
 
+use crate::blockers;
 use crate::control::{Client, Options, TestInstance};
 use crate::explore::Instance;
 use crate::findings::Disposition;
@@ -907,7 +908,7 @@ impl Driver {
             }
             let phase = match self.objective.cycle().map(|c| c.phase) {
                 None | Some(Phase::Done) => {
-                    let done = self.objective.cycles.len() as u32;
+                    let done = self.improvements();
                     if self.objective.parent.is_some() && done > 0 {
                         // A child explores once; its result goes back.
                         let result = children::child_result(&self.objective);
@@ -932,18 +933,26 @@ impl Driver {
                         );
                         return;
                     }
-                    self.new_cycle(done + 1);
+                    self.new_cycle(self.objective.cycles.len() as u32 + 1);
                     Phase::Propose
                 }
                 Some(Phase::Failed) => {
                     let blocker = self.cycle().blocker.clone().unwrap_or_default();
-                    let done = self.objective.cycles.len() as u32;
-                    if done >= self.objective.budgets.cycles || self.objective.parent.is_some() {
-                        self.end(State::Failed, blocker);
-                        return;
+                    // A reviewed change the checks blocked elsewhere: a cycle
+                    // repairs the cause first, when the objective may merge.
+                    if let Some(blocked) = self.repair_due() {
+                        self.new_repair_cycle(blocked);
+                        Phase::Propose
+                    } else {
+                        let done = self.improvements();
+                        if done >= self.objective.budgets.cycles || self.objective.parent.is_some()
+                        {
+                            self.end(State::Failed, blocker);
+                            return;
+                        }
+                        self.new_cycle(self.objective.cycles.len() as u32 + 1);
+                        Phase::Propose
                     }
-                    self.new_cycle(done + 1);
-                    Phase::Propose
                 }
                 Some(phase) => phase,
             };
@@ -1038,6 +1047,22 @@ impl Driver {
         self.save();
     }
 
+    fn improvements(&self) -> u32 {
+        self.objective.improvements()
+    }
+
+    fn repair_due(&self) -> Option<u32> {
+        self.objective.repair_due()
+    }
+
+    fn new_repair_cycle(&mut self, blocked: u32) {
+        let n = self.objective.start_repair(blocked);
+        self.save();
+        self.event(format!(
+            "Cycle {n} repairs what blocks cycle {blocked}'s reviewed change; once it is merged, that change is carried onto it"
+        ));
+    }
+
     /// The cycle's worktrees and folders, removed as it ends (C-54): all of
     /// them, but its `work` worktree when `keep_work` (a failed or
     /// interrupted cycle's, of which the three most recent are kept), each
@@ -1119,6 +1144,218 @@ impl Driver {
             Err(error) => format!("not known on the host ({error})"),
         };
         self.event(format!("The merged branch {branch}: {local}, {remote}"));
+    }
+
+    /// Whose a failed check is (W13.7): the failed job's log read into its
+    /// failing tests, and those placed against the crates the change from
+    /// `base` to `commit` touches and affects. A log or workspace that
+    /// cannot be read leaves the failure the change's.
+    fn attribute(
+        &self,
+        what: &str,
+        base: &str,
+        commit: &str,
+    ) -> (blockers::CiFailure, blockers::Attribution) {
+        let repository = self.objective.repository.clone();
+        let check = what.split(' ').next().unwrap_or("the repository's checks");
+        let failure = match forge::failed_log(&repository, what) {
+            Ok(log) => blockers::parse_failed_log(check, &log),
+            Err(error) => {
+                return (
+                    blockers::CiFailure {
+                        check: check.to_string(),
+                        ..blockers::CiFailure::default()
+                    },
+                    blockers::Attribution::Change(format!("its log could not be read: {error}")),
+                );
+            }
+        };
+        let paths = match forge::run(
+            &repository,
+            &["git", "diff", "--name-only", base, commit],
+            Duration::from_secs(120),
+        ) {
+            Ok(listed) => listed
+                .stdout
+                .lines()
+                .map(|l| l.trim().replace('\\', "/"))
+                .filter(|l| !l.is_empty())
+                .collect::<Vec<_>>(),
+            Err(error) => {
+                return (
+                    failure,
+                    blockers::Attribution::Change(format!(
+                        "the paths it changes could not be read: {error}"
+                    )),
+                );
+            }
+        };
+        let folder = self
+            .cycle()
+            .worktree
+            .clone()
+            .filter(|w| w.is_dir())
+            .unwrap_or(repository);
+        let attribution = match blockers::Workspace::read(&folder) {
+            Ok(workspace) => blockers::attribute(&failure, &paths, &workspace),
+            Err(error) => blockers::Attribution::Change(format!(
+                "the workspace's crates could not be read: {error}"
+            )),
+        };
+        (failure, attribution)
+    }
+
+    /// After this repair cycle merged as `repaired`: the change it unblocks,
+    /// carried onto `repaired` if its patch is unchanged, pushed onto its
+    /// pull request without forcing, merged once the repository's checks
+    /// pass on it; or, in the thread, why not (it then stays on its pull
+    /// request). Each side effect is done once, also across a restart.
+    fn carry_blocked(&mut self, repaired: &str) {
+        let Some(n) = self.cycle().repairs else {
+            return;
+        };
+        match self.carry(n, repaired) {
+            Ok(merged) => {
+                self.cycle_mut().carried = Some(merged);
+                self.save();
+            }
+            Err(why) => {
+                if let Some(b) = self
+                    .objective
+                    .cycles
+                    .iter_mut()
+                    .find(|c| c.n == n)
+                    .and_then(|c| c.blocked.as_mut())
+                {
+                    b.note = why.clone();
+                }
+                self.save();
+                self.event(format!(
+                    "Cycle {n}'s change is not carried onto the repair: {why}; it stays on its pull request for you"
+                ));
+            }
+        }
+    }
+
+    fn carry(&mut self, n: u32, repaired: &str) -> Result<String, String> {
+        let blocked = self
+            .objective
+            .cycles
+            .iter()
+            .find(|c| c.n == n)
+            .cloned()
+            .ok_or("the blocked cycle is not in the record")?;
+        let base = blocked.base.clone().ok_or("it has no base")?;
+        let reviewed = blocked
+            .review
+            .as_ref()
+            .map(|r| r.commit.clone())
+            .ok_or("it has no review")?;
+        let pr = blocked
+            .pull_request
+            .clone()
+            .ok_or("it has no pull request")?;
+        let branch = blocked.branch.clone().ok_or("it has no branch")?;
+        let pushed = blocked.pushed.clone().ok_or("nothing of it was pushed")?;
+        let proposal = blocked.proposal.clone().ok_or("it has no proposal")?;
+        let repository = self.objective.repository.clone();
+        let base_branch = self.objective.base_branch.clone();
+        let id = self.id();
+        let tree = blockers::carry_over(&repository, &base, &reviewed, repaired)?;
+        let message = format!(
+            "{}\n\nObjective {id}, cycle {n}: the reviewed commit {}, carried onto {} after cycle {} repaired what blocked it.",
+            proposal.title,
+            builds::short(&reviewed),
+            builds::short(repaired),
+            self.cycle().n
+        );
+        let gate = gates::keys_in("the commit message", &message, &self.setup.keys);
+        if !gate.passed() {
+            return Err(gate.detail);
+        }
+        let carried = self.setup.store.once(
+            &id,
+            &format!("cycle-{n}/carry-{}", builds::short(repaired)),
+            || forge::commit_on(&repository, &tree, &[&pushed, repaired], &message),
+        )?;
+        self.setup.store.once(
+            &id,
+            &format!("cycle-{n}/push-{}", builds::short(&carried)),
+            || {
+                forge::push_commit(&repository, &carried, &branch, &base_branch)
+                    .map(|_| String::new())
+            },
+        )?;
+        if let Some(cycle) = self.objective.cycles.iter_mut().find(|c| c.n == n) {
+            cycle.pushed = Some(carried.clone());
+            if let Some(b) = cycle.blocked.as_mut() {
+                b.carried = Some(carried.clone());
+            }
+        }
+        self.save();
+        self.event(format!(
+            "Cycle {n}'s reviewed change, its patch unchanged, carried onto {} as {} on pull request #{}; waiting for the repository's checks",
+            builds::short(repaired),
+            builds::short(&carried),
+            pr.number
+        ));
+        let since = Instant::now();
+        while forge::head(&repository, pr.number).ok().as_deref() != Some(carried.as_str()) {
+            if since.elapsed() > Duration::from_secs(180) || self.controls.stopped() {
+                return Err("the pull request does not show the carried commit".into());
+            }
+            std::thread::sleep(Duration::from_secs(5));
+        }
+        let stop = self.controls.stop.clone();
+        match forge::wait_for_checks(&repository, pr.number, forge::CHECKS_WITHIN, &|| {
+            stop.load(Ordering::SeqCst)
+        })? {
+            forge::Checks::Passed => {}
+            forge::Checks::Failed(what) => {
+                return Err(format!(
+                    "the repository's checks fail on the carried change too: {what}"
+                ));
+            }
+            forge::Checks::Pending => {
+                return Err("the repository's checks did not finish in time".into());
+            }
+        }
+        let subject = format!("{} (#{})", proposal.title, pr.number);
+        let _ = git::remove_worktree(&repository, &format!("{id}-{n}"));
+        let merged = self.setup.store.once(
+            &id,
+            &format!("cycle-{n}/merge-{}", builds::short(&carried)),
+            || forge::merge(&repository, pr.number, &carried, &subject),
+        )?;
+        if let Some(cycle) = self.objective.cycles.iter_mut().find(|c| c.n == n) {
+            cycle.merged = Some(merged.clone());
+            cycle.phase = Phase::Done;
+            cycle.blocker = None;
+        }
+        // The finding it fixed is fixed.
+        if let Some(finding) = blocked.replay.clone() {
+            let file = crate::knowledge::Knowledge::file(&self.setup.store, &repository);
+            let project = crate::knowledge::Knowledge::key(&repository);
+            if let Err(error) = crate::knowledge::Knowledge::change(&file, &project, |k| {
+                k.fixed(&finding.identity, &merged, Some(pr.number))
+            }) {
+                self.event(format!(
+                    "The testing knowledge could not record the fix: {error}"
+                ));
+            }
+        }
+        self.save();
+        self.event(format!(
+            "merged cycle {n}'s change (#{}) as {}",
+            pr.number,
+            builds::short(&merged)
+        ));
+        if let Err(problem) = forge::follow(&repository, &base_branch, &merged) {
+            return Err(format!(
+                "merged, but the local branch could not follow: {problem}"
+            ));
+        }
+        Ok(merged)
     }
 
     /// The `work` worktrees kept from failed or interrupted cycles, of all
@@ -1882,7 +2119,10 @@ impl Driver {
             system: roles::instructions(Role::Lead),
             definitions: roles::lead_tools(false, self.objective.explore && self.may_delegate()),
         };
-        let mut context = self.findings_brief();
+        let mut context = match self.repair_brief() {
+            Some(brief) => brief,
+            None => self.findings_brief(),
+        };
         if let Some(reading) = reading {
             context = format!("{reading}\n\n{context}");
         }
@@ -1977,6 +2217,32 @@ impl Driver {
 
     /// What the lead is told of an exploring cycle: the reproduced findings
     /// to choose among, and what the testing knowledge says.
+    /// What a repair cycle repairs, for the lead: the failure that blocks
+    /// another cycle's reviewed change, and its scope.
+    fn repair_brief(&self) -> Option<String> {
+        let blocked_n = self.cycle().repairs?;
+        let blocked = self.objective.cycles.iter().find(|c| c.n == blocked_n)?;
+        let b = blocked.blocked.as_ref()?;
+        let tests: Vec<String> = b
+            .failure
+            .tests
+            .iter()
+            .map(|t| format!("- {}", t.line()))
+            .collect();
+        Some(format!(
+            "This cycle repairs only what blocks cycle {blocked_n}'s reviewed change{}: the repository's checks ({}) fail where that change cannot have caused it — {}.\n\nThe failing tests:\n{}\n\nWhat the log shows:\n{}\n\nFind the cause in the code and repair it, so the checks pass for every change; propose nothing else. Never delete, ignore, loosen or rerun a test or check to make it pass (a deliberate change to one is named, with its reason, for the reviewer). The repository's checks may run on another system than this one (Linux in CI): reason from the code and the log when the failure does not happen here. Serve the requirement that the required checks decide.",
+            blocked
+                .pull_request
+                .as_ref()
+                .map(|pr| format!(" (pull request #{})", pr.number))
+                .unwrap_or_default(),
+            b.failure.check,
+            b.why,
+            tests.join("\n"),
+            b.failure.excerpt,
+        ))
+    }
+
     fn findings_brief(&self) -> String {
         if !self.objective.explore {
             return String::new();
@@ -2920,7 +3186,7 @@ impl Driver {
         // the last one pushed (or the base), and the pull request's text;
         // no configured key in any of it.
         let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
-        let parent = self.cycle().pushed.clone().unwrap_or(base);
+        let parent = self.cycle().pushed.clone().unwrap_or_else(|| base.clone());
         let message = format!(
             "{}\n\nObjective {id}, cycle {n}: the reviewed commit {short}.",
             proposal.title
@@ -2990,18 +3256,55 @@ impl Driver {
         })? {
             forge::Checks::Passed => {}
             forge::Checks::Failed(what) => {
+                // Whose failure it is: the change's goes back to the
+                // implementer; one the change cannot have caused blocks it,
+                // its reviewed work kept on the pull request.
+                let (failure, attribution) = self.attribute(&what, &base, &commit);
+                let detail = format!("{what}\n{}", failure.excerpt);
+                if let blockers::Attribution::Elsewhere(why) = attribution {
+                    self.post(
+                        ThreadEntry::event(format!(
+                            "The repository's checks fail on pull request #{}, but not because of this change: {why}. A defect already on the base, or the checks' own machinery: the reviewed change stays on #{} until that is repaired",
+                            pr.number, pr.number
+                        ))
+                        .with_details(detail.clone()),
+                    );
+                    let cycle = self.cycle_mut();
+                    let attempt = cycle.attempts.last_mut().expect("an attempt");
+                    attempt.gates.push(Outcome {
+                        name: "the repository's checks".into(),
+                        verdict: "failed elsewhere".into(),
+                        detail,
+                        judged: false,
+                    });
+                    cycle.blocked = Some(record::Blocked {
+                        failure,
+                        why: why.clone(),
+                        repaired_in: None,
+                        carried: None,
+                        note: String::new(),
+                    });
+                    self.save();
+                    return Err(format!(
+                        "blocked by a failure elsewhere ({why}); the reviewed change waits on pull request #{}",
+                        pr.number
+                    ));
+                }
+                let blockers::Attribution::Change(why) = attribution else {
+                    unreachable!("handled above")
+                };
                 self.post(
                     ThreadEntry::event(format!(
-                        "The repository's checks failed on pull request #{}; back to the implementer",
+                        "The repository's checks failed on pull request #{}; back to the implementer ({why})",
                         pr.number
                     ))
-                    .with_details(what.clone()),
+                    .with_details(detail.clone()),
                 );
                 let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
                 attempt.gates.push(Outcome {
                     name: "the repository's checks".into(),
                     verdict: "failed".into(),
-                    detail: what,
+                    detail,
                     judged: false,
                 });
                 return Ok(Phase::Repair);
@@ -3040,6 +3343,10 @@ impl Driver {
         self.delete_branch();
         if let Err(problem) = forge::follow(&repository, &base_branch, &merged) {
             return Err(format!("paused: {problem}"));
+        }
+        // A repair merged: the change it unblocks goes onto it.
+        if self.cycle().repairs.is_some() {
+            self.carry_blocked(&merged);
         }
         let _ = self.events.send(Event::Merged {
             repository: repository.clone(),
@@ -3094,10 +3401,13 @@ impl Driver {
     }
 
     fn build(&mut self) -> Next {
+        // A repair cycle that carried a blocked change builds that merge,
+        // which holds both.
         let merged = self
             .cycle()
-            .merged
+            .carried
             .clone()
+            .or_else(|| self.cycle().merged.clone())
             .ok_or("nothing merged to build")?;
         let id = self.id();
         let n = self.cycle().n;
