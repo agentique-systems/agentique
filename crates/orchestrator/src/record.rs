@@ -652,6 +652,56 @@ pub struct Cycle {
     /// commit (C-55), as the reviewer was given it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cumulative: Option<crate::traceability::Cumulative>,
+    /// Its reviewed change waits: the repository's checks failed where the
+    /// change cannot have caused it (W13.7).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blocked: Option<Blocked>,
+    /// The cycle whose blocked change this one repairs the cause of: it
+    /// proposes only that repair and is not one of the objective's
+    /// improvements.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repairs: Option<u32>,
+    /// After its repair merged, the merge commit of the blocked change it
+    /// carried onto the new base: what this cycle builds and adopts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub carried: Option<String>,
+}
+
+/// A reviewed change whose repository checks failed where it cannot have
+/// caused it (W13.7), and what became of it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Blocked {
+    /// What the repository's checks said: the failing steps and tests.
+    pub failure: crate::blockers::CiFailure,
+    /// Why it is not the change's.
+    pub why: String,
+    /// A defect elsewhere, or the checks' own machinery.
+    #[serde(default)]
+    pub cause: Cause,
+    /// The cycle that repairs its cause, once started.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repaired_in: Option<u32>,
+    /// The commit, pushed to its pull request, that carried the reviewed
+    /// change onto the repaired base.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub carried_as: Option<String>,
+    /// Why it was not carried over, when it was not.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub note: String,
+}
+
+/// Why a reviewed change is blocked (W13.7).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Cause {
+    /// A test the change cannot have caused fails: a defect already on the
+    /// base, which a repair cycle may repair.
+    #[default]
+    Elsewhere,
+    /// The checks never reached a verdict (cancelled, or failed setting the
+    /// job up): nothing is repaired and nothing reruns them here.
+    Infrastructure,
 }
 
 /// What a cycle's evidence on the base was made with (C-54).
@@ -742,7 +792,17 @@ impl Cycle {
             evidence: None,
             traceability: None,
             cumulative: None,
+            blocked: None,
+            repairs: None,
+            carried: None,
         }
+    }
+
+    /// The commit this cycle builds, tries and adopts: the merge of a
+    /// blocked change it carried onto its repair (which holds both), or its
+    /// own merge.
+    pub fn to_build(&self) -> Option<&String> {
+        self.carried.as_ref().or(self.merged.as_ref())
     }
 
     /// Where it is, in words.
@@ -960,6 +1020,47 @@ fn is_zero(value: &u8) -> bool {
 }
 
 impl Objective {
+    /// Its improvements so far: its cycles but those that repaired what
+    /// blocked another's change (W13.7).
+    pub fn improvements(&self) -> u32 {
+        self.cycles.iter().filter(|c| c.repairs.is_none()).count() as u32
+    }
+
+    /// The last cycle, if its reviewed change is blocked by a failure
+    /// elsewhere that no cycle repairs yet and this objective may push and
+    /// merge a repair: an objective's own cycles only, and a repair cycle is
+    /// not repaired in turn.
+    pub fn repair_due(&self) -> Option<u32> {
+        let cycle = self.cycle()?;
+        (self.parent.is_none()
+            && self.permissions.push
+            && self.permissions.merge
+            && cycle.repairs.is_none()
+            && cycle
+                .blocked
+                .as_ref()
+                .is_some_and(|b| b.cause == Cause::Elsewhere && b.repaired_in.is_none()))
+        .then_some(cycle.n)
+    }
+
+    /// Starts the cycle that repairs what blocks cycle `blocked`'s change:
+    /// it does not explore and is not one of the improvements. Its number.
+    pub fn start_repair(&mut self, blocked: u32) -> u32 {
+        let n = self.cycles.len() as u32 + 1;
+        let mut cycle = Cycle::new(n);
+        cycle.repairs = Some(blocked);
+        if let Some(b) = self
+            .cycles
+            .iter_mut()
+            .find(|c| c.n == blocked)
+            .and_then(|c| c.blocked.as_mut())
+        {
+            b.repaired_in = Some(n);
+        }
+        self.cycles.push(cycle);
+        n
+    }
+
     pub fn cycle(&self) -> Option<&Cycle> {
         self.cycles.last()
     }
@@ -2058,6 +2159,81 @@ mod tests {
         assert_eq!(store.list().len(), 1);
         assert_eq!(store.load(&objective.id).unwrap().budgets.usd, None);
         let _ = std::fs::remove_dir_all(&folder);
+    }
+
+    /// W13.7: a change blocked by a failure elsewhere is repaired by one
+    /// cycle that is not an improvement, only where the objective may merge,
+    /// and a repair is not repaired in turn; the record keeps it all, and a
+    /// previous build's record (without these fields) still reads.
+    #[test]
+    fn a_blocked_change_gets_one_repair_cycle_that_is_not_an_improvement() {
+        let mut objective = with_models();
+        objective.permissions.push = true;
+        objective.permissions.merge = true;
+        assert_eq!(objective.improvements(), 1);
+        assert_eq!(objective.repair_due(), None, "nothing blocked");
+        objective.cycles[0].phase = Phase::Failed;
+        objective.cycles[0].blocked = Some(Blocked {
+            failure: crate::blockers::CiFailure {
+                check: "workspace".into(),
+                ..Default::default()
+            },
+            why: "fails in agq-orchestrator, which the change cannot affect".into(),
+            cause: Cause::Elsewhere,
+            repaired_in: None,
+            carried_as: None,
+            note: String::new(),
+        });
+        let mut machinery = objective.clone();
+        machinery.cycles[0].blocked.as_mut().unwrap().cause = Cause::Infrastructure;
+        assert_eq!(
+            machinery.repair_due(),
+            None,
+            "the machinery is not repaired"
+        );
+        let mut may_not = objective.clone();
+        may_not.permissions.merge = false;
+        assert_eq!(may_not.repair_due(), None, "no repair without merging");
+        assert_eq!(objective.repair_due(), Some(1));
+        assert_eq!(objective.start_repair(1), 2);
+        assert_eq!(objective.cycles[1].repairs, Some(1));
+        assert!(objective.cycles[1].exploring.is_none());
+        assert_eq!(
+            objective.cycles[0].blocked.as_ref().unwrap().repaired_in,
+            Some(2)
+        );
+        assert_eq!(objective.improvements(), 1, "a repair is no improvement");
+        assert_eq!(objective.repair_due(), None, "repaired once");
+        // A repair cycle blocked in turn is not repaired again.
+        objective.cycles[1].phase = Phase::Failed;
+        objective.cycles[1].blocked = objective.cycles[0].blocked.clone();
+        objective.cycles[1].blocked.as_mut().unwrap().repaired_in = None;
+        assert_eq!(objective.repair_due(), None);
+        // What a cycle builds: the carried merge, else its own.
+        objective.cycles[1].merged = Some("repair".into());
+        assert_eq!(
+            objective.cycles[1].to_build().map(String::as_str),
+            Some("repair")
+        );
+        objective.cycles[1].carried = Some("carried".into());
+        assert_eq!(
+            objective.cycles[1].to_build().map(String::as_str),
+            Some("carried")
+        );
+        let text = serde_json::to_string(&objective).unwrap();
+        assert_eq!(serde_json::from_str::<Objective>(&text).unwrap(), objective);
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        for cycle in old["cycles"].as_array_mut().unwrap() {
+            for field in ["blocked", "repairs", "carried"] {
+                cycle.as_object_mut().unwrap().remove(field);
+            }
+        }
+        let read: Objective = serde_json::from_value(old).unwrap();
+        assert!(
+            read.cycles
+                .iter()
+                .all(|c| c.blocked.is_none() && c.repairs.is_none())
+        );
     }
 
     #[test]

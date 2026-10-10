@@ -2394,6 +2394,43 @@ Conversation panel: the sentence about limits shared their row and did
 not wrap. It has a line of its own, and the journey now checks that Start
 is on screen inside the window (that check fails on the first version).
 
+**W13.7 repair: a failure of the repository's checks attributed** (#129).
+The Orchestrator reads each failed check's log into its failing tests and
+their crates (`blockers.rs`), and places them against the crates the change
+touches or affects. The rules:
+
+- **The change's own failure** goes back to the implementer, as before. A
+  failing test that reads files outside its crate, a failing step that is
+  not a test, or a log that cannot be read counts as the change's.
+- **A failure elsewhere** stops the cycle and keeps the reviewed change on
+  its pull request. Where the objective may merge, a repair cycle proposes
+  only the repair; it is not an improvement and does not delegate. Its
+  implementer and reviewer are told its scope. Once it is merged, the
+  blocked change is carried onto it, but only if the repair touches what
+  failed and the change's patch is unchanged. It is merged only when the
+  repository's checks pass on it, and that build is tried and adopted.
+- **A check that never reached a verdict** is the machinery's: the change
+  waits, and nothing reruns it.
+
+Tested:
+- #125's actual log, attributed elsewhere for a Studio-only change.
+- A test reading outside its crate, a dependency's change, the model, a
+  lint and a crashed target, each attributed to the change.
+- Setup failures and cancellations, attributed to the machinery.
+- Several checks combined into one attribution.
+- A repair that does not touch what failed, refused for carrying.
+- The record's repair rules, and the commit a cycle builds.
+- A reviewed patch carried onto a moved base, and one the base changed
+  under it refused.
+
+An independent review found the trial of a carried change checking the
+wrong commit, carries lost on a stop, and a repair that touched nothing
+able to unblock by rerunning; corrected.
+
+Not tested end to end: the repair → carry → build → try path in `run.rs`,
+and the host's side (pushing, the pull request's checks, merging), have no
+stand-in in the tests.
+
 **W13.7 repairs: exploration** (the Operator's live proof explored the
 Studio and failed: the lead's plan named Agentique's own model, but the
 Driver alternated its start between `models/url-shortener` and `model`,
