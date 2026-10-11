@@ -945,7 +945,13 @@ fn merged_cycle_at(
     cycle.build = build.map(str::to_string);
     objective.cycles.push(cycle);
     store.save(&objective).unwrap();
-    let setup = Setup {
+    let setup = adopting_setup(dir, &store, running_build);
+    (store, objective, setup, merged)
+}
+
+/// A Setup whose roles cannot work, for objectives past their merge.
+fn adopting_setup(dir: &Path, store: &Store, running_build: Option<&str>) -> Setup {
+    Setup {
         store: store.clone(),
         work: dir.join("work"),
         builds: dir.join("builds"),
@@ -957,8 +963,7 @@ fn merged_cycle_at(
         speed: "instant".into(),
         credential: Box::new(|_| None),
         studios: Box::new(run::Live),
-    };
-    (store, objective, setup, merged)
+    }
 }
 
 /// What a held objective's run shows: its thread, the handovers it asked
@@ -1204,4 +1209,134 @@ fn a_failure_before_the_merge_and_a_merge_only_objective_go_on() {
         "{:#?}",
         held.thread
     );
+}
+
+/// AR-DEC-002: an objective continued in a build or repository that would
+/// check it with less than it was started with does not go on: before any
+/// phase, it stays not finished, its note naming what is missing.
+#[test]
+fn continuing_with_a_check_fewer_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, mut objective, mut setup, _) =
+        merged_cycle_at(dir.path(), Phase::Build, None, None, 2);
+    let words = |w: &str| w.split(' ').map(str::to_string).collect::<Vec<_>>();
+    objective.frozen = Some(agq_orchestrator::record::FrozenChecks {
+        checks: vec![
+            words("cargo fmt --all -- --check"),
+            words("cargo test --workspace"),
+        ],
+        protected: Vec::new(),
+        safeguards: Vec::new(),
+        build: Some("b1".into()),
+    });
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    setup.checks = vec![words("cargo fmt --all -- --check")];
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert_eq!(held.holds, 0, "it built nothing: {:#?}", held.thread);
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Running, "not finished");
+    assert_eq!(record.cycles.len(), 1);
+    assert_eq!(record.cycles[0].phase, Phase::Build, "no phase ran");
+    let note = record.note.unwrap_or_default();
+    assert!(
+        note.contains("Missing now: the required check `cargo test --workspace`")
+            && note.contains("started with them in b1"),
+        "{note}"
+    );
+    assert!(
+        held.thread.iter().any(|t| t.contains("Missing now")),
+        "{:#?}",
+        held.thread
+    );
+}
+
+/// AR-DEC-002: a build that requires more than the objective was started
+/// with goes on, holding it to the more, and says so; a record without
+/// frozen checks is frozen at its first run, its thread listing them.
+#[test]
+fn continuing_with_a_check_more_goes_on_and_says_so() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, mut objective, mut setup, _) =
+        merged_cycle_at(dir.path(), Phase::Build, None, None, 2);
+    let words = |w: &str| w.split(' ').map(str::to_string).collect::<Vec<_>>();
+    setup.checks = vec![words("cargo fmt --all -- --check")];
+    let id = objective.id.clone();
+    // Its record has none yet: frozen now, said in the thread.
+    let first = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert!(
+        first
+            .thread
+            .iter()
+            .any(|t| t.starts_with("Its record had no frozen checks")),
+        "{:#?}",
+        first.thread
+    );
+    objective = store.load(&id).unwrap();
+    let frozen = objective.frozen.clone().expect("frozen at its first run");
+    assert_eq!(frozen.checks, vec![words("cargo fmt --all -- --check")]);
+    assert!(frozen.protected.iter().any(|p| p == ".git"), "{frozen:?}");
+    assert!(
+        frozen.safeguards.iter().any(|p| p == "crates/orchestrator"),
+        "{frozen:?}"
+    );
+    // Continued with a check more: it goes on (and is held at its build).
+    let mut more = adopting_setup(dir.path(), &store, None);
+    more.checks = vec![
+        words("cargo fmt --all -- --check"),
+        words("cargo test --workspace"),
+    ];
+    objective.state = State::Running;
+    objective.note = None;
+    store.save(&objective).unwrap();
+    let second = run_held(&store, more, objective, |_| Ok(()), |_| Command::Stop);
+    assert!(
+        second.thread.iter().any(|t| t
+            .starts_with("This build also requires the required check `cargo test --workspace`")),
+        "{:#?}",
+        second.thread
+    );
+    assert_eq!(
+        second.holds, 1,
+        "it went on to its build: {:#?}",
+        second.thread
+    );
+    // What it was started with stays what it is held to at least.
+    assert_eq!(store.load(&id).unwrap().frozen, Some(frozen));
+}
+
+/// AR-DEC-002, after an adoption: a build that took over records the
+/// adoption (Resume runs nothing else), and is then refused before the next
+/// phase if it would check with less than the objective was started with.
+#[test]
+fn an_adopted_build_with_a_check_fewer_records_the_adoption_and_goes_no_further() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, mut objective, mut setup, _) =
+        merged_cycle_at(dir.path(), Phase::Resume, Some("b1"), Some("b1"), 2);
+    let words = |w: &str| w.split(' ').map(str::to_string).collect::<Vec<_>>();
+    objective.continuation = Some(agq_orchestrator::record::Continuation {
+        cycle: 1,
+        build: "b1".into(),
+        at: "t".into(),
+    });
+    objective.frozen = Some(agq_orchestrator::record::FrozenChecks {
+        checks: vec![
+            words("cargo fmt --all -- --check"),
+            words("cargo test --workspace"),
+        ],
+        protected: Vec::new(),
+        safeguards: Vec::new(),
+        build: Some("b0".into()),
+    });
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    setup.checks = vec![words("cargo fmt --all -- --check")];
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    let record = store.load(&id).unwrap();
+    assert!(record.cycles[0].adopted, "{:#?}", held.thread);
+    assert_eq!(record.continuation, None);
+    assert_eq!(record.cycles.len(), 1, "no next cycle: {:#?}", held.thread);
+    assert_eq!(record.state, State::Running, "not finished");
+    let note = record.note.unwrap_or_default();
+    assert!(note.contains("Missing now"), "{note}");
 }

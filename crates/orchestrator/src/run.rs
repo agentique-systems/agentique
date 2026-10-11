@@ -422,6 +422,40 @@ fn freshen(folder: &Path) {
     }
 }
 
+/// How a refusal for checks fewer than frozen begins.
+const REFUSED_FROZEN: &str =
+    "This build would check the objective with less than it was started with.";
+
+/// The required checks and protections this build and repository hold an
+/// objective to now: the project's required checks, the links' protected
+/// paths with the built-in ones, and the safeguards and agent configuration
+/// a cycle changes only when named.
+fn frozen_now(setup: &Setup) -> record::FrozenChecks {
+    let path = |p: &str| p.replace('\\', "/");
+    let mut protected: Vec<String> = setup
+        .protected
+        .iter()
+        .map(|p| path(p))
+        .chain(gates::ALWAYS_PROTECTED.iter().map(|p| path(p)))
+        .collect();
+    protected.sort();
+    protected.dedup();
+    let mut safeguards: Vec<String> = gates::SAFEGUARDS
+        .iter()
+        .chain(gates::AGENT_CONFIGURATION.iter())
+        .chain(gates::AGENT_FILES.iter())
+        .map(|p| path(p))
+        .collect();
+    safeguards.sort();
+    safeguards.dedup();
+    record::FrozenChecks {
+        checks: setup.checks.clone(),
+        protected,
+        safeguards,
+        build: setup.running_build.clone(),
+    }
+}
+
 /// How many tests a test run says it ran: cargo's `test result:` lines,
 /// Node's `# pass` / `ℹ pass`, Python's `Ran N tests` less those its summary
 /// says were skipped (`OK (skipped=N)`), as cargo leaves ignored tests and
@@ -950,6 +984,10 @@ impl Driver {
         {
             cycle.phase = Phase::Resume;
         }
+        // Held to what it was started with, before any phase but Resume
+        // (which runs nothing and records whether an adopted build took
+        // over).
+        let mut frozen = Some(self.hold_to_frozen());
         loop {
             self.hold();
             if self.interrupted() {
@@ -957,6 +995,15 @@ impl Driver {
             }
             if let Some((state, reason)) = self.over() {
                 self.end(state, reason);
+                return;
+            }
+            if self.objective.cycle().map(|c| c.phase) != Some(Phase::Resume)
+                && let Some(Err(why)) = frozen.take()
+            {
+                // Not finished: a later Continue checks again.
+                self.objective.note = Some(why.clone());
+                self.event(why);
+                self.save();
                 return;
             }
             let phase = match self.objective.cycle().map(|c| c.phase) {
@@ -1130,6 +1177,59 @@ impl Driver {
 
     fn improvements(&self) -> u32 {
         self.objective.improvements()
+    }
+
+    /// Holds the objective to the required checks and protections frozen
+    /// when it first ran (AR-DEC-002): a record without them (a fresh one,
+    /// or one an earlier build wrote or saved) freezes what this build and
+    /// repository give now; with them, this build may add to them, said in
+    /// the thread, but `Err` when it would check with less.
+    fn hold_to_frozen(&mut self) -> Result<(), String> {
+        let now = frozen_now(&self.setup);
+        let Some(frozen) = self.objective.frozen.clone() else {
+            let lines = now.lines();
+            let text = if self.objective.cycles.is_empty() {
+                format!(
+                    "Its required checks and protections, frozen for every later start: {} check(s), {} protected path(s), {} safeguard(s)",
+                    now.checks.len(),
+                    now.protected.len(),
+                    now.safeguards.len()
+                )
+            } else {
+                "Its record had no frozen checks (an earlier build wrote or saved it): from now on it is held to this build's required checks and protections".to_string()
+            };
+            self.objective.frozen = Some(now);
+            self.save();
+            self.post(ThreadEntry::event(text).with_details(lines.join("\n")));
+            return Ok(());
+        };
+        // A refusal before is over once this build holds every one of them.
+        if self
+            .objective
+            .note
+            .as_deref()
+            .is_some_and(|n| n.starts_with(REFUSED_FROZEN))
+            && frozen.missing(&now).is_empty()
+        {
+            self.objective.note = None;
+            self.save();
+        }
+        let missing = frozen.missing(&now);
+        if !missing.is_empty() {
+            return Err(format!(
+                "{REFUSED_FROZEN} Missing now: {}. It was started with them in {}. Continue it in a build that has them (Settings › About › Builds) or with them restored, or stop it and start a new objective under this build's checks.",
+                missing.join("; "),
+                frozen.build.as_deref().unwrap_or("a development build")
+            ));
+        }
+        let added = frozen.added(&now);
+        if !added.is_empty() {
+            self.event(format!(
+                "This build also requires {}. The objective is held to them too, with those it started with.",
+                added.join("; ")
+            ));
+        }
+        Ok(())
     }
 
     /// Holds a cycle whose merged change failed to build, pass its trial or

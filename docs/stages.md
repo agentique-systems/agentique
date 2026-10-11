@@ -2093,7 +2093,7 @@ it). Read against the code and the model before any change:
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 | W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
-| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, #135, #136, `stage13/provenance`, `stage13/pending-adoption` | #134, #135 and #136 merged; the rest in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134 to #138, `stage13/frozen-checks` | #134 to #138 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2919,3 +2919,33 @@ by the Operator." by the Studio (its cycle still says merged, not adopted);
 a recovery after a fallback counts a resume and waits paused, so two of
 them end it, as for any paused objective. Not verified: a real release
 build, trial and handover with the launcher.
+
+*An objective's required checks are frozen when it first runs* (AR-T-005
+read, AR-T-006 built, the review's AR-DEC-002 decided under the
+delegation; `stage13/frozen-checks`). The criteria were frozen at the
+proposal, but the project's required checks and protected paths were read
+again at every start: an adopted build, a fallback to an older one, or an
+edit of `model/links.json`'s protected paths in the working copy could
+continue an objective under fewer checks than it started with. Now its
+record keeps them (`frozen`: the check commands, the protected paths, the
+safeguards and agent configuration, and the build that froze them), written
+at its first run; every later start compares: the same goes on; more goes
+on, held to the more, said in the thread; anything missing (a reworded
+command too) is refused before any phase but Resume (an adopted build
+records the adoption first), leaving the objective not finished with a
+note naming what is missing. A record without them (an earlier build wrote
+it) does not go on by itself; the Operator's Continue freezes the current
+set and the thread lists it. Self-model: the Orchestrator's contract says
+so (`apply_changes`, the lock confirmed). Tested: what is missing and what
+is added, the format read by the previous build's fields, the rule of
+`on_start`, a start with a check fewer refused, one with a check more going
+on and saying so, an old record frozen at its first run, and an adopted
+build with a check fewer recording the adoption and going no further. An
+independent review found the adoption path untested, a refusal's note left
+after the checks held again, and a doc comment moved; corrected. Not
+changed: a refused objective looks interrupted, so a recovery
+(`--recovered-from`) continues it by itself and is refused again, until
+two such resumes end it; the Studio still reads `model/links.json`'s protected
+paths from the working copy at a start (a removal between starts is now
+refused). Not verified: the real previous build reading a record with
+`frozen`.
