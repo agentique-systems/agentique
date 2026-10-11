@@ -2050,4 +2050,39 @@ package AgentiqueArchitecture {
     }
 
     satisfy purpose by agentique;
+
+    verification def AMergedChangeWhoseBuildFails {
+        doc /* A failure path of adoption: the merged change's release build fails, so the cycle is merged but not adopted, and the objective is held for the Operator rather than going on to its next cycle on a merged commit no build ran (J8, K8, ROADMAP §4.16, AR-T-014). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify recoverableAdoption;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part approves : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = true);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 2, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept integrate : Integrate via orchestrator.jobs;
+        then send new Integrated(ok = true) via orchestrator.jobs;
+        then accept build : BuildRequest via orchestrator.jobs;
+        then send new Built(ok = false) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then accept after 1000;
+        then assert constraint mergedNotAdoptedAndHeld {
+            report.merged and not report.adopted and orchestrator.driver.cyclesLeft == 2
+        }
+    }
 }
