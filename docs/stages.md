@@ -2093,7 +2093,7 @@ it). Read against the code and the model before any change:
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 | W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
-| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, `stage13/gates` | #134 merged; the rest in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, #135, `stage13/stale-model` | #134 and #135 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2784,3 +2784,35 @@ not know which checks the host requires, and GitHub counts a skipped
 required check as passing); a neutral check (which `gh` lists among the
 skipped) is said to be skipped. Not verified: a real disk failure during an
 adoption, and skipped checks on a real pull request.
+
+*An action decided on a model its agent never saw* (AR-T-017 reproduced,
+AR-T-018 repaired; `stage13/stale-model`; the control interface is among
+the Orchestrator's safeguards, named under the delegation). An action
+names the observation it rests on (its `screenRevision`), and the revision
+rose only when the screen's shape changed (screen, dialog, palette,
+project, settings section, selection). So an Operator's edit that kept the
+view and the selection (a rename, a value) left an agent's earlier
+observation current, and the agent's `delete` was carried out on a model it
+never saw. The model's revision is now part of the screen's shape: any
+change to the model (the Operator's, the Assistant's, an undo) makes earlier
+observations stale, and the refusal says the screen or the model changed,
+with the model's revision now. Chosen over the review's proposal of an
+optional `expect.revision`, which only agents that send it would have: this
+covers every agent with no change to what they send. An agent's own change
+does not make its next action stale (each answer carries the revision after
+it), but a change by someone else does, so:
+- a wait, which changes nothing, is not refused for a change since its
+  observation (a request's wait while the Assistant's turn changes the
+  model);
+- the explorer, clicking Stop on a turn past its budget, observes again
+  and tries once more when refused as stale, as its other actions do;
+- the tools' description and skill tell agents that their own
+  `apply_changes` changes the model too, so they observe again after it.
+
+Tested: the reproduction now refuses the action observed before the rename
+(the selection unchanged), accepts it observed again, and does not refuse a
+wait; the Orchestrator's stand-in Studio raises its revision with its model
+as the Studio does. An independent review found waits and Stop refused
+during an Assistant's turn, and the tool description agents read unchanged;
+corrected. Not verified: a real window (the window journeys observe before
+each action that changes the model).
