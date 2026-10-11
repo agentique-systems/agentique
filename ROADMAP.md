@@ -2189,8 +2189,8 @@ rendering are exercised; selecting an element; waiting for a condition
 (beside other actions). An action names the identity and the observation
 (its screen revision) it rests on: one for another instance, project,
 session or build, a screen that changed since (screen, dialog, palette,
-project, settings section or selection), or a control that is gone or
-disabled is refused as stale; a request nobody waits for any more is dropped.
+project, settings section or selection) or a model that changed since (its
+revision), or a control that is gone or disabled is refused as stale; a request nobody waits for any more is dropped.
 **The Operator's own** stays the Operator's (§3 roles): an agent cannot
 answer a dialog that asks for the Operator's approval (integrating a task,
 changing locked elements, trusted-local execution, a paid live run, starting

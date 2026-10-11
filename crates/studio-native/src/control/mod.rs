@@ -808,16 +808,18 @@ pub fn command_by_name(name: &str) -> Option<CommandId> {
 }
 
 /// The screen's shape: what an action's place and effect depend on (a
-/// command acts on the selection).
+/// command acts on the selection, and on the model as it is: an action
+/// decided on a model its agent never observed is stale, AR-T-018).
 fn shape(studio: &Studio) -> String {
     format!(
-        "{}|{}|{}|{:?}|{}|{:?}",
+        "{}|{}|{}|{:?}|{}|{:?}|{:?}",
         screen(studio),
         dialog_kind(studio).unwrap_or_default(),
         studio.palette.is_some(),
         studio.project.as_ref().map(|p| p.folder().to_path_buf()),
         studio.settings_section_name(),
         studio.selection.elements(&studio.scene),
+        studio.project.as_ref().map(|p| p.state().revision()),
     )
 }
 
@@ -1734,10 +1736,15 @@ pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
     };
     if seen != studio.control.screen_revision {
         return Some(format!(
-            "stale: the screen changed since you observed it (now: {}{}); observe again",
+            "stale: the screen or the model changed since you observed it (now: {}{}{}); observe again",
             screen(studio),
             dialog_kind(studio)
                 .map(|d| format!(", dialog {d}"))
+                .unwrap_or_default(),
+            studio
+                .project
+                .as_ref()
+                .map(|p| format!(", model revision {}", p.state().revision()))
                 .unwrap_or_default()
         ));
     }
@@ -3244,12 +3251,13 @@ mod tests {
         assert_eq!(app.control.digest, None);
     }
 
-    /// Research reproduction AR-T-017 (characterises what is, not what
-    /// should be): an action is checked against the screen's shape, not the
-    /// model's revision, so an action observed before the Operator changed
-    /// the model is accepted on the changed model.
+    /// AR-T-018 (`oneChangePath`): an action is decided on the model its
+    /// agent observed. The Operator renames the selected part after an
+    /// agent observed it and before its `delete` arrives: the screen keeps
+    /// its view, dialog and selection, but the model changed, so the action
+    /// is stale and is refused; observed again, it is accepted.
     #[test]
-    fn an_action_observed_before_the_model_changed_is_accepted_on_the_changed_model() {
+    fn an_action_observed_before_the_model_changed_is_stale() {
         let (mut app, _folder) = crate::edit::app_tests::studio("model-race");
         let api = crate::edit::app_tests::part(&mut app, "api");
         // What `tick` does each frame before it takes requests.
@@ -3268,31 +3276,28 @@ mod tests {
         );
         let revision = |app: &Studio| app.project.as_ref().unwrap().state().revision();
         let model_seen = revision(&app);
-        let delete = act(
-            &app,
-            "explorer",
-            json!({ "kind": "command", "id": "delete" }),
-            true,
-        );
+        let delete = || json!({ "kind": "command", "id": "delete" });
+        let before = act(&app, "explorer", delete(), true);
         // The Operator renames the selected part: the model changes, the
-        // screen keeps its shape (the same view, dialog and selection).
+        // view, dialog and selection do not.
         app.rename(api, "gateway");
         refresh(&mut app);
         assert_ne!(revision(&app), model_seen, "the model changed");
         assert_eq!(
-            delete.body["observed"],
-            json!(app.control.screen_revision),
-            "the screen did not"
+            app.selection.elements(&app.scene),
+            vec![api],
+            "the selection did not"
         );
-        assert_eq!(
-            stale(&app, &delete.body),
-            None,
-            "so the action is not stale"
-        );
+        let why = stale(&app, &before.body).expect("the action is stale");
+        assert!(why.contains("the model changed"), "{why}");
         assert!(
-            start(&mut app, delete).is_ok(),
-            "and it is accepted on a model its agent never observed"
+            why.contains(&format!("model revision {}", revision(&app))),
+            "{why}"
         );
+        // Observed again, it is decided on the model as it is now.
+        let after = act(&app, "explorer", delete(), true);
+        assert_eq!(stale(&app, &after.body), None);
+        assert!(start(&mut app, after).is_ok());
     }
 
     /// The digest's cost at 10k elements (W12.2): worked out once per model
