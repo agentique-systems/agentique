@@ -2736,6 +2736,86 @@ memory and not run again, so coverage and unwanted actions are not compared;
 for it there is only the 6-step measurement above (decisions p50 17 s, model
 calls p50 75 s).
 
+*E3, exploration that serves engineering questions* (`stage13/explore-questions`;
+the Orchestrator's lock confirmed for its docs on the Operator's instruction
+for these repairs). The lead's plan may give `hypotheses` (at most five):
+a claim, the requirement of the project's model that governs it (resolved at
+the commit, its text read from the model through a copy of the project) or
+the intended behaviour, the workflow in the screens' words, and the expected
+observation. A run tests them first, each with a share of its steps (its
+steps divided among them and what is not covered after, three at least),
+decided by the escalation role's reasoning model (an engineering question,
+as E2's review asked; a view or panel the workflow names is still opened by
+rule), whose prompt holds the hypothesis, the requirement's text and the
+expectations the testing knowledge holds as judged wrong before; its spend
+counts under the escalation role; the existing expectation mechanism answers it: the
+expectation the explorer states is checked on the next observation, and the
+hypothesis agrees, is contradicted (the failed expectation is the finding,
+linked to the hypothesis and its requirement), or is not answered (no
+expectation checked within its share, or the run ended; never a finding).
+The rules answer none. Coverage-driven discovery follows. The answers go to
+the "Explored" result, the exploration's record and the proposing lead's
+brief; a contradicted hypothesis is still only a finding, judged against its
+requirement (the dispositions of C-55, unchanged), and a proposal that fixes
+it names that requirement in `serves`. The planning instructions lead to
+hypotheses about meaning (counts against the rows they summarise, what is
+counted with what, which configuration evidence refers to, whether something
+unsupported or out of date says so), not to this objective. Tests: the
+engine's three answers with the finding linked and the prompt's contents,
+the rules answering none, a hypothesis's requirement refused when unknown
+and its text carried, the report in the thread and the lead's brief, the
+reading of hypotheses and the proposal's requirement, a hypothesis's step
+counted for the escalation role. Not verified: a live run of the reasoning
+model forming expectations on a real Studio, and how long a hypothesis
+takes with it (E2 measured deepseek-v4-pro at max at about 75 s a call on
+the stand-in).
+
+*E3 after its independent review* (a separate agent requested changes;
+finished on 2026-10-11 under the Operator's delegation, rebased on the
+external review's repairs). A hypothesis's requirement is resolved in the
+repository's own model, where `serves` is checked, and a proposal that
+fixes its finding must serve the requirement the lead judged the finding
+against, or the hypothesis's (before, a target other than `model` refused
+every fix). A finding of a failed expectation keeps what was expected in its
+identity, so two contradictions are two findings (before, they collided and
+the second read as already judged). Only the expectation the reasoning
+model marks `answers` answers a hypothesis, and the answer records what was
+expected and observed; an expectation only about the Assistant's reply
+answers nothing; the last step's expectation is settled after the run.
+Hypothesis steps rank relevance before coverage, name the requirement and
+select it by rule where the explored project holds it; Jev navigates between
+the reasoning steps, whose effort is capped at high. The directive lists the
+hypotheses, progress names the one under test and says when each is
+answered; children do not inherit hypotheses, answered ones are not tested
+again, and the planning lead's brief lists the answers. The expectations
+judged wrong before go only into the reasoning prompts, with why. Tests: the
+path end to end on the stand-in (a contradicted hypothesis reproduced,
+judged, offered and fixed for its requirement), identities, a stop while a
+hypothesis is tested, and reply-only expectations. Measured live on the
+stand-in (no windows; two hypotheses: every History button says what it
+does, which the stand-in's unlabelled Archive button contradicts, and
+validating says whether the model is valid): with deepseek-v4-pro at high
+for the hypotheses, 10 min 5 s and $0.20, its 5 calls p50 58 s and slowest
+189 s, the model 99 % of the time; with deepseek-flash at high, 4 min 20 s
+and $0.067, calls p50 44 s and slowest 74 s; both found validation to agree
+and left the History hypothesis not answered within its five steps (no
+expectation can say "every control is labelled"; the run's own label check
+is what finds an unlabelled control). Which model tests hypotheses stays
+the escalation role's setting (Settings › Agents). Its second independent
+review found Jev's navigation during a hypothesis counted as the escalation
+model's spend, the self-model and §4.16 still describing the first version,
+and the requirement rule for `serves` applied to every finding; corrected
+(only a step the reasoning model decided is the hypothesis's; the self-model
+through `apply_changes`; the rule only for a hypothesis's finding), and a
+hypothesis's requirement is selected again after a restart. Not changed: an
+answering expectation that mixes a reply part with a screen part is judged
+on the screen part; the identity of a discovery expectation keeps its values
+too, so variants that differ only in numbers are separate findings;
+`traceability::project_model` (used to resolve a plan's names) now also
+returns the text of the requirements a hypothesis names, and joins a
+project's folders one by one (`within`), so `models/shop` works on Windows
+too. Not verified: a live run on a real Studio.
+
 **W13.7 repairs from an external review.** An external research review
 of `main` at `5d893017` (2026-10-10) read the loop's code against its
 requirements and listed suspected defects; each repaired here was first

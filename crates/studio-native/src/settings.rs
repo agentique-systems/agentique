@@ -464,7 +464,7 @@ pub const AGENTS: &[Setting] = &[
     agent_row(
         "agents.escalation.model",
         "Escalation",
-        "The reasoning model a typed decision escalates to when Jev is unsure (reading an objective's intent), called directly (an API key, never the subscription token). An exploration's steps go to the explorer's model instead.",
+        "The reasoning model a typed decision escalates to when Jev is unsure (reading an objective's intent), and that decides an exploration's steps testing a hypothesis, called directly (an API key, never the subscription token). An exploration's other steps go to the explorer's model.",
         "anthropic/claude-opus-5-5",
         AGENT_MODELS,
     ),

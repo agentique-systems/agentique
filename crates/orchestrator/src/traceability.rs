@@ -910,19 +910,43 @@ pub fn projects(repository: &Path, commit: &str) -> Result<Vec<String>, String> 
 
 /// The model of project `project` of `checkout` (a checkout of a commit in
 /// which nothing ran), by identity, as the names of an exploration's plan
-/// are resolved in it: read through a fresh repository in `scratch` that
-/// holds a copy of its model files (a project other than the repository's
-/// own `model` has no history of its own to read it from), removed after.
-pub fn project_model(checkout: &Path, project: &str, scratch: &Path) -> Result<Elements, String> {
+/// are resolved in it, and the text of each element of `read` that it has,
+/// as the model prints it (`read_model`): read through a fresh repository
+/// in `scratch` that holds a copy of its model files (a project other than
+/// the repository's own `model` has no history of its own to read it
+/// from), removed after.
+pub fn project_model(
+    checkout: &Path,
+    project: &str,
+    scratch: &Path,
+    read: &[&String],
+) -> Result<(Elements, BTreeMap<String, String>), String> {
     let _ = std::fs::remove_dir_all(scratch);
-    let read = (|| {
-        crate::explore::copy_model(&checkout.join(project), &scratch.join("model"))?;
+    let model = (|| {
+        crate::explore::copy_model(
+            &crate::explore::within(checkout, project),
+            &scratch.join("model"),
+        )?;
         let commit = agq_execution::git::init_and_commit(scratch, "the project's model")
             .map_err(|e| e.to_string())?;
-        agq_assistant::model_tools::model_at(scratch, &commit)
+        let elements = agq_assistant::model_tools::model_at(scratch, &commit)?;
+        let mut working = agq_assistant::model_tools::WorkingModel::new(scratch);
+        let mut texts = BTreeMap::new();
+        for name in read.iter().filter(|name| find(&elements, name).is_some()) {
+            let printed = working.execute(&agq_assistant::turn::ToolCall {
+                id: "read".into(),
+                name: "read_model".into(),
+                input: serde_json::json!({ "element": name.trim() }),
+            });
+            if !printed.is_error {
+                texts.insert(name.trim().to_string(), printed.content);
+            }
+        }
+        working.close();
+        Ok((elements, texts))
     })();
     let _ = std::fs::remove_dir_all(scratch);
-    read.map_err(|e| format!("the model of {project} could not be read ({e})"))
+    model.map_err(|e: String| format!("the model of {project} could not be read ({e})"))
 }
 
 /// The tree of project `project` of `repository` at `revision`

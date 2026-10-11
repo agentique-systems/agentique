@@ -119,6 +119,10 @@ pub struct Setup {
     pub credential: CredentialSource,
     /// What builds the Studio and starts its test instances.
     pub studios: Box<dyn Studios + Send>,
+    /// What answers an exploration's typed questions in place of the
+    /// providers (Jev and the models its roles name): none in operation, a
+    /// stand-in in tests (as `studios` is).
+    pub answers: Option<Box<dyn crate::decide::Answers + Send>>,
 }
 
 /// Where a key for a test instance comes from.
@@ -687,8 +691,10 @@ fn by_rules(answers: &crate::decide::Decider) -> crate::explore::Deciding<'_> {
     let none = agq_providers::ModelRef::new(agq_providers::Provider::DeepSeek, "none");
     crate::explore::Deciding {
         answers,
-        explorer: none,
+        explorer: none.clone(),
         effort: None,
+        escalation: none,
+        escalation_effort: None,
     }
 }
 
@@ -1980,7 +1986,27 @@ impl Driver {
                                 dispositions: &dispositions.borrow(),
                                 model: base_model,
                             },
-                        );
+                        )
+                        .and_then(|proposal| {
+                            // A fix of a hypothesis's finding serves the
+                            // requirement the finding was judged against, or
+                            // else the one its hypothesis names (E3); other
+                            // findings keep the rules of W13.5.
+                            let found = proposal
+                                .finding
+                                .as_ref()
+                                .and_then(|id| cycle_findings.iter().find(|f| &f.identity == id))
+                                .filter(|f| f.hypothesis.is_some());
+                            let required = found.and_then(|f| {
+                                dispositions
+                                    .borrow()
+                                    .get(&f.identity)
+                                    .and_then(|d| d.requirement.clone())
+                                    .or_else(|| f.requirement.clone())
+                            });
+                            roles::serves_the_finding(&proposal, required.as_deref())
+                                .map(|()| proposal)
+                        });
                         match read {
                             Ok(proposal) => *accepted.borrow_mut() = Some(proposal),
                             Err(problem) => {
@@ -2708,7 +2734,8 @@ impl Driver {
         }
         let (offered, text) = self.offered_findings();
         format!(
-            "Reproduced findings of this cycle{}:\n{}\n\n{}",
+            "{}Reproduced findings of this cycle{}:\n{}\n\n{}",
+            self.answers_brief(&offered),
             if offered.is_empty() {
                 ""
             } else {
@@ -4245,6 +4272,7 @@ mod tests {
             speed: "instant".into(),
             credential: Box::new(|_| None),
             studios: Box::new(Live),
+            answers: None,
         };
         let driver = Driver {
             setup: Rc::new(setup),

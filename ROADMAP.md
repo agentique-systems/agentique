@@ -2348,7 +2348,24 @@ every 10 seconds while it waits, and after each action (what it did, how it
 came out, who chose it, its time), as updates folded under the exploration
 whose row shows the latest while the run goes on; each step keeps where its
 time went (Jev, the model with its calls, prompt and tokens, acting,
-observing), and the result says it in a line. Only what happened is reported. A
+observing), and the result says it in a line. Only what happened is
+reported. A plan may give the run hypotheses to test first (the W13.7
+repair): each a claim, the
+requirement of the repository's own model that governs it (its text read from
+that model and given to the explorer) or the intended behaviour, the workflow
+in the screens' words and the expected observation. Within a share of the
+run's steps, the escalation role's reasoning model (at most at high effort)
+decides the steps that state what the hypothesis expects (an engineering
+question: which action shows the answer, what the requirement says it must
+show), Jev navigates between them, and the requirement is selected by rule
+where the project explored holds it; the check of the expectation the model
+marks as answering it, on the next observation, answers the hypothesis: it
+agrees, it is contradicted (that expectation failed: a finding linked to the
+hypothesis and its requirement), or it is not answered (never a finding).
+Discovery of what is not covered follows. A contradicted hypothesis is still
+only a finding: the lead judges it against a requirement, and a proposal
+that fixes it serves the requirement it was judged against, or else the
+hypothesis's. A
 **finding** is a deterministic check that failed: an invariant (the instance
 exits or stops answering; a control the observation offered to agents, enabled,
 is refused as gone or disabled on a screen that did not change; an
@@ -3728,6 +3745,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-11 | Locked part under C-54, as built (W13.7 repairs from the external review, AR-T-019 and AR-T-016; the Orchestrator named under the delegation): Jev's waits take the objective's stop, as a model's call does, and cancel the request at once (the providers' existing cancel), whose cost is counted as unknown when it was sent; only a model's call is reported as asked and waited for; an exploration step whose decision was paid for is recorded before its instance starts again or its run ends, so the objective's spend counts it. No record format changes | A Stop took effect only at Jev's deadline, and a paid decision could be left out of the spend (both reproduced) |
 | 2026-10-11 | Locked part under C-53, as built (the boundary audit's F3 and F4; `ClaudeAgentRuntime` named under the delegation): the companion's file-tool hook refuses a write whose leaf, or the file a link at the leaf leads to, has more than one hard link, or is a link whose target cannot be resolved; it reads a search's glob as ripgrep does as the SDK passes it (split on whitespace and commas, escapes, braces, classes) and refuses one that picks out a hidden name but no ordinary one, or that it cannot read (nested braces, more than 64 alternatives, a class it cannot compile); it fails closed on a call it cannot judge. Broad globs stay with the deny rules | File tools are held to the session's folders and never read key files (the C-53 policy); the audit wrote outside through links and searched `.env` with a glob |
 | 2026-10-11 | The standards lock's `selection_basis` (metadata, not a pinned artifact; under the delegation): it names `docs/standards-discrepancies.md` at the tag `archive/pre-realignment`, as the tool that writes the lock does, since Stage 0 removed it from `main` (AR-F-002). No artifact, archive, source, PDF or specification changes | A reader of the lock followed a dead link to the edition's provenance |
+| 2026-10-11 | Locked part under C-54, as built (W13.7 repair E3, exploration that serves engineering questions; the Operator authorised these repairs, and it was finished under the delegation after its independent review): `submit_exploration` takes `hypotheses` (at most 5: a claim, a `requirement` of the repository's own model resolved at the commit, its text read from that model, or the intended `behaviour`, a `workflow`, the `expected` observation); a run tests them first, each with a share of its steps: the escalation role's reasoning model (`Deciding.escalation`, at most at high effort; a step Jev is unsure of otherwise goes to the explorer's model, E2) decides the steps that state what a hypothesis expects, with the hypothesis, the requirement's text and the expectations the testing knowledge holds as judged wrong before (with why) in its prompt, Jev navigates between, and the requirement is selected by rule where the project holds it; such a step is `hypothesis` (`Step.by`) and its spend counts under `escalation`, Jev's navigation under `decisions`; the check of the expectation it states answers it (agrees, contradicted with its finding linked, or not answered, never a finding; the rules answer none); discovery follows; the answers go to the thread, the exploration's record and the proposing lead's brief; a proposal fixing a hypothesis's finding serves the requirement the lead judged the finding against, or the hypothesis's (other findings keep W13.5's rules); only the expectation marked `answers` answers a hypothesis; a failed expectation's finding keeps what was expected in its identity, so findings identified before this change are not matched by their rediscovery (found again as new). Records: optional fields only, formats unchanged (`objective.json`: the target's `hypotheses`, an exploration's `answers`; a finding's `hypothesis`, `requirement` and `behaviour`, also in the testing knowledge), so a previous build reads them, and drops them if it saves the record. Self-model: the docs of `Orchestrator::Plan`, `Explored` and `Explorer`, through `apply_changes` with the Orchestrator's lock confirmed | The W13.7 proof explored coverage and found only a wrong expectation about selecting a scenario; nothing tested the engineering question (do the Requirements panel's counts, subrequirements, evidence and staleness say what the model holds) |
 
 ### 7.7 The original requirements
 
