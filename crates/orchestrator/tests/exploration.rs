@@ -98,8 +98,10 @@ impl Answers for Scripted {
     fn ask_jev(
         &self,
         question: &Question,
-        _: &mut dyn FnMut() -> bool,
+        stop: &mut dyn FnMut() -> bool,
     ) -> Result<Decision, Failure> {
+        // As the Decider does while it waits for Jev.
+        let _ = stop();
         self.questions.borrow_mut().push(question.clone());
         match self.jev.borrow_mut().pop_front() {
             Some(Ok((choice, confidence))) => Ok(Decision {
@@ -1740,6 +1742,37 @@ impl Answers for Slow {
             }),
         })
     }
+}
+
+/// AR-T-019's review: Jev's wait asks whether to stop, but says nothing:
+/// only a model's call is reported as asked and waited for, so a step Jev
+/// decides is not shown as one the explorer's model was asked.
+#[test]
+fn a_step_jev_decides_is_not_reported_as_a_model_asked() {
+    let answers = Scripted {
+        jev: std::cell::RefCell::new(
+            (0..2)
+                .map(|_| Ok(("a01".to_string(), 0.95)))
+                .collect::<std::collections::VecDeque<_>>(),
+        ),
+        ..Scripted::default()
+    };
+    let mut reported = Reported::default();
+    explore::explore(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Jev, 1, 2),
+        &deciding(&answers),
+        &Knowledge::new("stand-in"),
+        &mut reported,
+    );
+    let lines = &reported.0;
+    assert!(!lines.is_empty(), "the steps are reported");
+    assert!(
+        !lines
+            .iter()
+            .any(|l| l.contains(": asks ") || l.contains(": waiting for ")),
+        "{lines:#?}"
+    );
 }
 
 /// The W13.7 repair: a run reports what it does as it goes: when a model's

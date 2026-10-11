@@ -1135,8 +1135,8 @@ pub type Escalation<'a> = Result<(&'a ModelRef, Option<&'a str>), String>;
 /// (unless `jev` says why it cannot); a set confident at `answers`'
 /// threshold is used; otherwise the `escalation` model answers them (one
 /// more call when its answer cannot be read); when neither does, the
-/// defaults, with why. `stop` is asked before and while the model is
-/// waited for (a reading the Operator's typing replaced). Asked before
+/// defaults, with why. `stop` is asked while Jev is waited for, and before
+/// and while the model is (a reading the Operator's typing replaced). Asked before
 /// Start, so the Operator sees it and may change it.
 pub fn infer(
     answers: &dyn Answers,
