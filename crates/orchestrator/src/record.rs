@@ -2110,10 +2110,8 @@ mod tests {
         assert!(cycle.findings[0].disposition.is_none());
     }
 
-    /// Durable work (C-54): after an adoption or a recovered crash it goes
-    /// on by itself; interrupted by the Operator closing Agentique, or after
-    /// an ordinary start, it waits for Continue; resumed twice without
-    /// getting further, it stops.
+    /// AR-DEC-002: frozen checks compare by what they say, whatever the
+    /// separators and duplicates.
     #[test]
     fn frozen_checks_say_what_is_missing_and_what_is_added() {
         let frozen = FrozenChecks {
@@ -2210,6 +2208,10 @@ mod tests {
         assert!(matches!(objective.on_start(false), Resuming::Stop(_)));
     }
 
+    /// Durable work (C-54): after an adoption or a recovered crash it goes
+    /// on by itself; interrupted by the Operator closing Agentique, or after
+    /// an ordinary start, it waits for Continue; resumed twice without
+    /// getting further, it stops.
     #[test]
     fn an_unfinished_objective_goes_on_by_itself_only_when_it_should() {
         let mut objective = with_models();

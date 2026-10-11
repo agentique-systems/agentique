@@ -422,6 +422,10 @@ fn freshen(folder: &Path) {
     }
 }
 
+/// How a refusal for checks fewer than frozen begins.
+const REFUSED_FROZEN: &str =
+    "This build would check the objective with less than it was started with.";
+
 /// The required checks and protections this build and repository hold an
 /// objective to now: the project's required checks, the links' protected
 /// paths with the built-in ones, and the safeguards and agent configuration
@@ -1199,10 +1203,21 @@ impl Driver {
             self.post(ThreadEntry::event(text).with_details(lines.join("\n")));
             return Ok(());
         };
+        // A refusal before is over once this build holds every one of them.
+        if self
+            .objective
+            .note
+            .as_deref()
+            .is_some_and(|n| n.starts_with(REFUSED_FROZEN))
+            && frozen.missing(&now).is_empty()
+        {
+            self.objective.note = None;
+            self.save();
+        }
         let missing = frozen.missing(&now);
         if !missing.is_empty() {
             return Err(format!(
-                "This build would check the objective with less than it was started with. Missing now: {}. It was started with them in {}. Continue it in a build that has them (Settings › About › Builds) or with them restored, or stop it and start a new objective under this build's checks.",
+                "{REFUSED_FROZEN} Missing now: {}. It was started with them in {}. Continue it in a build that has them (Settings › About › Builds) or with them restored, or stop it and start a new objective under this build's checks.",
                 missing.join("; "),
                 frozen.build.as_deref().unwrap_or("a development build")
             ));
