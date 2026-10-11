@@ -2092,7 +2092,8 @@ it). Read against the code and the model before any change:
 | W13.6 A second system | #122 | In review (below) |
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
-| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130 | E1 merged; E2 in review (below) |
+| W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, `stage13/gates` | #134 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2734,3 +2735,52 @@ deepseek-v4-pro at max (the old way) was stopped by the system for low
 memory and not run again, so coverage and unwanted actions are not compared;
 for it there is only the 6-step measurement above (decisions p50 17 s, model
 calls p50 75 s).
+
+**W13.7 repairs from an external review.** An external research review
+of `main` at `5d893017` (2026-10-10) read the loop's code against its
+requirements and listed suspected defects; each repaired here was first
+reproduced by a failing test. Since 2026-10-11 the implementing agent plays
+the autonomous loop under the Operator's delegation (ROADMAP §7.6): it names
+the locked part a repair changes, has each change reviewed by an independent
+agent, and merges when the review's findings are resolved and the checks
+pass. Nothing here says the Operator accepted anything. The same day `main`
+and the tag `approved-baseline` were given GitHub rulesets (§7.6).
+
+*Gates that passed on nothing* (`stage13/gates`; the Orchestrator's lock
+named under the delegation):
+- *A handover without its continuation* (AR-T-004). The cycle saved the
+  objective's record with its continuation and asked the Studio to hand
+  over whether the save worked or not, and the adopted build goes on from
+  the record on disk, so it would neither verify nor record the adoption.
+  Now a failed save takes the continuation back, keeps the cycle at Adopt
+  and pauses the objective, saying why; Resume tries the handover again.
+- *A criterion with no test count* (AR-T-007). A criterion's test run that
+  exited well passed unless it said it ran 0 tests, so a run that says
+  nothing countable passed too (a module that exits as it loads, a test
+  target without a summary, output cut at its 2 MB limit). It now fails,
+  saying no number of tests run could be read, with the end of its output.
+  Python's skipped tests no longer count as run (`OK (skipped=3)` is none),
+  as cargo's ignored and Node's skipped ones never did.
+- *Every check skipped* (AR-T-008). When every check the host listed was
+  skipped, the repository's checks counted as passed and the cycle merged
+  what nothing had checked. Now at least one check must pass. Checks that
+  were all skipped (still so two minutes after they were first read, in
+  case others have yet to register) are a failure: the checks' machinery's
+  (the reviewed change waits on its pull request), or the change's when it
+  touches the workflows that decide whether checks run (`.github/`).
+
+Tested: the record unwritable at the adoption (a folder where its atomic
+write puts its temporary file) pauses with no handover asked, and Resume,
+once it can be written, hands over with the continuation on disk; a
+`python -m unittest` module that exits as it loads fails its criterion (the
+test skips where `python` is not installed); Python's skipped tests; the
+checks' reading of skipped, passed, pending and failed checks, and the
+attribution of skipped ones. An independent review found the first
+attribution blaming the change for touching anything outside the crates
+(the model, say), the Resume untested, and Python's skipped tests counted;
+corrected. Not covered: a check the host requires that
+was skipped beside another that passed still passes (the Orchestrator does
+not know which checks the host requires, and GitHub counts a skipped
+required check as passing); a neutral check (which `gh` lists among the
+skipped) is said to be skipped. Not verified: a real disk failure during an
+adoption, and skipped checks on a real pull request.

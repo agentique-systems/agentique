@@ -19,6 +19,10 @@ use std::time::{Duration, Instant};
 /// How long the repository's checks may take before the cycle stops.
 pub const CHECKS_WITHIN: Duration = Duration::from_secs(60 * 60);
 
+/// How long checks that were all skipped are read again before that counts,
+/// in case others have yet to register.
+const SKIPPED_SETTLE: Duration = Duration::from_secs(120);
+
 pub(crate) fn run(
     repository: &Path,
     words: &[&str],
@@ -244,10 +248,10 @@ pub fn head(repository: &Path, number: u64) -> Result<String, String> {
 /// What the repository's checks say about the pull request.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Checks {
-    /// Every check passed (and there is at least one).
+    /// Every check passed or was skipped, and at least one passed.
     Passed,
-    /// Checks failed or were cancelled: each on a line, with where to read
-    /// it.
+    /// Checks failed or were cancelled, or every one was skipped: each on a
+    /// line, with where to read it.
     Failed(String),
     /// Some are still running, or none has registered yet.
     Pending,
@@ -279,33 +283,46 @@ pub fn checks(repository: &Path, number: u64) -> Result<Checks, String> {
             ));
         }
     };
-    let all = value.as_array().cloned().unwrap_or_default();
+    Ok(read_checks(&value.as_array().cloned().unwrap_or_default()))
+}
+
+/// What the checks `gh pr checks --json name,bucket,link` lists say: failed
+/// when any failed or was cancelled; passed when the rest passed or were
+/// skipped and at least one passed; failed when every one was skipped, since
+/// nothing ran on the commit (each skipped one on its line, with
+/// `skipping`); otherwise pending.
+fn read_checks(all: &[Value]) -> Checks {
     if all.is_empty() {
-        return Ok(Checks::Pending);
+        return Checks::Pending;
     }
+    let bucket = |c: &Value| c["bucket"].as_str().unwrap_or("").to_string();
+    let line = |c: &Value| {
+        format!(
+            "{} {} ({})",
+            c["name"].as_str().unwrap_or("a check"),
+            c["bucket"].as_str().unwrap_or("failed"),
+            c["link"].as_str().unwrap_or("")
+        )
+    };
     // Every failed or cancelled check, one per line.
     let failed: Vec<String> = all
         .iter()
-        .filter(|c| matches!(c["bucket"].as_str(), Some("fail") | Some("cancel")))
-        .map(|failed| {
-            format!(
-                "{} {} ({})",
-                failed["name"].as_str().unwrap_or("a check"),
-                failed["bucket"].as_str().unwrap_or("failed"),
-                failed["link"].as_str().unwrap_or("")
-            )
-        })
+        .filter(|c| matches!(bucket(c).as_str(), "fail" | "cancel"))
+        .map(line)
         .collect();
     if !failed.is_empty() {
-        return Ok(Checks::Failed(failed.join("\n")));
+        return Checks::Failed(failed.join("\n"));
+    }
+    if all.iter().all(|c| bucket(c) == "skipping") {
+        return Checks::Failed(all.iter().map(line).collect::<Vec<_>>().join("\n"));
     }
     if all
         .iter()
-        .all(|c| matches!(c["bucket"].as_str(), Some("pass") | Some("skipping")))
+        .all(|c| matches!(bucket(c).as_str(), "pass" | "skipping"))
     {
-        Ok(Checks::Passed)
+        Checks::Passed
     } else {
-        Ok(Checks::Pending)
+        Checks::Pending
     }
 }
 
@@ -350,6 +367,11 @@ pub fn wait_for_checks(
     loop {
         match checks(repository, number)? {
             Checks::Pending if started.elapsed() < within => {}
+            // Every check listed was skipped: others (another workflow's)
+            // may not have registered yet, so it settles a while first.
+            Checks::Failed(lines)
+                if lines.lines().all(|l| l.contains(" skipping ("))
+                    && started.elapsed() < SKIPPED_SETTLE.min(within) => {}
             other => return Ok(other),
         }
         for _ in 0..30 {
@@ -498,7 +520,7 @@ pub fn follow(repository: &Path, base_branch: &str, merged: &str) -> Result<(), 
 
 #[cfg(test)]
 mod tests {
-    use super::without_credentials;
+    use super::{Checks, read_checks, without_credentials};
 
     /// C-55: the recorded `origin` never holds a token.
     #[test]
@@ -527,5 +549,43 @@ mod tests {
         ] {
             assert_eq!(without_credentials(given), kept, "{given}");
         }
+    }
+
+    /// AR-T-008 (`gatesDecide`): the repository's checks have passed only
+    /// when a check ran and passed. When every check the host lists was
+    /// skipped (each job's condition left it out), nothing ran on the
+    /// commit: that is no pass, on which the cycle would merge, but a failure
+    /// naming each skipped check (which `attribute` places).
+    #[test]
+    fn checks_that_were_all_skipped_have_not_passed() {
+        let check = |name: &str, bucket: &str| {
+            serde_json::json!({
+                "name": name,
+                "bucket": bucket,
+                "link": format!("https://example.invalid/o/r/actions/runs/1/job/{name}"),
+            })
+        };
+        let skipped = [check("ubuntu", "skipping"), check("windows", "skipping")];
+        match read_checks(&skipped) {
+            Checks::Failed(lines) => {
+                assert_eq!(lines.lines().count(), 2, "{lines}");
+                assert!(lines.lines().all(|l| l.contains(" skipping (")), "{lines}");
+            }
+            other => panic!("every check was skipped, yet: {other:?}"),
+        }
+        // One that passed beside a skipped one (a matrix leg left out) passes.
+        assert_eq!(
+            read_checks(&[check("ubuntu", "pass"), check("windows", "skipping")]),
+            Checks::Passed
+        );
+        assert_eq!(
+            read_checks(&[check("ubuntu", "pass"), check("windows", "pending")]),
+            Checks::Pending
+        );
+        assert!(matches!(
+            read_checks(&[check("ubuntu", "fail"), check("windows", "skipping")]),
+            Checks::Failed(lines) if lines.lines().count() == 1
+        ));
+        assert_eq!(read_checks(&[]), Checks::Pending);
     }
 }

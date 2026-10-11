@@ -423,12 +423,20 @@ fn freshen(folder: &Path) {
 }
 
 /// How many tests a test run says it ran: cargo's `test result:` lines,
-/// Node's `# pass` / `ℹ pass`, Python's `Ran N tests`; `None` when it says
-/// nothing countable.
+/// Node's `# pass` / `ℹ pass`, Python's `Ran N tests` less those its summary
+/// says were skipped (`OK (skipped=N)`), as cargo leaves ignored tests and
+/// Node skipped ones out; `None` when it says nothing countable.
 fn tests_ran(output: &str) -> Option<usize> {
     let mut total = None;
+    let mut skipped = 0;
     let mut add = |n: usize| total = Some(total.unwrap_or(0) + n);
     for line in output.lines() {
+        if (line.starts_with("OK (") || line.starts_with("FAILED ("))
+            && let Some(n) = number_after(line, "skipped=")
+        {
+            skipped += n;
+            continue;
+        }
         if line.contains("test result:") {
             let passed = number_after(line, ". ").unwrap_or(0);
             let failed = number_after(line, "passed; ").unwrap_or(0);
@@ -444,7 +452,7 @@ fn tests_ran(output: &str) -> Option<usize> {
             add(n);
         }
     }
-    total
+    total.map(|n| n.saturating_sub(skipped))
 }
 
 /// The number written after `marker` in `line`, if any.
@@ -746,13 +754,25 @@ impl Driver {
     }
 
     fn save(&mut self) {
+        let _ = self.saved();
+    }
+
+    /// Saves the record as `save` does, and says whether it was written:
+    /// for a step that must not go on unless it is (the handover to an
+    /// adopted build).
+    fn saved(&mut self) -> Result<(), String> {
         self.count_time();
         // Interrupted because the Operator closed Agentique: every save from
         // now says so (the Studio marks the record too as it closes).
         if self.controls.interrupted.load(Ordering::SeqCst) {
             self.objective.interrupted = true;
         }
-        if let Err(error) = self.setup.store.save(&self.objective) {
+        let saved = self
+            .setup
+            .store
+            .save(&self.objective)
+            .map_err(|e| e.to_string());
+        if let Err(error) = &saved {
             self.event(format!(
                 "The objective's record could not be saved: {error}"
             ));
@@ -760,6 +780,7 @@ impl Driver {
         let _ = self
             .events
             .send(Event::Changed(Box::new(self.objective.clone())));
+        saved
     }
 
     fn id(&self) -> String {
@@ -1184,6 +1205,8 @@ impl Driver {
     /// detection, so a moved file counts where it was and where it is). A
     /// log or workspace that cannot be read leaves the failure the change's,
     /// but a cancelled check whose log cannot be read is the machinery's.
+    /// Checks that were all skipped have no log: `blockers::skipped` places
+    /// them.
     fn attribute(
         &self,
         what: &str,
@@ -1215,6 +1238,20 @@ impl Driver {
         let mut attributions = Vec::new();
         for line in what.lines().filter(|l| !l.trim().is_empty()) {
             let check = line.split(' ').next().unwrap_or("a check").to_string();
+            if line.contains(" skipping (") {
+                // Every check was skipped: nothing ran, so there is no log.
+                attributions.push(match &paths {
+                    Ok(paths) => blockers::skipped(&check, paths),
+                    Err(error) => blockers::Attribution::Change(format!(
+                        "{check} was skipped, and the paths the change touches could not be read: {error}"
+                    )),
+                });
+                failures.push(blockers::CiFailure {
+                    check,
+                    ..blockers::CiFailure::default()
+                });
+                continue;
+            }
             let cancelled = line.contains(" cancel ");
             let failure = match forge::failed_log(&repository, line) {
                 Ok(log) => blockers::CiFailure {
@@ -2673,17 +2710,39 @@ impl Driver {
             }
         };
         match executor.run(&program, "", timeout) {
-            Ok(finished)
-                if finished.success
-                    && tests
-                    && tests_ran(&format!("{}\n{}", finished.stdout, finished.stderr))
-                        == Some(0) =>
-            {
-                Outcome {
-                    name,
-                    verdict: "failed".into(),
-                    detail: "it ran no test".into(),
-                    judged: false,
+            Ok(finished) if finished.success && tests => {
+                // A pass needs tests seen to run: none, or no count at all
+                // (a module that exits as it loads, a harness that prints no
+                // summary, output cut at its limit), is no evidence.
+                let output = format!("{}\n{}", finished.stdout, finished.stderr);
+                match tests_ran(&output) {
+                    Some(0) => Outcome {
+                        name,
+                        verdict: "failed".into(),
+                        detail: "it ran no test".into(),
+                        judged: false,
+                    },
+                    None => Outcome {
+                        name,
+                        verdict: "failed".into(),
+                        detail: format!(
+                            "it exited well, but its output says no number of tests run, so no test is seen to run; it ends:\n{}",
+                            agq_execution::process::last_lines(&output, 20)
+                        ),
+                        judged: false,
+                    },
+                    Some(_) if output.contains("test result: FAILED") => Outcome {
+                        name,
+                        verdict: "failed".into(),
+                        detail: "the run exited well but says tests failed".into(),
+                        judged: false,
+                    },
+                    Some(_) => Outcome {
+                        name,
+                        verdict: "passed".into(),
+                        detail: String::new(),
+                        judged: false,
+                    },
                 }
             }
             Ok(finished)
@@ -3810,7 +3869,16 @@ impl Driver {
             at: agq_launcher::now(),
         });
         self.cycle_mut().phase = Phase::Resume;
-        self.save();
+        if let Err(error) = self.saved() {
+            // The adopted build goes on from the record on disk: without the
+            // continuation there it would neither verify nor record the
+            // adoption. The handover waits, and Resume tries it again.
+            self.objective.continuation = None;
+            self.cycle_mut().phase = Phase::Adopt;
+            return Err(format!(
+                "paused: the build {build} was not handed over, since the objective's record could not be saved ({error})"
+            ));
+        }
         self.event(format!("handing over to {build}"));
         let (reply, answer) = std::sync::mpsc::channel();
         let _ = self.events.send(Event::Adopt {
@@ -3919,6 +3987,92 @@ mod tests {
         );
         assert_eq!(tests_ran("# tests 2\n# pass 2\n# fail 0"), Some(2));
         assert_eq!(tests_ran("Ran 5 tests in 0.010s\n\nOK"), Some(5));
+        // Python's skipped tests did not run, as cargo's ignored ones.
+        assert_eq!(
+            tests_ran("Ran 3 tests in 0.001s\n\nOK (skipped=3)"),
+            Some(0)
+        );
+        assert_eq!(
+            tests_ran("Ran 4 tests in 0.001s\n\nFAILED (failures=1, skipped=2)"),
+            Some(2)
+        );
         assert_eq!(tests_ran("Compiling things"), None);
+    }
+
+    /// AR-T-007 (reproduction, `requiredChecksDecide`): a criterion's test
+    /// run passes only when it shows that tests ran. A run the criterion's
+    /// gate admits (`python -m unittest <module>`) that exits 0 and says
+    /// nothing about tests (the module ends the process as it is imported)
+    /// ran no test that can be seen: it must not pass, as a run that says
+    /// it ran 0 tests does not. Needs Python (skipped without it).
+    #[test]
+    fn a_criterion_run_that_exits_well_without_a_recognisable_test_count_does_not_pass() {
+        let python = std::process::Command::new("python")
+            .arg("--version")
+            .output()
+            .is_ok_and(|o| o.status.success());
+        if !python {
+            eprintln!("Python is not available: skipped");
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let checkout = dir.path().join("checkout");
+        std::fs::create_dir_all(&checkout).unwrap();
+        std::fs::write(checkout.join("silent.py"), "import sys\nsys.exit(0)\n").unwrap();
+        let store = Store::new(dir.path().join("objectives"));
+        let objective = store
+            .create(
+                "Check a criterion",
+                &checkout,
+                "main",
+                record::Budgets::default(),
+                record::Permissions::default(),
+            )
+            .unwrap();
+        let (events, _shown) = std::sync::mpsc::channel();
+        let setup = Setup {
+            store: store.clone(),
+            work: dir.path().join("work"),
+            builds: dir.path().join("builds"),
+            runtime: Box::new(|_, _| Err("no agent works in this test".into())),
+            keys: Vec::new(),
+            checks: Vec::new(),
+            protected: Vec::new(),
+            running_build: None,
+            speed: "instant".into(),
+            credential: Box::new(|_| None),
+            studios: Box::new(Live),
+        };
+        let driver = Driver {
+            setup: Rc::new(setup),
+            poster: Poster {
+                store,
+                objective: objective.id.clone(),
+                events: events.clone(),
+                keys: Vec::new(),
+            },
+            objective,
+            events,
+            controls: Controls::default(),
+            last: Instant::now(),
+            delegated: 0,
+        };
+        let words: Vec<String> = ["python", "-m", "unittest", "silent"]
+            .map(String::from)
+            .to_vec();
+        assert_eq!(
+            roles::test_command(&words),
+            Ok(()),
+            "a criterion may run it"
+        );
+        let outcome = driver.criterion(&checkout, &words, Duration::from_secs(120));
+        assert_ne!(
+            outcome.verdict, "not run",
+            "it ran (exit 0, nothing written): {outcome:?}"
+        );
+        assert_ne!(
+            outcome.verdict, "passed",
+            "a run with no recognisable test count passed the criterion: {outcome:?}"
+        );
     }
 }
