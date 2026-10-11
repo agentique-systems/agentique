@@ -254,6 +254,8 @@ impl StandIn {
         self.s.redo.clear();
         self.s.elements.push(name.clone());
         self.s.revision += 1;
+        // The model changed: an observation before it is stale.
+        self.moved();
         self.s.status = format!("Created part {name}");
         self.s.selection = vec![name];
         self.s.dialog = false;
@@ -303,6 +305,8 @@ impl StandIn {
             self.s.redo.clear();
             self.s.elements.push(name.to_string());
             self.s.revision += 1;
+            // The model changed: an observation before it is stale.
+            self.moved();
         }
         self.s.talk.reply = Some(format!("Done: {request}"));
     }
@@ -337,6 +341,8 @@ impl StandIn {
                     .redo
                     .push(std::mem::replace(&mut self.s.elements, previous));
                 self.s.revision += 1;
+                // The model changed: an observation before it is stale.
+                self.moved();
                 self.ok("command undo", 90)
             }
             "redo" => {
@@ -347,6 +353,8 @@ impl StandIn {
                     .undo
                     .push(std::mem::replace(&mut self.s.elements, next));
                 self.s.revision += 1;
+                // The model changed: an observation before it is stale.
+                self.moved();
                 self.ok("command redo", 90)
             }
             "graph" => {
@@ -508,7 +516,7 @@ impl Instance for StandIn {
         }
         if act.observed != self.s.screen_revision {
             return Ok(Self::refuse(
-                "stale: the screen changed since you observed it (now: surface); observe again",
+                "stale: the screen or the model changed since you observed it (now: surface); observe again",
             ));
         }
         let action = act.action;

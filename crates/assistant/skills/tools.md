@@ -45,8 +45,9 @@
   do, visibly: a command by id, a click or fill on a control by id or label,
   keys, typing, selecting an element, opening a project, or waiting for a
   condition. Pass `expect.instance` and `observed` (the `screenRevision`)
-  from your latest observation and say `why`; a stale action is refused and
-  nothing happens: observe again. What is the Operator's own is refused: a
+  from your latest observation and say `why`; a stale action (the screen or
+  the model changed since, your own `apply_changes` too) is refused and
+  nothing happens: observe again, also after changing the model yourself. What is the Operator's own is refused: a
   dialog asking for the Operator's approval, Settings, the Conversation,
   locking, pausing agents; type only into a focused field (or use `fill`;
   press Enter to commit a panel's field).
