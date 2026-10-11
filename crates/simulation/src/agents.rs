@@ -474,7 +474,8 @@ pub fn from_json(types: &Types, ty: ElementId, json: &Json) -> Result<Value, Str
             let value = match (fields_json.get(&field.slot.name), field.ty) {
                 (Some(json), Some(ty)) => from_json(types, ty, json)
                     .map_err(|why| format!("`{}.{}`: {why}", item.name, field.slot.name))?,
-                (Some(json), None) => scalar(json),
+                (Some(json), None) => untyped(json)
+                    .map_err(|why| format!("`{}.{}`: {why}", item.name, field.slot.name))?,
                 (None, _) => field.slot.default.clone().unwrap_or(Value::Null),
             };
             fields.push(Field {
@@ -512,6 +513,22 @@ pub fn from_json(types: &Types, ty: ElementId, json: &Json) -> Result<Value, Str
     }
 }
 
+/// A value for a field whose type is not known: as `scalar`, but a whole
+/// number beyond the 64 bits Agentique computes is refused, never turned
+/// into an inexact `Real` (AR-F-001). (A typed field refuses it already: a
+/// whole-number type does not take the `Real` it reads as.)
+fn untyped(json: &Json) -> Result<Value, String> {
+    if let Json::Number(n) = json
+        && n.as_i64().is_none()
+        && n.is_u64()
+    {
+        return Err(format!(
+            "the whole number {n} is outside the whole numbers Agentique computes (64-bit)"
+        ));
+    }
+    Ok(scalar(json))
+}
+
 fn scalar(json: &Json) -> Value {
     match json {
         Json::Null => Value::Null,
@@ -522,5 +539,25 @@ fn scalar(json: &Json) -> Value {
         },
         Json::String(s) => Value::Str(s.clone()),
         other => Value::Str(other.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// AR-F-001: a field whose type is not known takes a whole number only
+    /// within 64 bits; beyond, it is refused rather than read as a `Real`.
+    #[test]
+    fn an_untyped_whole_number_beyond_64_bits_is_refused() {
+        let read = |text: &str| untyped(&serde_json::from_str::<Json>(text).unwrap());
+        assert_eq!(read("9223372036854775807"), Ok(Value::Int(i64::MAX)));
+        assert_eq!(read("-9223372036854775808"), Ok(Value::Int(i64::MIN)));
+        assert!(
+            read("9223372036854775808")
+                .unwrap_err()
+                .contains("9223372036854775808 is outside the whole numbers")
+        );
+        assert_eq!(read("1.5"), Ok(Value::Real(1.5)));
     }
 }

@@ -61,8 +61,9 @@ use std::time::Instant;
 /// version and, after `+`, the revision of what runs compute. The revision
 /// goes up with every change that makes a run of an unchanged model come
 /// out differently, so the results made before it are outdated rather than
-/// current (2: whole numbers compare exactly and `MIN % -1` is 0).
-pub const RUNNER: &str = concat!("agq-simulation ", env!("CARGO_PKG_VERSION"), "+2");
+/// current (2: whole numbers compare exactly and `MIN % -1` is 0; 3: a
+/// whole number beyond 64 bits is refused, not run as binary64).
+pub const RUNNER: &str = concat!("agq-simulation ", env!("CARGO_PKG_VERSION"), "+3");
 
 /// What to run and how.
 #[derive(Clone, Debug, PartialEq)]

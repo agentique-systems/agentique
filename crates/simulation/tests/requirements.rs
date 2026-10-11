@@ -790,3 +790,25 @@ fn the_remainder_of_the_smallest_whole_number_is_calculated() {
     let lowest = of(&tree, &all, "lowestDivided");
     assert_eq!(lowest.status, Status::Holds, "{}", lowest.reason);
 }
+
+#[test]
+fn a_whole_number_beyond_64_bits_makes_a_requirement_not_evaluable() {
+    // AR-F-001: as binary64 it would equal 2^63 - 1 rounded, and
+    // `c.count <= 9223372036854775807` would hold; it is not computed.
+    let tree = model(
+        "    part def Counter { attribute count : Integer; }
+    part huge : Counter { attribute :>> count = 9223372036854775808; }
+    requirement def CountLimit { subject c : Counter; require constraint { c.count <= 9223372036854775807 } }
+    requirement hugeLimited : CountLimit;
+    satisfy hugeLimited by huge;",
+    );
+    let all = evaluate_all(&tree);
+    let huge = of(&tree, &all, "hugeLimited");
+    assert_eq!(huge.status, Status::NotEvaluable, "{}", huge.reason);
+    assert!(
+        huge.reason
+            .contains("9223372036854775808 is outside the whole numbers"),
+        "{}",
+        huge.reason
+    );
+}
