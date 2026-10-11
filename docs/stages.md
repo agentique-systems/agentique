@@ -2093,7 +2093,7 @@ it). Read against the code and the model before any change:
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 | W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
-| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134 to #139, `stage13/stop-and-spend` | #134 to #139 merged; the rest in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134 to #140, `stage13/hook-links` | #134 to #140 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2972,3 +2972,31 @@ and that a step recorded after a restart came out of order and without its
 time; corrected (a stop says whether a model's call waits; a step is
 recorded before the instance starts again). Not verified: a live Jev
 request cancelled (the providers' cancel was already tested).
+
+*The file-tool hook: writes through links, and globs that pick out key
+files* (the boundary audit's F3 and F4; `stage13/hook-links`; the locked
+`ClaudeAgentRuntime` named under the delegation). The companion's pre-tool
+hook judges a file tool's path by where the file system resolves it, but a
+write through a dangling symbolic link (or junction) was judged where the
+link stands and created its target anywhere, and a write through a hard
+link changed the same file's other name outside the session's folders
+(both shown on a fixture); and a search's glob was compared with the
+hidden patterns as text, so `.env*` passed. Now a write is refused when its
+leaf, or the file a link at the leaf leads to, has more than one hard link,
+or is a link whose target cannot be resolved; and a glob is read as
+ripgrep reads it as the SDK hands it over (split on whitespace, then on
+commas outside braces; a backslash both as a separator and as an escape;
+braces expanded, refused when nested or past 64 alternatives, counted
+first), one picking out a hidden name but no ordinary one is refused, and
+a broad one (`*`, `**/*`) is left to the deny rules that keep hidden files
+out of every search. The hook fails closed on a call it cannot judge.
+Tested on fixtures: a hard link, a dangling link and a link to a hard link
+refused; plain and new files written; the audit's and the review's globs
+refused within a second; common globs allowed. An independent review found
+a link to a hard link, the SDK's own splitting of a glob, escapes, an
+alternative past the cap, exponential brace expansion and a class that
+threw; corrected. Not changed: the time between the hook's decision and
+the write (a command or a subagent could swap the leaf), and a dangling
+junction as a parent folder, where the operating system's write fails.
+Not verified: that the SDK's deny rules really exclude hidden files from a
+search (read from its code, not run).
