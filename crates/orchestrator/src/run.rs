@@ -746,13 +746,25 @@ impl Driver {
     }
 
     fn save(&mut self) {
+        let _ = self.saved();
+    }
+
+    /// Saves the record as `save` does, and says whether it was written:
+    /// for a step that must not go on unless it is (the handover to an
+    /// adopted build).
+    fn saved(&mut self) -> Result<(), String> {
         self.count_time();
         // Interrupted because the Operator closed Agentique: every save from
         // now says so (the Studio marks the record too as it closes).
         if self.controls.interrupted.load(Ordering::SeqCst) {
             self.objective.interrupted = true;
         }
-        if let Err(error) = self.setup.store.save(&self.objective) {
+        let saved = self
+            .setup
+            .store
+            .save(&self.objective)
+            .map_err(|e| e.to_string());
+        if let Err(error) = &saved {
             self.event(format!(
                 "The objective's record could not be saved: {error}"
             ));
@@ -760,6 +772,7 @@ impl Driver {
         let _ = self
             .events
             .send(Event::Changed(Box::new(self.objective.clone())));
+        saved
     }
 
     fn id(&self) -> String {
@@ -1215,6 +1228,20 @@ impl Driver {
         let mut attributions = Vec::new();
         for line in what.lines().filter(|l| !l.trim().is_empty()) {
             let check = line.split(' ').next().unwrap_or("a check").to_string();
+            if line.contains(" skipping (") {
+                // Every check was skipped: nothing ran, so there is no log.
+                attributions.push(match (&paths, &workspace) {
+                    (Ok(paths), Ok(workspace)) => blockers::skipped(&check, paths, workspace),
+                    _ => blockers::Attribution::Change(format!(
+                        "{check} was skipped, and what the change touches could not be read"
+                    )),
+                });
+                failures.push(blockers::CiFailure {
+                    check,
+                    ..blockers::CiFailure::default()
+                });
+                continue;
+            }
             let cancelled = line.contains(" cancel ");
             let failure = match forge::failed_log(&repository, line) {
                 Ok(log) => blockers::CiFailure {
@@ -2673,17 +2700,36 @@ impl Driver {
             }
         };
         match executor.run(&program, "", timeout) {
-            Ok(finished)
-                if finished.success
-                    && tests
-                    && tests_ran(&format!("{}\n{}", finished.stdout, finished.stderr))
-                        == Some(0) =>
-            {
-                Outcome {
-                    name,
-                    verdict: "failed".into(),
-                    detail: "it ran no test".into(),
-                    judged: false,
+            Ok(finished) if finished.success && tests => {
+                // A pass needs tests seen to run: none, or no count at all
+                // (a module that exits as it loads, a harness that prints no
+                // summary, output cut at its limit), is no evidence.
+                let output = format!("{}\n{}", finished.stdout, finished.stderr);
+                match tests_ran(&output) {
+                    Some(0) => Outcome {
+                        name,
+                        verdict: "failed".into(),
+                        detail: "it ran no test".into(),
+                        judged: false,
+                    },
+                    None => Outcome {
+                        name,
+                        verdict: "failed".into(),
+                        detail: "it exited well, but its output says no number of tests run, so no test is seen to run".into(),
+                        judged: false,
+                    },
+                    Some(_) if output.contains("test result: FAILED") => Outcome {
+                        name,
+                        verdict: "failed".into(),
+                        detail: "the run exited well but says tests failed".into(),
+                        judged: false,
+                    },
+                    Some(_) => Outcome {
+                        name,
+                        verdict: "passed".into(),
+                        detail: String::new(),
+                        judged: false,
+                    },
                 }
             }
             Ok(finished)
@@ -3810,7 +3856,16 @@ impl Driver {
             at: agq_launcher::now(),
         });
         self.cycle_mut().phase = Phase::Resume;
-        self.save();
+        if let Err(error) = self.saved() {
+            // The adopted build goes on from the record on disk: without the
+            // continuation there it would neither verify nor record the
+            // adoption. The handover waits, and Resume tries it again.
+            self.objective.continuation = None;
+            self.cycle_mut().phase = Phase::Adopt;
+            return Err(format!(
+                "paused: the build {build} was not handed over, since the objective's record could not be saved ({error})"
+            ));
+        }
         self.event(format!("handing over to {build}"));
         let (reply, answer) = std::sync::mpsc::channel();
         let _ = self.events.send(Event::Adopt {

@@ -851,7 +851,14 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
                 // The Studio would save and exit here; this one declines.
                 let _ = reply.send(Err("this test hands over to nothing".into()));
             }
-            Ok(Event::Thread(entry)) => thread.push(entry.text),
+            Ok(Event::Thread(entry)) => {
+                // Paused, as it should be: the Operator would resume it.
+                if entry.text.starts_with("Paused until you resume it") && !stopped {
+                    handle.send(Command::Stop);
+                    stopped = true;
+                }
+                thread.push(entry.text);
+            }
             Ok(_) => {}
             Err(_) if handle.finished() => break,
             Err(_) => {}
@@ -865,6 +872,18 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
             "the objective did not end: {thread:#?}"
         );
     }
+    // It waits for the Operator, saying why, rather than failing the cycle.
+    assert!(
+        thread
+            .iter()
+            .any(|t| t.starts_with("Paused until you resume it")
+                && t.contains("was not handed over")),
+        "{thread:#?}"
+    );
+    assert!(
+        !thread.iter().any(|t| t.starts_with("Cycle 1 stopped")),
+        "{thread:#?}"
+    );
     // The failure took effect, and the objective said so.
     assert!(
         thread

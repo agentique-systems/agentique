@@ -441,6 +441,21 @@ pub fn repairs_what_failed(
     }
 }
 
+/// A check the host skipped, when every check was (`forge::checks`): nothing
+/// ran, so there is no log. The machinery's, unless the change touches what
+/// the checks are set up from (a job's condition, say).
+pub fn skipped(check: &str, paths: &[String], workspace: &Workspace) -> Attribution {
+    if workspace.affected(paths).is_ok() {
+        Attribution::Infrastructure(format!(
+            "{check} was skipped, so no check ran on the commit"
+        ))
+    } else {
+        Attribution::Change(format!(
+            "{check} was skipped, and the change touches what the checks are set up from"
+        ))
+    }
+}
+
 /// Whether `failure` can be the change's, which touches `paths`. Only a
 /// failure whose every failing test is in a crate the change neither
 /// touches nor can affect is elsewhere; a failing step that is not a test
@@ -762,6 +777,16 @@ workspace\tRun cargo test --locked --workspace\t2026-10-10T11:45:54.4073112Z err
         let workflow = vec![".github/workflows/ci.yml".to_string()];
         assert!(matches!(
             attribute(&setup, &workflow, &workspace(), folder.path()),
+            Attribution::Change(_)
+        ));
+        // Every check skipped (AR-T-008): nothing ran; the machinery's,
+        // unless the change touches what the checks are set up from.
+        assert!(matches!(
+            skipped("workspace", &studio, &workspace()),
+            Attribution::Infrastructure(why) if why.contains("no check ran")
+        ));
+        assert!(matches!(
+            skipped("workspace", &workflow, &workspace()),
             Attribution::Change(_)
         ));
         // A check whose name holds a setup word is a check.
