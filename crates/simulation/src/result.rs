@@ -317,7 +317,7 @@ pub struct LiveProvenance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Provenance {
-    /// The runner and its version, such as `agq-simulation 0.1.0 model`.
+    /// The runner and its version, such as `agq-simulation 0.1.0+2 model`.
     pub runner: String,
     /// The digest of the scenario's model slice when the run started.
     pub model_digest: String,

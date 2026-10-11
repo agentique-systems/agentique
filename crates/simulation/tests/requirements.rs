@@ -745,3 +745,48 @@ fn a_referential_part_is_the_part_it_refers_to_and_counts_once() {
         loose.reason
     );
 }
+
+#[test]
+fn whole_numbers_are_compared_exactly_beyond_two_to_the_53() {
+    // 2^53 + 1 and 2^53 have one binary64 value; as whole numbers the
+    // first is still over a limit of the second (deviation 22).
+    let tree = model(
+        "    part def Counter { attribute count : Integer; }
+    part over : Counter { attribute :>> count = 9007199254740993; }
+    part level : Counter { attribute :>> count = 9007199254740992; }
+    requirement def CountLimit {
+        subject c : Counter;
+        attribute limit : Integer;
+        require constraint { c.count <= limit }
+    }
+    requirement overLimit : CountLimit { attribute :>> limit = 9007199254740992; }
+    requirement atLimit : CountLimit { attribute :>> limit = 9007199254740992; }
+    satisfy overLimit by over;
+    satisfy atLimit by level;",
+    );
+    let all = evaluate_all(&tree);
+    let over = of(&tree, &all, "overLimit");
+    assert_eq!(over.status, Status::Violated, "{}", over.reason);
+    assert_eq!(
+        over.reason,
+        "the required constraint `c.count <= limit` is false (c.count = 9007199254740993, limit = 9007199254740992)"
+    );
+    let level = of(&tree, &all, "atLimit");
+    assert_eq!(level.status, Status::Holds, "{}", level.reason);
+}
+
+#[test]
+fn the_remainder_of_the_smallest_whole_number_is_calculated() {
+    // Its quotient by -1 does not fit in 64 bits; its remainder, 0, does,
+    // and the evaluation must not crash on the way.
+    let tree = model(
+        "    part def Counter { attribute count : Integer; }
+    part lowest : Counter { attribute :>> count = -9223372036854775808; }
+    requirement def EvenlyDivided { subject c : Counter; require constraint { c.count % -1 == 0 } }
+    requirement lowestDivided : EvenlyDivided;
+    satisfy lowestDivided by lowest;",
+    );
+    let all = evaluate_all(&tree);
+    let lowest = of(&tree, &all, "lowestDivided");
+    assert_eq!(lowest.status, Status::Holds, "{}", lowest.reason);
+}
