@@ -918,7 +918,8 @@ fn merged_cycle_at(
     running_build: Option<&str>,
     cycles: u32,
 ) -> (Store, Objective, Setup, String) {
-    let repository = repository_with(dir, &[]);
+    // An empty manifest: a release build of it fails at once.
+    let repository = repository_with(dir, &["Cargo.toml"]);
     let merged = git_out(&repository, &["rev-parse", "HEAD"]);
     let store = Store::new(dir.join("objectives"));
     let mut objective = store
@@ -1027,7 +1028,7 @@ fn a_merged_change_whose_build_fails_is_held_until_resumed_or_stopped() {
     let (store, objective, setup, merged) =
         merged_cycle_at(dir.path(), Phase::Build, None, None, 2);
     let id = objective.id.clone();
-    // The fixture holds no Cargo workspace: its release build fails.
+    // The fixture's manifest is empty: its release build fails.
     let held = run_held(
         &store,
         setup,
@@ -1064,6 +1065,12 @@ fn a_merged_change_whose_build_fails_is_held_until_resumed_or_stopped() {
     );
     assert_eq!(record.cycles[0].phase, Phase::Build);
     assert!(!record.cycles[0].adopted);
+    // The cycle itself says so, whatever later happens to the note.
+    let blocker = record.cycles[0].blocker.clone().unwrap_or_default();
+    assert!(
+        blocker.starts_with(&format!("Merged as {short}, not adopted:")),
+        "{blocker}"
+    );
     let note = record.note.unwrap_or_default();
     assert!(
         note.contains(&format!("Cycle 1, merged as {short}, is not adopted")),
@@ -1131,18 +1138,24 @@ fn a_refused_handover_is_held_and_resume_hands_over_again() {
         "{:#?}",
         held.thread
     );
-    // Handed over: the adopted build goes on from the record.
+    // Handed over: the adopted build goes on from the record, the hold's
+    // reason and note gone with it.
     let record = store.load(&id).unwrap();
     assert_eq!(record.cycles.len(), 1);
     assert_eq!(record.cycles[0].phase, Phase::Resume);
     assert!(record.continuation.is_some());
+    assert_eq!(record.cycles[0].blocker, None);
+    assert!(
+        !record.note.unwrap_or_default().starts_with("Merged as"),
+        "the note no longer says it is held"
+    );
 }
 
 /// AR-T-014: a handover that took longer than its wait, resumed in the
 /// build it handed over to, is not asked again: that build runs, so the
 /// cycle is adopted, as `resume` records it.
 #[test]
-fn a_held_handover_resumed_in_its_build_is_adopted() {
+fn a_handover_resumed_in_its_build_is_adopted() {
     let dir = tempfile::tempdir().unwrap();
     let (store, objective, setup, _) =
         merged_cycle_at(dir.path(), Phase::Adopt, Some("b1"), Some("b1"), 1);
@@ -1153,4 +1166,42 @@ fn a_held_handover_resumed_in_its_build_is_adopted() {
     let record = store.load(&id).unwrap();
     assert!(record.cycles[0].adopted, "{:#?}", held.thread);
     assert_eq!(record.state, State::Done, "{:#?}", held.thread);
+}
+
+/// AR-T-014's controls: a failure before the merge, and a merge the
+/// objective may not adopt, are not held: the next cycle starts as before.
+#[test]
+fn a_failure_before_the_merge_and_a_merge_only_objective_go_on() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, mut objective, setup, _) =
+        merged_cycle_at(dir.path(), Phase::Failed, None, None, 2);
+    // Failed before its merge: nothing merged.
+    objective.cycles[0].merged = None;
+    objective.cycles[0].blocker = Some("the implementer changed nothing".into());
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert_eq!(held.holds, 0, "{:#?}", held.thread);
+    let record = store.load(&id).unwrap();
+    assert_eq!(
+        record.cycles.len(),
+        2,
+        "the next cycle started: {:#?}",
+        held.thread
+    );
+    // Merged, and not allowed to adopt: done, and the next cycle starts.
+    let other = tempfile::tempdir().unwrap();
+    let (store, mut objective, setup, _) =
+        merged_cycle_at(other.path(), Phase::Done, None, None, 2);
+    objective.permissions.adopt = false;
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert_eq!(held.holds, 0, "{:#?}", held.thread);
+    assert_eq!(
+        store.load(&id).unwrap().cycles.len(),
+        2,
+        "{:#?}",
+        held.thread
+    );
 }

@@ -2906,5 +2906,16 @@ Resume are not modelled; a refused handover is folded into a failed build).
 Tested: a failed release build held, built again on Resume, held again,
 stopped; a trial without a manifest held; a refused handover held with no
 continuation and handed over again on Resume with its continuation on disk;
-a held handover resumed in its build adopted; the self-model's scenarios.
-Not verified: a real release build, trial and handover with the launcher.
+a handover resumed in its build adopted; a failure before the merge and a
+merge-only objective going on; the self-model's scenarios. An independent
+review found the hold's reason left on a cycle that then got further, the
+"merged, not adopted" kept only in a note that closing Agentique rewrites,
+a time budget used up during the build answered with "Resume builds it
+again", and the Driver's doc claiming the hold for merge-only objectives
+too; corrected (the cycle's blocker now holds the whole sentence, and the
+hold ends the objective when a budget is used up). Not changed: a held
+objective stopped after a restart, while no Driver runs, is noted "Stopped
+by the Operator." by the Studio (its cycle still says merged, not adopted);
+a recovery after a fallback counts a resume and waits paused, so two of
+them end it, as for any paused objective. Not verified: a real release
+build, trial and handover with the launcher.
