@@ -1108,6 +1108,17 @@ mod tests {
             earlier.freshness("abc", false, "m1"),
             Freshness::Outdated(why) if why.contains("does not say which version")
         ));
+        // This runner, with scenario verdicts: current.
+        if let Some(checked) = earlier.checked.as_mut() {
+            checked.runner = agq_simulation::RUNNER.into();
+        }
+        assert_eq!(earlier.freshness("abc", false, "m1"), Freshness::Current);
+        // A record from before the runner was kept reads, and an empty
+        // runner is left out when saved.
+        let old: Checked = serde_json::from_str(r#"{"commit":"abc","modelDigest":"m1"}"#).unwrap();
+        assert_eq!(old.runner, "");
+        let saved = serde_json::to_string(&old).unwrap();
+        assert!(!saved.contains("runner"), "{saved}");
         // The build did not run (refused): not a pass, and said so.
         let refused = Verification {
             checks: vec![check(

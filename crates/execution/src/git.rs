@@ -58,28 +58,54 @@ pub fn changed_files(repository: &Path) -> Result<Vec<String>, Refusal> {
 /// A digest of the working tree's state, so a result can say which code it
 /// ran: the head commit and, for every changed file, its path and what it
 /// is now (its exact bytes by git's blob id, a symbolic link's target, a
-/// folder, or deleted). `v2:` marks this way of digesting, so a digest made
-/// the earlier, lossy way never equals one made now. A changed file that
-/// cannot be read is an error, never taken as empty.
+/// nested repository's own digest, or deleted). `v2:` marks this way of
+/// digesting, so a digest made the earlier, lossy way never equals one made
+/// now. What cannot be identified is an error, never taken as empty: a
+/// changed file that cannot be read, a path git cannot read or that is not
+/// UTF-8, a folder that is no repository.
 pub fn tree_digest(repository: &Path) -> Result<String, Refusal> {
     let head = head(repository)?;
     let mut text = head.commit.into_bytes();
-    for file in changed_files(repository)? {
-        let path = repository.join(&file);
+    let repo = open(repository)?;
+    let mut options = StatusOptions::new();
+    options
+        .include_untracked(true)
+        .recurse_untracked_dirs(true)
+        .include_ignored(false)
+        .include_unreadable(true);
+    let statuses = repo.statuses(Some(&mut options)).map_err(io)?;
+    for entry in statuses
+        .iter()
+        .filter(|s| s.status() != Status::CURRENT && !s.status().contains(Status::IGNORED))
+    {
+        let file = entry.path().map_err(|_| {
+            Refusal::Io(format!(
+                "a changed path is not UTF-8: {}",
+                String::from_utf8_lossy(entry.path_bytes())
+            ))
+        })?;
+        if entry.status().contains(Status::WT_UNREADABLE) {
+            return Err(Refusal::Io(format!("{file}: git cannot read it")));
+        }
+        let path = repository.join(file);
+        let unreadable = |e: std::io::Error| Refusal::Io(format!("{file}: {e}"));
         let state = match std::fs::symlink_metadata(&path) {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => "deleted".to_string(),
-            Err(e) => return Err(Refusal::Io(format!("{file}: {e}"))),
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory
+                ) =>
+            {
+                "deleted".to_string()
+            }
+            Err(e) => return Err(unreadable(e)),
             Ok(meta) if meta.is_symlink() => {
-                let target =
-                    std::fs::read_link(&path).map_err(|e| Refusal::Io(format!("{file}: {e}")))?;
-                format!("link {}", blob(target.to_string_lossy().as_bytes())?)
+                let target = std::fs::read_link(&path).map_err(unreadable)?;
+                format!("link {}", blob(target.as_os_str().as_encoded_bytes())?)
             }
-            Ok(meta) if meta.is_dir() => "folder".to_string(),
-            Ok(_) => {
-                let content =
-                    std::fs::read(&path).map_err(|e| Refusal::Io(format!("{file}: {e}")))?;
-                format!("file {}", blob(&content)?)
-            }
+            // A submodule or a repository nested in this one: its own state.
+            Ok(meta) if meta.is_dir() => format!("repository {}", tree_digest(&path)?),
+            Ok(_) => format!("file {}", blob(&std::fs::read(&path).map_err(unreadable)?)?),
         };
         // NUL never occurs in a path or a state: the framing is unambiguous.
         text.push(0);
@@ -777,6 +803,27 @@ mod tests {
             emptied, deleted,
             "an emptied file and a deleted file give the same tree digest"
         );
+    }
+
+    /// A repository nested in the code (untracked, or a submodule) is
+    /// identified by its own state, not as a folder: a change inside it
+    /// changes the digest; a folder git lists that is no repository cannot
+    /// be identified.
+    #[test]
+    fn a_digest_follows_a_change_inside_a_nested_repository() {
+        let (_dir, repo) = repository();
+        let nested = repo.join("vendor");
+        std::fs::create_dir_all(&nested).unwrap();
+        std::fs::write(nested.join("engine.rs"), "pub fn v() -> u32 { 1 }\n").unwrap();
+        init_and_commit(&nested, "Vendored").unwrap();
+        let before = tree_digest(&repo).unwrap();
+        assert!(before.starts_with("v2:"), "{before}");
+        std::fs::write(nested.join("engine.rs"), "pub fn v() -> u32 { 2 }\n").unwrap();
+        let after = tree_digest(&repo).unwrap();
+        assert_ne!(before, after, "a change inside the nested repository");
+        std::fs::remove_dir_all(nested.join(".git")).unwrap();
+        // Now its files are listed one by one, each digested as a file.
+        assert!(tree_digest(&repo).is_ok());
     }
 
     /// A worktree that cannot be made leaves no branch behind.

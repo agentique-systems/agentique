@@ -93,12 +93,14 @@ impl CheckReport {
         }
         // Unknown code is never current: a digest not read when the checks
         // ran (stored empty), or not readable now, compares with nothing.
+        let now = git::tree_digest(repository);
         if self.tree_digest.is_empty() {
-            return agq_simulation::Freshness::Outdated(
-                "the code these checks ran on could not be identified".into(),
-            );
+            return agq_simulation::Freshness::Outdated(match now {
+                Ok(_) => "the code these checks ran on was not identified when they ran".into(),
+                Err(error) => format!("the code these checks run on cannot be identified: {error}"),
+            });
         }
-        match git::tree_digest(repository) {
+        match now {
             Ok(digest) if digest == self.tree_digest => agq_simulation::Freshness::Current,
             Ok(_) => agq_simulation::Freshness::Outdated(
                 "the code changed since these checks ran".into(),
