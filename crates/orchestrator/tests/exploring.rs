@@ -274,7 +274,7 @@ impl Answers for Hypothesising {
         0.6
     }
 
-    fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+    fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
         Ok(Decision {
             choice: "a01".into(),
             source: Source::Jev,

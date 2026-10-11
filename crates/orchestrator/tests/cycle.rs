@@ -838,6 +838,7 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
         speed: "instant".into(),
         credential: Box::new(|_| None),
         studios: Box::new(run::Live),
+        answers: None,
     };
     let handle = run::start(setup, objective);
     let deadline = Instant::now() + Duration::from_secs(60);
@@ -964,6 +965,7 @@ fn adopting_setup(dir: &Path, store: &Store, running_build: Option<&str>) -> Set
         speed: "instant".into(),
         credential: Box::new(|_| None),
         studios: Box::new(run::Live),
+        answers: None,
     }
 }
 

@@ -4270,6 +4270,7 @@ mod tests {
             speed: "instant".into(),
             credential: Box::new(|_| None),
             studios: Box::new(Live),
+            answers: None,
         };
         let driver = Driver {
             setup: Rc::new(setup),
