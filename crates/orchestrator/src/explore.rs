@@ -312,9 +312,13 @@ impl Answers for Measured<'_> {
         self.answers.threshold()
     }
 
-    fn ask_jev(&self, question: &Question) -> Result<Decision, decide::Failure> {
+    fn ask_jev(
+        &self,
+        question: &Question,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<Decision, decide::Failure> {
         let started = Instant::now();
-        let answer = self.answers.ask_jev(question);
+        let answer = self.answers.ask_jev(question, stop);
         self.timing.borrow_mut().jev_ms += started.elapsed().as_millis() as u64;
         answer
     }
@@ -323,9 +327,10 @@ impl Answers for Measured<'_> {
         &self,
         state: &Value,
         questions: BTreeMap<String, agq_providers::jev::Question>,
+        stop: &mut dyn FnMut() -> bool,
     ) -> Result<(BTreeMap<String, agq_providers::jev::Answer>, Option<f64>), decide::Failure> {
         let started = Instant::now();
-        let answer = self.answers.ask_jev_all(state, questions);
+        let answer = self.answers.ask_jev_all(state, questions, stop);
         self.timing.borrow_mut().jev_ms += started.elapsed().as_millis() as u64;
         answer
     }
@@ -1892,7 +1897,10 @@ impl Choosing<'_> {
 /// them, its answer checked; Jev escalating to the explorer's model. Whatever fails falls back
 /// to the rules, with its time and cost kept; `stop` is asked while a model
 /// is waited for.
-fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usize, Chosen) {
+/// `stop` is asked while a decision is waited for; its argument says
+/// whether a model's call waits (`true`, which whoever watches is told of)
+/// or Jev's (`false`, which is only checked).
+fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut(bool) -> bool) -> (usize, Chosen) {
     let deciding = choosing.deciding;
     if matches!(way, Way::Rules | Way::Cancel) || choosing.candidates.len() == 1 {
         return by_rule(choosing.ranked, Spent::NOTHING, String::new());
@@ -1904,7 +1912,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
             Spent::NOTHING,
             String::new(),
             Source::Model,
-            stop,
+            &mut || stop(true),
         );
     }
     let (q, shown) = question(
@@ -1917,7 +1925,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
     );
     let answers = deciding.answers;
     let bound = at_most(&answers.jev_model(), q.prompt("").len(), JEV_OUTPUT_TOKENS) * JEV_REQUESTS;
-    let (spent, note) = match answers.ask_jev(&q) {
+    let (spent, note) = match answers.ask_jev(&q, &mut || stop(false)) {
         Ok(decision) => {
             let spent = Spent::NOTHING.and(decision.millis, decision.usd, bound);
             match shown_as(&shown, &decision.choice) {
@@ -1955,7 +1963,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
             spent,
             note,
             Source::Escalated,
-            stop,
+            &mut || stop(true),
         )
     } else {
         by_rule(choosing.ranked, spent, note)
@@ -2617,19 +2625,24 @@ impl Explorer<'_> {
     }
 
     fn observe(&mut self) -> Result<Option<Value>, String> {
-        let observing = Instant::now();
-        let observed = self.instance.observe();
-        self.pending.observe_ms += observing.elapsed().as_millis() as u64;
-        match observed {
-            Ok(now) => {
-                self.seen(&now);
-                Ok(Some(now))
-            }
+        match self.observe_only() {
+            Ok(now) => Ok(Some(now)),
             Err(error) => {
                 self.ended(&error)?;
                 Ok(None)
             }
         }
+    }
+
+    /// An observation, timed and seen, or why the instance did not answer
+    /// (not yet acted on: a step taken records itself first).
+    fn observe_only(&mut self) -> Result<Value, String> {
+        let observing = Instant::now();
+        let observed = self.instance.observe();
+        self.pending.observe_ms += observing.elapsed().as_millis() as u64;
+        let now = observed?;
+        self.seen(&now);
+        Ok(now)
     }
 
     /// One action of the explorer's, or a recovery.
@@ -2703,10 +2716,13 @@ impl Explorer<'_> {
                 let heartbeat = (supervisor.heartbeat().as_millis() as u64).max(1);
                 let mut asked: Option<Instant> = None;
                 let mut beats = 0;
-                choose(self.plan.way, &choosing, &mut || {
-                    // A model's call starts (Jev, the rules and a named
-                    // route ask no stop): said once, and its wait counted
-                    // from here.
+                choose(self.plan.way, &choosing, &mut |asks_model| {
+                    // Jev's wait is only checked: nothing is said of it.
+                    if !asks_model {
+                        return halted(supervisor, started, seconds);
+                    }
+                    // A model's call starts (the rules and a named route ask
+                    // no stop): said once, and its wait counted from here.
                     let since = match asked {
                         Some(since) => since,
                         None => {
@@ -2826,8 +2842,17 @@ impl Explorer<'_> {
                     {
                         held += 1;
                         std::thread::sleep(findings::HELD_WAIT);
-                        if let Some(now) = self.observe()? {
-                            self.now = now;
+                        match self.observe_only() {
+                            Ok(now) => self.now = now,
+                            Err(ended) => {
+                                // Recorded first (its decision was paid
+                                // for), in its order and with its time;
+                                // then the instance starts again or the run
+                                // ends.
+                                let detail = format!("{error}; the instance ended: {ended}");
+                                self.record(&step, chosen, "held", detail, None);
+                                return self.ended(&ended);
+                            }
                         }
                         continue;
                     }
@@ -2850,8 +2875,13 @@ impl Explorer<'_> {
                 _ => {}
             }
             if matches!(refusal, Refusal::Stale | Refusal::Gone) {
-                let Some(after) = self.observe()? else {
-                    return Ok(());
+                let after = match self.observe_only() {
+                    Ok(after) => after,
+                    Err(ended) => {
+                        let detail = format!("{error}; the instance ended: {ended}");
+                        self.record(&step, chosen, "stale", detail, None);
+                        return self.ended(&ended);
+                    }
                 };
                 let failed = findings::failures(&Outcome {
                     before: &self.now,
@@ -2904,9 +2934,12 @@ impl Explorer<'_> {
             let took = answer["tookMs"].as_u64();
             *self.run.covered.entry(step.key.clone()).or_default() += 1;
             self.since.push(step.clone());
-            let Some(after) = self.observe()? else {
-                self.record(&step, chosen, outcome, error, took);
-                return Ok(());
+            let after = match self.observe_only() {
+                Ok(after) => after,
+                Err(ended) => {
+                    self.record(&step, chosen, outcome, error, took);
+                    return self.ended(&ended);
+                }
             };
             // A request sent: what the explorer expected of it is checked
             // when its turn has ended, on the wait for it.

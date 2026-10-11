@@ -95,7 +95,13 @@ impl Answers for Scripted {
         0.6
     }
 
-    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
+    fn ask_jev(
+        &self,
+        question: &Question,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<Decision, Failure> {
+        // As the Decider does while it waits for Jev.
+        let _ = stop();
         self.questions.borrow_mut().push(question.clone());
         match self.jev.borrow_mut().pop_front() {
             Some(Ok((choice, confidence))) => Ok(Decision {
@@ -1227,7 +1233,7 @@ fn a_decision_of_unknown_cost_counts_at_the_most_it_could_have_cost() {
         fn threshold(&self) -> f64 {
             0.6
         }
-        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+        fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
             unreachable!()
         }
         fn chat(
@@ -1704,7 +1710,7 @@ impl Answers for Slow {
         0.6
     }
 
-    fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+    fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
         unreachable!("the model is asked")
     }
 
@@ -1736,6 +1742,37 @@ impl Answers for Slow {
             }),
         })
     }
+}
+
+/// AR-T-019's review: Jev's wait asks whether to stop, but says nothing:
+/// only a model's call is reported as asked and waited for, so a step Jev
+/// decides is not shown as one the explorer's model was asked.
+#[test]
+fn a_step_jev_decides_is_not_reported_as_a_model_asked() {
+    let answers = Scripted {
+        jev: std::cell::RefCell::new(
+            (0..2)
+                .map(|_| Ok(("a01".to_string(), 0.95)))
+                .collect::<std::collections::VecDeque<_>>(),
+        ),
+        ..Scripted::default()
+    };
+    let mut reported = Reported::default();
+    explore::explore(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Jev, 1, 2),
+        &deciding(&answers),
+        &Knowledge::new("stand-in"),
+        &mut reported,
+    );
+    let lines = &reported.0;
+    assert!(!lines.is_empty(), "the steps are reported");
+    assert!(
+        !lines
+            .iter()
+            .any(|l| l.contains(": asks ") || l.contains(": waiting for ")),
+        "{lines:#?}"
+    );
 }
 
 /// The W13.7 repair: a run reports what it does as it goes: when a model's
@@ -2158,4 +2195,157 @@ fn live_step_time_by_way_model_and_effort() {
         );
     }
     println!("spent ${spent:.4}");
+}
+
+/// The Operator's Stop at a set moment, as the Orchestrator's supervisor
+/// reads it: before each step and during long waits.
+struct StopsAt(std::time::Instant);
+
+impl explore::Supervisor for StopsAt {
+    fn go_on(&mut self) -> bool {
+        !self.stopped()
+    }
+
+    fn stopped(&mut self) -> bool {
+        std::time::Instant::now() >= self.0
+    }
+}
+
+/// AR-T-019 (reproduction, C-54: Stop takes effect at once): a Stop while
+/// a run waits for Jev ends the wait and the run at once, and the instance
+/// is not acted on after it. The real decider (its Jev deadline as the
+/// Orchestrator configures it) asks a local TypeSafe AI endpoint that takes
+/// the request and never answers; the Operator stops the run half a second
+/// in. No key or network beyond this computer is used.
+#[test]
+fn a_stop_ends_a_run_waiting_for_jev_at_once() {
+    use std::time::{Duration, Instant};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    std::thread::spawn(move || {
+        // Each request is read by no one and never answered.
+        let mut held = Vec::new();
+        for stream in listener.incoming() {
+            held.push(stream);
+        }
+    });
+    let decider = Decider {
+        providers: agq_providers::Providers::new()
+            .with_key(Provider::TypeSafe, "test-key")
+            .with_endpoint(Provider::TypeSafe, url),
+        ..Decider::default()
+    };
+    let mut studio = StandIn::new(Defects::default());
+    let plan = plan(Way::Jev, 1, 20);
+    let stop = Instant::now() + Duration::from_millis(500);
+    let run = explore::explore(
+        &mut studio,
+        &plan,
+        &deciding(&decider),
+        &Knowledge::new("stand-in"),
+        &mut StopsAt(stop),
+    );
+    let late = Instant::now().saturating_duration_since(stop);
+    let steps: Vec<String> = run.steps.iter().map(|t| t.line()).collect();
+    // What the instance was asked to do, besides starting.
+    let acted: Vec<&String> = studio
+        .log
+        .iter()
+        .filter(|l| !l.starts_with("start "))
+        .collect();
+    assert!(
+        late < Duration::from_secs(1),
+        "the run ended {late:?} after the Operator's stop (Jev's deadline is {:?}); ended: {}; steps: {steps:#?}; the instance was asked: {acted:?}",
+        decider.deadline,
+        run.ended
+    );
+    assert!(
+        acted.is_empty(),
+        "the instance was acted on after the stop: {acted:?}"
+    );
+}
+
+/// The stand-in, whose next observation fails (it ended) right after it
+/// refuses an action as stale.
+struct EndsAfterStale {
+    studio: StandIn,
+    ending: bool,
+}
+
+impl Instance for EndsAfterStale {
+    fn observe(&mut self) -> Result<Value, String> {
+        if std::mem::take(&mut self.ending) {
+            return Err("the Studio closed the connection".into());
+        }
+        self.studio.observe()
+    }
+
+    fn act(&mut self, act: &explore::Act) -> Result<Value, String> {
+        let answer = self.studio.act(act)?;
+        if answer["error"]
+            .as_str()
+            .is_some_and(|e| e.starts_with("stale"))
+        {
+            self.ending = true;
+        }
+        Ok(answer)
+    }
+
+    fn restart(&mut self, stop: &mut dyn FnMut() -> bool) -> Result<(), String> {
+        self.studio.restart(stop)
+    }
+
+    fn alive(&mut self) -> bool {
+        self.studio.alive()
+    }
+
+    fn folder(&self) -> Option<PathBuf> {
+        self.studio.folder()
+    }
+
+    fn opened(&self) -> Option<Opened> {
+        self.studio.opened()
+    }
+}
+
+/// AR-T-016 / AR-GAP-021 (reproduction, `childWorkBounded`): an
+/// objective's spend on an exploration is counted from the run's steps
+/// (`count_exploration`), so every cost the run counts is on a step it
+/// records. Here Jev decides each step ($0.001 each); the first action is
+/// refused as stale and the instance ends as it is observed again: that
+/// step's decision was paid, and counted in the run, but the step is not
+/// recorded, so the objective (a child's, and through it its parent's)
+/// never counts it.
+#[test]
+fn every_cost_a_run_counts_is_on_a_step_it_records() {
+    let mut studio = StandIn::new(Defects::default());
+    studio.drift = 1;
+    let mut instance = EndsAfterStale {
+        studio,
+        ending: false,
+    };
+    let answers = Scripted::default().jev(&[Ok(("a01", 0.9)), Ok(("a01", 0.9)), Ok(("a01", 0.9))]);
+    let run = explore_with(
+        &mut instance,
+        &plan(Way::Jev, 1, 3),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let lines: Vec<String> = run.steps.iter().map(|t| t.line()).collect();
+    assert!(
+        run.recoveries.iter().any(|r| r.kind == "restarted"),
+        "the instance ended after the stale refusal: {:?}",
+        run.recoveries
+    );
+    let on_steps: f64 = run
+        .steps
+        .iter()
+        .filter_map(|t| t.chosen.as_ref())
+        .map(|c| c.counted)
+        .sum();
+    assert!(
+        (run.usd - run.assistant_usd - on_steps).abs() < 1e-9,
+        "the run counted ${:.4} for its decisions, its recorded steps (what the objective's spend is counted from) ${on_steps:.4}: {lines:#?}",
+        run.usd - run.assistant_usd
+    );
 }

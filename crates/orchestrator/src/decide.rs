@@ -175,16 +175,22 @@ pub trait Answers {
     fn jev_model(&self) -> ModelRef;
     fn threshold(&self) -> f64;
     /// Jev's choice among the question's options, with its confidence,
-    /// within its deadline.
-    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure>;
+    /// within its deadline. `stop` is asked while it is waited for; a
+    /// stopped request is cancelled and fails at once.
+    fn ask_jev(
+        &self,
+        question: &Question,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<Decision, Failure>;
     /// Jev's answers to several typed questions about one state, in one
     /// request within its deadline, with what they cost (the questions
     /// about an objective's intent, [`infer`]). Where Jev is not asked so,
-    /// it does not answer.
+    /// it does not answer. `stop` is asked as for [`Answers::ask_jev`].
     fn ask_jev_all(
         &self,
         _state: &Value,
         _questions: BTreeMap<String, jev::Question>,
+        _stop: &mut dyn FnMut() -> bool,
     ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
         Err(Failure {
             error: "Jev: not asked several questions here".into(),
@@ -444,6 +450,7 @@ impl Answers for Decider {
         &self,
         state: &Value,
         questions: BTreeMap<String, jev::Question>,
+        stop: &mut dyn FnMut() -> bool,
     ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
         let started = Instant::now();
         let request = DecisionRequest {
@@ -455,6 +462,10 @@ impl Answers for Decider {
             .providers
             .decide_start(request, Instant::now() + self.deadline);
         let result = loop {
+            // A stop ends the wait at once: the request is cancelled.
+            if stop() {
+                handle.cancel();
+            }
             if let Some(result) = handle.next_result(Duration::from_millis(50)) {
                 break result;
             }
@@ -479,7 +490,11 @@ impl Answers for Decider {
         self.threshold
     }
 
-    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
+    fn ask_jev(
+        &self,
+        question: &Question,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<Decision, Failure> {
         let started = Instant::now();
         let request = DecisionRequest {
             model: self.jev_model.clone(),
@@ -498,6 +513,10 @@ impl Answers for Decider {
             .providers
             .decide_start(request, Instant::now() + self.deadline);
         let result = loop {
+            // A stop ends the wait at once: the request is cancelled.
+            if stop() {
+                handle.cancel();
+            }
             if let Some(result) = handle.next_result(Duration::from_millis(50)) {
                 break result;
             }
@@ -601,7 +620,7 @@ impl Decider {
         if let Some(only) = only_waiting(situation) {
             return Ok(only);
         }
-        self.ask_jev(&situation.question())
+        self.ask_jev(&situation.question(), &mut || false)
     }
 
     /// The reasoning model alone.
@@ -1116,8 +1135,8 @@ pub type Escalation<'a> = Result<(&'a ModelRef, Option<&'a str>), String>;
 /// (unless `jev` says why it cannot); a set confident at `answers`'
 /// threshold is used; otherwise the `escalation` model answers them (one
 /// more call when its answer cannot be read); when neither does, the
-/// defaults, with why. `stop` is asked before and while the model is
-/// waited for (a reading the Operator's typing replaced). Asked before
+/// defaults, with why. `stop` is asked while Jev is waited for, and before
+/// and while the model is (a reading the Operator's typing replaced). Asked before
 /// Start, so the Operator sees it and may change it.
 pub fn infer(
     answers: &dyn Answers,
@@ -1137,7 +1156,7 @@ pub fn infer(
             millis: 0,
             usd: Some(0.0),
         })
-        .and_then(|()| answers.ask_jev_all(&state, jev_questions()));
+        .and_then(|()| answers.ask_jev_all(&state, jev_questions(), stop));
     let note = match asked {
         Ok((said, cost)) => {
             usd = add(usd, cost);
@@ -1359,7 +1378,7 @@ mod tests {
         fn threshold(&self) -> f64 {
             0.6
         }
-        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+        fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
             unreachable!("no Jev here")
         }
         fn chat(
@@ -1526,13 +1545,14 @@ Answer with JSON only: {{\"choice\": \"<one option id>\"}}",
         fn threshold(&self) -> f64 {
             0.6
         }
-        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+        fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
             unreachable!("asked all three at once")
         }
         fn ask_jev_all(
             &self,
             state: &Value,
             questions: BTreeMap<String, jev::Question>,
+            _: &mut dyn FnMut() -> bool,
         ) -> Result<(BTreeMap<String, Answer>, Option<f64>), Failure> {
             assert!(state["intent"].as_str().unwrap().starts_with("Explore"));
             assert_eq!(
