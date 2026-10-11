@@ -2621,12 +2621,21 @@ fn every_cost_a_run_counts_is_on_a_step_it_records() {
 #[ignore = "live: needs the TypeSafe AI and DeepSeek keys, spends a few cents"]
 fn live_hypotheses_on_the_stand_in() {
     let decider = Decider::default();
+    let (escalation_model, escalation_effort) = std::env::var("AGENTIQUE_ESCALATION")
+        .ok()
+        .and_then(|v| {
+            v.split_once('@')
+                .map(|(m, e)| (m.to_string(), e.to_string()))
+        })
+        .unwrap_or_else(|| ("deepseek-v4-pro".into(), "max".into()));
     let deciding = Deciding {
         answers: &decider,
         explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
         effort: Some("low".into()),
-        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
-        escalation_effort: Some("max".into()),
+        // Another model for the hypotheses, to compare (`AGENTIQUE_ESCALATION=
+        // deepseek-flash@high`).
+        escalation: ModelRef::new(Provider::DeepSeek, &escalation_model),
+        escalation_effort: Some(escalation_effort),
     };
     let hypothesis =
         |claim: &str, behaviour: &str, workflow: &str, expected: &str| explore::Hypothesis {

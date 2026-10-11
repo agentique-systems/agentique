@@ -2770,6 +2770,40 @@ model forming expectations on a real Studio, and how long a hypothesis
 takes with it (E2 measured deepseek-v4-pro at max at about 75 s a call on
 the stand-in).
 
+*E3 after its independent review* (a separate agent requested changes;
+finished on 2026-10-11 under the Operator's delegation, rebased on the
+external review's repairs). A hypothesis's requirement is resolved in the
+repository's own model, where `serves` is checked, and a proposal that
+fixes its finding must serve the requirement the lead judged the finding
+against, or the hypothesis's (before, a target other than `model` refused
+every fix). A finding of a failed expectation keeps what was expected in its
+identity, so two contradictions are two findings (before, they collided and
+the second read as already judged). Only the expectation the reasoning
+model marks `answers` answers a hypothesis, and the answer records what was
+expected and observed; an expectation only about the Assistant's reply
+answers nothing; the last step's expectation is settled after the run.
+Hypothesis steps rank relevance before coverage, name the requirement and
+select it by rule where the explored project holds it; Jev navigates between
+the reasoning steps, whose effort is capped at high. The directive lists the
+hypotheses, progress names the one under test and says when each is
+answered; children do not inherit hypotheses, answered ones are not tested
+again, and the planning lead's brief lists the answers. The expectations
+judged wrong before go only into the reasoning prompts, with why. Tests: the
+path end to end on the stand-in (a contradicted hypothesis reproduced,
+judged, offered and fixed for its requirement), identities, a stop while a
+hypothesis is tested, and reply-only expectations. Measured live on the
+stand-in (no windows; two hypotheses: every History button says what it
+does, which the stand-in's unlabelled Archive button contradicts, and
+validating says whether the model is valid): with deepseek-v4-pro at high
+for the hypotheses, 10 min 5 s and $0.20, its 5 calls p50 58 s and slowest
+189 s, the model 99 % of the time; with deepseek-flash at high, 4 min 20 s
+and $0.067, calls p50 44 s and slowest 74 s; both found validation to agree
+and left the History hypothesis not answered within its five steps (no
+expectation can say "every control is labelled"; the run's own label check
+is what finds an unlabelled control). Which model tests hypotheses stays
+the escalation role's setting (Settings › Agents). Not verified: a live run
+on a real Studio.
+
 **W13.7 repairs from an external review.** An external research review
 of `main` at `5d893017` (2026-10-10) read the loop's code against its
 requirements and listed suspected defects; each repaired here was first
