@@ -20,7 +20,7 @@ pub const AGENT_CONFIGURATION: [&str; 4] = agq_assistant::policy::AGENT_CONFIGUR
 
 /// Files that configure agents wherever they are (Claude Code reads them in
 /// the folder it works in).
-const AGENT_FILES: [&str; 5] = [
+pub(crate) const AGENT_FILES: [&str; 5] = [
     "CLAUDE.md",
     "CLAUDE.local.md",
     "AGENTS.md",

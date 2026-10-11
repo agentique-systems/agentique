@@ -1001,6 +1001,68 @@ pub struct Objective {
     /// and for an objective that does not explore.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<crate::explore::Target>,
+    /// Its required checks and protections as frozen when it first ran
+    /// (AR-DEC-002). None in a record an earlier build wrote or saved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frozen: Option<FrozenChecks>,
+}
+
+/// The required checks and protections an objective's cycles are held to,
+/// frozen when it first ran (AR-DEC-002): a later start or continue runs it
+/// only with every one of them, and says what the build adds.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FrozenChecks {
+    /// Each required check command, as its words.
+    pub checks: Vec<Vec<String>>,
+    /// Paths no cycle changes: the links' protected paths and the built-in
+    /// ones, with `/`.
+    pub protected: Vec<String>,
+    /// Paths a cycle changes only when the objective names them: Agentique's
+    /// safeguards and agents' configuration.
+    pub safeguards: Vec<String>,
+    /// The build that froze them; none for a development build.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build: Option<String>,
+}
+
+impl FrozenChecks {
+    /// Each check and path, one line naming its kind.
+    pub fn lines(&self) -> Vec<String> {
+        let path = |p: &String| p.replace('\\', "/");
+        let mut lines: Vec<String> = self
+            .checks
+            .iter()
+            .map(|words| format!("the required check `{}`", words.join(" ")))
+            .collect();
+        lines.extend(
+            self.protected
+                .iter()
+                .map(|p| format!("the protected path `{}`", path(p))),
+        );
+        lines.extend(
+            self.safeguards
+                .iter()
+                .map(|p| format!("the safeguard `{}`", path(p))),
+        );
+        lines.sort();
+        lines.dedup();
+        lines
+    }
+
+    /// What these hold that `now` does not (a reworded command among them).
+    pub fn missing(&self, now: &FrozenChecks) -> Vec<String> {
+        let now = now.lines();
+        self.lines()
+            .into_iter()
+            .filter(|l| !now.contains(l))
+            .collect()
+    }
+
+    /// What `now` holds besides these.
+    pub fn added(&self, now: &FrozenChecks) -> Vec<String> {
+        now.missing(self)
+    }
 }
 
 fn is_zero_u32(value: &u32) -> bool {
@@ -1161,6 +1223,11 @@ impl Objective {
                 "It resumed by itself {} times without getting further, so it stops here.",
                 self.resumes
             )),
+            // Its required checks were never frozen (an earlier build wrote
+            // or saved it): only the Operator's Continue freezes them.
+            Some(_) if self.frozen.is_none() => Resuming::Wait(
+                "Its record has no frozen required checks (an earlier build wrote or saved it), so it does not go on by itself. Continue holds it, from then on, to this build's required checks and protected paths, which its thread lists; Stop ends it.".into(),
+            ),
             Some(why) => Resuming::Continue(why.into()),
             None => Resuming::Wait(
                 "An objective is not finished: Continue goes on from where it was.".into(),
@@ -1244,6 +1311,7 @@ impl Store {
             delivered: 0,
             origin: crate::forge::origin_url(repository),
             target: None,
+            frozen: None,
         };
         self.save(&objective)?;
         Ok(objective)
@@ -1577,6 +1645,7 @@ mod tests {
             delivered: 0,
             origin: None,
             target: None,
+            frozen: None,
         };
         objective.spent.add(
             "lead",
@@ -2046,8 +2115,105 @@ mod tests {
     /// an ordinary start, it waits for Continue; resumed twice without
     /// getting further, it stops.
     #[test]
+    fn frozen_checks_say_what_is_missing_and_what_is_added() {
+        let frozen = FrozenChecks {
+            checks: vec![
+                vec!["cargo".into(), "fmt".into()],
+                vec!["python".into(), "tools/check_architecture.py".into()],
+            ],
+            protected: vec![".github".into(), "standards\\pdf".into()],
+            safeguards: vec!["crates/orchestrator".into()],
+            build: Some("b1".into()),
+        };
+        // The same, with other separators and duplicates, misses nothing.
+        let same = FrozenChecks {
+            protected: vec![".github".into(), "standards/pdf".into(), ".github".into()],
+            build: Some("b2".into()),
+            ..frozen.clone()
+        };
+        assert!(frozen.missing(&same).is_empty());
+        assert!(frozen.added(&same).is_empty());
+        // A reworded command is one missing and one added; a path more is
+        // added.
+        let mut now = frozen.clone();
+        now.checks[1] = vec!["python3".into(), "tools/check_architecture.py".into()];
+        now.protected.push("tools".into());
+        assert_eq!(
+            frozen.missing(&now),
+            ["the required check `python tools/check_architecture.py`"]
+        );
+        assert_eq!(
+            frozen.added(&now),
+            [
+                "the protected path `tools`",
+                "the required check `python3 tools/check_architecture.py`"
+            ]
+        );
+    }
+
+    /// `objective.json` stays format 1 with `frozen` (AR-DEC-002): the
+    /// previous build's reader, which knows no such field, reads a record
+    /// that has it; this build reads it back whole, and one without it as
+    /// none.
+    #[test]
+    fn a_record_with_frozen_checks_stays_format_1() {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        #[allow(dead_code)]
+        struct Previous {
+            format: u32,
+            id: String,
+            state: State,
+            #[serde(default)]
+            cycles: Vec<Cycle>,
+            continuation: Option<Continuation>,
+        }
+        let mut objective = with_models();
+        objective.frozen = Some(FrozenChecks {
+            checks: vec![vec!["cargo".into(), "test".into()]],
+            protected: vec![".github".into()],
+            safeguards: vec!["crates/orchestrator".into()],
+            build: None,
+        });
+        let text = serde_json::to_string_pretty(&objective).unwrap();
+        assert!(text.contains("\"frozen\""), "{text}");
+        let previous: Previous = serde_json::from_str(&text).unwrap();
+        assert_eq!(previous.format, 1);
+        assert_eq!(serde_json::from_str::<Objective>(&text).unwrap(), objective);
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        old.as_object_mut().unwrap().remove("frozen");
+        let read: Objective = serde_json::from_value(old).unwrap();
+        assert_eq!(read.frozen, None);
+    }
+
+    /// A record without frozen checks (an earlier build wrote or saved it)
+    /// does not go on by itself, after an adoption or a recovery: the
+    /// Operator's Continue freezes them.
+    #[test]
+    fn a_record_without_frozen_checks_does_not_go_on_by_itself() {
+        let mut objective = with_models();
+        assert!(matches!(
+            objective.on_start(true),
+            Resuming::Wait(why) if why.contains("no frozen required checks")
+        ));
+        objective.continuation = Some(Continuation {
+            cycle: 1,
+            build: "b2".into(),
+            at: "t".into(),
+        });
+        assert!(matches!(objective.on_start(false), Resuming::Wait(_)));
+        objective.frozen = Some(FrozenChecks::default());
+        assert!(matches!(objective.on_start(false), Resuming::Continue(_)));
+        // Stopping after resuming twice still comes first.
+        objective.frozen = None;
+        objective.resumes = RESUMES;
+        assert!(matches!(objective.on_start(false), Resuming::Stop(_)));
+    }
+
+    #[test]
     fn an_unfinished_objective_goes_on_by_itself_only_when_it_should() {
         let mut objective = with_models();
+        objective.frozen = Some(FrozenChecks::default());
         assert!(matches!(objective.on_start(false), Resuming::Wait(_)));
         assert!(matches!(objective.on_start(true), Resuming::Continue(_)));
         objective.interrupted = true;
