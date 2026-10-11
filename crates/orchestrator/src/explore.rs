@@ -312,9 +312,13 @@ impl Answers for Measured<'_> {
         self.answers.threshold()
     }
 
-    fn ask_jev(&self, question: &Question) -> Result<Decision, decide::Failure> {
+    fn ask_jev(
+        &self,
+        question: &Question,
+        stop: &mut dyn FnMut() -> bool,
+    ) -> Result<Decision, decide::Failure> {
         let started = Instant::now();
-        let answer = self.answers.ask_jev(question);
+        let answer = self.answers.ask_jev(question, stop);
         self.timing.borrow_mut().jev_ms += started.elapsed().as_millis() as u64;
         answer
     }
@@ -323,9 +327,10 @@ impl Answers for Measured<'_> {
         &self,
         state: &Value,
         questions: BTreeMap<String, agq_providers::jev::Question>,
+        stop: &mut dyn FnMut() -> bool,
     ) -> Result<(BTreeMap<String, agq_providers::jev::Answer>, Option<f64>), decide::Failure> {
         let started = Instant::now();
-        let answer = self.answers.ask_jev_all(state, questions);
+        let answer = self.answers.ask_jev_all(state, questions, stop);
         self.timing.borrow_mut().jev_ms += started.elapsed().as_millis() as u64;
         answer
     }
@@ -1917,7 +1922,7 @@ fn choose(way: Way, choosing: &Choosing, stop: &mut dyn FnMut() -> bool) -> (usi
     );
     let answers = deciding.answers;
     let bound = at_most(&answers.jev_model(), q.prompt("").len(), JEV_OUTPUT_TOKENS) * JEV_REQUESTS;
-    let (spent, note) = match answers.ask_jev(&q) {
+    let (spent, note) = match answers.ask_jev(&q, stop) {
         Ok(decision) => {
             let spent = Spent::NOTHING.and(decision.millis, decision.usd, bound);
             match shown_as(&shown, &decision.choice) {
@@ -2826,8 +2831,15 @@ impl Explorer<'_> {
                     {
                         held += 1;
                         std::thread::sleep(findings::HELD_WAIT);
-                        if let Some(now) = self.observe()? {
-                            self.now = now;
+                        // A step whose decision was paid for is recorded
+                        // before the run ends, so its spend is counted.
+                        match self.observe() {
+                            Ok(Some(now)) => self.now = now,
+                            Ok(None) => {}
+                            Err(ended) => {
+                                self.record(&step, chosen, "ended", ended.clone(), None);
+                                return Err(ended);
+                            }
                         }
                         continue;
                     }
@@ -2850,8 +2862,16 @@ impl Explorer<'_> {
                 _ => {}
             }
             if matches!(refusal, Refusal::Stale | Refusal::Gone) {
-                let Some(after) = self.observe()? else {
-                    return Ok(());
+                let after = match self.observe() {
+                    Ok(Some(after)) => after,
+                    Ok(None) => {
+                        self.record(&step, chosen, "ended", error, None);
+                        return Ok(());
+                    }
+                    Err(ended) => {
+                        self.record(&step, chosen, "ended", ended.clone(), None);
+                        return Err(ended);
+                    }
                 };
                 let failed = findings::failures(&Outcome {
                     before: &self.now,
@@ -2904,9 +2924,16 @@ impl Explorer<'_> {
             let took = answer["tookMs"].as_u64();
             *self.run.covered.entry(step.key.clone()).or_default() += 1;
             self.since.push(step.clone());
-            let Some(after) = self.observe()? else {
-                self.record(&step, chosen, outcome, error, took);
-                return Ok(());
+            let after = match self.observe() {
+                Ok(Some(after)) => after,
+                Ok(None) => {
+                    self.record(&step, chosen, outcome, error, took);
+                    return Ok(());
+                }
+                Err(ended) => {
+                    self.record(&step, chosen, outcome, error, took);
+                    return Err(ended);
+                }
             };
             // A request sent: what the explorer expected of it is checked
             // when its turn has ended, on the wait for it.

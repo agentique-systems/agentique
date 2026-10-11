@@ -95,7 +95,11 @@ impl Answers for Scripted {
         0.6
     }
 
-    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
+    fn ask_jev(
+        &self,
+        question: &Question,
+        _: &mut dyn FnMut() -> bool,
+    ) -> Result<Decision, Failure> {
         self.questions.borrow_mut().push(question.clone());
         match self.jev.borrow_mut().pop_front() {
             Some(Ok((choice, confidence))) => Ok(Decision {
@@ -1227,7 +1231,7 @@ fn a_decision_of_unknown_cost_counts_at_the_most_it_could_have_cost() {
         fn threshold(&self) -> f64 {
             0.6
         }
-        fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+        fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
             unreachable!()
         }
         fn chat(
@@ -1704,7 +1708,7 @@ impl Answers for Slow {
         0.6
     }
 
-    fn ask_jev(&self, _: &Question) -> Result<Decision, Failure> {
+    fn ask_jev(&self, _: &Question, _: &mut dyn FnMut() -> bool) -> Result<Decision, Failure> {
         unreachable!("the model is asked")
     }
 
