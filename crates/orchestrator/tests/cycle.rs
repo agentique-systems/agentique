@@ -790,7 +790,8 @@ fn a_proposal_serving_a_part_is_refused() {
 /// written when the cycle adopts (a folder stands where its atomic write
 /// puts its temporary file), while its thread and journal still can: the
 /// Studio must not be told to hand over to a build the record on disk does
-/// not say to continue in.
+/// not say to continue in. The objective pauses instead; once the record
+/// can be written again, Resume hands over, with the continuation on disk.
 #[test]
 fn an_adoption_waits_for_its_continuation_to_be_saved() {
     let dir = tempfile::tempdir().unwrap();
@@ -840,6 +841,7 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
     let handle = run::start(setup, objective);
     let deadline = Instant::now() + Duration::from_secs(60);
     let mut stopped = false;
+    let mut resumed = false;
     let mut thread = Vec::new();
     // Each handover asked: its build, and the continuation on disk then.
     let mut handovers = Vec::new();
@@ -848,14 +850,17 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
             Ok(Event::Adopt { build, reply }) => {
                 let saved = store.load(&id).unwrap().continuation;
                 handovers.push((build, saved));
-                // The Studio would save and exit here; this one declines.
-                let _ = reply.send(Err("this test hands over to nothing".into()));
+                // The Studio saves and exits here: the Driver ends.
+                let _ = reply.send(Ok(()));
             }
             Ok(Event::Thread(entry)) => {
-                // Paused, as it should be: the Operator would resume it.
-                if entry.text.starts_with("Paused until you resume it") && !stopped {
-                    handle.send(Command::Stop);
-                    stopped = true;
+                // Paused, as it should be: nothing was handed over. The
+                // Operator clears what was in the way and resumes it.
+                if entry.text.starts_with("Paused until you resume it") && !resumed {
+                    assert!(handovers.is_empty(), "{handovers:?}");
+                    std::fs::remove_dir_all(&in_the_way).unwrap();
+                    handle.send(Command::Resume);
+                    resumed = true;
                 }
                 thread.push(entry.text);
             }
@@ -872,6 +877,9 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
             "the objective did not end: {thread:#?}"
         );
     }
+    // Resumed, it handed over once, with its continuation on disk.
+    assert!(resumed && !stopped, "{thread:#?}");
+    assert_eq!(handovers.len(), 1, "{handovers:?}\n{thread:#?}");
     // It waits for the Operator, saying why, rather than failing the cycle.
     assert!(
         thread

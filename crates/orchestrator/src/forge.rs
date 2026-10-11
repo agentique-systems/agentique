@@ -19,6 +19,10 @@ use std::time::{Duration, Instant};
 /// How long the repository's checks may take before the cycle stops.
 pub const CHECKS_WITHIN: Duration = Duration::from_secs(60 * 60);
 
+/// How long checks that were all skipped are read again before that counts,
+/// in case others have yet to register.
+const SKIPPED_SETTLE: Duration = Duration::from_secs(120);
+
 pub(crate) fn run(
     repository: &Path,
     words: &[&str],
@@ -363,6 +367,11 @@ pub fn wait_for_checks(
     loop {
         match checks(repository, number)? {
             Checks::Pending if started.elapsed() < within => {}
+            // Every check listed was skipped: others (another workflow's)
+            // may not have registered yet, so it settles a while first.
+            Checks::Failed(lines)
+                if lines.lines().all(|l| l.contains(" skipping ("))
+                    && started.elapsed() < SKIPPED_SETTLE.min(within) => {}
             other => return Ok(other),
         }
         for _ in 0..30 {

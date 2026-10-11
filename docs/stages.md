@@ -2758,20 +2758,29 @@ named under the delegation):
   exited well passed unless it said it ran 0 tests, so a run that says
   nothing countable passed too (a module that exits as it loads, a test
   target without a summary, output cut at its 2 MB limit). It now fails,
-  saying no number of tests run could be read.
+  saying no number of tests run could be read, with the end of its output.
+  Python's skipped tests no longer count as run (`OK (skipped=3)` is none),
+  as cargo's ignored and Node's skipped ones never did.
 - *Every check skipped* (AR-T-008). When every check the host listed was
   skipped, the repository's checks counted as passed and the cycle merged
   what nothing had checked. Now at least one check must pass. Checks that
-  were all skipped are a failure: the checks' machinery's (the reviewed
-  change waits on its pull request), or the change's when it touches what
-  the checks are set up from (a workflow's condition, say).
+  were all skipped (still so two minutes after they were first read, in
+  case others have yet to register) are a failure: the checks' machinery's
+  (the reviewed change waits on its pull request), or the change's when it
+  touches the workflows that decide whether checks run (`.github/`).
 
 Tested: the record unwritable at the adoption (a folder where its atomic
-write puts its temporary file) pauses with no handover asked; a
-`python -m unittest` module that exits as it loads fails its criterion; the
+write puts its temporary file) pauses with no handover asked, and Resume,
+once it can be written, hands over with the continuation on disk; a
+`python -m unittest` module that exits as it loads fails its criterion (the
+test skips where `python` is not installed); Python's skipped tests; the
 checks' reading of skipped, passed, pending and failed checks, and the
-attribution of skipped ones. Not covered: a check the host requires that
+attribution of skipped ones. An independent review found the first
+attribution blaming the change for touching anything outside the crates
+(the model, say), the Resume untested, and Python's skipped tests counted;
+corrected. Not covered: a check the host requires that
 was skipped beside another that passed still passes (the Orchestrator does
 not know which checks the host requires, and GitHub counts a skipped
-required check as passing). Not verified: a real disk failure during an
+required check as passing); a neutral check (which `gh` lists among the
+skipped) is said to be skipped. Not verified: a real disk failure during an
 adoption, and skipped checks on a real pull request.

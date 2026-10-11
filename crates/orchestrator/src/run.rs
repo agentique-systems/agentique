@@ -423,12 +423,20 @@ fn freshen(folder: &Path) {
 }
 
 /// How many tests a test run says it ran: cargo's `test result:` lines,
-/// Node's `# pass` / `ℹ pass`, Python's `Ran N tests`; `None` when it says
-/// nothing countable.
+/// Node's `# pass` / `ℹ pass`, Python's `Ran N tests` less those its summary
+/// says were skipped (`OK (skipped=N)`), as cargo leaves ignored tests and
+/// Node skipped ones out; `None` when it says nothing countable.
 fn tests_ran(output: &str) -> Option<usize> {
     let mut total = None;
+    let mut skipped = 0;
     let mut add = |n: usize| total = Some(total.unwrap_or(0) + n);
     for line in output.lines() {
+        if (line.starts_with("OK (") || line.starts_with("FAILED ("))
+            && let Some(n) = number_after(line, "skipped=")
+        {
+            skipped += n;
+            continue;
+        }
         if line.contains("test result:") {
             let passed = number_after(line, ". ").unwrap_or(0);
             let failed = number_after(line, "passed; ").unwrap_or(0);
@@ -444,7 +452,7 @@ fn tests_ran(output: &str) -> Option<usize> {
             add(n);
         }
     }
-    total
+    total.map(|n| n.saturating_sub(skipped))
 }
 
 /// The number written after `marker` in `line`, if any.
@@ -1197,6 +1205,8 @@ impl Driver {
     /// detection, so a moved file counts where it was and where it is). A
     /// log or workspace that cannot be read leaves the failure the change's,
     /// but a cancelled check whose log cannot be read is the machinery's.
+    /// Checks that were all skipped have no log: `blockers::skipped` places
+    /// them.
     fn attribute(
         &self,
         what: &str,
@@ -1230,10 +1240,10 @@ impl Driver {
             let check = line.split(' ').next().unwrap_or("a check").to_string();
             if line.contains(" skipping (") {
                 // Every check was skipped: nothing ran, so there is no log.
-                attributions.push(match (&paths, &workspace) {
-                    (Ok(paths), Ok(workspace)) => blockers::skipped(&check, paths, workspace),
-                    _ => blockers::Attribution::Change(format!(
-                        "{check} was skipped, and what the change touches could not be read"
+                attributions.push(match &paths {
+                    Ok(paths) => blockers::skipped(&check, paths),
+                    Err(error) => blockers::Attribution::Change(format!(
+                        "{check} was skipped, and the paths the change touches could not be read: {error}"
                     )),
                 });
                 failures.push(blockers::CiFailure {
@@ -2715,7 +2725,10 @@ impl Driver {
                     None => Outcome {
                         name,
                         verdict: "failed".into(),
-                        detail: "it exited well, but its output says no number of tests run, so no test is seen to run".into(),
+                        detail: format!(
+                            "it exited well, but its output says no number of tests run, so no test is seen to run; it ends:\n{}",
+                            agq_execution::process::last_lines(&output, 20)
+                        ),
                         judged: false,
                     },
                     Some(_) if output.contains("test result: FAILED") => Outcome {
@@ -3974,6 +3987,15 @@ mod tests {
         );
         assert_eq!(tests_ran("# tests 2\n# pass 2\n# fail 0"), Some(2));
         assert_eq!(tests_ran("Ran 5 tests in 0.010s\n\nOK"), Some(5));
+        // Python's skipped tests did not run, as cargo's ignored ones.
+        assert_eq!(
+            tests_ran("Ran 3 tests in 0.001s\n\nOK (skipped=3)"),
+            Some(0)
+        );
+        assert_eq!(
+            tests_ran("Ran 4 tests in 0.001s\n\nFAILED (failures=1, skipped=2)"),
+            Some(2)
+        );
         assert_eq!(tests_ran("Compiling things"), None);
     }
 

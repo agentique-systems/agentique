@@ -442,17 +442,17 @@ pub fn repairs_what_failed(
 }
 
 /// A check the host skipped, when every check was (`forge::checks`): nothing
-/// ran, so there is no log. The machinery's, unless the change touches what
-/// the checks are set up from (a job's condition, say).
-pub fn skipped(check: &str, paths: &[String], workspace: &Workspace) -> Attribution {
-    if workspace.affected(paths).is_ok() {
-        Attribution::Infrastructure(format!(
+/// ran, so there is no log. The machinery's, unless the change touches the
+/// workflows that decide whether a check runs (`.github/`: a job's
+/// condition or path filter, say), which nothing else does.
+pub fn skipped(check: &str, paths: &[String]) -> Attribution {
+    match paths.iter().find(|p| p.starts_with(".github/")) {
+        Some(path) => Attribution::Change(format!(
+            "{check} was skipped, and the change touches {path}, which decides whether checks run"
+        )),
+        None => Attribution::Infrastructure(format!(
             "{check} was skipped, so no check ran on the commit"
-        ))
-    } else {
-        Attribution::Change(format!(
-            "{check} was skipped, and the change touches what the checks are set up from"
-        ))
+        )),
     }
 }
 
@@ -782,12 +782,21 @@ workspace\tRun cargo test --locked --workspace\t2026-10-10T11:45:54.4073112Z err
         // Every check skipped (AR-T-008): nothing ran; the machinery's,
         // unless the change touches what the checks are set up from.
         assert!(matches!(
-            skipped("workspace", &studio, &workspace()),
+            skipped("workspace", &studio),
             Attribution::Infrastructure(why) if why.contains("no check ran")
         ));
+        // The model and the lock file decide nothing about skipping.
+        let model = vec![
+            "model/Agentique.sysml".to_string(),
+            "Cargo.lock".to_string(),
+        ];
         assert!(matches!(
-            skipped("workspace", &workflow, &workspace()),
-            Attribution::Change(_)
+            skipped("workspace", &model),
+            Attribution::Infrastructure(_)
+        ));
+        assert!(matches!(
+            skipped("workspace", &workflow),
+            Attribution::Change(why) if why.contains(".github/workflows/ci.yml")
         ));
         // A check whose name holds a setup word is a check.
         let companion = parse_failed_log(
