@@ -1039,6 +1039,14 @@ impl Driver {
                     // The adopted build did not take over: this build goes
                     // no further on top of it.
                     Err(problem) => {
+                        let problem = match self.cycle().to_build() {
+                            Some(merged) => format!(
+                                "{problem}; cycle {}, merged as {}, is not adopted",
+                                self.cycle().n,
+                                builds::short(merged)
+                            ),
+                            None => problem,
+                        };
                         self.cycle_mut().blocker = Some(problem.clone());
                         self.cycle_mut().phase = Phase::Failed;
                         self.end(State::Failed, problem);
@@ -1052,6 +1060,18 @@ impl Driver {
                     self.cycle_mut().phase = next;
                     // It got further: a resume after this is a fresh one.
                     self.objective.resumes = 0;
+                    // A held merge that got further is no longer held.
+                    if matches!(phase, Phase::Build | Phase::Try | Phase::Adopt) {
+                        self.cycle_mut().blocker = None;
+                        if self
+                            .objective
+                            .note
+                            .as_deref()
+                            .is_some_and(|n| n.starts_with("Merged as "))
+                        {
+                            self.objective.note = None;
+                        }
+                    }
                     if next == Phase::Done {
                         self.objective
                             .settle_running(DirectiveStatus::Done, "the cycle is done");
@@ -1075,6 +1095,14 @@ impl Driver {
                     self.objective.note = Some(why);
                     self.controls.apply(Command::Pause);
                     self.save();
+                }
+                // A merged change that is not adopted is held, not followed
+                // (J8, K8, §4.16: the next cycle runs in the adopted build).
+                Err(blocker)
+                    if matches!(phase, Phase::Build | Phase::Try | Phase::Adopt)
+                        && self.cycle().to_build().is_some() =>
+                {
+                    self.hold_unadopted(phase, blocker);
                 }
                 Err(blocker) => {
                     self.event(format!("Cycle {} stopped: {blocker}", self.cycle().n));
@@ -1102,6 +1130,51 @@ impl Driver {
 
     fn improvements(&self) -> u32 {
         self.objective.improvements()
+    }
+
+    /// Holds a cycle whose merged change failed to build, pass its trial or
+    /// be handed over: it stays at that phase, and the objective pauses, so
+    /// no next cycle starts on a merged commit no build ran. Resume tries
+    /// the phase again on the same commit (a failed build is built again);
+    /// Stop ends the objective with the cycle merged and not adopted.
+    fn hold_unadopted(&mut self, phase: Phase, blocker: String) {
+        // A budget used up meanwhile (a release build takes long) ends it:
+        // Resume could not go on.
+        if let Some((state, reason)) = self.over() {
+            self.cycle_mut().blocker = Some(blocker);
+            self.end(state, reason);
+            return;
+        }
+        let n = self.cycle().n;
+        let merged = builds::short(self.cycle().to_build().map_or("", String::as_str)).to_string();
+        let running = self
+            .setup
+            .running_build
+            .clone()
+            .unwrap_or_else(|| "a development build".into());
+        let retry = match phase {
+            Phase::Build => "Resume builds it again",
+            Phase::Try => "Resume tries its build again",
+            _ => "Resume hands it over again",
+        };
+        // Nothing was handed over: no continuation, and the phase back from
+        // Resume, so a restart cannot resume what never started.
+        if phase == Phase::Adopt {
+            self.objective.continuation = None;
+        }
+        // The cycle keeps the whole of it, which outlives the objective's
+        // note (closing Agentique rewrites that).
+        let held = format!("Merged as {merged}, not adopted: {blocker}");
+        let cycle = self.cycle_mut();
+        cycle.phase = phase;
+        cycle.blocker = Some(held.clone());
+        self.objective.state = State::Paused;
+        self.objective.note = Some(held);
+        self.controls.apply(Command::Pause);
+        self.save();
+        self.event(format!(
+            "Cycle {n}, merged as {merged}, is not adopted: {blocker}. Agentique runs {running}. Nothing starts on a merged change that is not adopted: {retry}; Stop ends the objective"
+        ));
     }
 
     fn repair_due(&self) -> Option<u32> {
@@ -1625,6 +1698,21 @@ impl Driver {
         {
             self.clean_cycle(true);
         }
+        // Ended while a merged change waits to be adopted: said so.
+        let note = match self.objective.cycle() {
+            Some(c)
+                if !c.adopted
+                    && matches!(c.phase, Phase::Build | Phase::Try | Phase::Adopt)
+                    && let Some(merged) = c.to_build() =>
+            {
+                format!(
+                    "{note} Cycle {}, merged as {}, is not adopted.",
+                    c.n,
+                    builds::short(merged)
+                )
+            }
+            _ => note,
+        };
         self.event(note.clone());
         let settled = match state {
             State::Stopped => DirectiveStatus::Stopped,
@@ -3868,7 +3956,22 @@ impl Driver {
             build: build.clone(),
             at: agq_launcher::now(),
         });
+        // Already running it (a handover that took longer than its wait,
+        // resumed in the adopted build): adopted, as `resume` records it.
+        if self.setup.running_build.as_deref() == Some(build.as_str()) {
+            return self.resume().map(Some);
+        }
         self.cycle_mut().phase = Phase::Resume;
+        // Handed over from a hold: no longer held.
+        self.cycle_mut().blocker = None;
+        if self
+            .objective
+            .note
+            .as_deref()
+            .is_some_and(|n| n.starts_with("Merged as "))
+        {
+            self.objective.note = None;
+        }
         if let Err(error) = self.saved() {
             // The adopted build goes on from the record on disk: without the
             // continuation there it would neither verify nor record the

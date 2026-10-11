@@ -2093,7 +2093,7 @@ it). Read against the code and the model before any change:
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 | W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
-| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, #135, #136, `stage13/provenance` | #134, #135 and #136 merged; the rest in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, #135, #136, `stage13/provenance`, `stage13/pending-adoption` | #134, #135 and #136 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2865,3 +2865,57 @@ implementation results current without comparing code, a status line
 promising drift that could not show, and lossy link targets and paths;
 corrected. Not tested: a symbolic link (creating one needs a privilege on
 Windows), an unreadable file, and a Run panel without readable links.
+
+*A merged change that is not adopted is held, not followed* (AR-T-013 read,
+AR-T-014 repaired; `stage13/pending-adoption`; the Orchestrator's lock
+named under the delegation). After a merge, a release build that failed, a
+build that did not pass its trial, or a handover the Studio refused failed
+the cycle, and the next cycle started on the merged commit, which no build
+ran, in the build that ran before; the record could not tell that apart
+from a second cycle in the adopted build, against Scenario J8 ("the next
+cycle starts from the adopted version"), K8 and §4.16. Now such a cycle
+stays at that phase and the objective pauses, saying the cycle is merged
+and not adopted, why, the build that runs, and what Resume does (builds
+again, tries again, hands over again; a failed build is built again, as the
+journal repeats only what did not complete); Stop ends the objective,
+still saying so. A handover resumed in the build it handed over to (one
+that took longer than its two minutes) is adopted, not asked again. A build
+that does not take over still ends the objective. Failures before the
+merge, merge-only objectives and changes kept on their branch go on to the
+next cycle as before. No record change: the cycle's phase, merged commit,
+build, trial and blocker, and the objective's paused state and note hold it;
+a previous build that resumes such an objective waits for the Operator the
+same way, but applies its old rule if the retry fails again.
+
+Decided with it, under the delegation, the review's open question: an
+objective whose intent orders its improvements ("then, in the adopted
+build") does not also stop after a failure before the merge. Such a
+failure merges nothing, so the next cycle still starts in the build that
+was adopted last, which is what J8 asks; whether the failed cycle counts as
+one of the improvements stays as built (it does, which bounds the work).
+The first W13.7 proof failed that way (cycle 1 before its merge, cycle 2 in
+the same build); with #129 a failure elsewhere now repairs first, and a
+proof judges "the second cycle in the adopted build" from the thread.
+
+Self-model, first and through `apply_changes` (the Orchestrator's lock
+confirmed): the scenario `AMergedChangeWhoseBuildFails` (a merged change,
+its build fails, a CycleReport merged and not adopted, and no next cycle),
+which failed on the Driver as it was; then the Driver's `notTried` waits in
+idle instead of going on to the next cycle, and its doc says so (Pause and
+Resume are not modelled; a refused handover is folded into a failed build).
+Tested: a failed release build held, built again on Resume, held again,
+stopped; a trial without a manifest held; a refused handover held with no
+continuation and handed over again on Resume with its continuation on disk;
+a handover resumed in its build adopted; a failure before the merge and a
+merge-only objective going on; the self-model's scenarios. An independent
+review found the hold's reason left on a cycle that then got further, the
+"merged, not adopted" kept only in a note that closing Agentique rewrites,
+a time budget used up during the build answered with "Resume builds it
+again", and the Driver's doc claiming the hold for merge-only objectives
+too; corrected (the cycle's blocker now holds the whole sentence, and the
+hold ends the objective when a budget is used up). Not changed: a held
+objective stopped after a restart, while no Driver runs, is noted "Stopped
+by the Operator." by the Studio (its cycle still says merged, not adopted);
+a recovery after a fallback counts a resume and waits paused, so two of
+them end it, as for any paused objective. Not verified: a real release
+build, trial and handover with the launcher.

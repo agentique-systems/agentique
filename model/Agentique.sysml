@@ -853,7 +853,7 @@ package AgentiqueArchitecture {
             port work : RolePort;
         }
         part def Driver {
-            doc /* The Orchestrator's deterministic code (run.rs): it drives one objective through its cycles and decides each next phase from recorded results. A cycle plans and explores (when the objective explores; every exploration is planned, so the lead may delegate in each turn, unless the objective is a child at the maximum depth), replays what was found, proposes (a proposal whose names do not resolve is asked once more; a lead that judges every finding other than a defect proposes nothing), implements, checks, reviews, merges, builds and tries, and adopts; a failing check or gate, a rejected review or a failed merge goes to repair within the attempt budget; after a cycle, done or failed, the next one starts while cycles are left; a child objective explores once and returns its result. Folded, and so stricter or coarser than the code: Evaluate is part of Check (gatesPassed), and a user-facing change without a behavioural criterion is shown as a failing gate rather than an immediate end; Try is part of the build's answer (Built); every round of repair (a failing check or gate, a rejection, a failed merge) counts its failures, and a round without fewer failures than the last ends the cycle, where the code ends it on the same failures twice in a row or after two rounds without fewer failures, so the model ends some cycles earlier than the code and none later; host refusals at merge go to repair here; the lead's delegation while proposing, and the code's cap of five children per cycle, are not modelled; nor is a failure of the repository's checks the change cannot have caused (W13.7), which the code keeps apart: it keeps the reviewed change on its pull request and, where merging is allowed, runs a repair cycle (not an improvement) after which the change, its patch unchanged, is carried onto the repair and merged when the checks pass. */
+            doc /* The Orchestrator's deterministic code (run.rs): it drives one objective through its cycles and decides each next phase from recorded results. A cycle plans and explores (when the objective explores; every exploration is planned, so the lead may delegate in each turn, unless the objective is a child at the maximum depth), replays what was found, proposes (a proposal whose names do not resolve is asked once more; a lead that judges every finding other than a defect proposes nothing), implements, checks, reviews, merges, builds and tries, and adopts; a failing check or gate, a rejected review or a failed merge goes to repair within the attempt budget; after a cycle, done or failed before its merge, the next one starts while cycles are left; when the objective may adopt, a merged change whose build fails is held, not followed: no next cycle starts on a merged commit no build ran (J8, K8), and the objective waits for the Operator, whose Resume tries the build again on the same merge and whose Stop ends it (Pause and Resume are not modelled, so the model waits in idle, which stands for both held and ended); a merge-only objective goes on from its merge, as it may not build; a child objective explores once and returns its result. Folded, and so stricter or coarser than the code: Evaluate is part of Check (gatesPassed), and a user-facing change without a behavioural criterion is shown as a failing gate rather than an immediate end; Try is part of the build's answer (Built), and a handover the Studio refuses is held as a failed build is; every round of repair (a failing check or gate, a rejection, a failed merge) counts its failures, and a round without fewer failures than the last ends the cycle, where the code ends it on the same failures twice in a row or after two rounds without fewer failures, so the model ends some cycles earlier than the code and none later; host refusals at merge go to repair here; the lead's delegation while proposing, and the code's cap of five children per cycle, are not modelled; nor is a failure of the repository's checks the change cannot have caused (W13.7), which the code keeps apart: it keeps the reviewed change on its pull request and, where merging is allowed, runs a repair cycle (not an improvement) after which the change, its patch unchanged, is carried onto the repair and merged when the checks pass. */
             port objectives : ObjectivePort;
             port explorer : ~RolePort;
             port lead : ~RolePort;
@@ -1035,7 +1035,7 @@ package AgentiqueArchitecture {
                 } then implementing;
                 transition notMerged first merging accept i : Integrated via jobs if not i.ok and attempts + 1 >= maxAttempts do send new CycleReport(reproduced = reproduced, merged = false, adopted = false) via objectives then between;
                 transition tried first building accept b : Built via jobs if b.ok do send new AdoptRequest() via launch then adopting;
-                transition notTried first building accept b : Built via jobs if not b.ok do send new CycleReport(reproduced = reproduced, merged = true, adopted = false) via objectives then between;
+                transition notTried first building accept b : Built via jobs if not b.ok do send new CycleReport(reproduced = reproduced, merged = true, adopted = false) via objectives then idle;
                 transition adoptedBuild first adopting accept r : Running via launch if r.build == Started::newBuild do action {
                     assign adopted := true;
                     then send new CycleReport(reproduced = reproduced, merged = true, adopted = true) via objectives;
@@ -2050,4 +2050,39 @@ package AgentiqueArchitecture {
     }
 
     satisfy purpose by agentique;
+
+    verification def AMergedChangeWhoseBuildFails {
+        doc /* A failure path of adoption: the merged change's release build fails, so the cycle is merged but not adopted, and the objective is held for the Operator rather than going on to its next cycle on a merged commit no build ran (J8, K8, ROADMAP §4.16, AR-T-014). */
+        subject orchestrator : Orchestrator;
+        objective {
+            verify recoverableAdoption;
+        }
+        part proposes : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Proposal(servesResolves = true);
+            :>> target = orchestrator.lead;
+        }
+        part implements : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::Implemented(files = 3);
+            :>> target = orchestrator.implementer;
+        }
+        part approves : Scenarios::StandIn {
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> output = new Orchestrator::ReviewVerdict(approved = true);
+            :>> target = orchestrator.reviewer;
+        }
+        send new ObjectiveRequest(cycles = 2, explore = false, depth = 0, mayMerge = true, mayAdopt = true, attempts = 4) via orchestrator.objectives;
+        then accept checks : CheckRequest via orchestrator.jobs;
+        then send new Orchestrator::CycleChecks(required = 5, passed = 5, evidenceOnBase = true, gatesPassed = true) via orchestrator.jobs;
+        then accept integrate : Integrate via orchestrator.jobs;
+        then send new Integrated(ok = true) via orchestrator.jobs;
+        then accept build : BuildRequest via orchestrator.jobs;
+        then send new Built(ok = false) via orchestrator.jobs;
+        then accept report : CycleReport via orchestrator.objectives;
+        then accept after 1000;
+        then assert constraint mergedNotAdoptedAndHeld {
+            report.merged and not report.adopted and orchestrator.driver.cyclesLeft == 2
+        }
+    }
 }

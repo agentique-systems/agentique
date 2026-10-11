@@ -907,3 +907,301 @@ fn an_adoption_waits_for_its_continuation_to_be_saved() {
         "the Studio was told to hand over although the record on disk holds no continuation for it: {handovers:?}\n{thread:#?}"
     );
 }
+
+/// An objective that may merge and adopt, whose first cycle merged the
+/// repository's head and is at `phase` with `build` (AR-T-014); its roles
+/// cannot work (no agent), so nothing after the merge needs one.
+fn merged_cycle_at(
+    dir: &Path,
+    phase: Phase,
+    build: Option<&str>,
+    running_build: Option<&str>,
+    cycles: u32,
+) -> (Store, Objective, Setup, String) {
+    // An empty manifest: a release build of it fails at once.
+    let repository = repository_with(dir, &["Cargo.toml"]);
+    let merged = git_out(&repository, &["rev-parse", "HEAD"]);
+    let store = Store::new(dir.join("objectives"));
+    let mut objective = store
+        .create(
+            "Improve it, then again in the adopted build",
+            &repository,
+            "main",
+            Budgets {
+                cycles,
+                ..Budgets::default()
+            },
+            Permissions {
+                push: true,
+                merge: true,
+                adopt: true,
+                ..Permissions::default()
+            },
+        )
+        .unwrap();
+    let mut cycle = agq_orchestrator::record::Cycle::new(1);
+    cycle.phase = phase;
+    cycle.merged = Some(merged.clone());
+    cycle.build = build.map(str::to_string);
+    objective.cycles.push(cycle);
+    store.save(&objective).unwrap();
+    let setup = Setup {
+        store: store.clone(),
+        work: dir.join("work"),
+        builds: dir.join("builds"),
+        runtime: Box::new(|_, _| Err("no agent works in this test".into())),
+        keys: Vec::new(),
+        checks: Vec::new(),
+        protected: Vec::new(),
+        running_build: running_build.map(str::to_string),
+        speed: "instant".into(),
+        credential: Box::new(|_| None),
+        studios: Box::new(run::Live),
+    };
+    (store, objective, setup, merged)
+}
+
+/// What a held objective's run shows: its thread, the handovers it asked
+/// (each answered by `answer`), and how often it was held before `then`
+/// (Resume or Stop) was sent after the `holds`-th hold.
+struct Held {
+    thread: Vec<String>,
+    handovers: Vec<(String, Option<agq_orchestrator::record::Continuation>)>,
+    holds: usize,
+}
+
+fn run_held(
+    store: &Store,
+    setup: Setup,
+    objective: Objective,
+    answer: impl Fn(usize) -> Result<(), String>,
+    then: impl Fn(usize) -> Command,
+) -> Held {
+    let id = objective.id.clone();
+    let handle = run::start(setup, objective);
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let mut held = Held {
+        thread: Vec::new(),
+        handovers: Vec::new(),
+        holds: 0,
+    };
+    loop {
+        match handle.events.recv_timeout(Duration::from_millis(50)) {
+            Ok(Event::Adopt { build, reply }) => {
+                let saved = store.load(&id).unwrap().continuation;
+                held.handovers.push((build, saved));
+                let _ = reply.send(answer(held.handovers.len()));
+            }
+            Ok(Event::Thread(entry)) => {
+                if entry.text.contains("is not adopted:") && entry.text.contains("Resume") {
+                    held.holds += 1;
+                    // The record on disk holds it: paused, at its phase.
+                    let record = store.load(&id).unwrap();
+                    assert_eq!(record.state, State::Paused, "{:?}", entry.text);
+                    assert!(record.continuation.is_none(), "{record:?}");
+                    assert_eq!(record.cycles.len(), 1, "no next cycle starts");
+                    handle.send(then(held.holds));
+                }
+                held.thread.push(entry.text);
+            }
+            Ok(_) => {}
+            Err(_) if handle.finished() => break,
+            Err(_) => {}
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the objective did not end: {:#?}",
+            held.thread
+        );
+    }
+    held
+}
+
+/// AR-T-014 (J8, K8, §4.16): a merged change whose release build fails is
+/// held, not followed. The objective pauses at Build, saying it is merged
+/// and not adopted, and no next cycle starts on a commit no build ran
+/// (before, cycle 2 started on it). Resume builds it again; Stop ends the
+/// objective, still saying so.
+#[test]
+fn a_merged_change_whose_build_fails_is_held_until_resumed_or_stopped() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, objective, setup, merged) =
+        merged_cycle_at(dir.path(), Phase::Build, None, None, 2);
+    let id = objective.id.clone();
+    // The fixture's manifest is empty: its release build fails.
+    let held = run_held(
+        &store,
+        setup,
+        objective,
+        |_| Ok(()),
+        |holds| {
+            if holds == 1 {
+                Command::Resume
+            } else {
+                Command::Stop
+            }
+        },
+    );
+    assert_eq!(
+        held.holds, 2,
+        "held, built again, held again: {:#?}",
+        held.thread
+    );
+    assert!(held.handovers.is_empty());
+    let short = &merged[..10];
+    assert!(
+        held.thread.iter().any(|t| t
+            .starts_with(&format!("Cycle 1, merged as {short}, is not adopted:"))
+            && t.contains("Resume builds it again")),
+        "{:#?}",
+        held.thread
+    );
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.state, State::Stopped);
+    assert_eq!(
+        record.cycles.len(),
+        1,
+        "no cycle started on the merged commit"
+    );
+    assert_eq!(record.cycles[0].phase, Phase::Build);
+    assert!(!record.cycles[0].adopted);
+    // The cycle itself says so, whatever later happens to the note.
+    let blocker = record.cycles[0].blocker.clone().unwrap_or_default();
+    assert!(
+        blocker.starts_with(&format!("Merged as {short}, not adopted:")),
+        "{blocker}"
+    );
+    let note = record.note.unwrap_or_default();
+    assert!(
+        note.contains(&format!("Cycle 1, merged as {short}, is not adopted")),
+        "{note}"
+    );
+}
+
+/// AR-T-014: a build that does not pass its trial (here, one with no
+/// manifest) is held at Try in the same way.
+#[test]
+fn a_merged_change_whose_trial_fails_is_held() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, objective, setup, _) = merged_cycle_at(dir.path(), Phase::Try, Some("b1"), None, 2);
+    let id = objective.id.clone();
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert_eq!(held.holds, 1, "{:#?}", held.thread);
+    assert!(
+        held.thread
+            .iter()
+            .any(|t| t.contains("Resume tries its build again")),
+        "{:#?}",
+        held.thread
+    );
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.cycles.len(), 1);
+    assert_eq!(record.cycles[0].phase, Phase::Try);
+}
+
+/// AR-T-014: a handover the Studio refuses is held at Adopt, with no
+/// continuation (before, the record kept Resume and the next cycle
+/// started); Resume hands over again, with its continuation on disk.
+#[test]
+fn a_refused_handover_is_held_and_resume_hands_over_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, objective, setup, _) =
+        merged_cycle_at(dir.path(), Phase::Adopt, Some("b1"), None, 2);
+    let id = objective.id.clone();
+    let held = run_held(
+        &store,
+        setup,
+        objective,
+        |n| {
+            if n == 1 {
+                Err("it reads and writes other data formats".into())
+            } else {
+                Ok(())
+            }
+        },
+        |_| Command::Resume,
+    );
+    assert_eq!(held.holds, 1, "{:#?}", held.thread);
+    assert_eq!(held.handovers.len(), 2, "{:?}", held.handovers);
+    assert!(
+        held.handovers.iter().all(|(build, saved)| build == "b1"
+            && saved
+                .as_ref()
+                .is_some_and(|c| c.build == "b1" && c.cycle == 1)),
+        "{:?}",
+        held.handovers
+    );
+    assert!(
+        held.thread
+            .iter()
+            .any(|t| t.contains("Resume hands it over again")),
+        "{:#?}",
+        held.thread
+    );
+    // Handed over: the adopted build goes on from the record, the hold's
+    // reason and note gone with it.
+    let record = store.load(&id).unwrap();
+    assert_eq!(record.cycles.len(), 1);
+    assert_eq!(record.cycles[0].phase, Phase::Resume);
+    assert!(record.continuation.is_some());
+    assert_eq!(record.cycles[0].blocker, None);
+    assert!(
+        !record.note.unwrap_or_default().starts_with("Merged as"),
+        "the note no longer says it is held"
+    );
+}
+
+/// AR-T-014: a handover that took longer than its wait, resumed in the
+/// build it handed over to, is not asked again: that build runs, so the
+/// cycle is adopted, as `resume` records it.
+#[test]
+fn a_handover_resumed_in_its_build_is_adopted() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, objective, setup, _) =
+        merged_cycle_at(dir.path(), Phase::Adopt, Some("b1"), Some("b1"), 1);
+    let id = objective.id.clone();
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert!(held.handovers.is_empty(), "{:?}", held.handovers);
+    assert_eq!(held.holds, 0, "{:#?}", held.thread);
+    let record = store.load(&id).unwrap();
+    assert!(record.cycles[0].adopted, "{:#?}", held.thread);
+    assert_eq!(record.state, State::Done, "{:#?}", held.thread);
+}
+
+/// AR-T-014's controls: a failure before the merge, and a merge the
+/// objective may not adopt, are not held: the next cycle starts as before.
+#[test]
+fn a_failure_before_the_merge_and_a_merge_only_objective_go_on() {
+    let dir = tempfile::tempdir().unwrap();
+    let (store, mut objective, setup, _) =
+        merged_cycle_at(dir.path(), Phase::Failed, None, None, 2);
+    // Failed before its merge: nothing merged.
+    objective.cycles[0].merged = None;
+    objective.cycles[0].blocker = Some("the implementer changed nothing".into());
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert_eq!(held.holds, 0, "{:#?}", held.thread);
+    let record = store.load(&id).unwrap();
+    assert_eq!(
+        record.cycles.len(),
+        2,
+        "the next cycle started: {:#?}",
+        held.thread
+    );
+    // Merged, and not allowed to adopt: done, and the next cycle starts.
+    let other = tempfile::tempdir().unwrap();
+    let (store, mut objective, setup, _) =
+        merged_cycle_at(other.path(), Phase::Done, None, None, 2);
+    objective.permissions.adopt = false;
+    store.save(&objective).unwrap();
+    let id = objective.id.clone();
+    let held = run_held(&store, setup, objective, |_| Ok(()), |_| Command::Stop);
+    assert_eq!(held.holds, 0, "{:#?}", held.thread);
+    assert_eq!(
+        store.load(&id).unwrap().cycles.len(),
+        2,
+        "{:#?}",
+        held.thread
+    );
+}
