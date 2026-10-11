@@ -37,8 +37,9 @@ pub struct FieldSlot {
     pub feature: ElementId,
     pub aliases: Vec<ElementId>,
     pub name: String,
-    /// The value the type gives the field when `new` does not.
-    pub default: Option<Value>,
+    /// The value the type gives the field when `new` does not, or why it
+    /// cannot be computed (a whole number beyond 64 bits): using it fails.
+    pub default: Option<Result<Value, String>>,
 }
 
 /// Why an expression could not be evaluated, in plain words.
@@ -121,7 +122,13 @@ pub fn eval(expr: &Expr, env: &dyn Env) -> Result<Value, EvalError> {
             for (slot, given) in fields {
                 let value = match given {
                     Some(expr) => eval(expr, env)?,
-                    None => slot.default.clone().unwrap_or(Value::Null),
+                    None => match &slot.default {
+                        Some(Ok(value)) => value.clone(),
+                        Some(Err(why)) => {
+                            return Err(EvalError(format!("`{type_name}.{}`: {why}", slot.name)));
+                        }
+                        None => Value::Null,
+                    },
                 };
                 values.push(Field {
                     feature: slot.feature,

@@ -812,3 +812,26 @@ fn a_whole_number_beyond_64_bits_makes_a_requirement_not_evaluable() {
         huge.reason
     );
 }
+
+#[test]
+fn an_item_whose_default_is_beyond_64_bits_is_not_read_as_nothing() {
+    // AR-F-001's review: the refused default stays refused where the item
+    // is made, rather than holding nothing (which `!=` would call true).
+    let tree = model(
+        "    attribute def Limit { attribute max : Integer = 9223372036854775808; }
+    part def Counter { attribute count : Integer; attribute limit : Limit = new Limit(); }
+    part one : Counter { attribute :>> count = 1; }
+    requirement def UnderLimit { subject c : Counter; require constraint { c.count != c.limit.max } }
+    requirement oneUnder : UnderLimit;
+    satisfy oneUnder by one;",
+    );
+    let all = evaluate_all(&tree);
+    let one = of(&tree, &all, "oneUnder");
+    assert_eq!(one.status, Status::NotEvaluable, "{}", one.reason);
+    assert!(
+        one.reason
+            .contains("9223372036854775808 is outside the whole numbers"),
+        "{}",
+        one.reason
+    );
+}

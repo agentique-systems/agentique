@@ -733,15 +733,17 @@ impl<'a> Compiler<'a> {
     }
 
     /// A feature's literal value; one Agentique cannot compute blocks the
-    /// run at the feature.
-    fn literal_value(&mut self, feature: ElementId, element: &Element) -> Option<Value> {
-        match literal(element.value.as_ref()?) {
-            Ok(value) => Some(value),
-            Err(why) => {
-                self.block(feature, why);
-                None
-            }
+    /// run at the feature, and stays refused wherever it would be used.
+    fn literal_value(
+        &mut self,
+        feature: ElementId,
+        element: &Element,
+    ) -> Option<Result<Value, String>> {
+        let value = literal(element.value.as_ref()?);
+        if let Err(why) = &value {
+            self.block(feature, why.clone());
         }
+        Some(value)
     }
 
     // ---- expressions ----
