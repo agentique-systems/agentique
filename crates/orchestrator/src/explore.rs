@@ -1000,8 +1000,9 @@ pub struct Step {
     /// What the explorer expected it to show.
     #[serde(default)]
     pub expect: Option<Value>,
-    /// `explorer` (chosen), `hypothesis` (chosen to test one, by the
-    /// escalation role's model: E3), `check` (the undo check's undo and redo, Stop
+    /// `explorer` (chosen, Jev's navigation while a hypothesis is tested
+    /// among them), `hypothesis` (decided by the escalation role's model to
+    /// test one, or its requirement selected by rule: E3), `check` (the undo check's undo and redo, Stop
     /// after a turn ran past its budget), `wait` (for a turn of the
     /// Assistant to end: `label` is `the turn`, or `the stop` after Stop),
     /// `recovery` (a dialog cancelled by rule, Escape out of a dead end) or
@@ -2691,6 +2692,9 @@ impl Explorer<'_> {
 
     /// Starts the instance (again), from the same start.
     fn start(&mut self, again: bool) -> Result<(), String> {
+        // A fresh instance shows no selection: a hypothesis's requirement is
+        // selected again.
+        self.selected = false;
         if again {
             self.restarts += 1;
             if self.restarts > RESTARTS {
@@ -3107,7 +3111,9 @@ impl Explorer<'_> {
             screen: screen_of(&self.now),
             label: candidate.label.clone(),
             expect: chosen.expect.clone(),
-            by: if testing.is_some() {
+            // Only a step the reasoning model decided for a hypothesis is the
+            // hypothesis's; Jev's navigation between is the explorer's.
+            by: if testing.is_some() && decided_by_model {
                 "hypothesis"
             } else {
                 "explorer"

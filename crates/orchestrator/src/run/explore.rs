@@ -45,8 +45,9 @@ use std::time::Duration;
 pub const SAMPLE: &str = "models/url-shortener";
 
 /// What a step of a run spent, and the role it counts for: a model asked
-/// for the explorer, or for the escalation role when the step tested a
-/// hypothesis (E3), Jev alone for the decisions. A step the rules took
+/// for the explorer, or for the escalation role when its model decided the
+/// step to test a hypothesis (E3; Jev's navigation between is the
+/// decisions'), Jev alone for the decisions. A step the rules took
 /// after a call failed, timed out or was stopped counts what was tried
 /// (the review of the W13.7 repair: it was dropped), and a decision made
 /// as the run stopped counts though nothing was acted on.
@@ -773,8 +774,9 @@ impl Driver {
 
     /// An exploration's spend, by the role whose model decided: Jev's under
     /// `decisions`, the explorer's model under `explorer` (also when Jev
-    /// escalated to it), and the instance's Assistant (on the explorer's
-    /// key) under `explorer`.
+    /// escalated to it), the escalation role's model, deciding a
+    /// hypothesis's steps, under `escalation`, and the instance's Assistant
+    /// (on the explorer's key) under `explorer`.
     fn count_exploration(&mut self, run: &Run) {
         for (role, cost) in run.steps.iter().filter_map(spent_on) {
             let Some(model) = self.model_of(role) else {

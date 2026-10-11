@@ -1988,21 +1988,23 @@ impl Driver {
                             },
                         )
                         .and_then(|proposal| {
-                            // The change serves the requirement the finding
-                            // was judged against, or else the one its
-                            // hypothesis names (E3).
-                            let judged = proposal.finding.as_ref().and_then(|id| {
-                                dispositions
-                                    .borrow()
-                                    .get(id)
-                                    .and_then(|d| d.requirement.clone())
-                            });
-                            let named = proposal
+                            // A fix of a hypothesis's finding serves the
+                            // requirement the finding was judged against, or
+                            // else the one its hypothesis names (E3); other
+                            // findings keep the rules of W13.5.
+                            let found = proposal
                                 .finding
                                 .as_ref()
                                 .and_then(|id| cycle_findings.iter().find(|f| &f.identity == id))
-                                .and_then(|f| f.requirement.clone());
-                            roles::serves_the_finding(&proposal, judged.or(named).as_deref())
+                                .filter(|f| f.hypothesis.is_some());
+                            let required = found.and_then(|f| {
+                                dispositions
+                                    .borrow()
+                                    .get(&f.identity)
+                                    .and_then(|d| d.requirement.clone())
+                                    .or_else(|| f.requirement.clone())
+                            });
+                            roles::serves_the_finding(&proposal, required.as_deref())
                                 .map(|()| proposal)
                         });
                         match read {

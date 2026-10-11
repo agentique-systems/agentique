@@ -130,10 +130,11 @@ what to change.
   entry, and each step keeps where its time went (`Timing`), summarised by
   `Run::time`. A plan's hypotheses (a claim, the requirement that governs
   it or the intended behaviour, a workflow, the expected observation) are
-  tested first, each with a share of the steps, by the escalation role's
-  reasoning model (`Deciding::asked`); the
-  check of the expectation it states answers each (`Answer`: agrees,
-  contradicted with its finding, not answered). Each step lists the actions valid there
+  tested first, each with a share of the steps: the escalation role's
+  reasoning model (`Deciding::asked`) decides the steps that state what it
+  expects, Jev navigates between; the check of the expectation the model
+  marks as answering it answers each (`Answer`: agrees, contradicted with
+  its finding, not answered). Each step lists the actions valid there
   that the observation offers to agents (fields with fixed input classes),
   chooses one by the rules, Jev, the explorer's model or Jev escalating to
   the explorer's model (an objective's explorations always escalate; a view

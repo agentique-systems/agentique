@@ -1985,6 +1985,22 @@ fn a_run_tests_its_hypotheses_first_and_says_how_each_was_answered() {
             .filter(|t| t.step.by == "hypothesis" && t.timing.calls > 0)
             .all(|t| t.timing.effort.as_deref() == Some("high"))
     );
+    // Jev's navigation between is not the hypothesis's: its steps are the
+    // explorer's, and what they spend counts for the decisions.
+    assert!(
+        run.steps
+            .iter()
+            .filter(|t| t.step.by == "hypothesis")
+            .all(|t| t
+                .chosen
+                .as_ref()
+                .is_none_or(|c| c.decision.source != Source::Jev)),
+        "{:#?}",
+        run.steps
+            .iter()
+            .map(|t| (&t.step.by, t.chosen.as_ref().map(|c| c.decision.source)))
+            .collect::<Vec<_>>()
+    );
     assert!(
         answers
             .questions

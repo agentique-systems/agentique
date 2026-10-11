@@ -2801,8 +2801,20 @@ and $0.067, calls p50 44 s and slowest 74 s; both found validation to agree
 and left the History hypothesis not answered within its five steps (no
 expectation can say "every control is labelled"; the run's own label check
 is what finds an unlabelled control). Which model tests hypotheses stays
-the escalation role's setting (Settings › Agents). Not verified: a live run
-on a real Studio.
+the escalation role's setting (Settings › Agents). Its second independent
+review found Jev's navigation during a hypothesis counted as the escalation
+model's spend, the self-model and §4.16 still describing the first version,
+and the requirement rule for `serves` applied to every finding; corrected
+(only a step the reasoning model decided is the hypothesis's; the self-model
+through `apply_changes`; the rule only for a hypothesis's finding), and a
+hypothesis's requirement is selected again after a restart. Not changed: an
+answering expectation that mixes a reply part with a screen part is judged
+on the screen part; the identity of a discovery expectation keeps its values
+too, so variants that differ only in numbers are separate findings;
+`traceability::project_model` (used to resolve a plan's names) now also
+returns the text of the requirements a hypothesis names, and joins a
+project's folders one by one (`within`), so `models/shop` works on Windows
+too. Not verified: a live run on a real Studio.
 
 **W13.7 repairs from an external review.** An external research review
 of `main` at `5d893017` (2026-10-10) read the loop's code against its
