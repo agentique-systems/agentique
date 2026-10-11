@@ -3103,3 +3103,10 @@ code; corrected. Not changed: a JSON number above 2^64 − 1 or below −2^63
 reads as a `Real` (the reader cannot tell it from one), and the language
 core's validation still accepts the literal (the run and the evaluation
 refuse it).
+
+*The standards lock's dead link* (AR-F-002; `stage13/standards-pointer`).
+`standards/lock.json`'s `selection_basis` pointed to
+`docs/standards-discrepancies.md`, which Stage 0 removed (`0e8562ca`); it
+now points to that document at the tag `archive/pre-realignment`, and so
+does the tool that writes the lock (`tools/library-release.mjs`). No pinned
+artifact's bytes change (the lock's artifact entries are untouched).
