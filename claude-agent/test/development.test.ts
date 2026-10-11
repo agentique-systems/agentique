@@ -343,8 +343,16 @@ test("a search's glob that picks out key files is refused, however it is written
     assert.equal(decide("Grep", { pattern: "KEY", glob }, keys, cwd, tools).kind, "deny", glob);
   }
   assert.equal(decide("Glob", { pattern: "**/.env*" }, keys, cwd, tools).kind, "deny");
+  // As the SDK splits it (whitespace, then commas), escapes as ripgrep reads
+  // them, and globs the policy cannot read in time or at all.
+  const many = `{${Array.from({ length: 64 }, (_, i) => `a${i}`).join(",")},.env}`;
+  for (const glob of ["*.rs,.env", "*.rs .env", ".env*,x.example", ".env x.example", ".e\\nv", many, "{a,b}".repeat(22), "[z-a]env", "{x,{y,.env}}"]) {
+    const started = Date.now();
+    assert.equal(decide("Grep", { pattern: "KEY", glob }, keys, cwd, tools).kind, "deny", glob);
+    assert.ok(Date.now() - started < 1000, `${glob} took too long`);
+  }
   // A broad glob names no key file: the deny rules keep them out of it.
-  for (const glob of ["*", "**/*", "*.*", "*.rs", "**/*.{rs,toml}", ".env.example", "src/**"]) {
+  for (const glob of ["*", "**/*", "*.*", "*.rs", "**/*.{rs,toml}", ".env.example", "src/**", "!*.rs", "*.ts", "**/*.{ts,tsx}", "src/**/*.rs", ".github/**", "Cargo.toml", ".eslintrc*", "*.env.example"]) {
     assert.equal(decide("Grep", { pattern: "KEY", glob }, keys, cwd, tools).kind, "allow", glob);
   }
 });
@@ -366,6 +374,16 @@ test("a write through a link to a file it cannot see is refused (F3)", () => {
     const hard = decide("Edit", { file_path: "hard.txt" }, local, work, tools);
     assert.equal(hard.kind, "deny");
     assert.match(hard.kind === "deny" ? hard.reason : "", /hard links/);
+    // Nor through a link to it.
+    let linked = true;
+    try {
+      symlinkSync(join(work, "hard.txt"), join(work, "via.txt"), "file");
+    } catch {
+      linked = false;
+    }
+    if (linked) {
+      assert.equal(decide("Edit", { file_path: "via.txt" }, local, work, tools).kind, "deny");
+    }
     // A link whose target does not exist yet: writing creates it outside.
     let dangling = true;
     try {

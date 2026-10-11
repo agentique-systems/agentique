@@ -21,7 +21,7 @@
 // These are gates on what the agent can do; they are not an operating-system
 // sandbox, and the Studio's own checks still decide every model change.
 
-import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Login, Policy, StartOptions } from "./protocol.ts";
 
@@ -229,11 +229,12 @@ const TEMPLATE = /\.(example|sample|template|dist)$/i;
  * be resolved, which `real` cannot follow, so it is judged where it stands
  * (a dangling symbolic link or junction: the write creates its target,
  * wherever that is); or a file with more than one hard link, whose other
- * names may be anywhere. Null when the leaf does not exist yet or is a
- * plain file.
+ * names may be anywhere, whether named itself or through a link. Null when
+ * the leaf does not exist yet or is a plain file. The path is read as
+ * written (case and all), as the file system will.
  */
 function linkedLeaf(path: string, cwd: string): string | null {
-  const full = normalise(path, cwd);
+  const full = isAbsolute(path) ? verbatimless(path) : join(cwd, path);
   let stat;
   try {
     stat = lstatSync(full);
@@ -242,11 +243,10 @@ function linkedLeaf(path: string, cwd: string): string | null {
   }
   if (stat.isSymbolicLink()) {
     try {
-      realpathSync.native(full);
+      stat = statSync(full);
     } catch {
       return "it is a link whose target cannot be resolved";
     }
-    return null;
   }
   if (stat.isFile() && stat.nlink > 1) {
     return `it has ${stat.nlink} hard links, whose other names may be outside the folders this session may write`;
@@ -254,27 +254,62 @@ function linkedLeaf(path: string, cwd: string): string | null {
   return null;
 }
 
-/** A glob's alternatives, its braces expanded (`*.{rs,env}`: `*.rs`, `*.env`),
- * at most `limit` of them. */
-function alternatives(glob: string, limit = 64): string[] {
-  const open = glob.indexOf("{");
-  const close = open < 0 ? -1 : glob.indexOf("}", open);
-  if (open < 0 || close < 0) {
-    return [glob];
-  }
-  const out: string[] = [];
-  for (const choice of glob.slice(open + 1, close).split(",")) {
-    for (const rest of alternatives(glob.slice(0, open) + choice + glob.slice(close + 1), limit)) {
-      if (out.length < limit) {
-        out.push(rest);
+/** A search's glob as the SDK hands it to ripgrep: split on whitespace,
+ * then, in a piece without braces, on commas. */
+function globPieces(glob: string): string[] {
+  return glob
+    .split(/\s+/)
+    .filter((piece) => piece !== "")
+    .flatMap((piece) => (piece.includes("{") ? [piece] : piece.split(",").filter((p) => p !== "")));
+}
+
+/** The most alternatives a glob's braces may expand to before the policy
+ * refuses to read it. */
+const ALTERNATIVES = 64;
+
+/** A glob's alternatives, its braces expanded (`*.{rs,env}`: `*.rs`,
+ * `*.env`); null when braces nest or would expand to more than
+ * `ALTERNATIVES` (counted first, so nothing large is ever built). An unclosed
+ * brace is a plain character. */
+function alternatives(glob: string): string[] | null {
+  let count = 1;
+  let open = -1;
+  let choices = 1;
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === "{") {
+      if (open >= 0) {
+        return null;
+      }
+      open = i;
+      choices = 1;
+    } else if (c === "," && open >= 0) {
+      choices++;
+    } else if (c === "}" && open >= 0) {
+      open = -1;
+      count *= choices;
+      if (count > ALTERNATIVES) {
+        return null;
       }
     }
   }
-  return out;
+  const expand = (text: string): string[] => {
+    const start = text.indexOf("{");
+    const end = start < 0 ? -1 : text.indexOf("}", start);
+    if (start < 0 || end < 0) {
+      return [text];
+    }
+    return text
+      .slice(start + 1, end)
+      .split(",")
+      .flatMap((choice) => expand(text.slice(0, start) + choice + text.slice(end + 1)));
+  };
+  return expand(glob);
 }
 
 /** One path segment's glob (`*`, `?`, `[...]`, `[!...]`) as a regular
- * expression over a name, without case. */
+ * expression over a name, without case; it throws for a class JavaScript
+ * cannot read (`[z-a]`), which the caller refuses. */
 function segment(glob: string): RegExp {
   let source = "";
   for (let i = 0; i < glob.length; i++) {
@@ -300,26 +335,48 @@ function segment(glob: string): RegExp {
 const ORDINARY = ["main.rs", "README.md", ".gitignore", "package.json", "x"];
 
 /**
- * The secret file a search's glob picks out, if any (F4 of the boundary
- * audit): one of its alternatives whose last segment matches a name the
- * hidden patterns hide but no ordinary name (`.env*`, `?env`, `[.]env`,
- * `*.{rs,env}`), so a broad glob is left to the deny rules, which exclude
- * hidden files from every search.
+ * Why a search's glob is refused for picking out secret files, if it is (F4
+ * of the boundary audit): read as ripgrep reads it (each piece the SDK
+ * passes, a backslash read both as a separator and as an escape, braces
+ * expanded), one alternative whose last segment matches a name the hidden
+ * patterns hide but no ordinary name (`.env*`, `?env`, `[.]env`,
+ * `*.{rs,env}`, `*.rs,.env`); or a glob it cannot read (braces nested or too
+ * many, a class JavaScript rejects). A broad glob is left to the deny rules,
+ * which exclude hidden files from every search. The hidden names are tried
+ * with `*` as nothing, `x` and `local` (`.env.local`), so a glob that only
+ * fits such a sample (`*.local`) is refused too.
  */
 function namesSecret(glob: string, hidden: string[]): string | null {
   const secrets = hidden.flatMap((h) => {
     const last = h.replace(/\\/g, "/").split("/").pop() ?? h;
     return [last.replace(/\*/g, ""), last.replace(/\*/g, "x"), last.replace(/\*/g, "local")];
   });
-  for (const alternative of alternatives(glob.replace(/\\/g, "/"))) {
-    const last = alternative.replace(/\/+$/, "").split("/").pop() ?? alternative;
-    if (TEMPLATE.test(last)) {
+  for (const piece of globPieces(glob)) {
+    // A negated piece leaves files out; it never adds one.
+    if (piece.startsWith("!")) {
       continue;
     }
-    const re = segment(last === "**" ? "*" : last);
-    const secret = secrets.find((name) => name !== "" && re.test(name));
-    if (secret !== undefined && !ORDINARY.some((name) => re.test(name))) {
-      return secret;
+    for (const reading of [piece.replace(/\\/g, "/"), piece.replace(/\\(.)/g, "$1")]) {
+      const all = alternatives(reading);
+      if (all === null) {
+        return `${piece} has braces nested or expanding to more than ${ALTERNATIVES} alternatives`;
+      }
+      for (const alternative of all) {
+        const last = alternative.replace(/\/+$/, "").split("/").pop() ?? alternative;
+        if (TEMPLATE.test(last)) {
+          continue;
+        }
+        let re: RegExp;
+        try {
+          re = segment(last === "**" ? "*" : last);
+        } catch {
+          return `${piece} is a glob this policy cannot read`;
+        }
+        const secret = secrets.find((name) => name !== "" && re.test(name));
+        if (secret !== undefined && !ORDINARY.some((name) => re.test(name))) {
+          return `${piece} picks out ${secret}`;
+        }
+      }
     }
   }
   return null;
@@ -401,12 +458,14 @@ export function decide(
     // given (they become ripgrep exclusions); a glob naming one is refused
     // here too.
     const pattern = typeof input.glob === "string" ? input.glob : typeof input.pattern === "string" && tool === "Glob" ? input.pattern : "";
-    if (
-      pattern &&
-      !TEMPLATE.test(pattern) &&
-      (policy.hidden.some((h) => matches(pattern.replace(/^\.\//, ""), h)) || namesSecret(pattern, policy.hidden) !== null)
-    ) {
-      return { kind: "deny", reason: `${pattern} names files that can hold keys; they are not read in this session` };
+    if (pattern) {
+      const named = globPieces(pattern).find(
+        (piece) => !TEMPLATE.test(piece) && policy.hidden.some((h) => matches(piece.replace(/^\.\//, ""), h)),
+      );
+      const why = named !== undefined ? `${named} names them` : namesSecret(pattern, policy.hidden);
+      if (why !== null) {
+        return { kind: "deny", reason: `${pattern}: files that can hold keys are not read in this session (${why})` };
+      }
     }
     return allow;
   }
@@ -986,7 +1045,13 @@ export function sdkOptions(
             async (input: { tool_name?: string; tool_input?: unknown }) => {
               const tool = input.tool_name ?? "";
               const toolInput = (typeof input.tool_input === "object" && input.tool_input !== null ? input.tool_input : {}) as Record<string, unknown>;
-              const decision = decide(tool, toolInput, policy, start.cwd, names);
+              // The policy fails closed: a call it cannot judge is refused.
+              let decision: Decision;
+              try {
+                decision = decide(tool, toolInput, policy, start.cwd, names);
+              } catch (error) {
+                decision = { kind: "deny", reason: `The permission policy could not judge this call: ${String(error)}` };
+              }
               if (decision.kind === "deny") {
                 return deny(decision.reason);
               }
