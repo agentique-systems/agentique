@@ -200,10 +200,11 @@ impl Studio {
     }
 }
 
-/// Whether an implementation result still describes the code: without a
-/// repository to compare with it stands, as in the Run panel.
+/// Whether an implementation result still describes the code. Without a
+/// repository to compare with, its code is not compared, so it is not
+/// current (as in the Run panel): unknown code is never current.
 pub(crate) fn code_current(result: &RunResult, repository: Option<&Path>) -> bool {
-    repository.is_none_or(|repository| {
+    repository.is_some_and(|repository| {
         agq_implementation::harness::code_is_current(result, repository).is_ok()
     })
 }
@@ -783,6 +784,18 @@ mod tests {
             live: None,
         };
         assert!(code_current(&result, Some(&folder)));
+        // Unknown code is never current (AR-F-003), even while the code is
+        // unchanged: without a repository to compare with (as in the Run
+        // panel), a result that recorded no code, or code not identified.
+        assert!(!code_current(&result, None));
+        let mut unknown = result.clone();
+        unknown.provenance.implementation = None;
+        assert!(!code_current(&unknown, Some(&folder)));
+        let mut unidentified = result.clone();
+        if let Some(code) = unidentified.provenance.implementation.as_mut() {
+            code.tree_digest.clear();
+        }
+        assert!(!code_current(&unidentified, Some(&folder)));
         // The code changes: the pass no longer describes it.
         std::fs::write(
             folder.join("lib.rs"),
@@ -791,8 +804,6 @@ mod tests {
         )
         .unwrap();
         assert!(!code_current(&result, Some(&folder)));
-        // Without a repository to compare with, it stands (as in the Run panel).
-        assert!(code_current(&result, None));
         let _ = std::fs::remove_dir_all(&folder);
     }
 }

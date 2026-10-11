@@ -55,27 +55,44 @@ pub fn changed_files(repository: &Path) -> Result<Vec<String>, Refusal> {
         .collect())
 }
 
-/// A digest of the working tree's state: the head commit plus the content
-/// of every changed file, so a result can say which code it ran.
+/// A digest of the working tree's state, so a result can say which code it
+/// ran: the head commit and, for every changed file, its path and what it
+/// is now (its exact bytes by git's blob id, a symbolic link's target, a
+/// folder, or deleted). `v2:` marks this way of digesting, so a digest made
+/// the earlier, lossy way never equals one made now. A changed file that
+/// cannot be read is an error, never taken as empty.
 pub fn tree_digest(repository: &Path) -> Result<String, Refusal> {
-    use std::fmt::Write;
     let head = head(repository)?;
-    let mut text = head.commit.clone();
+    let mut text = head.commit.into_bytes();
     for file in changed_files(repository)? {
-        let content = std::fs::read(repository.join(&file)).unwrap_or_default();
-        let _ = write!(text, "\n{file}\n{}", content.len());
-        text.push_str(&String::from_utf8_lossy(&content));
+        let path = repository.join(&file);
+        let state = match std::fs::symlink_metadata(&path) {
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => "deleted".to_string(),
+            Err(e) => return Err(Refusal::Io(format!("{file}: {e}"))),
+            Ok(meta) if meta.is_symlink() => {
+                let target =
+                    std::fs::read_link(&path).map_err(|e| Refusal::Io(format!("{file}: {e}")))?;
+                format!("link {}", blob(target.to_string_lossy().as_bytes())?)
+            }
+            Ok(meta) if meta.is_dir() => "folder".to_string(),
+            Ok(_) => {
+                let content =
+                    std::fs::read(&path).map_err(|e| Refusal::Io(format!("{file}: {e}")))?;
+                format!("file {}", blob(&content)?)
+            }
+        };
+        // NUL never occurs in a path or a state: the framing is unambiguous.
+        text.push(0);
+        text.extend_from_slice(file.as_bytes());
+        text.push(0);
+        text.extend_from_slice(state.as_bytes());
     }
-    Ok(format!("{:016x}", fnv(&text)))
+    Ok(format!("v2:{}", blob(&text)?))
 }
 
-fn fnv(text: &str) -> u64 {
-    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
-    for byte in text.as_bytes() {
-        hash ^= u64::from(*byte);
-        hash = hash.wrapping_mul(0x0100_0000_01b3);
-    }
-    hash
+/// Git's id of `bytes` as a blob (SHA-1 over its exact bytes).
+fn blob(bytes: &[u8]) -> Result<Oid, Refusal> {
+    Oid::hash_object(git2::ObjectType::Blob, bytes).map_err(io)
 }
 
 /// A task's worktree.

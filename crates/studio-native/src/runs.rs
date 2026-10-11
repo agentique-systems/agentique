@@ -364,13 +364,21 @@ impl Studio {
         self.runs.freshness = match &result {
             Some(result) if self.project.is_some() => {
                 let mut fresh = self.freshness_of(result);
-                if fresh.is_current()
-                    && result.mode == Mode::Implementation
-                    && let Some(repository) = self.implementation_repository()
-                    && let Err(why) =
-                        agq_implementation::harness::code_is_current(result, &repository)
-                {
-                    fresh = Freshness::Outdated(why);
+                if fresh.is_current() && result.mode == Mode::Implementation {
+                    // Unknown code is never current: without the project's
+                    // implementation repository its code is not compared.
+                    let compared = match self.implementation_repository() {
+                        Some(repository) => {
+                            agq_implementation::harness::code_is_current(result, &repository)
+                        }
+                        None => Err(
+                            "its code was not compared: the project names no implementation repository"
+                                .into(),
+                        ),
+                    };
+                    if let Err(why) = compared {
+                        fresh = Freshness::Outdated(why);
+                    }
                 }
                 Some(fresh)
             }
