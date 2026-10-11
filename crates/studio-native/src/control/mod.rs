@@ -403,7 +403,8 @@ pub struct ControlState {
     pub instance: String,
     started: Instant,
     /// Changes when the screen's shape changes (screen, dialog, palette,
-    /// project, settings): an action observed before that is stale.
+    /// project, settings, selection) or the model changes: an action
+    /// observed before that is stale.
     pub screen_revision: u64,
     shape: String,
     sender: Sender<Request>,
@@ -805,6 +806,16 @@ pub fn command_by_name(name: &str) -> Option<CommandId> {
         .iter()
         .map(|c| c.id)
         .find(|id| command_name(*id) == name)
+}
+
+/// Raises the screen's revision when its shape changed (each tick, before
+/// requests are taken).
+fn refresh_shape(studio: &mut Studio) {
+    let now = shape(studio);
+    if now != studio.control.shape {
+        studio.control.shape = now;
+        studio.control.screen_revision += 1;
+    }
 }
 
 /// The screen's shape: what an action's place and effect depend on (a
@@ -1685,9 +1696,10 @@ pub fn parse_action(body: &Value) -> Result<Action, String> {
 }
 
 /// Why an action observed against `body`'s identity and screen cannot be
-/// carried out now: another instance, project or build, or a screen that
+/// carried out now: another instance, project or build, or (when `acts`: it
+/// would change something, which a wait does not) a screen or a model that
 /// changed since.
-pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
+pub fn stale(studio: &Studio, body: &Value, acts: bool) -> Option<String> {
     let expect = &body["expect"];
     let instance = expect["instance"].as_str();
     if instance != Some(studio.control.instance.as_str()) {
@@ -1734,7 +1746,7 @@ pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
             "stale: say which observation you acted on (`observed`: its screenRevision)".into(),
         );
     };
-    if seen != studio.control.screen_revision {
+    if acts && seen != studio.control.screen_revision {
         return Some(format!(
             "stale: the screen or the model changed since you observed it (now: {}{}{}); observe again",
             screen(studio),
@@ -1879,11 +1891,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
     let mut changed = false;
     // The screen's shape, for stale actions.
     studio.update(cx, |studio, _| {
-        let now = shape(studio);
-        if now != studio.control.shape {
-            studio.control.shape = now;
-            studio.control.screen_revision += 1;
-        }
+        refresh_shape(studio);
         while let Ok(request) = studio.control.requests.try_recv() {
             studio.control.waiting.push_back(request);
         }
@@ -2185,7 +2193,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         );
         return refuse(request, (Refusal::Held, error), what);
     }
-    if let Some(reason) = stale(studio, &request.body) {
+    if let Some(reason) = stale(studio, &request.body, !matches!(action, Action::Wait(..))) {
         return refuse(request, (Refusal::Stale, reason), what);
     }
     let drawn = target::drawn();
@@ -3261,14 +3269,7 @@ mod tests {
         let (mut app, _folder) = crate::edit::app_tests::studio("model-race");
         let api = crate::edit::app_tests::part(&mut app, "api");
         // What `tick` does each frame before it takes requests.
-        let refresh = |app: &mut Studio| {
-            let now = shape(app);
-            if now != app.control.shape {
-                app.control.shape = now;
-                app.control.screen_revision += 1;
-            }
-        };
-        refresh(&mut app);
+        refresh_shape(&mut app);
         assert_eq!(
             app.selection.elements(&app.scene),
             vec![api],
@@ -3281,22 +3282,25 @@ mod tests {
         // The Operator renames the selected part: the model changes, the
         // view, dialog and selection do not.
         app.rename(api, "gateway");
-        refresh(&mut app);
+        refresh_shape(&mut app);
         assert_ne!(revision(&app), model_seen, "the model changed");
         assert_eq!(
             app.selection.elements(&app.scene),
             vec![api],
             "the selection did not"
         );
-        let why = stale(&app, &before.body).expect("the action is stale");
+        let why = stale(&app, &before.body, true).expect("the action is stale");
         assert!(why.contains("the model changed"), "{why}");
         assert!(
             why.contains(&format!("model revision {}", revision(&app))),
             "{why}"
         );
+        // A wait changes nothing: an observation from before the change is
+        // not refused for it.
+        assert_eq!(stale(&app, &before.body, false), None);
         // Observed again, it is decided on the model as it is now.
         let after = act(&app, "explorer", delete(), true);
-        assert_eq!(stale(&app, &after.body), None);
+        assert_eq!(stale(&app, &after.body, true), None);
         assert!(start(&mut app, after).is_ok());
     }
 

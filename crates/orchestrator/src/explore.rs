@@ -3084,24 +3084,38 @@ impl Explorer<'_> {
     /// did: whether it was carried out, `None` when the instance ended (and
     /// was started again).
     fn act_and_check(&mut self, step: Step, why: &str) -> Result<Option<bool>, String> {
-        let act = Act {
-            agent: AGENT,
-            goal: &self.plan.goal,
-            why,
-            observed: self.now["screenRevision"].as_u64().unwrap_or_default(),
-            action: &step.action,
-        };
-        let acting = Instant::now();
-        let answered = self.instance.act(&act);
-        self.pending.act_ms += acting.elapsed().as_millis() as u64;
-        let answer = match answered {
-            Ok(answer) => answer,
-            Err(error) => {
-                self.record(&step, None, "ended", error.clone(), None);
-                self.since.push(step);
-                self.ended(&error)?;
-                return Ok(None);
+        let mut retried = false;
+        let answer = loop {
+            let act = Act {
+                agent: AGENT,
+                goal: &self.plan.goal,
+                why,
+                observed: self.now["screenRevision"].as_u64().unwrap_or_default(),
+                action: &step.action,
+            };
+            let acting = Instant::now();
+            let answered = self.instance.act(&act);
+            self.pending.act_ms += acting.elapsed().as_millis() as u64;
+            let answer = match answered {
+                Ok(answer) => answer,
+                Err(error) => {
+                    self.record(&step, None, "ended", error.clone(), None);
+                    self.since.push(step);
+                    self.ended(&error)?;
+                    return Ok(None);
+                }
+            };
+            // Stale (the model changed under a turn of the Assistant, say):
+            // observed again, and tried once more.
+            if !retried && observed::refusal(&answer) == Refusal::Stale {
+                let Some(after) = self.observe()? else {
+                    return Ok(None);
+                };
+                self.now = after;
+                retried = true;
+                continue;
             }
+            break answer;
         };
         let ok = answer["ok"] != false;
         let error = answer["error"].as_str().unwrap_or_default().to_string();

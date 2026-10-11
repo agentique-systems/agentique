@@ -355,9 +355,8 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   `control` with `enabled`, `statusContains`, `idle` for every job, or
   `conversationIdle` for the Conversation's turn alone). Stale ones
   (another instance, a screen or a model that changed, a control gone or
-  disabled) and
-  the Operator's own are refused before anything happens, and the
-  Operator's own effects are refused where they happen too. A refused
+  disabled; a wait is not refused for a change) and the Operator's own are
+  refused before anything happens, and the Operator's own effects are refused where they happen too. A refused
   action's answer carries `kind` beside `error`, so clients need not read
   the words: `operator-own`, `stale`, `gone`, `disabled`, `unavailable`,
   `held`, `stopped`, `expired`, `invalid`, `timeout` or `failed`
