@@ -3000,3 +3000,26 @@ the write (a command or a subagent could swap the leaf), and a dangling
 junction as a parent folder, where the operating system's write fails.
 Not verified: that the SDK's deny rules really exclude hidden files from a
 search (read from its code, not run).
+
+*A whole number beyond 64 bits is refused* (AR-F-001, found while
+reproducing AR-T-002; `stage13/wide-literals`; Simulation, not locked). An
+integer literal outside the 64-bit range became a binary64 `Real` without a
+word, so `count <= 9223372036854775807` held for a count of
+9223372036854775808 (both round to 2^63), against deviation 22's "whole
+numbers are exact"; the language core types such a literal as an
+`Integer`, whatever its size. Now a run stops before it starts, at the
+feature that holds it (`Unsupported`, once however often it is read; one
+in a scenario's step blocks it at the step), and a requirement that reads
+it is not evaluable, each saying which number and the range Agentique
+computes; an item made with such a default fails where it is made rather
+than holding nothing; and a whole number beyond 64 bits in an agent's
+answer is refused for any field whose type is not a real number's. The runner's revision becomes `+3`,
+so runs made before are outdated. Deviation 22 says so. Tested: a run and a
+requirement on 9223372036854775808, 9223372036854775807 still running, and
+the untyped field. An independent review found an item's refused default
+read as nothing in a requirement, a field of a type the run does not know
+still taking the number as a `Real`, and the docs claiming more than the
+code; corrected. Not changed: a JSON number above 2^64 − 1 or below −2^63
+reads as a `Real` (the reader cannot tell it from one), and the language
+core's validation still accepts the literal (the run and the evaluation
+refuse it).

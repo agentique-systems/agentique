@@ -360,3 +360,41 @@ fn a_run_checks_whole_numbers_exactly_at_the_ends_of_their_range() {
         ]
     );
 }
+
+/// AR-F-001 (deviation 22): a whole number beyond the 64 bits Agentique
+/// computes blocks the run at the feature that holds it, rather than
+/// running on an inexact binary64 value; the smallest and largest fit.
+#[test]
+fn a_whole_number_beyond_64_bits_blocks_the_run_at_its_feature() {
+    let source = |value: &str| {
+        format!(
+            "package Counting {{
+    private import ScalarValues::*;
+    part def Counter {{
+        attribute count : Integer = {value};
+    }}
+    verification def Counts {{
+        subject counter : Counter;
+        assert constraint positive {{ counter.count > 0 }}
+    }}
+}}"
+        )
+    };
+    let tree = load(&source("9223372036854775808"));
+    let result = run_model(&tree, "Counting::Counts");
+    assert_eq!(result.status, RunStatus::Stopped);
+    let stop = result.stop.expect("it stops before it runs");
+    assert_eq!(stop.reason, StopReason::Unsupported);
+    assert_eq!(
+        stop.element,
+        Some(tree.find("Counting::Counter::count").unwrap().raw())
+    );
+    assert_eq!(
+        stop.message,
+        "the whole number 9223372036854775808 is outside the whole numbers Agentique computes (64-bit, from -9223372036854775808 to 9223372036854775807)",
+        "once, at the feature"
+    );
+    let tree = load(&source("9223372036854775807"));
+    let result = run_model(&tree, "Counting::Counts");
+    assert_eq!(result.status, RunStatus::Completed, "{:#?}", result.stop);
+}

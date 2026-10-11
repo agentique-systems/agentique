@@ -556,10 +556,15 @@ struct RefPart {
 
 impl<'a> Compiler<'a> {
     fn block(&mut self, element: ElementId, message: impl Into<String>) {
-        self.blockers.push(Blocker {
+        let blocker = Blocker {
             element,
             message: message.into(),
-        });
+        };
+        // Met again (a feature's value is read for its type and for each
+        // instance): said once.
+        if !self.blockers.contains(&blocker) {
+            self.blockers.push(blocker);
+        }
     }
 
     fn element(&self, id: ElementId) -> Option<&'a Element> {
@@ -690,7 +695,7 @@ impl<'a> Compiler<'a> {
                     if let Some(ty) = ty {
                         self.learn_type(ty);
                     }
-                    let default = self.literal_value(e);
+                    let default = self.literal_value(feature, e);
                     let required = e.multiplicity.is_none_or(|m| m.lower >= 1);
                     fields.push(ItemField {
                         required,
@@ -727,8 +732,18 @@ impl<'a> Compiler<'a> {
         out
     }
 
-    fn literal_value(&self, element: &Element) -> Option<Value> {
-        element.value.as_ref().map(literal)
+    /// A feature's literal value; one Agentique cannot compute blocks the
+    /// run at the feature, and stays refused wherever it would be used.
+    fn literal_value(
+        &mut self,
+        feature: ElementId,
+        element: &Element,
+    ) -> Option<Result<Value, String>> {
+        let value = literal(element.value.as_ref()?);
+        if let Err(why) = &value {
+            self.block(feature, why.clone());
+        }
+        Some(value)
     }
 
     // ---- expressions ----
@@ -736,7 +751,7 @@ impl<'a> Compiler<'a> {
     /// Compiles an expression written in `holder`.
     fn expr(&mut self, holder: ElementId, expression: &Expression) -> Result<Expr, String> {
         Ok(match expression {
-            Expression::Literal(l) => Expr::Const(literal(l)),
+            Expression::Literal(l) => Expr::Const(literal(l)?),
             Expression::Null => Expr::Const(Value::Null),
             Expression::Name(reference) => {
                 let steps = self.steps(holder, Role::Value, reference)?;
@@ -843,7 +858,7 @@ impl<'a> Compiler<'a> {
             return Ok(None);
         };
         if let Some(literal_value) = &element.value {
-            return Ok(Some(Expr::Const(literal(literal_value))));
+            return Ok(Some(Expr::Const(literal(literal_value)?)));
         }
         match &element.expression {
             Some(expression) => self.expr(feature, expression).map(Some),
@@ -2122,14 +2137,19 @@ pub(crate) fn expression_paths(expr: &Expr, visit: &mut dyn FnMut(&[ElementId]))
     }
 }
 
-/// A literal as a run-time value. Escapes in a string are resolved.
-pub(crate) fn literal(literal: &Literal) -> Value {
-    match literal {
+/// A literal as a run-time value. Escapes in a string are resolved. A whole
+/// number outside the 64 bits Agentique computes is refused, never turned
+/// into an inexact `Real` (deviation 22, AR-F-001).
+pub(crate) fn literal(literal: &Literal) -> Result<Value, String> {
+    Ok(match literal {
         Literal::Boolean(b) => Value::Bool(*b),
-        Literal::Integer(text) => text
-            .parse::<i64>()
-            .map(Value::Int)
-            .unwrap_or_else(|_| Value::Real(text.parse().unwrap_or(f64::NAN))),
+        Literal::Integer(text) => Value::Int(text.parse::<i64>().map_err(|_| {
+            format!(
+                "the whole number {text} is outside the whole numbers Agentique computes (64-bit, from {} to {})",
+                i64::MIN,
+                i64::MAX
+            )
+        })?),
         Literal::Real(text) => Value::Real(text.parse().unwrap_or(f64::NAN)),
         Literal::String(text) => {
             let mut out = String::with_capacity(text.len());
@@ -2148,5 +2168,5 @@ pub(crate) fn literal(literal: &Literal) -> Value {
             }
             Value::Str(out)
         }
-    }
+    })
 }

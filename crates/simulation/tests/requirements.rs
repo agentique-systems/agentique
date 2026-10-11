@@ -790,3 +790,48 @@ fn the_remainder_of_the_smallest_whole_number_is_calculated() {
     let lowest = of(&tree, &all, "lowestDivided");
     assert_eq!(lowest.status, Status::Holds, "{}", lowest.reason);
 }
+
+#[test]
+fn a_whole_number_beyond_64_bits_makes_a_requirement_not_evaluable() {
+    // AR-F-001: as binary64 it would equal 2^63 - 1 rounded, and
+    // `c.count <= 9223372036854775807` would hold; it is not computed.
+    let tree = model(
+        "    part def Counter { attribute count : Integer; }
+    part huge : Counter { attribute :>> count = 9223372036854775808; }
+    requirement def CountLimit { subject c : Counter; require constraint { c.count <= 9223372036854775807 } }
+    requirement hugeLimited : CountLimit;
+    satisfy hugeLimited by huge;",
+    );
+    let all = evaluate_all(&tree);
+    let huge = of(&tree, &all, "hugeLimited");
+    assert_eq!(huge.status, Status::NotEvaluable, "{}", huge.reason);
+    assert!(
+        huge.reason
+            .contains("9223372036854775808 is outside the whole numbers"),
+        "{}",
+        huge.reason
+    );
+}
+
+#[test]
+fn an_item_whose_default_is_beyond_64_bits_is_not_read_as_nothing() {
+    // AR-F-001's review: the refused default stays refused where the item
+    // is made, rather than holding nothing (which `!=` would call true).
+    let tree = model(
+        "    attribute def Limit { attribute max : Integer = 9223372036854775808; }
+    part def Counter { attribute count : Integer; attribute limit : Limit = new Limit(); }
+    part one : Counter { attribute :>> count = 1; }
+    requirement def UnderLimit { subject c : Counter; require constraint { c.count != c.limit.max } }
+    requirement oneUnder : UnderLimit;
+    satisfy oneUnder by one;",
+    );
+    let all = evaluate_all(&tree);
+    let one = of(&tree, &all, "oneUnder");
+    assert_eq!(one.status, Status::NotEvaluable, "{}", one.reason);
+    assert!(
+        one.reason
+            .contains("9223372036854775808 is outside the whole numbers"),
+        "{}",
+        one.reason
+    );
+}
