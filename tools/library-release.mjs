@@ -84,7 +84,7 @@ fs.writeFileSync(
       library_source_root: "standards/libraries-2026-04",
       baseline_lock: "standards/baseline-lock.json",
       selection_basis:
-        "Official corrections to StateTransitionAction payload direction and TransitionPerformance receiver binding; originals retained. See docs/standards-discrepancies.md.",
+        "Official corrections to StateTransitionAction payload direction and TransitionPerformance receiver binding; originals retained. See docs/standards-discrepancies.md as of the tag archive/pre-realignment (git show archive/pre-realignment:docs/standards-discrepancies.md); Stage 0 removed it from main.",
       artifacts,
     },
     null,
