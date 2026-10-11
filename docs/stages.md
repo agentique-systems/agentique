@@ -2093,7 +2093,7 @@ it). Read against the code and the model before any change:
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 | W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
-| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134 to #138, `stage13/frozen-checks` | #134 to #138 merged; the rest in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134 to #139, `stage13/stop-and-spend` | #134 to #139 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2949,3 +2949,26 @@ two such resumes end it; the Studio still reads `model/links.json`'s protected
 paths from the working copy at a start (a removal between starts is now
 refused). Not verified: the real previous build reading a record with
 `frozen`.
+
+*Stop during a wait for Jev, and a paid step left uncounted* (AR-T-019
+and AR-T-016; `stage13/stop-and-spend`; the Orchestrator's lock named
+under the delegation). Jev's wait did not ask whether to stop, so a Stop
+while a request was pending took effect only at Jev's deadline (up to about
+4 s; reproduced at 3.5 s; nothing was acted on after it): Jev's waits now
+take the stop, as a model's call does, and cancel the request at once,
+also while an objective's intent is read. The cause of the first proof's
+missing $0.41 had been fixed by #132; a narrower path remained: a step
+whose decision was paid for was not recorded when the instance ended right
+after the action was refused as stale or held, or after it was carried
+out, so the objective's spend, counted from recorded steps, left that
+decision out. Each such step is now recorded first, under its outcome
+(held, stale, or the action's) with why the instance ended, in its order
+and with its time. Tested: a Stop half a second into a pending Jev request
+ends the run at once with no action taken; every cost a run counts is on a
+step it records; a step Jev decides is not reported as a model asked. An
+independent review found that the stop check, now also asked during Jev's
+wait, reported every step Jev decided as "asks <the explorer's model>",
+and that a step recorded after a restart came out of order and without its
+time; corrected (a stop says whether a model's call waits; a step is
+recorded before the instance starts again). Not verified: a live Jev
+request cancelled (the providers' cancel was already tested).
