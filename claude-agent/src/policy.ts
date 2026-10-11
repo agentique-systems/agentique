@@ -21,7 +21,7 @@
 // These are gates on what the agent can do; they are not an operating-system
 // sandbox, and the Studio's own checks still decide every model change.
 
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import type { Login, Policy, StartOptions } from "./protocol.ts";
 
@@ -223,6 +223,108 @@ function trickyName(path: string): string | null {
 /** Example and template files, which hold no keys (`.env.example`). */
 const TEMPLATE = /\.(example|sample|template|dist)$/i;
 
+/**
+ * Why a write to `path` could change a file other than the one the policy
+ * judged (F3 of the boundary audit): a link at the leaf whose target cannot
+ * be resolved, which `real` cannot follow, so it is judged where it stands
+ * (a dangling symbolic link or junction: the write creates its target,
+ * wherever that is); or a file with more than one hard link, whose other
+ * names may be anywhere. Null when the leaf does not exist yet or is a
+ * plain file.
+ */
+function linkedLeaf(path: string, cwd: string): string | null {
+  const full = normalise(path, cwd);
+  let stat;
+  try {
+    stat = lstatSync(full);
+  } catch {
+    return null;
+  }
+  if (stat.isSymbolicLink()) {
+    try {
+      realpathSync.native(full);
+    } catch {
+      return "it is a link whose target cannot be resolved";
+    }
+    return null;
+  }
+  if (stat.isFile() && stat.nlink > 1) {
+    return `it has ${stat.nlink} hard links, whose other names may be outside the folders this session may write`;
+  }
+  return null;
+}
+
+/** A glob's alternatives, its braces expanded (`*.{rs,env}`: `*.rs`, `*.env`),
+ * at most `limit` of them. */
+function alternatives(glob: string, limit = 64): string[] {
+  const open = glob.indexOf("{");
+  const close = open < 0 ? -1 : glob.indexOf("}", open);
+  if (open < 0 || close < 0) {
+    return [glob];
+  }
+  const out: string[] = [];
+  for (const choice of glob.slice(open + 1, close).split(",")) {
+    for (const rest of alternatives(glob.slice(0, open) + choice + glob.slice(close + 1), limit)) {
+      if (out.length < limit) {
+        out.push(rest);
+      }
+    }
+  }
+  return out;
+}
+
+/** One path segment's glob (`*`, `?`, `[...]`, `[!...]`) as a regular
+ * expression over a name, without case. */
+function segment(glob: string): RegExp {
+  let source = "";
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === "*") {
+      source += ".*";
+    } else if (c === "?") {
+      source += ".";
+    } else if (c === "[" && glob.indexOf("]", i + 1) > i + 1) {
+      const end = glob.indexOf("]", i + 1);
+      const inner = glob.slice(i + 1, end).replace(/\\/g, "\\\\");
+      source += inner.startsWith("!") ? `[^${inner.slice(1)}]` : `[${inner}]`;
+      i = end;
+    } else {
+      source += c.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+    }
+  }
+  return new RegExp(`^${source}$`, "i");
+}
+
+/** Names of files that are not secret, which a broad glob (`*`, `**\/*`)
+ * matches as well: such a glob names no key file in particular. */
+const ORDINARY = ["main.rs", "README.md", ".gitignore", "package.json", "x"];
+
+/**
+ * The secret file a search's glob picks out, if any (F4 of the boundary
+ * audit): one of its alternatives whose last segment matches a name the
+ * hidden patterns hide but no ordinary name (`.env*`, `?env`, `[.]env`,
+ * `*.{rs,env}`), so a broad glob is left to the deny rules, which exclude
+ * hidden files from every search.
+ */
+function namesSecret(glob: string, hidden: string[]): string | null {
+  const secrets = hidden.flatMap((h) => {
+    const last = h.replace(/\\/g, "/").split("/").pop() ?? h;
+    return [last.replace(/\*/g, ""), last.replace(/\*/g, "x"), last.replace(/\*/g, "local")];
+  });
+  for (const alternative of alternatives(glob.replace(/\\/g, "/"))) {
+    const last = alternative.replace(/\/+$/, "").split("/").pop() ?? alternative;
+    if (TEMPLATE.test(last)) {
+      continue;
+    }
+    const re = segment(last === "**" ? "*" : last);
+    const secret = secrets.find((name) => name !== "" && re.test(name));
+    if (secret !== undefined && !ORDINARY.some((name) => re.test(name))) {
+      return secret;
+    }
+  }
+  return null;
+}
+
 /** Whether a relative path matches a policy pattern (see `Policy`). */
 export function matches(relative: string, pattern: string): boolean {
   const p = pattern.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "").toLowerCase();
@@ -299,7 +401,11 @@ export function decide(
     // given (they become ripgrep exclusions); a glob naming one is refused
     // here too.
     const pattern = typeof input.glob === "string" ? input.glob : typeof input.pattern === "string" && tool === "Glob" ? input.pattern : "";
-    if (pattern && !TEMPLATE.test(pattern) && policy.hidden.some((h) => matches(pattern.replace(/^\.\//, ""), h))) {
+    if (
+      pattern &&
+      !TEMPLATE.test(pattern) &&
+      (policy.hidden.some((h) => matches(pattern.replace(/^\.\//, ""), h)) || namesSecret(pattern, policy.hidden) !== null)
+    ) {
       return { kind: "deny", reason: `${pattern} names files that can hold keys; they are not read in this session` };
     }
     return allow;
@@ -317,6 +423,10 @@ export function decide(
     const relative = relativeTo(path, policy.write, cwd);
     if (relative === null) {
       return { kind: "deny", reason: `${value} is outside the folders this session may write` };
+    }
+    const linked = linkedLeaf(value, cwd);
+    if (linked !== null) {
+      return { kind: "deny", reason: `${value}: ${linked}; write a plain file` };
     }
     if (policy.protected.some((p) => matches(relative, p))) {
       return /(^|\/)model\//.test(relative)

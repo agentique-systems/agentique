@@ -4,6 +4,9 @@
 // own tools, subagent tasks and compaction). No packages needed.
 
 import assert from "node:assert/strict";
+import { linkSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { type McpFactory, type Sdk, Turn, resultText, usage } from "../src/bridge.ts";
 import {
@@ -332,6 +335,53 @@ test("key files are hidden wherever they are, and names Windows reads differentl
   assert.equal(decide("Write", { file_path: "model\\agentique.json::$DATA" }, policy, cwd, tools).kind, "deny");
   assert.equal(decide("Write", { file_path: "notes.txt." }, policy, cwd, tools).kind, "deny");
   assert.equal(decide("Write", { file_path: "notes.txt " }, policy, cwd, tools).kind, "deny");
+});
+
+test("a search's glob that picks out key files is refused, however it is written (F4)", () => {
+  const keys = { ...policy, hidden: [...policy.hidden, "**/.env.*"] };
+  for (const glob of [".env*", "?env", "[.]env", ".ENV", "*.{rs,env}", "{.env,main.rs}", "**/.env.local", "id_rsa*", "*.pem"]) {
+    assert.equal(decide("Grep", { pattern: "KEY", glob }, keys, cwd, tools).kind, "deny", glob);
+  }
+  assert.equal(decide("Glob", { pattern: "**/.env*" }, keys, cwd, tools).kind, "deny");
+  // A broad glob names no key file: the deny rules keep them out of it.
+  for (const glob of ["*", "**/*", "*.*", "*.rs", "**/*.{rs,toml}", ".env.example", "src/**"]) {
+    assert.equal(decide("Grep", { pattern: "KEY", glob }, keys, cwd, tools).kind, "allow", glob);
+  }
+});
+
+test("a write through a link to a file it cannot see is refused (F3)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "agq-policy-links-"));
+  try {
+    const work = join(dir, "work");
+    const outside = join(dir, "outside");
+    mkdirSync(work);
+    mkdirSync(outside);
+    writeFileSync(join(outside, "secret.txt"), "outside");
+    writeFileSync(join(work, "plain.txt"), "inside");
+    const local = { ...policy, read: [work], write: [work], protected: [], hidden: [] };
+    assert.equal(decide("Write", { file_path: "plain.txt" }, local, work, tools).kind, "allow");
+    assert.equal(decide("Write", { file_path: "new.txt" }, local, work, tools).kind, "allow");
+    // A hard link: the same file as one outside, by another name.
+    linkSync(join(outside, "secret.txt"), join(work, "hard.txt"));
+    const hard = decide("Edit", { file_path: "hard.txt" }, local, work, tools);
+    assert.equal(hard.kind, "deny");
+    assert.match(hard.kind === "deny" ? hard.reason : "", /hard links/);
+    // A link whose target does not exist yet: writing creates it outside.
+    let dangling = true;
+    try {
+      symlinkSync(join(outside, "created.txt"), join(work, "dangling.txt"), "file");
+    } catch {
+      dangling = false;
+      console.log("a symbolic link cannot be made here (Windows without the privilege): that part is skipped");
+    }
+    if (dangling) {
+      const link = decide("Write", { file_path: "dangling.txt" }, local, work, tools);
+      assert.equal(link.kind, "deny");
+      assert.match(link.kind === "deny" ? link.reason : "", /cannot be resolved/);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("subagents stay in the session's folder, and MCP servers are named exactly", () => {
