@@ -2093,7 +2093,7 @@ it). Read against the code and the model before any change:
 | W13.8 The start of an objective (the Operator's amendment of C-54, during W13.7) | #123, #124 | Merged (below) |
 | W13.7 Proof | #125 (salvaged), #126, #128, #129, #131, and the exploration repairs | First attempt failed, 2026-10-10 (below); repairs in progress, then a fresh proof |
 | W13.7 repairs: exploration (E1 what is explored, E2 progress and time, E3 engineering questions) | #130, #132, #133 | E1 and E2 merged; E3 in review (below) |
-| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, #135, `stage13/stale-model` | #134 and #135 merged; the rest in review (below) |
+| W13.7 repairs from an external review (exact whole numbers; gates that passed on nothing; and the rest below) | #134, #135, #136, `stage13/provenance` | #134, #135 and #136 merged; the rest in review (below) |
 
 **W13.1** (#117): the purpose recorded once (ROADMAP §1.1) with its
 protections named; C-55 and Stage 13; the claims of §4.14; alignment in
@@ -2816,3 +2816,52 @@ as the Studio does. An independent review found waits and Stop refused
 during an Assistant's turn, and the tool description agents read unchanged;
 corrected. Not verified: a real window (the window journeys observe before
 each action that changes the model).
+
+*Unknown code is never current* (AR-T-010, AR-T-011, the review's
+AR-F-003 and the task verification gap #134's review found;
+`stage13/provenance`; the locked `Execution` and `Implementation` named
+under the delegation). Evidence about code says which code it ran by the
+working tree's digest, and three ways let it say "current" about code
+nobody identified:
+- *The digest was lossy* (AR-T-011). A changed file's bytes went through a
+  lossy UTF-8 conversion into a 64-bit FNV hash, and a file that could not
+  be read counted as empty: the bytes 0x80 and 0x81 in one changed file
+  gave one digest, and so did an emptied file and a deleted one. The digest
+  now hashes each changed file's exact bytes (git's blob id), framed by its
+  path and state (file, symbolic link, deleted, or a nested repository's
+  own digest), under `v2:`, so no digest made the old way equals one made
+  now: every kept implementation result and check report is outdated once,
+  the safe direction. What cannot be identified is an error, never empty:
+  a changed file that cannot be read, a path git cannot read or that is not
+  UTF-8, a listed folder that is no repository.
+- *Unidentified code compared as equal* (AR-T-010, AR-F-003). A check
+  report on a folder git could not read stored an empty digest and compared
+  it with the empty digest read later, so it stayed current while the code
+  changed; an implementation result that recorded no code, or one shown
+  where the project's implementation links cannot be read, was current.
+  Now none is: each is outdated, saying why (read again now, so "not a git
+  repository" shows), and the status line says that checks on code that
+  cannot be identified show no drift. One rule decides whether a run is
+  current, `Studio::run_freshness`, for the Run panel, the Scenarios panel's
+  rows (which compared only the model before), the Requirements ladder and
+  the Assistant's `read_run` (likewise).
+- *A task's verification did not record its runner* (#134's review). Its
+  scenarios' verdicts are worked out by the simulation runner, but it
+  recorded only the commit and the model, so a verification made by an
+  earlier runner revision stayed current. `Checked` now records the runner
+  (an optional field, left out when empty); a verification with scenario
+  verdicts made by another runner, or by one it does not name, is outdated.
+  The runner's revision (`RUNNER`, #134) does not cover the harness driver
+  in `agq-implementation`.
+
+Tested: the reproductions (two contents of a changed binary file; an
+emptied and a deleted file; a report on a folder no repository holds), a
+change inside a nested repository, a report outdated once its repository
+cannot be read, an implementation result with no code recorded or code not
+identified, a verification's runner (another, none, this one), and an old
+verification record read. An independent review found a nested
+repository digested as a mere folder, two views still calling
+implementation results current without comparing code, a status line
+promising drift that could not show, and lossy link targets and paths;
+corrected. Not tested: a symbolic link (creating one needs a privilege on
+Windows), an unreadable file, and a Run panel without readable links.

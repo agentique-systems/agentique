@@ -374,6 +374,10 @@ impl Studio {
         }
         self.implementation.report = Some(report);
         self.refresh_check_freshness();
+        // Checks on code that cannot be identified show no drift: said so.
+        if let Some(Freshness::Outdated(why)) = &self.implementation.freshness {
+            self.status = format!("{}; they show no drift, since {why}", self.status);
+        }
         self.mark(Dirty::MODEL | Dirty::STATUS | Dirty::LAYOUT);
         true
     }

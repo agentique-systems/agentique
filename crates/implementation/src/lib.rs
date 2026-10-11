@@ -91,12 +91,24 @@ impl CheckReport {
                 "the linked model elements changed since these checks ran".into(),
             );
         }
-        if git::tree_digest(repository).unwrap_or_default() != self.tree_digest {
-            return agq_simulation::Freshness::Outdated(
-                "the code changed since these checks ran".into(),
-            );
+        // Unknown code is never current: a digest not read when the checks
+        // ran (stored empty), or not readable now, compares with nothing.
+        let now = git::tree_digest(repository);
+        if self.tree_digest.is_empty() {
+            return agq_simulation::Freshness::Outdated(match now {
+                Ok(_) => "the code these checks ran on was not identified when they ran".into(),
+                Err(error) => format!("the code these checks run on cannot be identified: {error}"),
+            });
         }
-        agq_simulation::Freshness::Current
+        match now {
+            Ok(digest) if digest == self.tree_digest => agq_simulation::Freshness::Current,
+            Ok(_) => agq_simulation::Freshness::Outdated(
+                "the code changed since these checks ran".into(),
+            ),
+            Err(error) => agq_simulation::Freshness::Outdated(format!(
+                "the code cannot be identified now: {error}"
+            )),
+        }
     }
 }
 

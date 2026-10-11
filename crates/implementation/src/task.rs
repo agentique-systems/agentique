@@ -457,6 +457,11 @@ pub struct Checked {
     pub commit: String,
     /// The digest of the model the brief was taken from ([`brief_digest`]).
     pub model_digest: String,
+    /// The runner that worked out its scenarios' verdicts
+    /// (`agq_simulation::RUNNER`); empty in a verification made before it
+    /// was recorded.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub runner: String,
 }
 
 /// One required check with its outcome.
@@ -674,6 +679,20 @@ impl Verification {
             return agq_simulation::Freshness::Outdated(
                 "the model changed after it was checked".into(),
             );
+        }
+        // Its scenarios' verdicts are the runner's: another version of the
+        // runner may work them out differently (as for a run's result).
+        if checked.runner != agq_simulation::RUNNER
+            && self.checks.iter().any(|c| c.kind == CheckKind::Scenario)
+        {
+            return agq_simulation::Freshness::Outdated(if checked.runner.is_empty() {
+                "it does not say which version of the runner checked its scenarios".into()
+            } else {
+                format!(
+                    "another version of the runner checked its scenarios ({})",
+                    checked.runner
+                )
+            });
         }
         agq_simulation::Freshness::Current
     }
@@ -1015,6 +1034,7 @@ mod tests {
             checked: Some(Checked {
                 commit: "abc".into(),
                 model_digest: "m1".into(),
+                runner: agq_simulation::RUNNER.into(),
             }),
             ..Default::default()
         };
@@ -1067,6 +1087,38 @@ mod tests {
             verification.freshness("abc", false, "m2"),
             Freshness::Outdated(_)
         ));
+        // Another runner (or one not recorded) matters only for the
+        // scenarios' verdicts, which it worked out.
+        let mut earlier = verification.clone();
+        if let Some(checked) = earlier.checked.as_mut() {
+            checked.runner = "agq-simulation 0.1.0 model".into();
+        }
+        assert_eq!(earlier.freshness("abc", false, "m1"), Freshness::Current);
+        earlier
+            .checks
+            .push(check(CheckKind::Scenario, Verdict::Passed, "it passed"));
+        assert!(matches!(
+            earlier.freshness("abc", false, "m1"),
+            Freshness::Outdated(why) if why.contains("another version of the runner")
+        ));
+        if let Some(checked) = earlier.checked.as_mut() {
+            checked.runner.clear();
+        }
+        assert!(matches!(
+            earlier.freshness("abc", false, "m1"),
+            Freshness::Outdated(why) if why.contains("does not say which version")
+        ));
+        // This runner, with scenario verdicts: current.
+        if let Some(checked) = earlier.checked.as_mut() {
+            checked.runner = agq_simulation::RUNNER.into();
+        }
+        assert_eq!(earlier.freshness("abc", false, "m1"), Freshness::Current);
+        // A record from before the runner was kept reads, and an empty
+        // runner is left out when saved.
+        let old: Checked = serde_json::from_str(r#"{"commit":"abc","modelDigest":"m1"}"#).unwrap();
+        assert_eq!(old.runner, "");
+        let saved = serde_json::to_string(&old).unwrap();
+        assert!(!saved.contains("runner"), "{saved}");
         // The build did not run (refused): not a pass, and said so.
         let refused = Verification {
             checks: vec![check(

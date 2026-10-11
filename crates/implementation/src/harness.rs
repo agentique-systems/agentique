@@ -387,12 +387,17 @@ pub fn run_implementation(
 }
 
 /// Whether an implementation result still describes the code: the same
-/// commit and working tree.
+/// commit and working tree. A result that recorded no code, or whose code
+/// could not be identified, is never current.
 pub fn code_is_current(result: &RunResult, repository: &Path) -> Result<(), String> {
     let Some(recorded) = &result.provenance.implementation else {
-        return Ok(());
+        return Err("it recorded no code it ran".into());
     };
-    let digest = git::tree_digest(repository).map_err(|e| e.to_string())?;
+    if recorded.tree_digest.is_empty() {
+        return Err("the code it ran could not be identified".into());
+    }
+    let digest = git::tree_digest(repository)
+        .map_err(|e| format!("the code cannot be identified now: {e}"))?;
     if digest == recorded.tree_digest {
         Ok(())
     } else {

@@ -276,6 +276,13 @@ impl Studio {
                     } && (summary.mode != Mode::Replay
                         || summary.recordings == recordings);
                 }
+                // An implementation result also depends on the code it ran.
+                if current && summary.mode == Mode::Implementation {
+                    current = self
+                        .run_store()
+                        .and_then(|s| s.load(&summary.id))
+                        .is_some_and(|result| self.run_freshness(&result).is_current());
+                }
                 latest.push((summary.mode, summary.clone(), current));
             }
             latest.sort_by_key(|(mode, ..)| Mode::ALL.iter().position(|m| m == mode));
@@ -359,21 +366,31 @@ impl Studio {
         )
     }
 
+    /// Whether a result still describes the present, as every view and
+    /// tool says it: the model (and binding and recordings), and for an
+    /// implementation result the code it ran. Unknown code is never
+    /// current.
+    pub fn run_freshness(&self, result: &RunResult) -> Freshness {
+        let fresh = self.freshness_of(result);
+        if !fresh.is_current() || result.mode != Mode::Implementation {
+            return fresh;
+        }
+        let compared = match self.implementation_repository() {
+            Some(repository) => agq_implementation::harness::code_is_current(result, &repository),
+            None => {
+                Err("its code was not compared: the implementation links cannot be read".into())
+            }
+        };
+        match compared {
+            Ok(()) => Freshness::Current,
+            Err(why) => Freshness::Outdated(why),
+        }
+    }
+
     /// Shows a result and works out whether it is current.
     pub fn show_result(&mut self, result: Option<RunResult>) {
         self.runs.freshness = match &result {
-            Some(result) if self.project.is_some() => {
-                let mut fresh = self.freshness_of(result);
-                if fresh.is_current()
-                    && result.mode == Mode::Implementation
-                    && let Some(repository) = self.implementation_repository()
-                    && let Err(why) =
-                        agq_implementation::harness::code_is_current(result, &repository)
-                {
-                    fresh = Freshness::Outdated(why);
-                }
-                Some(fresh)
-            }
+            Some(result) if self.project.is_some() => Some(self.run_freshness(result)),
             _ => None,
         };
         self.runs.cursor = result.as_ref().and_then(|r| {
@@ -1029,7 +1046,7 @@ impl Studio {
                     .and_then(|s| s.latest(scenario.raw(), mode));
                 let answer = match (result, &self.project) {
                     (Some(result), Some(_)) => {
-                        let why = match self.freshness_of(&result) {
+                        let why = match self.run_freshness(&result) {
                             Freshness::Current => None,
                             Freshness::Outdated(why) => Some(why),
                         };

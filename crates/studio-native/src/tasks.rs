@@ -547,6 +547,7 @@ impl Studio {
                 verification.checked = Some(Checked {
                     commit: commit.clone(),
                     model_digest: brief_digest(&tree, &brief),
+                    runner: agq_simulation::RUNNER.into(),
                 });
                 let files = if commit.is_empty() {
                     git::patch(worktree_path, &outcome_base.base)

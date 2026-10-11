@@ -10,12 +10,10 @@ use agq_implementation::requirements::{
 };
 use agq_implementation::{CheckReport, Links};
 use agq_language::{Element, ElementId, ElementKind, Parent, Reference};
-use agq_simulation::{Mode, RunResult};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::{Operation, SystemState};
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
-use std::path::Path;
 
 #[derive(Clone)]
 pub struct Row {
@@ -117,10 +115,8 @@ impl Studio {
 
     /// Every scenario's newest results, as the ladder reads them: an
     /// implementation result is current only while the code is what it ran
-    /// (as the Run panel decides when it shows one).
+    /// (`run_freshness`, as the Run panel and the Scenarios panel decide).
     fn scenario_runs(&self) -> Vec<ScenarioRuns> {
-        let store = self.run_store();
-        let repository = self.implementation_repository();
         self.scenario_rows_now()
             .into_iter()
             .map(|row| ScenarioRuns {
@@ -128,22 +124,12 @@ impl Studio {
                 results: row
                     .latest
                     .iter()
-                    .map(|(mode, summary, current)| {
-                        let current = *current
-                            && (*mode != Mode::Implementation
-                                || store
-                                    .as_ref()
-                                    .and_then(|s| s.load(&summary.id))
-                                    .is_some_and(|result| {
-                                        code_current(&result, repository.as_deref())
-                                    }));
-                        ScenarioResult {
-                            mode: *mode,
-                            status: summary.status,
-                            tally: summary.tally.clone(),
-                            stop: summary.stop,
-                            current,
-                        }
+                    .map(|(mode, summary, current)| ScenarioResult {
+                        mode: *mode,
+                        status: summary.status,
+                        tally: summary.tally.clone(),
+                        stop: summary.stop,
+                        current: *current,
                     })
                     .collect(),
             })
@@ -198,14 +184,6 @@ impl Studio {
             },
         );
     }
-}
-
-/// Whether an implementation result still describes the code: without a
-/// repository to compare with it stands, as in the Run panel.
-pub(crate) fn code_current(result: &RunResult, repository: Option<&Path>) -> bool {
-    repository.is_none_or(|repository| {
-        agq_implementation::harness::code_is_current(result, repository).is_ok()
-    })
 }
 
 /// The headline over the rows: what the requirement usages stand on, then
@@ -424,7 +402,7 @@ pub fn rows(
 mod tests {
     use super::*;
     use agq_language::{Source, parse};
-    use agq_simulation::{Mode, RunStatus};
+    use agq_simulation::{Mode, RunResult, RunStatus};
     use std::collections::BTreeSet;
 
     fn state() -> SystemState {
@@ -735,6 +713,9 @@ mod tests {
 
     #[test]
     fn an_implementation_pass_is_current_only_while_the_code_is_what_it_ran() {
+        let code_current = |result: &RunResult, folder: &std::path::Path| {
+            agq_implementation::harness::code_is_current(result, folder).is_ok()
+        };
         let folder =
             std::env::temp_dir().join(format!("agq-studio-code-current-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&folder);
@@ -782,7 +763,17 @@ mod tests {
             },
             live: None,
         };
-        assert!(code_current(&result, Some(&folder)));
+        assert!(code_current(&result, &folder));
+        // Unknown code is never current (AR-F-003), even while the code is
+        // unchanged: a result that recorded no code, or code not identified.
+        let mut unknown = result.clone();
+        unknown.provenance.implementation = None;
+        assert!(!code_current(&unknown, &folder));
+        let mut unidentified = result.clone();
+        if let Some(code) = unidentified.provenance.implementation.as_mut() {
+            code.tree_digest.clear();
+        }
+        assert!(!code_current(&unidentified, &folder));
         // The code changes: the pass no longer describes it.
         std::fs::write(
             folder.join("lib.rs"),
@@ -790,9 +781,7 @@ mod tests {
 ",
         )
         .unwrap();
-        assert!(!code_current(&result, Some(&folder)));
-        // Without a repository to compare with, it stands (as in the Run panel).
-        assert!(code_current(&result, None));
+        assert!(!code_current(&result, &folder));
         let _ = std::fs::remove_dir_all(&folder);
     }
 }
